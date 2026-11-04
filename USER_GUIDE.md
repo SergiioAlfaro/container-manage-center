@@ -1,6 +1,6 @@
 # Guía de usuario
 
-> Versión 0.2.0 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
+> Versión 0.2.1 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
 > contenedores (consultar, iniciar, detener, reiniciar, pausar, reanudar y
 > eliminar), las imágenes (consultar) y la configuración. El resto de apartados
 > indican en qué fase llegan.
@@ -52,7 +52,9 @@ Acciones de cada fila (solo aparecen las válidas para su estado):
 | Creado / Detenido | Iniciar, Eliminar |
 
 Detener y reiniciar esperan 10 s a que el proceso termine antes de forzarlo
-(como Docker). Mientras una acción está en curso, su fila muestra la operación y
+(como Docker). Tras cada acción, la aplicación pregunta a Docker el estado real
+del contenedor (verás "Comprobar estado del contenedor" en el panel) y lo muestra
+de inmediato. Mientras una acción está en curso, su fila muestra la operación y
 el resto de la aplicación sigue funcionando. Si Docker rechaza una acción, el
 mensaje de Docker aparece arriba de la tabla y en el panel de actividad.
 
@@ -93,7 +95,7 @@ pérdida de conexión.
   - **Automático**: busca `DOCKER_HOST`, el contexto activo, tu socket rootless y el del sistema.
   - **Socket personalizado**: una ruta absoluta concreta.
   - **Probar conexión** comprueba la configuración sin guardarla. **Guardar y conectar** la aplica. **Volver a conectar** repite la detección.
-  - Conexión actual (socket, origen, versión, API, rootless) y versión de **Docker Compose** (botón Comprobar, que ejecuta `docker compose version`).
+  - Conexión actual (socket, origen, versión, API, rootless) y **Docker Compose** (botón Comprobar, que ejecuta `docker compose version`). Si no está instalado lo indica y muestra cómo instalarlo; no es necesario para usar el resto de la aplicación.
 - **Atajos** y **Acerca de** (versión y ruta del archivo de configuración).
 
 Todo se guarda al momento en `~/.config/docker-control-center/config.toml`.

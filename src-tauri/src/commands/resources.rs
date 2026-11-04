@@ -1,6 +1,6 @@
 //! Contenedores e imágenes.
 
-use dcc_engine::{ContainerAction, ContainerSummary, EngineError, ImageSummary};
+use dcc_engine::{ContainerAction, ContainerState, ContainerSummary, EngineError, ImageSummary};
 use tauri::State;
 
 use crate::error::CmdResult;
@@ -15,13 +15,14 @@ pub async fn containers_list(state: State<'_, AppState>) -> CmdResult<Vec<Contai
 }
 
 /// Iniciar, detener, reiniciar, pausar o reanudar. `name` solo se usa para el registro.
+/// Devuelve el estado confirmado por inspect tras la acción (D-031).
 #[tauri::command]
 pub async fn container_action(
     state: State<'_, AppState>,
     id: String,
     name: Option<String>,
     action: ContainerAction,
-) -> CmdResult<()> {
+) -> CmdResult<ContainerState> {
     Ok(state
         .engine
         .with_engine(|e| async move { e.container_action(&id, name.as_deref(), action).await })

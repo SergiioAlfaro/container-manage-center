@@ -7,7 +7,8 @@
 | | |
 |---|---|
 | **Fase actual** | 2 · Integración con Docker Engine |
-| **Estado de la fase** | Implementada y probada en el entorno de desarrollo contra Docker real. **Pendiente de validación externa** en el equipo del propietario. |
+| **Versión** | 0.2.1 (corrección de la Fase 2) |
+| **Estado de la fase** | Corregidos los fallos de la verificación automática en Debian 13. Parte automática superada en el entorno de desarrollo. **Pendiente**: que el propietario repita `verify-phase-2.sh` en Debian 13 y, si está limpio, las comprobaciones manuales M1–M15. |
 | **Fases completadas (validadas)** | 1 |
 | **Fases pendientes** | 2–10 |
 
@@ -171,10 +172,47 @@ Pruebas como root (el entorno es un contenedor aislado) y, donde importa, como u
 ### Errores conocidos
 Ninguno abierto.
 
+### Verificación del propietario de la 0.2.0 (Debian 13, Docker 26.1.5) — 2026-11-04
+Compilación y pruebas de interfaz correctas. Fallos automáticos:
+1. `container_lifecycle_against_real_docker_matches_wire`: tras detener, el listado devolvía `running`.
+2. Compose: `unknown flag: --short` en el script y error con `--format` en las pruebas.
+Sin informe adjunto en la conversación; se trabajó con la descripción de los fallos.
+
+### Correcciones de la versión 0.2.1
+| Problema | Causa demostrada | Corrección | Evidencia |
+|---|---|---|---|
+| Estado `running` tras detener | Docker responde a `POST /stop` en `SetStopped` y actualiza la réplica del listado después (`CheckpointTo`); inspect toma el bloqueo y da el estado real (D-031) | La acción confirma el estado con `GET /containers/{id}/json`; la interfaz lo aplica a la fila | Prueba determinista `stale_list.rs` (listado `running`, inspect `exited`); prueba de interfaz que falla sin la corrección; ciclo de vida real 15/15 ejecuciones; E2E en la app real |
+| `unknown flag: --short` / `--format` | El CLI de Docker no encuentra el plugin Compose y toma esas opciones como suyas (reproducido ocultando el plugin, salida 125) (D-032) | Detección con `docker compose version` sin opciones y `docker-compose version`; 6 estados distintos; instrucciones por distribución | Salidas reales con y sin plugin; 9 pruebas unitarias; prueba real con plugin y sin él; pantalla de Configuración |
+| Script ambiguo | — | Omisiones separadas de fallos, veredicto, código de salida, limpieza con `trap`, versiones de herramientas (D-033) | Ejecución con fallo real (Xvfb caído): veredicto NO SUPERADA y salida 1; ejecución limpia: salida 0; sin Compose: 2 omisiones justificadas y 0 fallos |
+
+### Pruebas de la 0.2.1 en el entorno de desarrollo
+Ubuntu 24.04, Docker 29.9.2. Informe completo: `verify-phase-2-report.txt`.
+
+| Conjunto | Resultado |
+|---|---|
+| `verify-phase-2.sh --deb` (root con `DCC_VERIFY_ALLOW_ROOT=1`) | 27 correctas, 0 fallos, 2 omitidas justificadamente (pruebas de permisos como root), código 0 |
+| Mismo script con el plugin Compose oculto (escenario de Debian 13 sin Compose) | 25 correctas, 0 fallos, 4 omitidas (Compose no instalado y su prueba, más las 2 de permisos), código 0 |
+| Pruebas Rust deterministas | 132/132 (incluye 12 reales que en ese paso no hacen nada) |
+| Pruebas contra Docker real (motor) | 9 ejecutadas y correctas; 2 de permisos ejecutadas aparte como usuario normal: 2/2 correctas |
+| Ciclo de vida real repetido | 15/15 ejecuciones completas de `live_docker` correctas |
+| IPC contra Docker real, prueba determinista de la carrera | Correctas |
+| Vitest | 74/74 |
+| Clippy `-D warnings`, `cargo fmt --check`, `tsc`, shellcheck | Sin avisos |
+| App real: detener desde la interfaz → fila "Detenido", panel con "Comprobar estado del contenedor", `docker ps -a` = `exited` | Correcto |
+| App real sin plugin Compose: "No instalado" con instrucciones; ejecución CLI real registrada | Correcto |
+| `.deb` 0.2.1: instalar, arrancar como usuario normal y como root (desarrollo), desinstalar | Correcto |
+| Recursos de prueba tras todo lo anterior | Ninguno |
+
+### Limitaciones de esta verificación
+- La carrera de Docker 26 **no se reproduce** con Docker 29 en este entorno (120 ciclos con la API real); la corrección se apoya en el código de moby, una prueba determinista que reproduce las respuestas exactas de la ventana y la prueba real. Debe confirmarse en Debian 13 con `verify-phase-2.sh`.
+- No he podido confirmar desde aquí qué rutas instala el paquete `docker-compose` de Debian 13 (las páginas de Debian bloquean el acceso automático). La detección cubre tanto el plugin como el binario independiente.
+- Las herramientas del script se han comprobado con Docker CLI 29 y util-linux de Ubuntu 24.04; en Debian 13 solo se usan opciones existentes desde Docker 20.10.
+- Docker rootless sigue sin probarse con un daemon real (requisito 9, M14).
+
 ---
 
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-2.sh` (con un usuario con acceso a Docker) y las comprobaciones M1–M15, y envía `verify-phase-2-report.txt`.
+1. El propietario repite `bash scripts/verify-phase-2.sh` en Debian 13 y envía `verify-phase-2-report.txt`. Solo si el veredicto es "parte automática superada", realiza M1–M15.
 2. Corregir lo que surja y marcar la Fase 2 como validada.
 3. Fase 3: creación de contenedores con asistente por pestañas, duplicado, inspección, logs en tiempo real, terminal interactiva, estadísticas básicas.
 

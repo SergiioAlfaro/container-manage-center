@@ -15,6 +15,7 @@ import type { ComposeStatus } from "./bindings/ComposeStatus";
 import type { ConnectionState } from "./bindings/ConnectionState";
 import type { ConnectionTest } from "./bindings/ConnectionTest";
 import type { ContainerAction } from "./bindings/ContainerAction";
+import type { ContainerState } from "./bindings/ContainerState";
 import type { ContainerSummary } from "./bindings/ContainerSummary";
 import type { DockerConfig } from "./bindings/DockerConfig";
 import type { ImageSummary } from "./bindings/ImageSummary";
@@ -56,7 +57,7 @@ export const api = {
   engineOverview: () => call<SystemOverview>("engine_overview"),
   composeStatus: () => call<ComposeStatus>("compose_status"),
   containersList: () => call<ContainerSummary[]>("containers_list"),
-  containerAction: (id: string, name: string | null, action: ContainerAction) => call<void>("container_action", { id, name, action }),
+  containerAction: (id: string, name: string | null, action: ContainerAction) => call<ContainerState>("container_action", { id, name, action }),
   containerRemove: (id: string, name: string | null, force: boolean, volumes: boolean) =>
     call<void>("container_remove", { id, name, force, volumes, confirmed: true }),
   imagesList: () => call<ImageSummary[]>("images_list"),

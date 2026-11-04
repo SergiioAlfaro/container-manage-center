@@ -198,7 +198,8 @@
       "restart": "Reiniciar contenedor",
       "pause": "Pausar contenedor",
       "unpause": "Reanudar contenedor",
-      "remove": "Eliminar contenedor"
+      "remove": "Eliminar contenedor",
+      "state": "Comprobar estado del contenedor"
     },
     "image": {
       "list": "Listar imágenes"
@@ -455,11 +456,21 @@
     "composeCheck": "Comprobar",
     "composeChecking": "Comprobando…",
     "composeNotChecked": "Sin comprobar",
-    "composeCliMissing": "No se encontró el CLI de Docker",
-    "composePluginMissing": "El plugin Compose no está instalado",
     "composeError": "Error: {{message}}",
-    "composeHint": "Se obtiene ejecutando «docker compose version».",
-    "security": "El acceso al socket de Docker equivale a privilegios de administrador. La aplicación nunca cambia permisos ni grupos del sistema."
+    "composeHint": "Se obtiene ejecutando «docker compose version». Hace falta para el apartado Docker Compose (fase 7); el resto de la aplicación funciona sin él.",
+    "security": "El acceso al socket de Docker equivale a privilegios de administrador. La aplicación nunca cambia permisos ni grupos del sistema.",
+    "composePlugin": "{{version}} (plugin «docker compose»)",
+    "composeStandalone": "{{version}} (binario «docker-compose»)",
+    "composeNotInstalled": "No instalado",
+    "composeUnusable": "El plugin está en {{path}} pero el CLI de Docker no lo usa",
+    "composeLegacy": "Solo Compose v1 {{version}}, no admitido",
+    "composeUnrecognized": "Respuesta no reconocida: {{output}}",
+    "composeInstall": "Instala Docker Compose v2 (Debian 12 solo ofrece la v1, no admitida: usa el repositorio oficial de Docker):",
+    "composeInstallOn": {
+      "debian13": "Debian 13:",
+      "ubuntu": "Ubuntu 22.04 o posterior:",
+      "dockerRepo": "Con el repositorio oficial de Docker:"
+    }
   },
   "crash": {
     "title": "La interfaz ha encontrado un error",

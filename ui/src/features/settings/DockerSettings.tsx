@@ -7,11 +7,34 @@ import { explain } from "@/features/engine/diagnosis";
 import { SourceLabel } from "@/features/engine/SourceLabel";
 import { useEngine } from "@/features/engine/store";
 import { api } from "@/shared/ipc/client";
+import type { ComposeStatus } from "@/shared/ipc/bindings/ComposeStatus";
 import type { ConnectionTest } from "@/shared/ipc/bindings/ConnectionTest";
 import type { DockerMode } from "@/shared/ipc/bindings/DockerMode";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
 import { Spinner } from "@/shared/ui/feedback";
+
+type TFn = (key: string, opts?: Record<string, unknown>) => string;
+
+/** Texto para cada resultado de la detección de Compose (D-032). */
+export function composeLabel(fetching: boolean, s: ComposeStatus | undefined, t: TFn): string {
+  if (fetching) return t("settingsDocker.composeChecking");
+  if (!s) return t("settingsDocker.composeNotChecked");
+  switch (s.status) {
+    case "available":
+      return t(s.kind === "plugin" ? "settingsDocker.composePlugin" : "settingsDocker.composeStandalone", { version: s.version });
+    case "notInstalled":
+      return t("settingsDocker.composeNotInstalled");
+    case "pluginUnusable":
+      return t("settingsDocker.composeUnusable", { path: s.pluginPath });
+    case "legacy":
+      return t("settingsDocker.composeLegacy", { version: s.version });
+    case "unrecognized":
+      return t("settingsDocker.composeUnrecognized", { output: s.output });
+    case "error":
+      return t("settingsDocker.composeError", { message: s.message });
+  }
+}
 
 export function DockerSettings() {
   const { t } = useTranslation();
@@ -138,24 +161,31 @@ export function DockerSettings() {
             <p className="mt-0.5 text-[12px] text-ink-3">{t("settingsDocker.composeHint")}</p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <span className="selectable text-[12.5px] tabular-nums">
-              {compose.isFetching
-                ? t("settingsDocker.composeChecking")
-                : !compose.data
-                  ? t("settingsDocker.composeNotChecked")
-                  : compose.data.status === "available"
-                    ? compose.data.version
-                    : compose.data.status === "cliMissing"
-                      ? t("settingsDocker.composeCliMissing")
-                      : compose.data.status === "pluginMissing"
-                        ? t("settingsDocker.composePluginMissing")
-                        : t("settingsDocker.composeError", { message: compose.data.message })}
-            </span>
+            <span className="selectable text-right text-[12.5px] tabular-nums">{composeLabel(compose.isFetching, compose.data, t)}</span>
             <Button size="sm" onClick={() => void compose.refetch()} disabled={compose.isFetching}>
               {t("settingsDocker.composeCheck")}
             </Button>
           </div>
         </div>
+          {compose.data && compose.data.status !== "available" && (
+            <div className="border-t-0 px-5 pb-4 text-[12px] text-ink-2">
+              <p>{t("settingsDocker.composeInstall")}</p>
+              <ul className="mt-1 space-y-0.5">
+                {(
+                  [
+                    ["debian13", "sudo apt install docker-compose"],
+                    ["ubuntu", "sudo apt install docker-compose-v2"],
+                    ["dockerRepo", "sudo apt install docker-compose-plugin"],
+                  ] as const
+                ).map(([k, cmd]) => (
+                  <li key={k}>
+                    {t(`settingsDocker.composeInstallOn.${k}`)}{" "}
+                    <code className="selectable rounded bg-code px-1 font-mono text-[11.5px]">{cmd}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
         <p className="flex gap-2 px-5 py-3 text-[12px] text-ink-3">
           <ShieldAlert size={14} className="mt-px shrink-0" />

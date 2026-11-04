@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
-import { api, connected, diagnosis, disconnected } from "@/test/apiMock";
+import { api, connected, containers, diagnosis, disconnected } from "@/test/apiMock";
 import { renderWithQuery } from "@/test/render";
 import { useEngine } from "@/features/engine/store";
 import { ContainersView, allowedActions } from "./ContainersView";
@@ -47,6 +47,19 @@ describe("Contenedores", () => {
     expect(screen.getByText("1 contenedor")).toBeInTheDocument();
   });
 
+  it("aplica el estado confirmado por el backend aunque el listado siguiente llegue desfasado", async () => {
+    renderWithQuery(<ContainersView />);
+    await screen.findByText("web", { selector: "span" });
+    // Simula la ventana de Docker (D-031): el listado posterior aún dice "running"…
+    let releaseList!: () => void;
+    api.containersList.mockImplementationOnce(() => new Promise((r) => (releaseList = () => r(containers))));
+    await userEvent.click(screen.getByRole("button", { name: "Detener web" }));
+    // …pero la fila ya muestra el estado confirmado por inspect.
+    await waitFor(() => expect(within(row("web")).getByText("Detenido")).toBeInTheDocument());
+    expect(within(row("web")).getByRole("button", { name: "Iniciar web" })).toBeInTheDocument();
+    await act(async () => releaseList());
+  });
+
   it("una acción llama al backend con el ID real y después recarga la lista", async () => {
     renderWithQuery(<ContainersView />);
     await screen.findByText("db", { selector: "span" });
@@ -60,7 +73,9 @@ describe("Contenedores", () => {
 
   it("la interfaz sigue respondiendo mientras una operación está en curso", async () => {
     let release!: () => void;
-    api.containerAction.mockImplementationOnce(() => new Promise<void>((r) => (release = r)));
+    api.containerAction.mockImplementationOnce(
+      (id) => new Promise((r) => (release = () => r({ id, status: "exited", exitCode: 0 }))),
+    );
     renderWithQuery(<ContainersView />);
     await screen.findByText("web", { selector: "span" });
     await userEvent.click(screen.getByRole("button", { name: "Detener web" }));

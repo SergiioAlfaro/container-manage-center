@@ -10,6 +10,7 @@
 
 pub mod cli;
 pub mod client;
+pub mod compose;
 pub mod containers;
 pub mod endpoint;
 mod error;
@@ -21,7 +22,8 @@ pub mod resources;
 pub mod sys;
 
 pub use client::{ApiOp, Engine};
-pub use containers::{ContainerAction, ContainerSummary, PortMapping};
+pub use compose::{ComposeKind, ComposeStatus};
+pub use containers::{ContainerAction, ContainerState, ContainerSummary, PortMapping};
 pub use error::EngineError;
 pub use images::{ImageSummary, ImageUser};
 pub use manager::EngineManager;

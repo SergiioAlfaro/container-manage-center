@@ -7,6 +7,7 @@ como **sustituida** y se añade una nueva; no se borra.
 |---|---|---|
 | D-001 … D-017 | 2026-11-04 | Vigentes (Fase 1) |
 | D-018 … D-030 | 2026-11-04 | Vigentes (Fase 2) |
+| D-031 … D-033 | 2026-11-04 | Vigentes (0.2.1, correcciones de la Fase 2) |
 
 ---
 
@@ -149,7 +150,7 @@ Dos operaciones simultáneas sobre el mismo contenedor no se permiten: la
 segunda devuelve `engine.busy`. Los bloqueos sobreviven a las reconexiones.
 
 ### D-023 · Actualización de datos
-Los datos se vuelven a pedir a Docker tras cada operación, al reconectar, al
+(Complementada por D-031.) Los datos se vuelven a pedir a Docker tras cada operación, al reconectar, al
 volver a la ventana y con "Actualizar". Las consultas no se reintentan solas.
 Los cambios hechos fuera de la aplicación (CLI) aparecen en la siguiente
 actualización; la actualización en tiempo real con el flujo de eventos de Docker
@@ -189,3 +190,65 @@ El diagnóstico propone órdenes concretas (iniciar el servicio, `usermod`,
 contexto por defecto…) para copiar. La aplicación nunca las ejecuta, no pide
 sudo, no cambia permisos ni grupos, y advierte de que el grupo `docker` equivale
 a privilegios de administrador.
+
+---
+
+## Versión 0.2.1 (correcciones tras la verificación en Debian 13)
+
+### D-031 · Estado confirmado con inspect tras cada acción
+**Problema observado** en Debian 13 (Docker 26.1.5): `container_lifecycle_against_real_docker_matches_wire`
+esperaba `exited` tras detener y el listado devolvió `running`.
+
+**Causa** (código de moby, `daemon/monitor.go`, `handleContainerExit`): con el
+contenedor bloqueado, el daemon llama a `SetStopped`, que despierta al manejador
+de `POST /containers/{id}/stop` y hace que responda 204, y *después* ejecuta
+`CheckpointTo(containersReplica)`, que escribe el estado en disco y en la réplica
+de la que lee `GET /containers/json`. Mientras dura esa escritura el listado está
+desfasado. `GET /containers/{id}/json` (inspect) toma el bloqueo del contenedor y
+espera a que termine, así que devuelve el estado real y, al responder, el
+listado ya es coherente. La misma causa y solución están documentadas de forma
+independiente en otro proyecto (AgentSpore PR #129).
+
+No se reprodujo en el entorno de desarrollo (Docker 29.9.2, disco rápido) en 120
+ciclos con `curl` y con un cliente de conexión persistente; tampoco en el
+proyecto citado tras 680 ciclos. Afectaba también a la aplicación: la tabla se
+refrescaba con el listado justo después de la acción.
+
+**Solución:** `Engine::container_action` ejecuta la acción y luego
+`GET /containers/{id}/json?size=false` (operación registrada "Comprobar estado
+del contenedor", equivalente `docker container inspect --format '{{.State.Status}}' <id>`)
+y devuelve `ContainerState`. La interfaz aplica ese estado a la fila de
+inmediato y después vuelve a pedir el listado. Pruebas: `tests/stale_list.rs`
+(servidor que responde como Docker durante la ventana: listado `running`,
+inspect `exited`), prueba de interfaz equivalente (falla sin la corrección) y la
+prueba de ciclo de vida real, que comprueba estado confirmado y listado.
+
+### D-032 · Detección de Docker Compose
+**Problema observado:** el script mostraba `unknown flag: --short` y la app
+`unknown flag: --format`. Reproducido ocultando el plugin: cuando el CLI de
+Docker **no encuentra el plugin Compose**, `compose` no es un subcomando y el
+propio `docker` interpreta `--short`/`--format`, que no conoce (salida 125). El
+mensaje indica, por tanto, que Compose no está disponible para el CLI, no que la
+versión no admita esas opciones.
+
+**Solución:** se ejecuta solo `docker compose version` (sin opciones, válido en
+toda Compose v2+) y, si falta el plugin, `docker-compose version`. Estados:
+`available` (plugin o binario independiente v2+), `notInstalled` (con las rutas
+buscadas), `pluginUnusable` (el archivo existe pero el CLI no lo usa), `legacy`
+(solo Compose v1, no admitido), `unrecognized` y `error`. Versiones admitidas:
+Compose v2 o posterior. Compose **no es necesario para la Fase 2**; lo será para
+el apartado Docker Compose (Fase 7). Instalación: Debian 13 `docker-compose`;
+Ubuntu `docker-compose-v2`; repositorio oficial de Docker `docker-compose-plugin`;
+en Debian 12 el paquete `docker-compose` es la v1 (no admitida).
+
+### D-033 · Semántica del script de verificación
+Cuatro categorías: correctas, **fallos** (obligatorias), **omitidas
+justificadamente** (con motivo, nunca cuentan como superadas) y avisos.
+Veredicto explícito y código de salida 1 ante cualquier fallo. Obligatorio: la
+conexión con Docker y las pruebas contra Docker real. Omisiones aceptadas:
+Compose no instalado, pruebas que no aplican al usuario (permisos siendo
+root/miembro del grupo), prueba sin red si el sistema no permite espacios de
+nombres sin privilegios, arranque sin sesión gráfica. Al salir (también ante
+errores o Ctrl+C) se eliminan solo los recursos con la etiqueta `dcc.test=true`
+y se comprueba que no queda ninguno. `DCC_VERIFY_ALLOW_ROOT=1` permite
+ejecutarlo como root solo en entornos de desarrollo aislados.

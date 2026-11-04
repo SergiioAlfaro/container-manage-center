@@ -340,28 +340,39 @@ async fn compose_version_is_obtained_from_the_real_cli() {
     let m = EngineManager::new(log.clone(), ConnectionMode::Custom { socket_path: sock });
     m.connect().await;
     let status = m.compose_status().await;
-    let r = log
+    let runs: Vec<_> = log
         .snapshot()
         .into_iter()
-        .find(|r| r.kind == "compose.version")
-        .expect("registrada");
-    match &r.transport {
-        Transport::Cli { args, .. } => {
-            assert_eq!(args, &["compose", "version", "--format", "json"])
+        .rev()
+        .filter(|r| r.kind == "compose.version")
+        .collect();
+    // Nunca se usan opciones como --short o --format para detectar (D-032).
+    for r in &runs {
+        match &r.transport {
+            Transport::Cli { args, .. } => assert!(
+                args == &["compose", "version"] || args == &["version"],
+                "{args:?}"
+            ),
+            other => panic!("{other:?}"),
         }
-        other => panic!("{other:?}"),
     }
     match status {
-        ComposeStatus::Available { version, .. } => {
-            assert_eq!(r.status, OpStatus::Succeeded);
-            assert!(r.stdout.as_ref().unwrap().text.contains(&version));
+        ComposeStatus::Available { version, kind, .. } => {
+            let last = runs.last().expect("ejecución registrada");
+            assert_eq!(last.status, OpStatus::Succeeded);
+            assert!(last
+                .stdout
+                .as_ref()
+                .unwrap()
+                .text
+                .contains(version.split('+').next().unwrap()));
+            eprintln!("Compose {version} ({kind:?})");
         }
-        // Si el equipo no tiene el plugin, debe registrarse como fallo y diagnosticarse.
-        ComposeStatus::PluginMissing { .. }
-        | ComposeStatus::CliMissing
-        | ComposeStatus::Error { .. } => {
-            eprintln!("aviso: Docker Compose no disponible en este equipo: {status:?}");
+        ComposeStatus::NotInstalled { searched, .. } => {
+            assert!(!searched.is_empty());
+            eprintln!("omitida: Docker Compose no está instalado en este equipo (se buscó en {} ubicaciones)", searched.len());
         }
+        other => panic!("estado de Compose inesperado en este equipo: {other:?}"),
     }
 }
 
@@ -577,22 +588,28 @@ async fn container_lifecycle_against_real_docker_matches_wire() {
     assert_eq!(mine.image, fixture::IMAGE);
     assert_eq!(mine.state, "created");
 
-    e.container_action(&c.id, Some(&c.name), Start)
-        .await
-        .unwrap();
-    assert_eq!(state_of(&e, &c.id).await, "running");
-    e.container_action(&c.id, Some(&c.name), Pause)
-        .await
-        .unwrap();
-    assert_eq!(state_of(&e, &c.id).await, "paused");
-    e.container_action(&c.id, Some(&c.name), Unpause)
-        .await
-        .unwrap();
-    assert_eq!(state_of(&e, &c.id).await, "running");
-    e.container_action(&c.id, Some(&c.name), Restart)
-        .await
-        .unwrap();
-    assert_eq!(state_of(&e, &c.id).await, "running");
+    // Cada acción devuelve el estado confirmado por inspect; después el listado
+    // también debe reflejarlo (inspect sincroniza con la réplica del listado, D-031).
+    for (action, expected) in [
+        (Start, "running"),
+        (Pause, "paused"),
+        (Unpause, "running"),
+        (Restart, "running"),
+    ] {
+        let confirmed = e
+            .container_action(&c.id, Some(&c.name), action)
+            .await
+            .unwrap();
+        assert_eq!(
+            confirmed.status, expected,
+            "estado confirmado tras {action:?}"
+        );
+        assert_eq!(
+            state_of(&e, &c.id).await,
+            expected,
+            "listado tras {action:?}"
+        );
+    }
 
     // Eliminar en ejecución sin forzar: Docker lo rechaza con 409 y queda registrado.
     let err = e
@@ -609,10 +626,12 @@ async fn container_lifecycle_against_real_docker_matches_wire() {
     assert_eq!(failed.http_status, Some(409));
     assert!(failed.error.as_deref().unwrap().contains("409"));
 
-    e.container_action(&c.id, Some(&c.name), Stop)
+    let confirmed = e
+        .container_action(&c.id, Some(&c.name), Stop)
         .await
         .unwrap();
-    assert_eq!(state_of(&e, &c.id).await, "exited");
+    assert_eq!(confirmed.status, "exited", "estado confirmado tras Stop");
+    assert_eq!(state_of(&e, &c.id).await, "exited", "listado tras Stop");
     e.remove_container(&c.id, Some(&c.name), false, true)
         .await
         .unwrap();

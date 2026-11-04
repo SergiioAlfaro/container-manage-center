@@ -198,7 +198,8 @@
       "restart": "Restart container",
       "pause": "Pause container",
       "unpause": "Resume container",
-      "remove": "Remove container"
+      "remove": "Remove container",
+      "state": "Check container state"
     },
     "image": {
       "list": "List images"
@@ -455,11 +456,21 @@
     "composeCheck": "Check",
     "composeChecking": "Checking…",
     "composeNotChecked": "Not checked",
-    "composeCliMissing": "Docker CLI not found",
-    "composePluginMissing": "The Compose plugin is not installed",
     "composeError": "Error: {{message}}",
-    "composeHint": "Obtained by running “docker compose version”.",
-    "security": "Access to the Docker socket is equivalent to administrator privileges. The app never changes system permissions or groups."
+    "composeHint": "Obtained by running “docker compose version”. Needed for the Docker Compose section (phase 7); the rest of the app works without it.",
+    "security": "Access to the Docker socket is equivalent to administrator privileges. The app never changes system permissions or groups.",
+    "composePlugin": "{{version}} (“docker compose” plugin)",
+    "composeStandalone": "{{version}} (“docker-compose” binary)",
+    "composeNotInstalled": "Not installed",
+    "composeUnusable": "The plugin is at {{path}} but the Docker CLI does not use it",
+    "composeLegacy": "Only Compose v1 {{version}}, not supported",
+    "composeUnrecognized": "Unrecognized response: {{output}}",
+    "composeInstall": "Install Docker Compose v2 (Debian 12 only ships v1, which is not supported: use Docker's official repository):",
+    "composeInstallOn": {
+      "debian13": "Debian 13:",
+      "ubuntu": "Ubuntu 22.04 or later:",
+      "dockerRepo": "With Docker's official repository:"
+    }
   },
   "crash": {
     "title": "The interface hit an error",

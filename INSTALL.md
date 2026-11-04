@@ -6,7 +6,7 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.2.0_amd64.deb
+sudo apt install ./docker-control-center_0.2.1_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`).
@@ -64,6 +64,26 @@ sudo usermod -aG docker "$USER"
 Puedes fijar un socket concreto en **Configuración › Conexión con Docker ›
 Socket personalizado**. "Probar conexión" comprueba una ruta sin guardarla.
 
+## Docker Compose (opcional en esta versión)
+
+La aplicación funciona sin Docker Compose. Hará falta para el apartado
+**Docker Compose** (Fase 7). Se admite **Compose v2 o posterior**, como plugin
+(`docker compose`) o como binario independiente (`docker-compose` v2). Compose
+v1 (`docker-compose 1.x`) no se admite.
+
+| Sistema | Instalación |
+|---|---|
+| Debian 13 | `sudo apt install docker-compose` (Compose 2.26) |
+| Debian 12 | El paquete `docker-compose` es la v1 (no admitida). Usa el repositorio oficial de Docker: `sudo apt install docker-compose-plugin` |
+| Ubuntu 22.04 o posterior | `sudo apt install docker-compose-v2` |
+| Repositorio oficial de Docker (cualquiera) | `sudo apt install docker-compose-plugin` |
+
+Para comprobarlo: **Configuración › Conexión con Docker › Docker Compose ›
+Comprobar**, o `docker compose version` en una terminal. Si el plugin no está
+instalado, `docker compose version --short` responde `unknown flag: --short`:
+no es que la versión no admita la opción, es que el CLI de Docker no encuentra
+el plugin.
+
 ## Diagnóstico de problemas
 
 Si no hay conexión, el **Dashboard** muestra la causa, los sockets comprobados y
@@ -74,6 +94,7 @@ mismo código que usa la aplicación (compilando desde el código fuente):
 cargo run -q -p dcc-engine --bin dcc-diagnose            # detección automática
 cargo run -q -p dcc-engine --bin dcc-diagnose -- --socket /run/user/1000/docker.sock
 cargo run -q -p dcc-engine --bin dcc-diagnose -- --json  # salida completa
+cargo run -q -p dcc-engine --bin dcc-diagnose -- --compose  # incluye Docker Compose
 ```
 
 | Causa mostrada | Significado | Qué hacer |

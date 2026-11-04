@@ -53,7 +53,17 @@ describe("Configuración: conexión con Docker", () => {
     expect(screen.getByText("Sin comprobar")).toBeInTheDocument();
     expect(api.composeStatus).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole("button", { name: "Comprobar" }));
-    expect(await screen.findByText("v2.40.0")).toBeInTheDocument();
+    expect(await screen.findByText("2.40.0 (plugin «docker compose»)")).toBeInTheDocument();
+  });
+
+  it("Compose no instalado: lo dice claramente y explica cómo instalarlo", async () => {
+    api.composeStatus.mockResolvedValueOnce({ status: "notInstalled", cliPath: "/usr/bin/docker", searched: ["/usr/libexec/docker/cli-plugins/docker-compose"] });
+    renderWithQuery(<DockerSettings />);
+    await userEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(await screen.findByText("No instalado")).toBeInTheDocument();
+    expect(screen.getByText("sudo apt install docker-compose")).toBeInTheDocument();
+    expect(screen.getByText("sudo apt install docker-compose-v2")).toBeInTheDocument();
+    expect(screen.getByText("sudo apt install docker-compose-plugin")).toBeInTheDocument();
   });
 
   it("Volver a conectar llama al backend", async () => {

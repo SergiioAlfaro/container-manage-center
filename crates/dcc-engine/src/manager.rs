@@ -17,7 +17,6 @@ use chrono::Utc;
 use dcc_activity::ActivityLog;
 use tokio::sync::{watch, Mutex, RwLock};
 
-use crate::cli::{self, CliRequest};
 use crate::client::{self, Engine, MIN_API_VERSION};
 use crate::endpoint::{resolve, HostEnv};
 use crate::error::EngineError;
@@ -271,47 +270,21 @@ impl EngineManager {
         .await
     }
 
-    /// Versión del plugin Docker Compose, ejecutando el CLI oficial (D-005).
-    pub async fn compose_status(&self) -> ComposeStatus {
-        let Some(cli_path) = sys::find_executable("docker").map(|p| p.display().to_string()) else {
-            return ComposeStatus::CliMissing;
-        };
+    /// Docker Compose v2+ (plugin o binario independiente), ejecutando el CLI
+    /// oficial sin shell (D-005, D-032).
+    pub async fn compose_status(&self) -> crate::compose::ComposeStatus {
         let mut env = Vec::new();
         if let Ok(e) = self.engine().await {
             env.push(("DOCKER_HOST".to_owned(), e.endpoint().host_uri()));
         }
-        let req = CliRequest {
-            category: dcc_activity::Category::Compose,
-            kind: "compose.version".into(),
-            target: None,
-            program: cli_path.clone(),
-            args: ["compose", "version", "--format", "json"]
-                .map(String::from)
-                .to_vec(),
-            env,
-            timeout: Duration::from_secs(15),
-        };
-        match cli::run(&self.inner.activity, req).await {
-            Ok(out) if out.success() => match parse_compose_version(&out.stdout) {
-                Some(version) => ComposeStatus::Available { version, cli_path },
-                None => ComposeStatus::Error {
-                    message: format!("Salida no reconocida: {}", out.stdout.trim()),
-                },
-            },
-            Ok(out) => ComposeStatus::PluginMissing {
-                cli_path,
-                message: out.stderr.trim().to_owned(),
-            },
-            Err(e) => ComposeStatus::Error {
-                message: e.to_string(),
-            },
-        }
+        crate::compose::detect(
+            &self.inner.activity,
+            sys::find_executable("docker").map(|p| p.display().to_string()),
+            sys::find_executable("docker-compose").map(|p| p.display().to_string()),
+            &env,
+        )
+        .await
     }
-}
-
-fn parse_compose_version(stdout: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(stdout.trim()).ok()?;
-    v.get("version")?.as_str().map(str::to_owned)
 }
 
 /// Dos estados equivalentes (ignora las marcas de tiempo).
@@ -465,15 +438,6 @@ fn problem_text(p: &Problem) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn compose_version_parsing() {
-        assert_eq!(
-            parse_compose_version("{\"version\":\"v2.29.1\"}\n"),
-            Some("v2.29.1".into())
-        );
-        assert_eq!(parse_compose_version("Docker Compose version v2"), None);
-    }
 
     fn env_with(dir: &std::path::Path) -> HostEnv {
         HostEnv {

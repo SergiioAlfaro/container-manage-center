@@ -3,7 +3,8 @@
 use std::collections::BTreeMap;
 
 use bollard::query_parameters::{
-    ListContainersOptions, RemoveContainerOptions, RestartContainerOptions, StopContainerOptions,
+    InspectContainerOptions, ListContainersOptions, RemoveContainerOptions,
+    RestartContainerOptions, StopContainerOptions,
 };
 use dcc_activity::Category;
 use serde::{Deserialize, Serialize};
@@ -49,6 +50,18 @@ pub struct ContainerSummary {
     /// Proyecto Compose al que pertenece, si lo hay.
     pub compose_project: Option<String>,
     pub labels: BTreeMap<String, String>,
+}
+
+/// Estado confirmado tras una acción.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ContainerState {
+    pub id: String,
+    /// created, running, paused, restarting, exited, removing, dead.
+    pub status: String,
+    #[ts(type = "number | null")]
+    pub exit_code: Option<i64>,
 }
 
 /// Acción de ciclo de vida.
@@ -145,14 +158,32 @@ impl Engine {
     }
 
     /// Ejecuta una acción de ciclo de vida. `display` es el nombre para el registro.
+    /// Ejecuta una acción de ciclo de vida y devuelve el estado **confirmado**.
+    ///
+    /// Tras la acción se consulta `GET /containers/{id}/json` (inspect). Motivo
+    /// (D-031): el daemon responde a `POST /stop` en cuanto el contenedor se
+    /// detiene, pero actualiza la réplica que sirve `GET /containers/json`
+    /// un poco después (`SetStopped` antes de `CheckpointTo` en
+    /// `handleContainerExit`). Inspect toma el bloqueo del contenedor, así que
+    /// devuelve el estado real y, cuando responde, el listado ya es coherente.
     pub async fn container_action(
         &self,
         id: &str,
         display: Option<&str>,
         action: ContainerAction,
-    ) -> Result<(), EngineError> {
+    ) -> Result<ContainerState, EngineError> {
         validate_ref("contenedor", id)?;
         let _lock = self.locks().acquire(&format!("container:{id}"))?;
+        self.run_action(id, display, action).await?;
+        self.container_state(id, display).await
+    }
+
+    async fn run_action(
+        &self,
+        id: &str,
+        display: Option<&str>,
+        action: ContainerAction,
+    ) -> Result<(), EngineError> {
         let target = display.unwrap_or(id).to_owned();
         let d = self.docker().clone();
         let id_s = id.to_owned();
@@ -238,6 +269,51 @@ impl Engine {
                 .await
             }
         }
+    }
+
+    /// Estado actual de un contenedor según inspect (fuente consistente).
+    pub async fn container_state(
+        &self,
+        id: &str,
+        display: Option<&str>,
+    ) -> Result<ContainerState, EngineError> {
+        validate_ref("contenedor", id)?;
+        let opts = InspectContainerOptions { size: false };
+        let op = ApiOp {
+            category: Category::Container,
+            kind: "container.state",
+            target: Some(display.unwrap_or(id).to_owned()),
+            method: "GET",
+            path: path_with_query(&format!("/containers/{id}/json"), &opts),
+            body: None,
+            equivalent: Some(vec![
+                "container".into(),
+                "inspect".into(),
+                "--format".into(),
+                "{{.State.Status}}".into(),
+                id.into(),
+            ]),
+            timeout: None,
+        };
+        let d = self.docker().clone();
+        let id_s = id.to_owned();
+        let r = self
+            .call(
+                op,
+                async move { d.inspect_container(&id_s, Some(opts)).await },
+                |r| {
+                    r.state
+                        .as_ref()
+                        .map(|s| format!("Estado: {}", state_str(s.status.as_ref())))
+                },
+            )
+            .await?;
+        let st = r.state.unwrap_or_default();
+        Ok(ContainerState {
+            id: r.id.unwrap_or_else(|| id.to_owned()),
+            status: state_str(st.status.as_ref()),
+            exit_code: st.exit_code,
+        })
     }
 
     /// Elimina un contenedor. `force` detiene antes uno en ejecución; `volumes`

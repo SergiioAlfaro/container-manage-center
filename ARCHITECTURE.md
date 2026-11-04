@@ -1,6 +1,6 @@
 # Arquitectura de Docker Control Center
 
-Versión 0.2.0 (Fase 2).
+Versión 0.2.1 (Fase 2 con correcciones).
 
 ## Visión general
 
@@ -21,6 +21,7 @@ Versión 0.2.0 (Fase 2).
 │         client     Engine: bollard + registro (ping, version, info)                   │
 │         containers listado y ciclo de vida      images  listado y uso                 │
 │         resources  validación de IDs, rutas exactas, bloqueo por recurso              │
+│         compose    detección de Compose v2+ (plugin o binario)                        │
 │         cli        procesos sin shell (docker compose)                                │
 └──────────────┬───────────────────────────────────────────────┬───────────────────────┘
       socket Unix de Docker (API)                      docker compose (proceso CLI)
@@ -88,7 +89,8 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | Pausar / reanudar | `POST /containers/{id}/pause` · `/unpause` | `docker pause/unpause {id}` |
 | Eliminar | `DELETE /containers/{id}?v=…&force=…&link=false` | `docker rm [--force] [--volumes] {id}` |
 | Listar imágenes | `GET /images/json?all=false&shared-size=false&digests=false&manifests=false` + listado de contenedores para el uso | `docker image ls` |
-| Versión de Compose | proceso `docker compose version --format json` (CLI) | — |
+| Estado confirmado tras cada acción (D-031) | `GET /containers/{id}/json?size=false` | `docker container inspect --format '{{.State.Status}}' {id}` |
+| Versión de Compose (D-032) | proceso `docker compose version` y, si falta el plugin, `docker-compose version` (CLI, sin opciones) | — |
 
 ## Comandos IPC
 
@@ -101,7 +103,7 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | `engine_test(docker)` | Probar una configuración sin guardarla ni sustituir la conexión |
 | `engine_overview` | Versión e información del motor |
 | `compose_status` | Versión del plugin Compose |
-| `containers_list`, `container_action(id, name, action)` | Contenedores |
+| `containers_list`, `container_action(id, name, action)` | Contenedores; la acción devuelve el estado confirmado (`ContainerState`) |
 | `container_remove(id, name, force, volumes, confirmed)` | Exige `confirmed = true` |
 | `images_list` | Imágenes con su uso |
 
@@ -119,9 +121,10 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`.
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 55 motor · 15 configuración |
+| Rust unitarias | `cargo test` | 22 actividad · 64 motor · 15 configuración |
 | Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 18 (una contra Docker real) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker` | 11 (2 requieren usuario no root) |
-| Interfaz | Vitest + Testing Library | 72 |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker` | 11 (2 requieren usuario no root; Compose se omite si no está instalado) |
+| Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
+| Interfaz | Vitest + Testing Library | 74 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto, shellcheck | — |
 | Manual | `scripts/verify-phase-2.sh` | M1–M15 |

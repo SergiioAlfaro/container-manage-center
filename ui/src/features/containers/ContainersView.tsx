@@ -110,6 +110,14 @@ function ContainersTable() {
       setBusy((b) => ({ ...b, [c.id]: op }));
     },
     onError: (e, { c, op }) => setFailure({ op, name: c.name, message: (e as { message: string }).message }),
+    // El estado confirmado por inspect se aplica de inmediato (D-031); el listado
+    // que se pide después ya es coherente con él.
+    onSuccess: (confirmed, { c, op }) => {
+      if (op === "remove" || !confirmed) return;
+      qc.setQueryData<ContainerSummary[]>(keys.containers, (list) =>
+        list?.map((x) => (x.id === c.id ? { ...x, state: confirmed.status } : x)),
+      );
+    },
     onSettled: (_d, _e, { c }) => {
       setBusy(({ [c.id]: _drop, ...rest }) => rest);
       // Los datos se vuelven a pedir a Docker después de cada operación.

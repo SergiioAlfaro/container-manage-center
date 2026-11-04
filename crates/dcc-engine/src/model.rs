@@ -275,31 +275,6 @@ pub struct EngineInfo {
     pub rootless: bool,
 }
 
-/// Docker Compose (plugin del CLI).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(
-    tag = "status",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-#[ts(export)]
-pub enum ComposeStatus {
-    Available {
-        version: String,
-        cli_path: String,
-    },
-    /// No se encontró el CLI `docker`.
-    CliMissing,
-    /// El CLI existe pero el plugin compose no.
-    PluginMissing {
-        cli_path: String,
-        message: String,
-    },
-    Error {
-        message: String,
-    },
-}
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
