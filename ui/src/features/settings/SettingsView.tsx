@@ -5,6 +5,7 @@ import type { Language } from "@/shared/ipc/bindings/Language";
 import type { Theme } from "@/shared/ipc/bindings/Theme";
 import { LANGUAGES } from "@/shared/i18n";
 import { Segmented, Switch } from "@/shared/ui/controls";
+import { DockerSettings } from "./DockerSettings";
 
 export const MIN_RECORDS = 50;
 export const MAX_RECORDS = 10_000;
@@ -122,6 +123,8 @@ export function SettingsView() {
           <MaxRecordsInput value={config.activity.maxRecords} onCommit={(maxRecords) => void updateConfig({ activity: { maxRecords } })} />
         </Row>
       </Group>
+
+      <DockerSettings />
 
       <Group title={t("settings.shortcuts")}>
         <Row label={t("settings.shortcutSidebar")}>

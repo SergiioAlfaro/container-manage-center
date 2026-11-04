@@ -3,7 +3,13 @@ import { PanelRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ActivityPanel } from "@/features/activity/ActivityPanel";
 import { useActivity } from "@/features/activity/store";
+import { ContainersView } from "@/features/containers/ContainersView";
+import { DashboardView } from "@/features/dashboard/DashboardView";
+import { ConnectionBadge } from "@/features/engine/ConnectionBadge";
+import { useEngine } from "@/features/engine/store";
+import { ImagesView } from "@/features/images/ImagesView";
 import { PendingSection } from "@/features/pending/PendingSection";
+import { useQueryClient } from "@tanstack/react-query";
 import { SettingsView } from "@/features/settings/SettingsView";
 import { api } from "@/shared/ipc/client";
 import { cx } from "@/shared/ui/controls";
@@ -40,6 +46,45 @@ function useActivityBridge() {
   useEffect(() => useActivity.getState().setMax(max), [max]);
 }
 
+/** Estado de la conexión: valor inicial y cambios en tiempo real. Al (re)conectar se
+ *  descartan los datos en caché para volver a pedirlos a Docker. */
+function useEngineBridge() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    const { set, init } = useEngine.getState();
+    void api
+      .onEngineState((s) => {
+        const prev = useEngine.getState().state;
+        set(s);
+        if (s.state === "connected" && prev?.state !== "connected") void qc.invalidateQueries();
+        if (s.state !== "connected") qc.removeQueries();
+      })
+      .then((un) => (disposed ? un() : (unlisten = un)));
+    void init();
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [qc]);
+}
+
+function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) {
+  switch (id) {
+    case "dashboard":
+      return <DashboardView />;
+    case "containers":
+      return <ContainersView />;
+    case "images":
+      return <ImagesView />;
+    case "settings":
+      return <SettingsView />;
+    default:
+      return <PendingSection id={id} />;
+  }
+}
+
 function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -64,6 +109,7 @@ export function App() {
   const running = useActivity((s) => s.records.filter((r) => r.status === "running").length);
   const failedRecent = useActivity((s) => s.records.some((r) => r.status === "failed"));
   useActivityBridge();
+  useEngineBridge();
   useShortcuts();
 
   const panelOpen = config.activity.panelOpen;
@@ -79,6 +125,9 @@ export function App() {
             <h1 className="truncate text-[17px] font-semibold leading-tight tracking-[-0.01em]">{t(`sections.${section}.title`)}</h1>
             <p className="truncate text-[12.5px] text-ink-3">{t(`sections.${section}.description`)}</p>
           </div>
+          <div className="ml-auto flex shrink-0">
+            <ConnectionBadge onOpen={() => navigate("dashboard")} />
+          </div>
           <button
             type="button"
             onClick={toggleActivity}
@@ -86,7 +135,7 @@ export function App() {
             aria-label={panelOpen ? t("activity.close") : t("activity.open")}
             title={`${panelOpen ? t("activity.close") : t("activity.open")} (${t("activity.shortcut")})`}
             className={cx(
-              "relative ml-auto inline-flex h-8 items-center gap-2 rounded-md border px-3 text-[13px] transition-colors",
+              "relative inline-flex h-8 items-center gap-2 rounded-md border px-3 text-[13px] transition-colors",
               panelOpen ? "border-beacon bg-beacon-soft text-beacon-strong" : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink",
             )}
           >
@@ -109,7 +158,7 @@ export function App() {
         )}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {section === "settings" ? <SettingsView /> : <PendingSection id={section} />}
+          <Section id={section} />
         </div>
       </main>
 

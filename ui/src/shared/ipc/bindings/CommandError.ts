@@ -2,10 +2,15 @@
 
 export type CommandError = { 
 /**
- * Código estable para que la interfaz decida qué mostrar (p. ej. `config.io`).
+ * Código estable para que la interfaz decida qué mostrar (p. ej. `config.io`,
+ * `engine.docker`, `engine.notConnected`).
  */
 code: string, 
 /**
- * Mensaje técnico, en el idioma del sistema de origen.
+ * Mensaje técnico (el de Docker cuando el error viene de Docker).
  */
-message: string, };
+message: string, 
+/**
+ * Código HTTP devuelto por Docker, si lo hubo.
+ */
+httpStatus: number | null, };

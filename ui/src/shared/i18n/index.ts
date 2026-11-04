@@ -12,6 +12,8 @@ void i18n.use(initReactI18next).init({
   fallbackLng: "es",
   interpolation: { escapeValue: false },
   returnNull: false,
+  // Sin mensajes promocionales en la consola.
+  showSupportNotice: false,
 });
 
 export function setLanguage(lang: Language) {

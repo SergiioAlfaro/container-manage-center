@@ -6,7 +6,7 @@ import { SECTIONS } from "@/app/sections";
  * Apartado que aún no está implementado. No muestra datos ni acciones:
  * solo explica qué hará y en qué fase llega, para no simular funcionalidad.
  */
-export function PendingSection({ id }: { id: Exclude<SectionId, "settings"> }) {
+export function PendingSection({ id }: { id: Exclude<SectionId, "settings" | "dashboard" | "containers" | "images"> }) {
   const { t } = useTranslation();
   const Icon = SECTIONS.find((s) => s.id === id)!.icon;
   const planned = t(`sections.${id}.planned`, { returnObjects: true }) as string[];

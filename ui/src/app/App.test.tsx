@@ -1,29 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { AppConfig } from "@/shared/ipc/bindings/AppConfig";
 
-const configSet = vi.fn(async (c: AppConfig) => c);
-vi.mock("@/shared/ipc/client", () => ({
-  api: {
-    appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.1.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
-    configGet: vi.fn(async () => structuredClone(DEFAULT)),
-    configSet: (c: AppConfig) => configSet(c),
-    activityList: vi.fn(async () => []),
-    activityClear: vi.fn(async () => {}),
-    onActivity: vi.fn(async () => () => {}),
-    copyText: vi.fn(async () => {}),
-  },
-}));
+vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
+import { api } from "@/test/apiMock";
 import { App } from "./App";
 import { DEFAULT_CONFIG, useApp } from "./store";
+import { useEngine } from "@/features/engine/store";
+import { renderWithQuery } from "@/test/render";
 const DEFAULT = DEFAULT_CONFIG;
+const configSet = api.configSet;
 
 async function boot() {
   useApp.setState({ section: "dashboard", config: structuredClone(DEFAULT), saveError: null, info: null });
+  useEngine.setState({ state: null, reconnecting: false, error: null });
   await act(() => useApp.getState().init());
-  render(<App />);
+  renderWithQuery(<App />);
 }
 
 describe("App", () => {
@@ -51,15 +44,16 @@ describe("App", () => {
     ]);
   });
 
-  it("navega entre apartados sin botones de acción falsos", async () => {
+  it("navega entre apartados; los pendientes no tienen botones de acción falsos", async () => {
     await boot();
-    await userEvent.click(screen.getByRole("button", { name: "Contenedores" }));
-    expect(screen.getByRole("heading", { level: 1, name: "Contenedores" })).toBeInTheDocument();
-    expect(screen.getByText("Disponible a partir de la fase 3")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Contenedores" })).toHaveAttribute("aria-current", "page");
+    await userEvent.click(screen.getByRole("button", { name: "Redes" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Redes" })).toBeInTheDocument();
+    expect(screen.getByText("Disponible a partir de la fase 5")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Redes" })).toHaveAttribute("aria-current", "page");
     // El área central de un apartado pendiente no contiene botones.
     const main = screen.getByRole("main");
-    const centralButtons = within(main).getAllByRole("button").filter((b) => !b.getAttribute("aria-label")?.includes("actividad"));
+    const content = main.querySelector(".overflow-y-auto")!;
+    const centralButtons = within(content as HTMLElement).queryAllByRole("button");
     expect(centralButtons).toHaveLength(0);
   });
 
@@ -110,9 +104,8 @@ describe("App", () => {
   });
 
   it("abre el panel automáticamente cuando llega una operación fallida", async () => {
-    const { api } = await import("@/shared/ipc/client");
     let handler: ((e: unknown) => void) | undefined;
-    vi.mocked(api.onActivity).mockImplementationOnce(async (h) => {
+    api.onActivity.mockImplementationOnce(async (h) => {
       handler = h as (e: unknown) => void;
       return () => {};
     });

@@ -16,35 +16,15 @@
   "sections": {
     "dashboard": {
       "title": "Dashboard",
-      "description": "Overall state of Docker Engine and your resources.",
-      "planned": [
-        "Docker Engine connection status",
-        "Summary of containers, images, networks and volumes",
-        "CPU and memory usage of running containers"
-      ],
-      "phase": 2
+      "description": "Overall state of Docker Engine and your resources."
     },
     "containers": {
       "title": "Containers",
-      "description": "Create, start, stop and inspect containers.",
-      "planned": [
-        "List of running and stopped containers",
-        "Tabbed creation wizard",
-        "Start, stop, restart, pause and remove",
-        "Logs, inspection and interactive terminal"
-      ],
-      "phase": 3
+      "description": "Create, start, stop and inspect containers."
     },
     "images": {
       "title": "Images",
-      "description": "Pull, build, tag and remove images.",
-      "planned": [
-        "Local images and which containers use them",
-        "Pull from registries with progress",
-        "Build from a Dockerfile",
-        "Tagging, inspection and layers"
-      ],
-      "phase": 4
+      "description": "Pull, build, tag and remove images."
     },
     "networks": {
       "title": "Networks",
@@ -201,7 +181,289 @@
   },
   "common": {
     "dismiss": "Dismiss notice",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "loading": "Loading…",
+    "retry": "Retry"
   },
-  "ops": {}
+  "ops": {
+    "system": {
+      "ping": "Check connection",
+      "version": "Get version",
+      "info": "Get system information"
+    },
+    "container": {
+      "list": "List containers",
+      "start": "Start container",
+      "stop": "Stop container",
+      "restart": "Restart container",
+      "pause": "Pause container",
+      "unpause": "Resume container",
+      "remove": "Remove container"
+    },
+    "image": {
+      "list": "List images"
+    },
+    "compose": {
+      "version": "Get Compose version"
+    }
+  },
+  "conn": {
+    "connecting": "Connecting to Docker…",
+    "connected": "Docker {{version}}",
+    "disconnected": "Not connected to Docker",
+    "rootless": "rootless",
+    "source": {
+      "custom": "Custom socket",
+      "dockerHost": "DOCKER_HOST variable",
+      "context": "Context “{{name}}”",
+      "rootless": "User's rootless Docker",
+      "system": "System socket"
+    },
+    "reconnect": "Reconnect",
+    "reconnecting": "Connecting…",
+    "configure": "Configure connection",
+    "openDashboard": "View diagnosis",
+    "notConnectedTitle": "This section needs a Docker connection",
+    "notConnectedBody": "There is no connection to Docker Engine. The Dashboard explains the cause and how to fix it.",
+    "autoRetry": "The app retries automatically every few seconds.",
+    "badgeTitle": "Connected to {{path}}"
+  },
+  "diag": {
+    "title": "Connection diagnosis",
+    "steps": "How to fix it",
+    "candidates": "Sockets checked",
+    "candidatesHint": "In the order they are searched.",
+    "installation": "Detected installation",
+    "cli": "Docker CLI",
+    "daemon": "Daemon (dockerd)",
+    "rootlessTools": "Rootless tools",
+    "notFound": "Not found",
+    "yes": "Yes",
+    "no": "No",
+    "user": "User",
+    "probe": {
+      "reachable": "Responds",
+      "missing": "Does not exist",
+      "notASocket": "Not a socket",
+      "permissionDenied": "Permission denied",
+      "refused": "Nobody listening",
+      "errorLabel": "Error"
+    },
+    "rootGroupWarning": "Being in the {{group}} group is equivalent to having administrator privileges on this computer. The safer alternative is rootless Docker.",
+    "noAutoFix": "Docker Control Center does not change system permissions or groups: you need to run these steps yourself in a terminal.",
+    "problems": {
+      "noSocket": {
+        "title": "Docker Engine not found",
+        "body": "There is no Docker socket in the usual locations."
+      },
+      "notInstalled": {
+        "title": "Docker does not seem to be installed",
+        "body": "No socket, Docker CLI or Docker daemon was found."
+      },
+      "daemonNotRunning": {
+        "title": "Docker Engine is stopped",
+        "body": "The socket {{path}} exists, but no process is answering on it."
+      },
+      "permissionDenied": {
+        "title": "No permission to use the Docker socket",
+        "body": "Your user ({{user}}) cannot open {{path}}. It belongs to {{owner}}:{{group}} with mode {{mode}}."
+      },
+      "unsupportedHost": {
+        "title": "Unsupported Docker connection",
+        "body": "DOCKER_HOST or the active context point to {{host}}. This version only supports local Unix sockets."
+      },
+      "invalidPath": {
+        "title": "The configured path is not valid",
+        "body": "“{{path}}”: {{reason}}."
+      },
+      "notASocket": {
+        "title": "The path is not a socket",
+        "body": "{{path}} exists, but it is not a Unix socket."
+      },
+      "notDocker": {
+        "title": "The socket does not respond like Docker",
+        "body": "{{path}} accepts connections but does not respond like the Docker Engine API: {{message}}"
+      },
+      "timeout": {
+        "title": "Docker is not responding in time",
+        "body": "{{path}} did not respond within 5 seconds. The daemon may be stuck or overloaded."
+      },
+      "apiTooOld": {
+        "title": "Docker version too old",
+        "body": "Docker Engine offers API {{api}} and {{min}} or later is required (Docker 20.10 or later)."
+      },
+      "other": {
+        "title": "Error connecting to Docker",
+        "body": "{{message}}"
+      }
+    },
+    "stepsText": {
+      "install": "Install Docker Engine. With the Debian or Ubuntu packages:",
+      "installOfficial": "Or follow the official installation guide for Debian/Ubuntu at docs.docker.com/engine/install.",
+      "startSystem": "Start the Docker service and enable it at boot:",
+      "startRootless": "If you use rootless Docker, start your user service:",
+      "checkStatus": "If it does not start, check its status and latest messages:",
+      "addGroup": "Add your user to the {{group}} group:",
+      "relogin": "Then log out and log back in for the group to take effect.",
+      "alreadyInGroup": "You already belong to the {{group}} group, but your current session does not have it active yet. Log out and back in, or restart the computer.",
+      "ownerUnexpected": "The socket does not belong to the docker group. Check the SocketGroup option of the docker.socket unit.",
+      "rootlessAlternative": "Unprivileged alternative: rootless Docker (docs.docker.com/engine/security/rootless).",
+      "unsetHost": "To use the local socket, remove DOCKER_HOST from your environment or switch back to the default context:",
+      "customPath": "Or set a specific Unix socket in Settings, Docker connection section.",
+      "fixPath": "Fix the path in Settings, Docker connection section. It must be absolute, for example /var/run/docker.sock.",
+      "checkPath": "Check that the path is Docker's socket and not another service.",
+      "upgrade": "Upgrade Docker Engine to 20.10 or later.",
+      "restart": "Restart the Docker service:",
+      "retry": "Once fixed, press “Reconnect”. The app also retries on its own."
+    }
+  },
+  "dashboard": {
+    "refresh": "Refresh",
+    "engine": "Docker Engine",
+    "containers": "Containers",
+    "images": "Images",
+    "running": "Running",
+    "paused": "Paused",
+    "stopped": "Stopped",
+    "viewContainers": "View containers",
+    "viewImages": "View images",
+    "host": "Host",
+    "hostName": "Name",
+    "os": "Operating system",
+    "kernel": "Kernel",
+    "arch": "Architecture",
+    "cpus": "CPUs",
+    "memory": "Memory",
+    "runtime": "Storage and runtime",
+    "storageDriver": "Storage",
+    "rootDir": "Data directory",
+    "cgroup": "cgroups",
+    "logging": "Logs",
+    "api": "API",
+    "minApi": "Minimum API",
+    "go": "Go",
+    "commit": "Commit",
+    "warnings": "Daemon warnings",
+    "swarm": "Swarm active",
+    "connection": "Connection",
+    "socket": "Socket",
+    "source": "Source",
+    "loadError": "Could not get Docker information: {{message}}",
+    "imagesHint": "local images"
+  },
+  "containers": {
+    "refresh": "Refresh",
+    "search": "Search by name, image or ID",
+    "filter": {
+      "all": "All",
+      "running": "Running",
+      "stopped": "Stopped"
+    },
+    "count_one": "{{count}} container",
+    "count_other": "{{count}} containers",
+    "columns": {
+      "name": "Name",
+      "image": "Image",
+      "status": "Status",
+      "ports": "Ports",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "state": {
+      "created": "Created",
+      "running": "Running",
+      "paused": "Paused",
+      "restarting": "Restarting",
+      "exited": "Stopped",
+      "removing": "Removing",
+      "dead": "Dead"
+    },
+    "action": {
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart",
+      "pause": "Pause",
+      "unpause": "Resume",
+      "remove": "Remove"
+    },
+    "actionOn": "{{action}} {{name}}",
+    "failed": "{{action}} {{name}}: {{message}}",
+    "empty": "No containers",
+    "emptyBody": "Containers that exist in Docker will appear here. Creating containers arrives in phase 3.",
+    "noMatches": "No containers match the search.",
+    "later": "Creation, logs, inspection and terminal arrive in phase 3.",
+    "loadError": "Could not get the container list: {{message}}",
+    "removeTitle": "Remove {{name}}",
+    "removeBody": "The container and its writable layer will be removed. This cannot be undone.",
+    "removeRunning": "The container is {{state}}. Removing it requires stopping it by force.",
+    "removeForce": "Stop it by force and remove it",
+    "removeVolumes": "Also remove its anonymous volumes",
+    "removeVolumesHint": "Named volumes and bind-mounted folders are not touched.",
+    "cancel": "Cancel",
+    "confirmRemove": "Remove container",
+    "dismiss": "Dismiss"
+  },
+  "images": {
+    "refresh": "Refresh",
+    "search": "Search by tag or ID",
+    "filter": {
+      "all": "All",
+      "used": "In use",
+      "unused": "Unused",
+      "dangling": "Untagged"
+    },
+    "count_one": "{{count}} image",
+    "count_other": "{{count}} images",
+    "columns": {
+      "tags": "Image",
+      "id": "ID",
+      "size": "Size",
+      "created": "Created",
+      "usage": "Usage"
+    },
+    "dangling": "Untagged",
+    "usedBy_one": "{{count}} container",
+    "usedBy_other": "{{count}} containers",
+    "unused": "Unused",
+    "empty": "No local images",
+    "emptyBody": "Images that exist in Docker will appear here. Pulling and building images arrive in phase 4.",
+    "noMatches": "No images match the search.",
+    "later": "Pull, build, tag, inspect and remove arrive in phase 4.",
+    "loadError": "Could not get the image list: {{message}}"
+  },
+  "settingsDocker": {
+    "title": "Docker connection",
+    "mode": "Connection mode",
+    "modeAuto": "Automatic",
+    "modeCustom": "Custom socket",
+    "autoHint": "Looks for DOCKER_HOST, the active Docker context, your user's rootless socket and the system socket, in that order.",
+    "customHint": "Absolute path of a Unix socket, for example /run/user/1000/docker.sock.",
+    "socketPath": "Socket path",
+    "pathRequired": "Enter the socket path.",
+    "test": "Test connection",
+    "testing": "Testing…",
+    "save": "Save and connect",
+    "testOk": "Connection works: Docker {{version}} at {{path}}",
+    "testFailed": "Could not connect: {{reason}}",
+    "current": "Current connection",
+    "none": "Not connected",
+    "rootless": "Rootless mode",
+    "versions": "Versions",
+    "engineVersion": "Docker Engine",
+    "apiVersion": "API",
+    "compose": "Docker Compose",
+    "composeCheck": "Check",
+    "composeChecking": "Checking…",
+    "composeNotChecked": "Not checked",
+    "composeCliMissing": "Docker CLI not found",
+    "composePluginMissing": "The Compose plugin is not installed",
+    "composeError": "Error: {{message}}",
+    "composeHint": "Obtained by running “docker compose version”.",
+    "security": "Access to the Docker socket is equivalent to administrator privileges. The app never changes system permissions or groups."
+  },
+  "crash": {
+    "title": "The interface hit an error",
+    "body": "Docker has not been affected. You can reload the window; if it happens again, copy this text to report it.",
+    "reload": "Reload window"
+  }
 }

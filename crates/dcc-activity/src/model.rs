@@ -27,7 +27,7 @@ pub enum Category {
 
 /// Cómo se ejecutó realmente la operación.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(tag = "via", rename_all = "camelCase")]
+#[serde(tag = "via", rename_all = "camelCase", rename_all_fields = "camelCase")]
 #[ts(export)]
 pub enum Transport {
     /// Petición HTTP a la Docker Engine API a través del socket Unix.
@@ -98,7 +98,11 @@ pub struct OperationRecord {
 
 /// Evento emitido a los suscriptores (la interfaz) cuando cambia el registro.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 #[ts(export)]
 pub enum ActivityEvent {
     /// Un registro nuevo o actualizado (inicio o finalización).

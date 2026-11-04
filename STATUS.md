@@ -7,16 +7,16 @@
 | | |
 |---|---|
 | **Fase actual** | 2 · Integración con Docker Engine |
-| **Estado de la fase** | En desarrollo |
+| **Estado de la fase** | Implementada y probada en el entorno de desarrollo contra Docker real. **Pendiente de validación externa** en el equipo del propietario. |
 | **Fases completadas (validadas)** | 1 |
 | **Fases pendientes** | 2–10 |
 
 | Fase | Estado |
 |---|---|
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
-| 2. Integración con Docker Engine | En desarrollo |
-| 3. Contenedores | No iniciada |
-| 4. Imágenes | No iniciada |
+| 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | Pendiente de validación externa |
+| 3. Contenedores (creación, logs, inspección, terminal) | No iniciada |
+| 4. Imágenes (descarga, construcción, etiquetado, eliminación) | No iniciada |
 | 5. Redes | No iniciada |
 | 6. Volúmenes y bind mounts | No iniciada |
 | 7. Docker Compose | No iniciada |
@@ -88,14 +88,95 @@ Equipo del propietario: Debian 13 (trixie), núcleo 6.12, GNOME sobre Wayland, W
 - Limitación del entorno de desarrollo: Docker Hub no es accesible desde él; para las pruebas de integración de fases posteriores se crearán imágenes locales con `docker import`.
 
 ### Documentación actualizada
-README, STATUS, DECISIONS (D-001 a D-016), ARCHITECTURE, USER_GUIDE, INSTALL.
+README, STATUS, DECISIONS (D-001 a D-017), ARCHITECTURE, USER_GUIDE, INSTALL.
+
+---
+
+## Fase 2 · Integración con Docker Engine
+
+### Objetivos
+Conexión real con Docker Engine por socket Unix (normal y rootless), detección
+del endpoint, comprobación de permisos, diagnóstico con instrucciones,
+información del sistema, gestión de errores y reconexión. Ampliado por el
+propietario: Dashboard con datos reales, contenedores (consultar, iniciar,
+detener, reiniciar, pausar, reanudar, eliminar), imágenes (consultar),
+sección Docker en Configuración e indicadores de conexión.
+
+### Funcionalidades implementadas
+- Crate `dcc-engine`: resolución de candidatos (`DOCKER_HOST`, contexto de Docker, rootless, sistema; o socket personalizado), sondeo de bajo nivel, *handshake* (`/_ping`, `/version`, `/info`), API mínima 1.41, detección de rootless.
+- Diagnóstico de 10 causas distintas: sin instalación, sin socket, daemon detenido, permiso denegado (distingue "fuera del grupo" y "sesión sin el grupo activo"), host no soportado, ruta inválida, no es un socket, no es Docker, tiempo agotado, API antigua.
+- Monitor: latido cada 10 s, reintento con espera de 2 a 30 s, aviso inmediato ante errores de conexión de cualquier operación.
+- Registro de actividad de todas las operaciones con la ruta HTTP exacta enviada (verificada con proxy), comando equivalente y error/código de Docker (D-018, D-019).
+- Contenedores: listado y acciones de ciclo de vida, validación de identificadores, bloqueo por recurso, eliminación con confirmación en interfaz y backend (D-021, D-022).
+- Imágenes: listado con contenedores que las usan.
+- Versión de Docker Compose ejecutando el CLI oficial sin shell (registrado como CLI).
+- Interfaz: indicador de conexión en la barra superior, Dashboard real, pantalla de diagnóstico, vistas de Contenedores e Imágenes, sección "Conexión con Docker" (modo, socket, probar, guardar, reconectar, versiones), barrera de errores, textos es/en.
+- Configuración `[docker]` persistente (compatible con archivos de la Fase 1).
+- Herramienta de terminal `dcc-diagnose` (D-027).
+
+### Pruebas realizadas en el entorno de desarrollo
+Ubuntu 24.04, WebKitGTK 2.52, Docker Engine 29.9.2 (API 1.56), Compose 5.6.1.
+Pruebas como root (el entorno es un contenedor aislado) y, donde importa, como usuario normal `tester` sin acceso a Docker.
+
+| Conjunto | Resultado |
+|---|---|
+| Rust deterministas (sin Docker): actividad 22, motor 55, configuración 15, IPC 18 | 110/110 correctas |
+| Integración contra Docker real `live_docker.rs` como root | 9 ejecutadas y correctas; 2 omitidas por ser root |
+| Las 2 de permisos (`socket_without_permission_is_diagnosed`, `system_socket_denied_for_user_outside_docker_group`) como usuario normal | 2/2 correctas |
+| IPC contra Docker real (`live_app_connects_and_serves_real_data`) | Correcta |
+| Comparación registro ↔ tráfico real del socket (3 pruebas con proxy, incluido el ciclo de vida completo) | Coinciden exactamente |
+| Clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto, shellcheck | Sin avisos |
+| Interfaz (Vitest): 72 pruebas, incluidas 38 nuevas (diagnóstico por causa, Dashboard, indicador, contenedores, no bloqueo de la UI, diálogo de eliminación, imágenes, configuración Docker, formato, contrato IPC) | 72/72 correctas |
+| App real bajo Xvfb con Docker real: Dashboard con datos reales, contenedores, imágenes, panel, Configuración, tema oscuro | Correcto (capturas revisadas) |
+| Acciones desde la app real (detener, iniciar, eliminar forzado) comprobadas con `docker ps -a` | Correcto |
+| Daemon detenido con la app abierta → diagnóstico y ping fallido registrado; daemon arrancado → reconexión automática | Correcto |
+| App como usuario fuera del grupo docker → "Sin permiso…" con root:docker 660 y orden `usermod` para ese usuario | Correcto |
+| App sin red (`unshare -n`, sin DNS ni rutas) con Docker local | Conecta y funciona |
+| `scripts/verify-phase-2.sh` como usuario normal **sin acceso a Docker** sobre copia limpia | 18 correctas, 3 fallos esperados (sin acceso a Docker: conexión, pruebas reales y prueba sin red), 1 aviso. Compilación, Rust 120/120 (de ellas 12 reales omitidas en ese paso), Clippy, formato, tipos, Vitest 72/72 y arranque correctos. El diagnóstico mostrado fue PermissionDenied con root:docker 660 |
+| Auditoría: único `Command::new` de producción en el ejecutor CLI sin shell; sin cambios de permisos/grupos; sin peticiones externas | Correcto |
+
+### Requisitos de la Fase 2 y su verificación
+
+| Requisito | Verificado aquí | Pendiente en Debian |
+|---|---|---|
+| 1. Arranca con Docker disponible | Sí | M1 |
+| 2. Dashboard con datos del motor real | Sí | M2 |
+| 3. Daemon detenido o inaccesible | Sí (daemon detenido, socket inexistente, socket sin proceso, socket que no es Docker) | M8 |
+| 4. Errores de permisos identificados | Sí (usuario normal real) | M13 si es posible |
+| 5. Reconexión | Sí (daemon real detenido y arrancado) | M8 |
+| 6. Actividad = operaciones ejecutadas | Sí (proxy sobre el socket) | M3, M5 |
+| 7. Interfaz no bloqueada | Sí (prueba de interfaz con operación pendiente; comandos asíncronos) | M5 |
+| 8. Configuración guardada y recuperada | Sí (store, IPC, app) | M10, M11 |
+| 9. Compatibilidad rootless | Parcial: detección por XDG_RUNTIME_DIR, /run/user/UID y contexto, probada con pruebas unitarias; sin daemon rootless real (experimento abandonado por indicación del propietario) | M14 |
+| 10. Sin Internet | Sí (`unshare -n`) | M9 |
+| 11. Sin regresiones de la Fase 1 | Sí (todas las pruebas de la Fase 1 pasan) | M15 |
+
+### Problemas detectados y resueltos
+- Un socket que respondía algo distinto de Docker registraba el ping como correcto: la validación pasa a hacerse dentro de la operación registrada.
+- Campos snake_case y `bigint` en el contrato IPC (enums con variantes struct, enteros i64): corregido en Rust y protegido con prueba.
+- Ciclo de importación en los dobles de prueba que colgaba Vitest.
+- Maquetación con el panel abierto (indicador partido, cabecera del diagnóstico estrecha, nombres truncados): ajustada.
+- Clippy: variante grande en `Attempt`, `Default` derivable.
+- `verify-phase-2.sh`: aviso vacío del CLI, prueba sin red marcada como fallo sin conexión y recuento de pruebas que incluía las omitidas sin decirlo. Corregidos tras ejecutarlo.
+
+### Limitaciones y observaciones
+- **Rootless sin daemon real**: ver requisito 9.
+- **Ventana en blanco una vez**: en el primer arranque de la app compilada de la Fase 2 se observó una ventana en blanco. No se reprodujo en 7 arranques posteriores y no hubo error de JavaScript. Se añadió una barrera de errores que mostraría cualquier fallo de la interfaz. Si lo ves en tu equipo, avísame.
+- Los cambios hechos fuera de la aplicación (CLI) se ven al actualizar, volver a la ventana o cambiar de apartado; en tiempo real llegará con los eventos de Docker (Fase 8).
+- Al conectar se registran versión e información dos veces (conexión y Dashboard): son peticiones reales, solo redundantes.
+- Los comandos equivalentes usan el ID completo del contenedor, que es lo que se envía a Docker.
+- `rust-version = 1.80` declarado; probado con Rust 1.97 (aquí) y 1.99 (tu equipo), no con 1.80.
+- Docker Hub no es accesible desde el entorno de desarrollo; las pruebas usan una imagen local (D-026).
+
+### Errores conocidos
+Ninguno abierto.
 
 ---
 
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-1.sh` y las comprobaciones manuales, y envía `verify-phase-1-report.txt`.
-2. Corregir lo que surja y marcar la fase 1 como validada.
-3. Fase 2: crate `dcc-engine` con `bollard`; detección del socket (rootful, rootless, `DOCKER_HOST`), comprobación de permisos con instrucciones, información del sistema y versiones de Engine y Compose, errores de conexión y reconexión, y las primeras operaciones reales en el panel de actividad. Pruebas de integración contra el daemon Docker real del entorno de desarrollo.
+1. El propietario ejecuta `bash scripts/verify-phase-2.sh` (con un usuario con acceso a Docker) y las comprobaciones M1–M15, y envía `verify-phase-2-report.txt`.
+2. Corregir lo que surja y marcar la Fase 2 como validada.
+3. Fase 3: creación de contenedores con asistente por pestañas, duplicado, inspección, logs en tiempo real, terminal interactiva, estadísticas básicas.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

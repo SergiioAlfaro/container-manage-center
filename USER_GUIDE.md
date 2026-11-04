@@ -1,56 +1,102 @@
 # Guía de usuario
 
-> Estado: Fase 1. La aplicación todavía no se conecta a Docker. Esta guía
-> describe lo que ya funciona y se amplía con cada fase.
+> Versión 0.2.0 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
+> contenedores (consultar, iniciar, detener, reiniciar, pausar, reanudar y
+> eliminar), las imágenes (consultar) y la configuración. El resto de apartados
+> indican en qué fase llegan.
 
 ## La ventana principal
 
-La ventana tiene tres zonas:
+1. **Barra lateral (izquierda)**: los apartados. Se contrae a iconos con el botón inferior o Ctrl+B.
+2. **Área de trabajo (centro)**: el apartado seleccionado.
+3. **Barra superior**: título del apartado, **indicador de conexión** y botón **Actividad**.
+4. **Panel de actividad (derecha)**: se abre y cierra con el botón o Ctrl+Mayús+A.
 
-1. **Barra lateral (izquierda).** Los apartados de la aplicación, agrupados en
-   Recursos, Orquestación y Supervisión, con Configuración abajo. El botón
-   **Contraer barra lateral** la reduce a iconos para ganar espacio; al pasar el
-   ratón sobre un icono se ve su nombre.
-2. **Área de trabajo (centro).** Muestra el apartado seleccionado. Los apartados
-   que llegan en fases posteriores indican la fase y lo que permitirán hacer.
-3. **Panel de actividad (derecha).** Se abre y se cierra con el botón
-   **Actividad** de la parte superior, sin salir del apartado en el que estás.
+## Indicador de conexión
+
+| Aspecto | Significado |
+|---|---|
+| Punto verde y `Docker 29.x` | Conectado. Al pasar el ratón se ve el socket. `rootless` si el daemon es rootless |
+| `Conectando con Docker…` | Detectando o conectando |
+| Rojo, `Sin conexión con Docker` | No hay conexión. Púlsalo para ver el diagnóstico |
+
+La aplicación vigila la conexión y reconecta sola cuando Docker vuelve a estar
+disponible.
+
+## Dashboard
+
+Con conexión muestra datos obtenidos de Docker en ese momento: versión de Docker
+Engine y de la API, socket y origen de la conexión, número de contenedores (en
+ejecución, en pausa, detenidos), imágenes, datos del equipo (sistema, núcleo,
+CPU, memoria), almacenamiento y ejecución (controlador, directorio de datos,
+cgroups, logs) y los avisos del daemon. **Actualizar** vuelve a pedirlos.
+
+Sin conexión muestra el **diagnóstico**: la causa concreta, los pasos para
+resolverla (con las órdenes para copiar en una terminal), los sockets que se
+han comprobado y su resultado, y lo que se ha detectado instalado. Los botones
+**Volver a conectar** y **Configurar conexión** están en la cabecera.
+
+## Contenedores
+
+Lista todos los contenedores (como `docker ps -a`): estado, nombre e ID corto,
+proyecto Compose si lo tiene, imagen, estado de Docker, puertos publicados y
+antigüedad. Puedes filtrar por **Todos / En ejecución / Detenidos** y buscar por
+nombre, imagen, ID o proyecto.
+
+Acciones de cada fila (solo aparecen las válidas para su estado):
+
+| Estado | Acciones |
+|---|---|
+| En ejecución | Detener, Reiniciar, Pausar, Eliminar |
+| En pausa | Reanudar, Detener, Eliminar |
+| Creado / Detenido | Iniciar, Eliminar |
+
+Detener y reiniciar esperan 10 s a que el proceso termine antes de forzarlo
+(como Docker). Mientras una acción está en curso, su fila muestra la operación y
+el resto de la aplicación sigue funcionando. Si Docker rechaza una acción, el
+mensaje de Docker aparece arriba de la tabla y en el panel de actividad.
+
+**Eliminar** pide confirmación. Si el contenedor está en ejecución o en pausa,
+hay que marcar **Detenerlo a la fuerza y eliminarlo**. Opcionalmente se
+eliminan sus volúmenes anónimos; los volúmenes con nombre y las carpetas
+vinculadas no se tocan. No se puede deshacer.
+
+## Imágenes
+
+Lista las imágenes locales (como `docker image ls`): etiquetas, ID corto,
+tamaño, antigüedad y qué contenedores las usan. Filtros **Todas / En uso /
+Sin uso / Sin etiqueta** y búsqueda por etiqueta o ID. Descargar, construir,
+etiquetar, inspeccionar y eliminar llegan en la Fase 4.
 
 ## Panel de actividad
 
-Cada vez que la aplicación ejecute algo sobre Docker aparecerá aquí una entrada
-con:
+Cada operación que la aplicación ejecuta sobre Docker aparece aquí: hora,
+distintivo **API** (petición a Docker Engine por el socket) o **CLI** (proceso,
+como `docker compose`), tipo de operación, recurso, duración y estado. La línea
+principal es el comando `docker` equivalente, que puedes copiar.
 
-- Hora, área y tipo de operación, y el recurso afectado.
-- Un distintivo **API** (petición a Docker Engine a través del socket) o **CLI**
-  (proceso lanzado, como `docker compose`).
-- El comando como línea principal, que puedes copiar con el icono de la derecha.
-- El estado: En curso (franja azul animada), Correcto, Error o Interrumpida.
+Al desplegar una entrada ves la **operación ejecutada** de verdad (por ejemplo
+`POST /containers/<id>/stop?t=10` sobre `/var/run/docker.sock`), el comando
+equivalente (con la aclaración de que es orientativo cuando se usó la API), el
+resultado, el error de Docker y su código HTTP si falló, y las salidas de los
+procesos CLI.
 
-Haz clic en una entrada para ver sus detalles:
-
-- **Operación ejecutada**: lo que se hizo realmente, por ejemplo
-  `POST /v1.47/containers/web/start` sobre `/var/run/docker.sock`.
-- **Comando equivalente**: cómo harías lo mismo con el CLI de Docker. Cuando la
-  operación fue por API se indica que es una traducción orientativa: la app no
-  ejecutó ese comando.
-- Cuerpo de la petición, salida estándar, salida de error, mensaje de error,
-  código HTTP o de salida, inicio, fin y duración.
-
-Las operaciones con error se muestran desplegadas. Puedes buscar por texto
-(comandos, recursos, errores), filtrar por área y por estado, y limpiar el
-historial visual con el icono de papelera (las operaciones en curso se mantienen).
+Para no llenar el panel, las comprobaciones automáticas de la conexión (cada
+10 s) no se registran una a una; sí se registra la comprobación que detecta una
+pérdida de conexión.
 
 ## Configuración
 
-- **Tema**: Sistema (sigue el de tu escritorio), Claro u Oscuro.
-- **Idioma**: Español o English. El cambio es inmediato.
-- **Abrir el panel cuando una operación falle**: activado por defecto.
-- **Operaciones conservadas**: entre 50 y 10.000 (500 por defecto).
+- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma (Español, English).
+- **Panel de actividad**: abrirlo automáticamente ante errores y número de operaciones conservadas (50–10.000).
+- **Conexión con Docker**:
+  - **Automático**: busca `DOCKER_HOST`, el contexto activo, tu socket rootless y el del sistema.
+  - **Socket personalizado**: una ruta absoluta concreta.
+  - **Probar conexión** comprueba la configuración sin guardarla. **Guardar y conectar** la aplica. **Volver a conectar** repite la detección.
+  - Conexión actual (socket, origen, versión, API, rootless) y versión de **Docker Compose** (botón Comprobar, que ejecuta `docker compose version`).
+- **Atajos** y **Acerca de** (versión y ruta del archivo de configuración).
 
-Los cambios se guardan al momento en `~/.config/docker-control-center/config.toml`.
-Si no se pueden guardar, la aplicación lo indica y deshace el cambio. También se
-recuerdan entre sesiones el estado de la barra lateral y del panel de actividad.
+Todo se guarda al momento en `~/.config/docker-control-center/config.toml`.
 
 ## Atajos de teclado
 
@@ -58,3 +104,4 @@ recuerdan entre sesiones el estado de la barra lateral y del panel de actividad.
 |---|---|
 | Ctrl+B | Contraer o expandir la barra lateral |
 | Ctrl+Mayús+A | Abrir o cerrar el panel de actividad |
+| Escape | Cerrar un diálogo |

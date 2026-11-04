@@ -14,7 +14,9 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-pub use config::{ActivityConfig, AppConfig, Language, Theme, UiConfig, CONFIG_VERSION};
+pub use config::{
+    ActivityConfig, AppConfig, DockerConfig, DockerMode, Language, Theme, UiConfig, CONFIG_VERSION,
+};
 
 pub const APP_DIR: &str = "docker-control-center";
 pub const CONFIG_FILE: &str = "config.toml";
@@ -202,6 +204,25 @@ mod tests {
         assert!(l.warning.is_some());
         assert!(s.path().with_extension("toml.corrupt").exists());
         assert!(!s.path().exists());
+    }
+
+    #[test]
+    fn docker_section_roundtrip_and_old_files_get_defaults() {
+        let (_d, s) = store();
+        fs::create_dir_all(s.path().parent().unwrap()).unwrap();
+        // Archivo de la fase 1, sin sección [docker].
+        fs::write(s.path(), "version = 1\n[ui]\ntheme = \"dark\"\n").unwrap();
+        let c = s.load().unwrap().config;
+        assert_eq!(c.docker, DockerConfig::default());
+        let mut c = c;
+        c.docker = DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: "  /run/user/1000/docker.sock ".into(),
+        };
+        let c = c.normalized();
+        assert_eq!(c.docker.custom_socket, "/run/user/1000/docker.sock");
+        s.save(&c).unwrap();
+        assert_eq!(s.load().unwrap().config.docker, c.docker);
     }
 
     #[test]

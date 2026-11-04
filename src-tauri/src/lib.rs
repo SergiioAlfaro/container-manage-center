@@ -16,11 +16,13 @@ pub use error::CommandError;
 pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder<R> {
     let state = state::AppState::new(store);
     let activity = state.activity.clone();
+    let engine = state.engine.clone();
     builder
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(state)
         .setup(move |app| {
             events::spawn_activity_bridge(app.handle().clone(), activity);
+            events::spawn_engine(app.handle().clone(), engine);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -29,6 +31,15 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::config::config_set,
             commands::activity::activity_list,
             commands::activity::activity_clear,
+            commands::engine::engine_state,
+            commands::engine::engine_reconnect,
+            commands::engine::engine_test,
+            commands::engine::engine_overview,
+            commands::engine::compose_status,
+            commands::resources::containers_list,
+            commands::resources::container_action,
+            commands::resources::container_remove,
+            commands::resources::images_list,
         ])
 }
 

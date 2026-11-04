@@ -7,7 +7,7 @@ export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "ghost" | "quiet" | "primary"; size?: "sm" | "md" };
+type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "ghost" | "quiet" | "primary" | "danger"; size?: "sm" | "md" };
 
 export function Button({ variant = "quiet", size = "md", className, ...rest }: BtnProps) {
   return (
@@ -17,6 +17,7 @@ export function Button({ variant = "quiet", size = "md", className, ...rest }: B
         "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
         size === "sm" ? "h-7 px-2 text-[12px]" : "h-8 px-3 text-[13px]",
         variant === "primary" && "bg-beacon text-beacon-ink hover:bg-beacon-strong",
+        variant === "danger" && "bg-err text-white hover:brightness-110",
         variant === "quiet" && "border border-line bg-surface text-ink-2 hover:text-ink hover:border-line-strong",
         variant === "ghost" && "text-ink-2 hover:text-ink hover:bg-surface-sunk",
         className,

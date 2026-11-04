@@ -73,6 +73,32 @@ impl ActivityConfig {
     pub const MAX_RECORDS: u32 = 10_000;
 }
 
+/// Cómo localizar Docker Engine.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum DockerMode {
+    /// DOCKER_HOST, contexto de Docker, rootless y socket del sistema, en ese orden.
+    #[default]
+    Auto,
+    /// Solo el socket indicado en `custom_socket`.
+    Custom,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct DockerConfig {
+    pub mode: DockerMode,
+    /// Ruta absoluta del socket Unix (o `unix:///ruta`). Se conserva aunque el
+    /// modo sea automático, para no perderla al alternar.
+    pub custom_socket: String,
+}
+
+impl DockerConfig {
+    pub const MAX_PATH_LEN: usize = 4096;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
@@ -80,6 +106,7 @@ pub struct AppConfig {
     pub version: u32,
     pub ui: UiConfig,
     pub activity: ActivityConfig,
+    pub docker: DockerConfig,
 }
 
 impl Default for AppConfig {
@@ -88,6 +115,7 @@ impl Default for AppConfig {
             version: CONFIG_VERSION,
             ui: UiConfig::default(),
             activity: ActivityConfig::default(),
+            docker: DockerConfig::default(),
         }
     }
 }
@@ -100,6 +128,13 @@ impl AppConfig {
             .activity
             .max_records
             .clamp(ActivityConfig::MIN_RECORDS, ActivityConfig::MAX_RECORDS);
+        let trimmed = self.docker.custom_socket.trim();
+        self.docker.custom_socket =
+            if trimmed.len() > DockerConfig::MAX_PATH_LEN || trimmed.contains('\0') {
+                String::new()
+            } else {
+                trimmed.to_owned()
+            };
         self
     }
 }

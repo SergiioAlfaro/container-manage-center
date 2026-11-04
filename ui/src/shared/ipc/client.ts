@@ -11,21 +11,30 @@ import type { AppConfig } from "./bindings/AppConfig";
 import type { AppInfo } from "./bindings/AppInfo";
 import type { CommandError } from "./bindings/CommandError";
 import type { OperationRecord } from "./bindings/OperationRecord";
+import type { ComposeStatus } from "./bindings/ComposeStatus";
+import type { ConnectionState } from "./bindings/ConnectionState";
+import type { ConnectionTest } from "./bindings/ConnectionTest";
+import type { ContainerAction } from "./bindings/ContainerAction";
+import type { ContainerSummary } from "./bindings/ContainerSummary";
+import type { DockerConfig } from "./bindings/DockerConfig";
+import type { ImageSummary } from "./bindings/ImageSummary";
+import type { SystemOverview } from "./bindings/SystemOverview";
 
 export const ACTIVITY_EVENT = "activity://event";
 export const ACTIVITY_RESYNC = "activity://resync";
+export const ENGINE_STATE = "engine://state";
 
 /** Normaliza cualquier error de `invoke` a `CommandError`. */
 export function toCommandError(e: unknown): CommandError {
   if (e && typeof e === "object" && "code" in e && "message" in e) {
     return e as CommandError;
   }
-  return { code: "unknown", message: e instanceof Error ? e.message : String(e) };
+  return { code: "unknown", message: e instanceof Error ? e.message : String(e), httpStatus: null };
 }
 
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
-    throw { code: "ipc.unavailable", message: "La interfaz se está ejecutando fuera de la aplicación de escritorio." } satisfies CommandError;
+    throw { code: "ipc.unavailable", message: "La interfaz se está ejecutando fuera de la aplicación de escritorio.", httpStatus: null } satisfies CommandError;
   }
   try {
     return await invoke<T>(cmd, args);
@@ -40,6 +49,22 @@ export const api = {
   configSet: (config: AppConfig) => call<AppConfig>("config_set", { config }),
   activityList: () => call<OperationRecord[]>("activity_list"),
   activityClear: () => call<void>("activity_clear"),
+
+  engineState: () => call<ConnectionState>("engine_state"),
+  engineReconnect: () => call<ConnectionState>("engine_reconnect"),
+  engineTest: (docker: DockerConfig) => call<ConnectionTest>("engine_test", { docker }),
+  engineOverview: () => call<SystemOverview>("engine_overview"),
+  composeStatus: () => call<ComposeStatus>("compose_status"),
+  containersList: () => call<ContainerSummary[]>("containers_list"),
+  containerAction: (id: string, name: string | null, action: ContainerAction) => call<void>("container_action", { id, name, action }),
+  containerRemove: (id: string, name: string | null, force: boolean, volumes: boolean) =>
+    call<void>("container_remove", { id, name, force, volumes, confirmed: true }),
+  imagesList: () => call<ImageSummary[]>("images_list"),
+
+  onEngineState: async (handler: (s: ConnectionState) => void): Promise<UnlistenFn> => {
+    if (!isTauri()) return () => {};
+    return listen<ConnectionState>(ENGINE_STATE, (e) => handler(e.payload));
+  },
 
   onActivity: async (handler: (e: ActivityEvent) => void, onResync: () => void): Promise<UnlistenFn> => {
     if (!isTauri()) return () => {};

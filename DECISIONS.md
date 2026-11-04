@@ -5,7 +5,8 @@ como **sustituida** y se añade una nueva; no se borra.
 
 | ID | Fecha | Estado |
 |---|---|---|
-| D-001 … D-017 | 2026-11-04 | Vigentes |
+| D-001 … D-017 | 2026-11-04 | Vigentes (Fase 1) |
+| D-018 … D-030 | 2026-11-04 | Vigentes (Fase 2) |
 
 ---
 
@@ -106,3 +107,85 @@ paquete se llama `docker-control-center_<versión>_amd64.deb` y el lanzador
 mediante la plantilla `packaging/docker-control-center.desktop`, que añade
 traducción al español y palabras clave de búsqueda. Las dependencias de
 ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`) las añade Tauri.
+
+---
+
+## Fase 2
+
+### D-018 · Política de registro de las comprobaciones automáticas
+Se registran siempre: las conexiones pedidas por el usuario o al arrancar
+(ping, versión, información), toda operación de los apartados y la comprobación
+que detecta una pérdida de conexión. **No** se registran una a una las
+comprobaciones automáticas periódicas (latido cada 10 s con la conexión activa y
+reintentos con espera creciente de 2 a 30 s sin ella), para no inundar el panel.
+Cuando un reintento automático consigue reconectar, sus peticiones de versión e
+información sí quedan registradas, porque fundamentan lo que se muestra después.
+
+### D-019 · La ruta registrada es la ruta enviada, verificado por tráfico
+Comprobado con un proxy sobre el socket: bollard 0.21 envía las rutas **sin**
+prefijo de versión (`GET /_ping`, `GET /containers/json?all=true&size=false`).
+Las query strings se generan con `serde_urlencoded` sobre el mismo struct de
+opciones que usa bollard (`resources::path_with_query`). Las pruebas
+`recorded_requests_match_what_travels_on_the_socket`,
+`container_lifecycle_against_real_docker_matches_wire` e
+`images_list_reports_real_usage` interceptan el socket real y exigen que lo
+registrado coincida, en orden, con lo transmitido.
+
+### D-020 · Alcance de la Fase 2 ampliado
+A petición del propietario, la Fase 2 incluye: listado de contenedores con las
+acciones iniciar, detener, reiniciar, pausar, reanudar y eliminar, y listado de
+imágenes con su uso. Creación, logs, inspección y terminal siguen en la Fase 3.
+Descarga, construcción, etiquetado y eliminación de imágenes, en la Fase 4.
+
+### D-021 · Confirmación de operaciones destructivas en dos capas
+La interfaz pide confirmación con un diálogo (y obliga a marcar "forzar" si el
+contenedor está activo). Además, el comando `container_remove` exige
+`confirmed = true`; sin él devuelve `engine.notConfirmed` sin tocar Docker.
+
+### D-022 · Validación de identificadores y bloqueo por recurso
+Los IDs y nombres se validan (`[A-Za-z0-9][A-Za-z0-9_.-]{0,254}`) antes de
+formar una ruta HTTP; uno inválido nunca llega a Docker (probado con proxy).
+Dos operaciones simultáneas sobre el mismo contenedor no se permiten: la
+segunda devuelve `engine.busy`. Los bloqueos sobreviven a las reconexiones.
+
+### D-023 · Actualización de datos
+Los datos se vuelven a pedir a Docker tras cada operación, al reconectar, al
+volver a la ventana y con "Actualizar". Las consultas no se reintentan solas.
+Los cambios hechos fuera de la aplicación (CLI) aparecen en la siguiente
+actualización; la actualización en tiempo real con el flujo de eventos de Docker
+llega en la Fase 8.
+
+### D-024 · API mínima 1.41 (Docker Engine 20.10)
+Debian 12 incluye `docker.io` 20.10.24. Con una API anterior la conexión se
+rechaza con el diagnóstico `apiTooOld`.
+
+### D-025 · Solo sockets Unix locales
+`DOCKER_HOST` o contextos con `tcp://`, `ssh://`, etc. se diagnostican como
+`unsupportedHost`, pero se siguen probando el resto de candidatos locales.
+
+### D-026 · Imagen de prueba local, sin Internet
+Las pruebas de integración compilan un binario estático mínimo en C que espera a
+SIGTERM y lo importan como `dcc-test/sleeper:1` (`POST /images/create?fromSrc=-`).
+No dependen de Docker Hub. Requiere `build-essential` y `libc6-dev`, ya
+necesarios para compilar el proyecto. Los contenedores de prueba llevan la
+etiqueta `dcc.test=true` y se eliminan al terminar cada prueba.
+
+### D-027 · Herramienta `dcc-diagnose`
+Binario de terminal que usa el mismo código de conexión que la aplicación y
+muestra el diagnóstico y las peticiones realizadas. Sirve para soporte y para la
+verificación automática. No modifica nada.
+
+### D-028 · Barrera de errores de la interfaz
+Un error de renderizado muestra el error y un botón para recargar, en lugar de
+una ventana en blanco.
+
+### D-029 · Contrato IPC sin `bigint` ni snake_case
+Los enums con variantes struct usan `rename_all_fields = "camelCase"` y los
+enteros de 64 bits se anotan como `number` para ts-rs. Una prueba de interfaz
+(`bindings.test.ts`) impide que reaparezcan `bigint` o campos snake_case.
+
+### D-030 · Instrucciones del diagnóstico: el usuario las ejecuta
+El diagnóstico propone órdenes concretas (iniciar el servicio, `usermod`,
+contexto por defecto…) para copiar. La aplicación nunca las ejecuta, no pide
+sudo, no cambia permisos ni grupos, y advierte de que el grupo `docker` equivale
+a privilegios de administrador.

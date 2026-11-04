@@ -14,8 +14,15 @@ Tauri 2 · Rust · React · TypeScript.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitectura técnica |
 | [DECISIONS.md](DECISIONS.md) | Decisiones técnicas |
 
-Comprobación rápida en tu equipo:
+Estado: versión 0.2.0, Fase 2 (conexión con Docker, Dashboard, contenedores e
+imágenes). Comprobación en tu equipo:
 
 ```bash
-bash scripts/verify-phase-1.sh
+bash scripts/verify-phase-2.sh          # añade --deb para construir el paquete
+```
+
+Diagnóstico de la conexión desde terminal:
+
+```bash
+cargo run -q -p dcc-engine --bin dcc-diagnose
 ```

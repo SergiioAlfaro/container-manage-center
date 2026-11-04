@@ -1,101 +1,95 @@
 # Instalación
 
 Plataformas soportadas: **Debian 12 o superior** y **Ubuntu 22.04 o superior** (x86_64).
+Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o rootless.
 
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.1.0_amd64.deb
+sudo apt install ./docker-control-center_0.2.0_amd64.deb
 ```
 
-`apt` instala automáticamente las dependencias de ejecución (`libwebkit2gtk-4.1-0`,
-`libgtk-3-0`). La aplicación aparece en el menú como **Docker Control Center**.
+`apt` instala las dependencias de ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`).
+La aplicación aparece en el menú como **Docker Control Center**. Se ejecuta con
+tu usuario normal: **no la ejecutes con sudo** (se niega a arrancar como root).
 
-Desinstalar:
-
-```bash
-sudo apt remove docker-control-center
-```
-
-La configuración del usuario (`~/.config/docker-control-center/`) no se borra al
-desinstalar.
+Desinstalar: `sudo apt remove docker-control-center` (tu configuración en
+`~/.config/docker-control-center/` se conserva).
 
 ## Opción B: compilar desde el código fuente
 
-### 1. Paquetes de sistema
+1. Paquetes de sistema: `bash scripts/install-build-deps.sh`
+   (o `sudo apt install build-essential curl wget file pkg-config libssl-dev libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev`).
+2. Rust 1.80+: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+3. Node.js 20+: con nvm (`nvm install 22`) o el repositorio de NodeSource; las versiones de Debian 12 y Ubuntu 22.04 son demasiado antiguas.
+4. Compilar y ejecutar:
+   ```bash
+   npm ci
+   npx tauri build --debug --no-bundle && ./target/debug/docker-control-center
+   npx tauri build --bundles deb   # paquete: target/release/bundle/deb/
+   ```
+
+## Acceso a Docker
+
+La aplicación habla con Docker Engine por su **socket Unix** y necesita que tu
+usuario pueda abrirlo. Nunca pide sudo, no cambia permisos ni grupos, y no
+ejecuta las instrucciones de diagnóstico por ti.
+
+### Opción 1: Docker rootless (recomendada por seguridad)
+El daemon se ejecuta con tu usuario y el socket está en
+`$XDG_RUNTIME_DIR/docker.sock` (normalmente `/run/user/1000/docker.sock`).
+Guía oficial: <https://docs.docker.com/engine/security/rootless/>.
+La aplicación lo detecta sola (también a través del contexto `rootless` que
+crea el instalador) y lo indica con la etiqueta **rootless**.
 
 ```bash
-bash scripts/install-build-deps.sh
+systemctl --user enable --now docker
 ```
 
-o manualmente:
-
-```bash
-sudo apt update
-sudo apt install -y build-essential curl wget file pkg-config libssl-dev \
-  libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev
-```
-
-### 2. Rust (1.80 o superior)
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-```
-
-### 3. Node.js (20 o superior)
-
-Debian 12 y Ubuntu 22.04 incluyen versiones antiguas de Node.js en sus
-repositorios. Usa una de estas vías:
-
-- **nvm** (sin sudo):
-  ```bash
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-  exec "$SHELL"
-  nvm install 22
-  ```
-- **Repositorio de NodeSource**: <https://github.com/nodesource/distributions>
-
-### 4. Compilar y ejecutar
-
-```bash
-npm ci
-npx tauri build --debug --no-bundle     # compilación rápida para probar
-./target/debug/docker-control-center
-```
-
-Paquete de distribución:
-
-```bash
-npx tauri build --bundles deb
-# Resultado: target/release/bundle/deb/docker-control-center_0.1.0_amd64.deb
-```
-
-Desarrollo con recarga en caliente:
-
-```bash
-npx tauri dev
-```
-
-## Acceso a Docker (necesario a partir de la Fase 2)
-
-Docker Control Center **no debe ejecutarse como root** y se niega a hacerlo.
-Necesita acceso al socket de Docker con tu usuario. Hay dos opciones:
-
-**Docker en modo rootless (recomendado por seguridad).** El daemon se ejecuta con
-tu usuario y el socket está en `$XDG_RUNTIME_DIR/docker.sock`. Guía oficial:
-<https://docs.docker.com/engine/security/rootless/>
-
-**Grupo `docker`.**
-
+### Opción 2: grupo `docker`
 ```bash
 sudo usermod -aG docker "$USER"
-# Cierra la sesión y vuelve a entrar para que el cambio tenga efecto.
+# Cierra la sesión y vuelve a entrar.
 ```
 
 > Pertenecer al grupo `docker` equivale en la práctica a tener privilegios de
-> root en el equipo: cualquier proceso de tu usuario podrá controlar Docker y,
-> a través de él, el sistema. Valóralo antes de hacerlo.
+> administrador en el equipo. Valóralo antes de hacerlo.
+
+### Orden de detección (modo automático)
+1. Variable `DOCKER_HOST` (solo `unix://…`; `tcp://` y `ssh://` no se admiten en esta versión).
+2. Contexto activo de Docker (`docker context use …`).
+3. Socket rootless de tu usuario.
+4. Socket del sistema `/var/run/docker.sock`.
+
+Puedes fijar un socket concreto en **Configuración › Conexión con Docker ›
+Socket personalizado**. "Probar conexión" comprueba una ruta sin guardarla.
+
+## Diagnóstico de problemas
+
+Si no hay conexión, el **Dashboard** muestra la causa, los sockets comprobados y
+los pasos para resolverlo. También puedes diagnosticar desde una terminal con el
+mismo código que usa la aplicación (compilando desde el código fuente):
+
+```bash
+cargo run -q -p dcc-engine --bin dcc-diagnose            # detección automática
+cargo run -q -p dcc-engine --bin dcc-diagnose -- --socket /run/user/1000/docker.sock
+cargo run -q -p dcc-engine --bin dcc-diagnose -- --json  # salida completa
+```
+
+| Causa mostrada | Significado | Qué hacer |
+|---|---|---|
+| Docker no parece estar instalado | No hay socket, ni `docker`, ni `dockerd` | `sudo apt install docker.io` o la guía oficial de Docker |
+| No se encuentra Docker Engine | Hay instalación pero ningún socket | `sudo systemctl enable --now docker` (rootless: `systemctl --user enable --now docker`) |
+| Docker Engine está detenido | El socket existe pero nadie responde | Igual que arriba; revisa `systemctl status docker` |
+| Sin permiso para usar el socket | Tu usuario no puede abrirlo | Grupo `docker` y volver a iniciar sesión, o Docker rootless |
+| …ya perteneces al grupo… | La sesión actual no tiene el grupo activo | Cerrar sesión y volver a entrar |
+| Conexión de Docker no compatible | `DOCKER_HOST`/contexto con `tcp://` o `ssh://` | `unset DOCKER_HOST; docker context use default` o socket personalizado |
+| La ruta no es un socket / no responde como Docker | La ruta configurada apunta a otra cosa | Corregir la ruta en Configuración |
+| Docker no responde a tiempo | Sin respuesta en 5 s | `sudo systemctl restart docker` |
+| Versión de Docker demasiado antigua | API < 1.41 | Actualizar a Docker 20.10 o posterior |
+
+La aplicación reintenta la conexión sola cada pocos segundos (de 2 s a 30 s) y
+vigila la conexión activa cada 10 s.
 
 ## Variables de entorno
 
@@ -103,3 +97,11 @@ sudo usermod -aG docker "$USER"
 |---|---|
 | `DCC_CONFIG` | Ruta alternativa del archivo de configuración |
 | `DCC_LOG` | Nivel de registro del backend (`error`, `warn`, `info`, `debug`, `trace`) |
+| `DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CONFIG` | Se respetan en la detección automática |
+
+## Funcionamiento sin Internet
+
+La aplicación no necesita Internet: las fuentes y recursos van empaquetados, la
+política de seguridad de la ventana bloquea cualquier conexión externa y Docker
+se usa a través del socket local. Solo las operaciones que Docker haga contra
+registros remotos (descargar imágenes, Fase 4) necesitarán red.

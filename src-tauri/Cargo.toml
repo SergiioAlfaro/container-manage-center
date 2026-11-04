@@ -27,6 +27,7 @@ tracing-subscriber.workspace = true
 ts-rs.workspace = true
 dcc-activity.workspace = true
 dcc-store.workspace = true
+dcc-engine.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
