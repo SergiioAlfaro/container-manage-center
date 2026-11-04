@@ -1,0 +1,33 @@
+[package]
+name = "docker-control-center"
+description = "Administración gráfica de Docker Engine para Linux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+default-run = "docker-control-center"
+
+[lib]
+name = "dcc_app"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-clipboard-manager = "2"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+ts-rs.workspace = true
+dcc-activity.workspace = true
+dcc-store.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tauri = { version = "2", features = ["test"] }

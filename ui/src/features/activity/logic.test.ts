@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest";
+import { apiRecord, cliRecord } from "@/test/fixtures";
+import { EMPTY_FILTER, describeTransport, formatDuration, headlineCommand, matches, quoteArg, renderArgv, upsert } from "./logic";
+
+describe("quoteArg (misma regla que Rust)", () => {
+  it("no entrecomilla argumentos seguros", () => {
+    expect(renderArgv("docker", ["run", "-d", "--name", "web", "-p", "8080:80", "nginx:1.27"])).toBe(
+      "docker run -d --name web -p 8080:80 nginx:1.27",
+    );
+  });
+  it("entrecomilla metacaracteres del shell", () => {
+    expect(quoteArg("hola mundo")).toBe("'hola mundo'");
+    expect(quoteArg("a;rm -rf /")).toBe("'a;rm -rf /'");
+    expect(quoteArg("$(whoami)")).toBe("'$(whoami)'");
+    expect(quoteArg("`id`")).toBe("'`id`'");
+    expect(quoteArg("a|b&c>d")).toBe("'a|b&c>d'");
+  });
+  it("escapa comillas simples", () => {
+    expect(quoteArg("it's")).toBe("'it'\\''s'");
+  });
+  it("conserva argumentos vacíos y entrecomilla no ASCII", () => {
+    expect(renderArgv("docker", ["exec", ""])).toBe("docker exec ''");
+    expect(quoteArg("señal")).toBe("'señal'");
+  });
+});
+
+describe("describeTransport / headlineCommand", () => {
+  it("API muestra método y ruta; titular es el equivalente", () => {
+    const r = apiRecord();
+    expect(describeTransport(r.transport)).toBe("POST /v1.47/containers/web/start");
+    expect(headlineCommand(r)).toBe("docker start web");
+  });
+  it("CLI muestra el comando realmente ejecutado", () => {
+    const r = cliRecord();
+    expect(headlineCommand(r)).toBe("docker compose -f /srv/blog/compose.yaml up -d");
+  });
+  it("API sin equivalente devuelve null", () => {
+    expect(headlineCommand(apiRecord({ equivalentCommand: null }))).toBeNull();
+  });
+});
+
+describe("matches", () => {
+  const recs = [
+    apiRecord({ kind: "container.start", target: "web" }),
+    apiRecord({ kind: "image.pull", category: "image", target: "nginx:1.27", transport: { via: "api", method: "POST", path: "/v1.47/images/create?fromImage=nginx&tag=1.27", endpoint: "/var/run/docker.sock" }, status: "failed", error: "manifest unknown", equivalentCommand: "docker pull nginx:1.27" }),
+    cliRecord(),
+  ];
+  const run = (f: Partial<typeof EMPTY_FILTER>) => recs.filter((r) => matches(r, { ...EMPTY_FILTER, ...f })).map((r) => r.kind);
+
+  it("sin filtros devuelve todo", () => expect(run({})).toHaveLength(3));
+  it("filtra por categoría", () => expect(run({ category: "image" })).toEqual(["image.pull"]));
+  it("filtra por estado", () => expect(run({ status: "failed" })).toEqual(["image.pull"]));
+  it("busca en comandos, errores y destino, sin distinguir mayúsculas", () => {
+    expect(run({ query: "MANIFEST" })).toEqual(["image.pull"]);
+    expect(run({ query: "compose up" })).toEqual(["compose.up"]);
+    expect(run({ query: "docker start" })).toEqual(["container.start"]);
+  });
+  it("todas las palabras deben aparecer", () => expect(run({ query: "docker nada" })).toEqual([]));
+});
+
+describe("upsert", () => {
+  it("añade arriba y respeta el máximo", () => {
+    const a = apiRecord();
+    const b = apiRecord();
+    const c = apiRecord();
+    expect(upsert(upsert(upsert([], a, 2), b, 2), c, 2).map((r) => r.id)).toEqual([c.id, b.id]);
+  });
+  it("reemplaza en su sitio", () => {
+    const a = apiRecord({ status: "running" });
+    const b = apiRecord();
+    const list = [b, a];
+    const next = upsert(list, { ...a, status: "succeeded" }, 10);
+    expect(next.map((r) => r.id)).toEqual([b.id, a.id]);
+    expect(next[1]!.status).toBe("succeeded");
+  });
+});
+
+describe("formatDuration", () => {
+  it("formatea en ms, s y min", () => {
+    expect(formatDuration(null)).toBe("");
+    expect(formatDuration(87)).toBe("87 ms");
+    expect(formatDuration(1530)).toBe("1.53 s");
+    expect(formatDuration(42_100)).toBe("42.1 s");
+    expect(formatDuration(125_000)).toBe("2 min 5 s");
+  });
+});

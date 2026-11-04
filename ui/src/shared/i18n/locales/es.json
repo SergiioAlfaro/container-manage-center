@@ -1,0 +1,207 @@
+{
+  "app": {
+    "name": "Docker Control Center",
+    "startupWarning": "Aviso al iniciar"
+  },
+  "nav": {
+    "label": "Navegación principal",
+    "collapse": "Contraer barra lateral",
+    "expand": "Expandir barra lateral",
+    "groups": {
+      "resources": "Recursos",
+      "orchestration": "Orquestación",
+      "monitoring": "Supervisión"
+    }
+  },
+  "sections": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Estado general de Docker Engine y de tus recursos.",
+      "planned": [
+        "Estado de la conexión con Docker Engine",
+        "Resumen de contenedores, imágenes, redes y volúmenes",
+        "Uso de CPU y memoria de los contenedores en ejecución"
+      ],
+      "phase": 2
+    },
+    "containers": {
+      "title": "Contenedores",
+      "description": "Crea, inicia, detén e inspecciona contenedores.",
+      "planned": [
+        "Listado de contenedores activos y detenidos",
+        "Asistente de creación por pestañas",
+        "Inicio, parada, reinicio, pausa y eliminación",
+        "Logs, inspección y terminal interactiva"
+      ],
+      "phase": 3
+    },
+    "images": {
+      "title": "Imágenes",
+      "description": "Descarga, construye, etiqueta y elimina imágenes.",
+      "planned": [
+        "Listado de imágenes locales y uso por contenedores",
+        "Descarga desde registros con progreso",
+        "Construcción a partir de un Dockerfile",
+        "Etiquetado, inspección y capas"
+      ],
+      "phase": 4
+    },
+    "networks": {
+      "title": "Redes",
+      "description": "Gestiona redes y conecta contenedores entre sí.",
+      "planned": [
+        "Redes bridge, host, none, overlay y macvlan",
+        "Subredes, gateways y rangos de direcciones",
+        "Conexión y desconexión de contenedores"
+      ],
+      "phase": 5
+    },
+    "volumes": {
+      "title": "Volúmenes",
+      "description": "Almacenamiento gestionado por Docker.",
+      "planned": [
+        "Listado, creación e inspección de volúmenes",
+        "Contenedores que usan cada volumen",
+        "Aviso antes de eliminar volúmenes en uso"
+      ],
+      "phase": 6
+    },
+    "binds": {
+      "title": "Directorios vinculados",
+      "description": "Carpetas de tu sistema montadas dentro de contenedores (bind mounts).",
+      "planned": [
+        "Rutas de origen y destino de cada vinculación",
+        "Contenedores que usan cada directorio",
+        "Montajes de solo lectura o lectura y escritura",
+        "Selección de carpetas con el explorador de archivos"
+      ],
+      "phase": 6
+    },
+    "compose": {
+      "title": "Docker Compose",
+      "description": "Proyectos multicontenedor definidos en YAML.",
+      "planned": [
+        "Importación y creación de proyectos",
+        "Editor YAML con validación previa",
+        "Inicio, parada, reconstrucción y logs por servicio"
+      ],
+      "phase": 7
+    },
+    "events": {
+      "title": "Eventos y registros",
+      "description": "Eventos de Docker Engine en tiempo real.",
+      "planned": [
+        "Flujo de eventos en tiempo real",
+        "Filtros por fecha, tipo y recurso",
+        "Historial persistente de operaciones"
+      ],
+      "phase": 8
+    },
+    "settings": {
+      "title": "Configuración",
+      "description": "Preferencias de la aplicación."
+    }
+  },
+  "pending": {
+    "phase": "Disponible a partir de la fase {{phase}}",
+    "intro": "Este apartado todavía no está conectado a Docker. Cuando se implemente, permitirá:"
+  },
+  "activity": {
+    "title": "Actividad",
+    "subtitle": "Operaciones ejecutadas sobre Docker",
+    "open": "Abrir panel de actividad",
+    "close": "Cerrar panel de actividad",
+    "shortcut": "Ctrl+Mayús+A",
+    "running": "{{count}} en curso",
+    "failed_one": "{{count}} error",
+    "failed_other": "{{count}} errores",
+    "search": "Buscar comandos, recursos u operaciones",
+    "filterCategory": "Área",
+    "filterStatus": "Estado",
+    "all": "Todas",
+    "allStatus": "Todos",
+    "clear": "Limpiar historial",
+    "clearHint": "Vacía el historial visual. Las operaciones en curso se mantienen.",
+    "emptyTitle": "Aún no hay operaciones",
+    "emptyBody": "Cada acción que la aplicación realice sobre Docker aparecerá aquí con su comando equivalente, su estado y su resultado.",
+    "noMatches": "Ninguna operación coincide con los filtros.",
+    "resetFilters": "Quitar filtros",
+    "via": {
+      "api": "API",
+      "cli": "CLI"
+    },
+    "viaLong": {
+      "api": "Docker Engine API",
+      "cli": "Proceso CLI"
+    },
+    "executed": "Operación ejecutada",
+    "executedCommand": "Comando ejecutado",
+    "equivalent": "Comando equivalente",
+    "equivalentNote": "Traducción orientativa. La operación se realizó mediante la Docker Engine API, no ejecutando este comando.",
+    "noEquivalent": "Esta operación no tiene un comando docker equivalente exacto.",
+    "endpoint": "Socket",
+    "requestBody": "Cuerpo de la petición",
+    "stdout": "Salida estándar",
+    "stderr": "Salida de error",
+    "error": "Error",
+    "summary": "Resultado",
+    "httpStatus": "Código HTTP",
+    "exitCode": "Código de salida",
+    "started": "Inicio",
+    "finished": "Fin",
+    "duration": "Duración",
+    "truncated": "Salida recortada: se muestran los primeros {{shown}} de {{total}} bytes.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "No se pudo copiar",
+    "details": "Detalles",
+    "status": {
+      "running": "En curso",
+      "succeeded": "Correcto",
+      "failed": "Error",
+      "cancelled": "Interrumpida"
+    },
+    "category": {
+      "system": "Sistema",
+      "container": "Contenedores",
+      "image": "Imágenes",
+      "network": "Redes",
+      "volume": "Volúmenes",
+      "bind": "Directorios vinculados",
+      "compose": "Compose"
+    },
+    "loadError": "No se pudo cargar el historial de actividad: {{message}}"
+  },
+  "settings": {
+    "appearance": "Apariencia",
+    "theme": "Tema",
+    "themeOptions": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "language": "Idioma",
+    "languageNames": {
+      "es": "Español",
+      "en": "English"
+    },
+    "activityPanel": "Panel de actividad",
+    "openOnError": "Abrir el panel cuando una operación falle",
+    "openOnErrorHint": "Muestra el error sin que tengas que buscarlo.",
+    "maxRecords": "Operaciones conservadas",
+    "maxRecordsHint": "Entre {{min}} y {{max}}. Las más antiguas se descartan.",
+    "about": "Acerca de",
+    "version": "Versión",
+    "configPath": "Archivo de configuración",
+    "saveError": "No se pudo guardar la configuración: {{message}}",
+    "saved": "Guardado",
+    "shortcuts": "Atajos de teclado",
+    "shortcutSidebar": "Contraer o expandir la barra lateral",
+    "shortcutActivity": "Abrir o cerrar el panel de actividad"
+  },
+  "common": {
+    "dismiss": "Cerrar aviso",
+    "unknown": "Desconocido"
+  },
+  "ops": {}
+}

@@ -1,0 +1,5 @@
+//! Comandos IPC expuestos al frontend. Cada módulo agrupa un área.
+
+pub mod activity;
+pub mod app;
+pub mod config;

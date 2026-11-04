@@ -1,0 +1,207 @@
+{
+  "app": {
+    "name": "Docker Control Center",
+    "startupWarning": "Startup notice"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "groups": {
+      "resources": "Resources",
+      "orchestration": "Orchestration",
+      "monitoring": "Monitoring"
+    }
+  },
+  "sections": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Overall state of Docker Engine and your resources.",
+      "planned": [
+        "Docker Engine connection status",
+        "Summary of containers, images, networks and volumes",
+        "CPU and memory usage of running containers"
+      ],
+      "phase": 2
+    },
+    "containers": {
+      "title": "Containers",
+      "description": "Create, start, stop and inspect containers.",
+      "planned": [
+        "List of running and stopped containers",
+        "Tabbed creation wizard",
+        "Start, stop, restart, pause and remove",
+        "Logs, inspection and interactive terminal"
+      ],
+      "phase": 3
+    },
+    "images": {
+      "title": "Images",
+      "description": "Pull, build, tag and remove images.",
+      "planned": [
+        "Local images and which containers use them",
+        "Pull from registries with progress",
+        "Build from a Dockerfile",
+        "Tagging, inspection and layers"
+      ],
+      "phase": 4
+    },
+    "networks": {
+      "title": "Networks",
+      "description": "Manage networks and connect containers to each other.",
+      "planned": [
+        "bridge, host, none, overlay and macvlan networks",
+        "Subnets, gateways and address ranges",
+        "Connect and disconnect containers"
+      ],
+      "phase": 5
+    },
+    "volumes": {
+      "title": "Volumes",
+      "description": "Storage managed by Docker.",
+      "planned": [
+        "List, create and inspect volumes",
+        "Containers using each volume",
+        "Warning before removing volumes in use"
+      ],
+      "phase": 6
+    },
+    "binds": {
+      "title": "Bind mounts",
+      "description": "Folders on your system mounted inside containers.",
+      "planned": [
+        "Source and target path of each mount",
+        "Containers using each folder",
+        "Read-only or read-write mounts",
+        "Pick folders with the file browser"
+      ],
+      "phase": 6
+    },
+    "compose": {
+      "title": "Docker Compose",
+      "description": "Multi-container projects defined in YAML.",
+      "planned": [
+        "Import and create projects",
+        "YAML editor with validation before running",
+        "Start, stop, rebuild and per-service logs"
+      ],
+      "phase": 7
+    },
+    "events": {
+      "title": "Events and logs",
+      "description": "Docker Engine events in real time.",
+      "planned": [
+        "Real-time event stream",
+        "Filters by date, type and resource",
+        "Persistent operation history"
+      ],
+      "phase": 8
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Application preferences."
+    }
+  },
+  "pending": {
+    "phase": "Available from phase {{phase}}",
+    "intro": "This section is not connected to Docker yet. Once implemented, it will let you:"
+  },
+  "activity": {
+    "title": "Activity",
+    "subtitle": "Operations run against Docker",
+    "open": "Open activity panel",
+    "close": "Close activity panel",
+    "shortcut": "Ctrl+Shift+A",
+    "running": "{{count}} running",
+    "failed_one": "{{count}} error",
+    "failed_other": "{{count}} errors",
+    "search": "Search commands, resources or operations",
+    "filterCategory": "Area",
+    "filterStatus": "Status",
+    "all": "All",
+    "allStatus": "All",
+    "clear": "Clear history",
+    "clearHint": "Clears the visible history. Running operations are kept.",
+    "emptyTitle": "No operations yet",
+    "emptyBody": "Every action the app performs on Docker will appear here with its equivalent command, status and result.",
+    "noMatches": "No operations match the filters.",
+    "resetFilters": "Clear filters",
+    "via": {
+      "api": "API",
+      "cli": "CLI"
+    },
+    "viaLong": {
+      "api": "Docker Engine API",
+      "cli": "CLI process"
+    },
+    "executed": "Executed operation",
+    "executedCommand": "Executed command",
+    "equivalent": "Equivalent command",
+    "equivalentNote": "Approximate translation. The operation was performed through the Docker Engine API, not by running this command.",
+    "noEquivalent": "This operation has no exact docker command equivalent.",
+    "endpoint": "Socket",
+    "requestBody": "Request body",
+    "stdout": "Standard output",
+    "stderr": "Error output",
+    "error": "Error",
+    "summary": "Result",
+    "httpStatus": "HTTP status",
+    "exitCode": "Exit code",
+    "started": "Started",
+    "finished": "Finished",
+    "duration": "Duration",
+    "truncated": "Output truncated: showing the first {{shown}} of {{total}} bytes.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy",
+    "details": "Details",
+    "status": {
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "cancelled": "Interrupted"
+    },
+    "category": {
+      "system": "System",
+      "container": "Containers",
+      "image": "Images",
+      "network": "Networks",
+      "volume": "Volumes",
+      "bind": "Bind mounts",
+      "compose": "Compose"
+    },
+    "loadError": "Could not load the activity history: {{message}}"
+  },
+  "settings": {
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themeOptions": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": "Language",
+    "languageNames": {
+      "es": "Español",
+      "en": "English"
+    },
+    "activityPanel": "Activity panel",
+    "openOnError": "Open the panel when an operation fails",
+    "openOnErrorHint": "Shows the error without you having to look for it.",
+    "maxRecords": "Operations kept",
+    "maxRecordsHint": "Between {{min}} and {{max}}. Older ones are discarded.",
+    "about": "About",
+    "version": "Version",
+    "configPath": "Configuration file",
+    "saveError": "Could not save the settings: {{message}}",
+    "saved": "Saved",
+    "shortcuts": "Keyboard shortcuts",
+    "shortcutSidebar": "Collapse or expand the sidebar",
+    "shortcutActivity": "Open or close the activity panel"
+  },
+  "common": {
+    "dismiss": "Dismiss notice",
+    "unknown": "Unknown"
+  },
+  "ops": {}
+}

@@ -1,0 +1,19 @@
+[package]
+name = "dcc-store"
+description = "Configuración persistente de Docker Control Center"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+dirs.workspace = true
+tracing.workspace = true
+ts-rs.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true

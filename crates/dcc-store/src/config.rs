@@ -1,0 +1,105 @@
+//! Esquema de la configuración de la aplicación.
+//!
+//! Todos los campos tienen valor por defecto (`#[serde(default)]`) para que un
+//! archivo antiguo o incompleto siga siendo válido al añadir opciones nuevas.
+
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
+
+pub const CONFIG_VERSION: u32 = 1;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum Theme {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum Language {
+    #[default]
+    Es,
+    En,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct UiConfig {
+    pub theme: Theme,
+    pub language: Language,
+    pub sidebar_collapsed: bool,
+}
+
+impl Default for UiConfig {
+    fn default() -> Self {
+        Self {
+            theme: Theme::System,
+            language: Language::Es,
+            sidebar_collapsed: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct ActivityConfig {
+    /// Panel abierto al arrancar.
+    pub panel_open: bool,
+    /// Abrir el panel automáticamente cuando una operación falla.
+    pub open_on_error: bool,
+    /// Número máximo de operaciones conservadas en el historial.
+    pub max_records: u32,
+}
+
+impl Default for ActivityConfig {
+    fn default() -> Self {
+        Self {
+            panel_open: false,
+            open_on_error: true,
+            max_records: 500,
+        }
+    }
+}
+
+impl ActivityConfig {
+    pub const MIN_RECORDS: u32 = 50;
+    pub const MAX_RECORDS: u32 = 10_000;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct AppConfig {
+    pub version: u32,
+    pub ui: UiConfig,
+    pub activity: ActivityConfig,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            version: CONFIG_VERSION,
+            ui: UiConfig::default(),
+            activity: ActivityConfig::default(),
+        }
+    }
+}
+
+impl AppConfig {
+    /// Corrige valores fuera de rango en lugar de rechazarlos.
+    pub fn normalized(mut self) -> Self {
+        self.version = CONFIG_VERSION;
+        self.activity.max_records = self
+            .activity
+            .max_records
+            .clamp(ActivityConfig::MIN_RECORDS, ActivityConfig::MAX_RECORDS);
+        self
+    }
+}

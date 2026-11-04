@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = ["crates/dcc-activity", "crates/dcc-store", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+rust-version = "1.80"
+authors = ["Docker Control Center contributors"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+parking_lot = "0.12"
+tokio = { version = "1", features = ["sync", "rt", "macros"] }
+toml = "0.8"
+dirs = "6"
+tempfile = "3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ts-rs = { version = "10", features = ["serde-json-impl", "chrono-impl", "uuid-impl"] }
+
+dcc-activity = { path = "crates/dcc-activity" }
+dcc-store = { path = "crates/dcc-store" }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = "s"
+panic = "abort"
+strip = true

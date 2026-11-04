@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Docker Control Center
+GenericName=Docker administration
+GenericName[es]=Administración de Docker
+Comment=Manage Docker containers, images, networks, volumes and Compose projects
+Comment[es]=Administra contenedores, imágenes, redes, volúmenes y proyectos Compose de Docker
+Exec={{exec}}
+Icon={{icon}}
+StartupWMClass={{exec}}
+Terminal=false
+Categories={{categories}}
+Keywords=docker;container;contenedor;compose;image;imagen;volume;volumen;network;red;

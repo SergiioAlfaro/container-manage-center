@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+/*
+ * Identidad visual "casco y baliza".
+ * - Niebla (fondo), casco (barra lateral), baliza (acento verde azulado).
+ * - Colores de señal para el estado de las operaciones.
+ * Todas las superficies se definen como tokens para el tema claro y oscuro.
+ */
+
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --surface-sunk: #e6eaef;
+  --ink: #17212c;
+  --ink-2: #4a5868;
+  --ink-3: #7a8796;
+  --line: #d8dfe6;
+  --line-strong: #c3cdd7;
+
+  --hull: #16212d;
+  --hull-2: #1f2d3c;
+  --hull-3: #2a3b4d;
+  --hull-ink: #c9d4df;
+  --hull-ink-dim: #8194a7;
+
+  --beacon: #0e858a;
+  --beacon-strong: #0a6b6f;
+  --beacon-soft: rgb(14 133 138 / 0.11);
+  --beacon-ink: #ffffff;
+
+  --signal-ok: #2b8a57;
+  --signal-run: #2a74b0;
+  --signal-warn: #b7821b;
+  --signal-err: #bf412e;
+  --signal-off: #8794a2;
+
+  --log-bg: #f3f6f8;
+  --log-rule: #e2e8ee;
+  --code-bg: #e9eef2;
+
+  --focus: #2a74b0;
+  --shadow-panel: -18px 0 40px -28px rgb(17 28 40 / 0.45);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e151d;
+  --surface: #142029;
+  --surface-2: #192734;
+  --surface-sunk: #0b1219;
+  --ink: #e1e8ee;
+  --ink-2: #a5b2bf;
+  --ink-3: #75869a;
+  --line: #243443;
+  --line-strong: #31465a;
+
+  --hull: #0a1118;
+  --hull-2: #142130;
+  --hull-3: #1d2e40;
+  --hull-ink: #c3cfdb;
+  --hull-ink-dim: #6f8399;
+
+  --beacon: #25b0b3;
+  --beacon-strong: #4cc6c8;
+  --beacon-soft: rgb(37 176 179 / 0.14);
+  --beacon-ink: #071317;
+
+  --signal-ok: #4fb57c;
+  --signal-run: #5b9fd6;
+  --signal-warn: #d9a63c;
+  --signal-err: #e0664f;
+  --signal-off: #6c7d8f;
+
+  --log-bg: #101a23;
+  --log-rule: #1d2b39;
+  --code-bg: #0b141c;
+
+  --focus: #5b9fd6;
+  --shadow-panel: -18px 0 40px -24px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-hull: var(--hull);
+  --color-hull-2: var(--hull-2);
+  --color-hull-3: var(--hull-3);
+  --color-hull-ink: var(--hull-ink);
+  --color-hull-ink-dim: var(--hull-ink-dim);
+  --color-beacon: var(--beacon);
+  --color-beacon-strong: var(--beacon-strong);
+  --color-beacon-soft: var(--beacon-soft);
+  --color-beacon-ink: var(--beacon-ink);
+  --color-ok: var(--signal-ok);
+  --color-run: var(--signal-run);
+  --color-warn: var(--signal-warn);
+  --color-err: var(--signal-err);
+  --color-off: var(--signal-off);
+  --color-log: var(--log-bg);
+  --color-log-rule: var(--log-rule);
+  --color-code: var(--code-bg);
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* El texto técnico sí debe poder seleccionarse. */
+.selectable,
+code,
+pre {
+  user-select: text;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Panel de actividad: entra desde la derecha cuando el usuario lo abre. */
+@keyframes panel-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.panel-enter {
+  animation: panel-in 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Canal de estado: la franja izquierda de cada registro del cuaderno. */
+.channel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+}
+.channel-running {
+  background: repeating-linear-gradient(
+    180deg,
+    var(--signal-run) 0 6px,
+    transparent 6px 10px
+  );
+  background-size: 100% 20px;
+  animation: channel-flow 0.9s linear infinite;
+}
+@keyframes channel-flow {
+  to {
+    background-position: 0 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
