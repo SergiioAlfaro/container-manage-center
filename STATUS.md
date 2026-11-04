@@ -6,15 +6,15 @@
 
 | | |
 |---|---|
-| **Fase actual** | 1 · Arquitectura y estructura inicial |
-| **Estado de la fase** | Implementada y probada en el entorno de desarrollo. **Pendiente de validación externa** en el equipo del propietario. |
-| **Fases completadas (validadas)** | Ninguna |
-| **Fases pendientes** | 1 (validación), 2–10 |
+| **Fase actual** | 2 · Integración con Docker Engine |
+| **Estado de la fase** | En desarrollo |
+| **Fases completadas (validadas)** | 1 |
+| **Fases pendientes** | 2–10 |
 
 | Fase | Estado |
 |---|---|
-| 1. Arquitectura y estructura inicial | Pendiente de validación externa |
-| 2. Integración con Docker Engine | No iniciada (bloqueada por la validación de la fase 1) |
+| 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
+| 2. Integración con Docker Engine | En desarrollo |
 | 3. Contenedores | No iniciada |
 | 4. Imágenes | No iniciada |
 | 5. Redes | No iniciada |
@@ -68,10 +68,11 @@ desplegable conectado al backend, configuración persistente, temas e idiomas.
 | Paquete `.deb` (release, 3,0 MiB): metadatos, dependencias, `.desktop` validado con `desktop-file-validate`, instalación con `apt`, arranque desde `/usr/bin` como usuario normal, desinstalación limpia | Correcto |
 | `scripts/verify-phase-1.sh` ejecutado como usuario normal sobre una copia limpia del proyecto | 22 correctas, 0 fallos, 0 avisos |
 
-### Pruebas pendientes (validación externa)
-- `scripts/verify-phase-1.sh` en Debian 12+ / Ubuntu 22.04+ del propietario.
-- Comprobaciones manuales M1–M11 y, opcionalmente, D1–D3 (paquete `.deb`).
-- Tema "Sistema" con el escritorio real (GNOME/KDE), Wayland y X11.
+### Validación externa (2026-11-04)
+Equipo del propietario: Debian 13 (trixie), núcleo 6.12, GNOME sobre Wayland, WebKitGTK 2.54, Rust 1.99.1, Node 22.23.
+- `scripts/verify-phase-1.sh`: 22 correctas, 0 fallos, 0 avisos (Rust 44/44, Vitest 34/34, Clippy limpio).
+- Comprobaciones manuales M1–M11: todas correctas.
+- D1–D3 (paquete `.deb`, opcionales): no ejecutadas; se repetirán en la Fase 10.
 
 ### Problemas detectados y resueltos durante la fase
 - La ruta de configuración larga desbordaba la tarjeta de Configuración: ahora se muestra debajo de la etiqueta con ajuste de línea.
