@@ -16,6 +16,8 @@ pub struct CommandError {
     pub message: String,
     /// Código HTTP devuelto por Docker, si lo hubo.
     pub http_status: Option<u16>,
+    /// Problemas de validación de una especificación (`engine.invalidSpec`).
+    pub issues: Option<Vec<dcc_engine::spec::SpecIssue>>,
 }
 
 impl CommandError {
@@ -24,6 +26,7 @@ impl CommandError {
             code: code.into(),
             message: message.to_string(),
             http_status: None,
+            issues: None,
         }
     }
 }
@@ -46,16 +49,22 @@ impl From<EngineError> for CommandError {
             EngineError::InvalidInput { .. } => "engine.invalidInput",
             EngineError::Busy { .. } => "engine.busy",
             EngineError::NotConfirmed => "engine.notConfirmed",
+            EngineError::InvalidSpec { .. } => "engine.invalidSpec",
             EngineError::Other { .. } => "engine.other",
         };
         let message = match &e {
             EngineError::Docker { message, .. } => message.clone(),
             other => other.to_string(),
         };
+        let issues = match &e {
+            EngineError::InvalidSpec { issues } => Some(issues.clone()),
+            _ => None,
+        };
         Self {
             code: code.into(),
             message,
             http_status: e.http_status(),
+            issues,
         }
     }
 }

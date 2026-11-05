@@ -12,6 +12,8 @@ pub struct AppState {
     pub store: ConfigStore,
     /// Única conexión con Docker de la aplicación (D-004).
     pub engine: EngineManager,
+    /// Flujos abiertos (logs, estadísticas, terminales).
+    pub streams: std::sync::Arc<crate::streams::StreamRegistry>,
     config: Mutex<AppConfig>,
     /// Aviso generado al cargar la configuración (archivo corrupto, etc.).
     pub startup_warning: Option<String>,
@@ -44,6 +46,7 @@ impl AppState {
             activity,
             store,
             engine,
+            streams: Default::default(),
             config: Mutex::new(config),
             startup_warning: warning,
         }

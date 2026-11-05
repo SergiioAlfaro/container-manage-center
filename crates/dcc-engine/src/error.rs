@@ -30,6 +30,9 @@ pub enum EngineError {
     /// Un parámetro no superó la validación antes de enviarse a Docker.
     #[error("{message}")]
     InvalidInput { message: String },
+    /// La especificación del asistente tiene errores (no se envía nada a Docker).
+    #[error("la configuración tiene {} error(es)", issues.iter().filter(|i| i.severity == crate::spec::Severity::Error).count())]
+    InvalidSpec { issues: Vec<crate::spec::SpecIssue> },
     /// Ya hay otra operación en curso sobre el mismo recurso.
     #[error("ya hay una operación en curso sobre {resource}")]
     Busy { resource: String },

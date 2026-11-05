@@ -350,3 +350,160 @@ fn live_app_connects_and_serves_real_data() {
     assert_eq!(err["code"], "engine.docker");
     assert_eq!(err["httpStatus"], 404);
 }
+
+// ------------------------------------------------------------------ Fase 3
+
+#[test]
+fn preview_validates_and_translates_without_docker() {
+    let h = harness();
+    let v = invoke(
+        &h,
+        "container_preview",
+        json!({ "spec": { "name": "web", "image": "nginx:1.27", "ports": [{ "hostIp": "", "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }], "mounts": [{ "kind": "bind", "source": "/no/existe/dcc", "target": "/x", "readOnly": false }] } }),
+    )
+    .unwrap();
+    assert_eq!(
+        v["runCommand"],
+        "docker run --detach --name web --publish 8080:80/tcp --mount type=bind,source=/no/existe/dcc,target=/x --restart no nginx:1.27"
+    );
+    assert!(v["createCommand"]
+        .as_str()
+        .unwrap()
+        .starts_with("docker create --name web"));
+    assert!(v["body"].as_str().unwrap().contains("\"PortBindings\""));
+    let issues = v["issues"].as_array().unwrap();
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0]["code"], "bind.missing");
+    assert_eq!(issues[0]["severity"], "error");
+    assert_eq!(issues[0]["field"], "mounts.0.source");
+    // Nada de esto habla con Docker: el registro de actividad sigue vacío.
+    let list = invoke(&h, "activity_list", json!({})).unwrap();
+    assert!(list
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|r| r["category"] == "system"));
+}
+
+#[test]
+fn stream_close_of_unknown_stream_is_harmless() {
+    let h = harness();
+    assert_eq!(
+        invoke(&h, "stream_close", json!({ "stream": 999 })).unwrap(),
+        json!(false)
+    );
+    let err = invoke(
+        &h,
+        "terminal_input",
+        json!({ "stream": 999, "data": "ls\n" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "stream.closed");
+    invoke(
+        &h,
+        "terminal_resize",
+        json!({ "stream": 999, "cols": 80, "rows": 24 }),
+    )
+    .unwrap();
+}
+
+#[test]
+fn phase3_commands_fail_cleanly_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    for (cmd, args) in [
+        ("container_inspect", json!({ "id": "web", "name": null })),
+        (
+            "container_duplicate_spec",
+            json!({ "id": "web", "name": null }),
+        ),
+        (
+            "container_create",
+            json!({ "spec": { "image": "nginx" }, "start": true }),
+        ),
+        ("image_defaults", json!({ "image": "nginx" })),
+        ("networks_brief", json!({})),
+        ("volumes_brief", json!({})),
+    ] {
+        let err = invoke(&h, cmd, args).unwrap_err();
+        assert_eq!(err["code"], "engine.notConnected", "{cmd}: {err}");
+    }
+}
+
+/// Contra Docker real: crear con el asistente, inspeccionar, duplicar y eliminar.
+#[test]
+fn live_create_inspect_duplicate_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let images = invoke(&h, "images_list", json!({})).unwrap();
+    let Some(image) = images.as_array().unwrap().iter().find_map(|i| {
+        i["repoTags"]
+            .as_array()
+            .and_then(|t| t.first())
+            .and_then(|t| t.as_str())
+            .map(str::to_owned)
+    }) else {
+        eprintln!("omitida: no hay imágenes locales");
+        return;
+    };
+    let name = format!("dcc-test-ipc-{}", std::process::id());
+    let spec = json!({ "name": name, "image": image, "labels": [{ "key": "dcc.test", "value": "true" }], "env": [{ "key": "A", "value": "1" }] });
+    // Sin iniciar: algunas imágenes terminan enseguida y no importa aquí.
+    let r = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": spec, "start": false }),
+    )
+    .unwrap();
+    let id = r["id"].as_str().unwrap().to_owned();
+    assert_eq!(r["name"], name.as_str());
+    assert!(r["state"].is_null() && r["startError"].is_null());
+    let d = invoke(&h, "container_inspect", json!({ "id": id, "name": name })).unwrap();
+    assert_eq!(d["status"], "created");
+    assert!(d["env"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|e| e["key"] == "A" && e["value"] == "1"));
+    let dup = invoke(
+        &h,
+        "container_duplicate_spec",
+        json!({ "id": id, "name": name }),
+    )
+    .unwrap();
+    assert_eq!(dup["sourceName"], name.as_str());
+    assert!(dup["spec"]["env"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|e| e["key"] == "A"));
+    // Validación en el backend: una especificación inválida devuelve los problemas.
+    let err = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": { "image": image, "name": "mal nombre" }, "start": false }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "engine.invalidSpec");
+    assert_eq!(err["issues"][0]["code"], "name.invalid");
+    invoke(
+        &h,
+        "container_remove",
+        json!({ "id": id, "name": name, "force": true, "volumes": true, "confirmed": true }),
+    )
+    .unwrap();
+}

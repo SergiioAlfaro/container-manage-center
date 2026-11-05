@@ -3,7 +3,7 @@
 /**
  * Estado confirmado tras una acción.
  */
-export type ContainerState = { id: string, 
+export type ContainerState = { id: string, name: string, 
 /**
  * created, running, paused, restarting, exited, removing, dead.
  */

@@ -52,12 +52,22 @@ pub struct ContainerSummary {
     pub labels: BTreeMap<String, String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CreatedContainer {
+    pub id: String,
+    /// Avisos que devuelve Docker al crear.
+    pub warnings: Vec<String>,
+}
+
 /// Estado confirmado tras una acción.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ContainerState {
     pub id: String,
+    pub name: String,
     /// created, running, paused, restarting, exited, removing, dead.
     pub status: String,
     #[ts(type = "number | null")]
@@ -311,9 +321,117 @@ impl Engine {
         let st = r.state.unwrap_or_default();
         Ok(ContainerState {
             id: r.id.unwrap_or_else(|| id.to_owned()),
+            name: r
+                .name
+                .unwrap_or_default()
+                .trim_start_matches('/')
+                .to_owned(),
             status: state_str(st.status.as_ref()),
             exit_code: st.exit_code,
         })
+    }
+
+    /// `GET /containers/{id}/json` completo para la pantalla de detalle.
+    pub async fn inspect_raw(
+        &self,
+        id: &str,
+        display: Option<&str>,
+    ) -> Result<bollard::models::ContainerInspectResponse, EngineError> {
+        validate_ref("contenedor", id)?;
+        let opts = InspectContainerOptions { size: false };
+        let op = ApiOp {
+            category: Category::Container,
+            kind: "container.inspect",
+            target: Some(display.unwrap_or(id).to_owned()),
+            method: "GET",
+            path: path_with_query(&format!("/containers/{id}/json"), &opts),
+            body: None,
+            equivalent: Some(vec!["container".into(), "inspect".into(), id.into()]),
+            timeout: None,
+        };
+        let d = self.docker().clone();
+        let id_s = id.to_owned();
+        self.call(
+            op,
+            async move { d.inspect_container(&id_s, Some(opts)).await },
+            |r| {
+                r.state
+                    .as_ref()
+                    .map(|s| format!("Estado: {}", state_str(s.status.as_ref())))
+            },
+        )
+        .await
+    }
+
+    pub async fn inspect_container(
+        &self,
+        id: &str,
+        display: Option<&str>,
+    ) -> Result<crate::details::ContainerDetails, EngineError> {
+        Ok(crate::details::details_from(
+            &self.inspect_raw(id, display).await?,
+        ))
+    }
+
+    /// Crea un contenedor a partir de la especificación del asistente (D-034).
+    /// Se valida de nuevo en el backend, comprobando el disco para los bind mounts.
+    pub async fn create_container(
+        &self,
+        spec: &crate::spec::ContainerSpec,
+    ) -> Result<CreatedContainer, EngineError> {
+        let issues = spec.validate(true);
+        if crate::spec::ContainerSpec::has_errors(&issues) {
+            return Err(EngineError::InvalidSpec { issues });
+        }
+        let (name, body) = spec.to_create_body();
+        let opts = bollard::query_parameters::CreateContainerOptions {
+            name: name.clone(),
+            platform: String::new(),
+        };
+        let op = ApiOp {
+            category: Category::Container,
+            kind: "container.create",
+            target: Some(name.clone().unwrap_or_else(|| spec.image.trim().to_owned())),
+            method: "POST",
+            path: path_with_query("/containers/create", &opts),
+            body: Some(serde_json::to_string_pretty(&body).unwrap_or_default()),
+            equivalent: Some(spec.cli_args(false)),
+            timeout: None,
+        };
+        let d = self.docker().clone();
+        let r = self
+            .call(
+                op,
+                async move { d.create_container(Some(opts), body).await },
+                |r| {
+                    Some(format!(
+                        "Contenedor creado: {}",
+                        r.id.chars().take(12).collect::<String>()
+                    ))
+                },
+            )
+            .await?;
+        Ok(CreatedContainer {
+            id: r.id,
+            warnings: r.warnings,
+        })
+    }
+
+    /// Lee la configuración de un contenedor para duplicarlo: inspect del
+    /// contenedor y de su imagen (para descartar los valores heredados).
+    pub async fn duplicate_spec(
+        &self,
+        id: &str,
+        display: Option<&str>,
+    ) -> Result<crate::spec::DuplicateSpec, EngineError> {
+        let c = self.inspect_raw(id, display).await?;
+        let image_id = c.image.clone().unwrap_or_default();
+        let image = match self.inspect_image_config(&image_id).await {
+            Ok(cfg) => cfg,
+            Err(EngineError::Docker { status: 404, .. }) => None,
+            Err(e) => return Err(e),
+        };
+        Ok(crate::spec::from_inspect(&c, image.as_ref()))
     }
 
     /// Elimina un contenedor. `force` detiene antes uno en ejecución; `volumes`

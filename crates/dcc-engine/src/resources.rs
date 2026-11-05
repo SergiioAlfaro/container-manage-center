@@ -26,13 +26,15 @@ pub fn validate_ref(kind: &str, r: &str) -> Result<(), EngineError> {
     }
 }
 
-/// Ruta con query string serializada exactamente como lo hace bollard
-/// (`serde_urlencoded` sobre el mismo struct de opciones).
+/// Ruta con query string serializada exactamente como lo hace bollard cuando
+/// recibe opciones: `serde_urlencoded` sobre el mismo struct y `?` siempre,
+/// aunque la query quede vacía (comprobado con el tráfico real del socket).
+/// Para no enviar un `?` vacío, el llamador pasa `None` a bollard y no usa esta función.
 pub fn path_with_query<O: Serialize>(path: &str, opts: &O) -> String {
-    match serde_urlencoded::to_string(opts) {
-        Ok(q) if !q.is_empty() => format!("{path}?{q}"),
-        _ => path.to_owned(),
-    }
+    format!(
+        "{path}?{}",
+        serde_urlencoded::to_string(opts).unwrap_or_default()
+    )
 }
 
 /// Impide dos operaciones simultáneas sobre el mismo recurso.
@@ -109,7 +111,7 @@ mod tests {
         let o = bollard::query_parameters::StopContainerOptions::default();
         assert_eq!(
             path_with_query("/containers/web/stop", &o),
-            "/containers/web/stop"
+            "/containers/web/stop?"
         );
     }
 

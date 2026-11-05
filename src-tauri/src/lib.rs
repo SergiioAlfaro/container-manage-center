@@ -4,9 +4,10 @@ mod commands;
 mod error;
 mod events;
 mod state;
+mod streams;
 
 use dcc_store::ConfigStore;
-use tauri::{Builder, Runtime};
+use tauri::{Builder, Manager, Runtime};
 
 pub use error::CommandError;
 
@@ -19,7 +20,17 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
     let engine = state.engine.clone();
     builder
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(state)
+        .on_window_event(|window, event| {
+            // Al cerrar la ventana se cierran los flujos abiertos (logs, terminales…),
+            // que quedan registrados como cerrados por el usuario.
+            if let tauri::WindowEvent::Destroyed = event {
+                if let Some(state) = window.try_state::<state::AppState>() {
+                    state.streams.close_all();
+                }
+            }
+        })
         .setup(move |app| {
             events::spawn_activity_bridge(app.handle().clone(), activity);
             events::spawn_engine(app.handle().clone(), engine);
@@ -40,6 +51,19 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::resources::container_action,
             commands::resources::container_remove,
             commands::resources::images_list,
+            commands::containers::container_preview,
+            commands::containers::container_create,
+            commands::containers::container_inspect,
+            commands::containers::container_duplicate_spec,
+            commands::containers::image_defaults,
+            commands::containers::networks_brief,
+            commands::containers::volumes_brief,
+            commands::containers::logs_open,
+            commands::containers::stats_open,
+            commands::containers::terminal_open,
+            commands::containers::terminal_input,
+            commands::containers::terminal_resize,
+            commands::containers::stream_close,
         ])
 }
 
