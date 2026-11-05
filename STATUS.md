@@ -6,17 +6,17 @@
 
 | | |
 |---|---|
-| **Fase actual** | 2 · Integración con Docker Engine |
-| **Versión** | 0.2.1 (corrección de la Fase 2) |
-| **Estado de la fase** | Corregidos los fallos de la verificación automática en Debian 13. Parte automática superada en el entorno de desarrollo. **Pendiente**: que el propietario repita `verify-phase-2.sh` en Debian 13 y, si está limpio, las comprobaciones manuales M1–M15. |
-| **Fases completadas (validadas)** | 1 |
-| **Fases pendientes** | 2–10 |
+| **Fase actual** | 3 · Gestión de contenedores |
+| **Versión** | 0.2.1 (Fase 2 validada); Fase 3 en desarrollo |
+| **Estado de la fase** | En desarrollo |
+| **Fases completadas (validadas)** | 1, 2 |
+| **Fases pendientes** | 3–10 |
 
 | Fase | Estado |
 |---|---|
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
-| 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | Pendiente de validación externa |
-| 3. Contenedores (creación, logs, inspección, terminal) | No iniciada |
+| 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
+| 3. Contenedores (creación, logs, inspección, terminal) | En desarrollo |
 | 4. Imágenes (descarga, construcción, etiquetado, eliminación) | No iniciada |
 | 5. Redes | No iniciada |
 | 6. Volúmenes y bind mounts | No iniciada |
@@ -202,6 +202,9 @@ Ubuntu 24.04, Docker 29.9.2. Informe completo: `verify-phase-2-report.txt`.
 | App real sin plugin Compose: "No instalado" con instrucciones; ejecución CLI real registrada | Correcto |
 | `.deb` 0.2.1: instalar, arrancar como usuario normal y como root (desarrollo), desinstalar | Correcto |
 | Recursos de prueba tras todo lo anterior | Ninguno |
+
+### Validación externa de la 0.2.1 (2026-11-05)
+El propietario comunicó que en su Debian 13 "todo funciona correctamente" y autorizó pasar a la Fase 3. Se entiende que incluye `verify-phase-2.sh` y las comprobaciones manuales M1–M15. El informe no se adjuntó a la conversación, por lo que no hay detalle de omisiones (p. ej. M13 permisos, M14 rootless, Compose).
 
 ### Limitaciones de esta verificación
 - La carrera de Docker 26 **no se reproduce** con Docker 29 en este entorno (120 ciclos con la API real); la corrección se apoya en el código de moby, una prueba determinista que reproduce las respuestas exactas de la ventana y la prueba real. Debe confirmarse en Debian 13 con `verify-phase-2.sh`.
