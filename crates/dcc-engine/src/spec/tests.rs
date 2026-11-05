@@ -519,3 +519,29 @@ fn duplicate_notes_unsupported_settings_and_compose() {
     let d = from_inspect(&i, None);
     assert!(d.notes.contains(&"imageMissing".to_string()));
 }
+
+#[test]
+fn redacted_hides_secret_values_only() {
+    let spec = ContainerSpec {
+        image: "nginx".into(),
+        env: vec![
+            KeyValue::new("POSTGRES_PASSWORD", "s3creto"),
+            KeyValue::new("api_token", "abc"),
+            KeyValue::new("EMPTY_SECRET", ""),
+            KeyValue::new("MODO", "prod"),
+        ],
+        ..Default::default()
+    };
+    let (shown, n) = spec.redacted();
+    assert_eq!(n, 2);
+    assert_eq!(shown.env[0].value, REDACTED);
+    assert_eq!(shown.env[1].value, REDACTED);
+    assert_eq!(shown.env[2].value, "", "un valor vacío no oculta nada");
+    assert_eq!(shown.env[3].value, "prod");
+    let cmd = shown.cli_command(false);
+    assert!(!cmd.contains("s3creto") && !cmd.contains("abc"), "{cmd}");
+    assert!(cmd.contains("--env 'POSTGRES_PASSWORD=********'"), "{cmd}");
+    // La especificación original no cambia.
+    assert_eq!(spec.env[0].value, "s3creto");
+    assert!(is_secret_key("my_private_key") && !is_secret_key("PATH"));
+}

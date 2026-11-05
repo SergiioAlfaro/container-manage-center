@@ -63,6 +63,66 @@ hay que marcar **Detenerlo a la fuerza y eliminarlo**. Opcionalmente se
 eliminan sus volúmenes anónimos; los volúmenes con nombre y las carpetas
 vinculadas no se tocan. No se puede deshacer.
 
+Pulsa el **nombre** de un contenedor para abrir su detalle, o **Crear contenedor**
+para abrir el asistente.
+
+### Crear un contenedor
+
+El asistente tiene seis pestañas; solo la imagen es obligatoria:
+
+| Pestaña | Contenido |
+|---|---|
+| General | Nombre, imagen (debe estar en tu equipo; la lista sugiere las locales), comando, entrypoint y directorio de trabajo |
+| Entorno | Variables de entorno y etiquetas |
+| Red | Red, nombre de host, puertos publicados (IP, puerto del equipo, puerto del contenedor, protocolo), publicar todos los expuestos y entradas de /etc/hosts |
+| Almacenamiento | Volúmenes (con nombre o anónimos) y carpetas de tu equipo (bind mounts), de lectura y escritura o solo lectura |
+| Recursos | Límite de CPU, límite y reserva de memoria, política de reinicio |
+| Avanzado | Usuario, TTY, STDIN abierto, proceso init, sistema de archivos de solo lectura, eliminar al terminar, modo privilegiado y capacidades |
+
+- Al elegir una imagen local, los campos muestran como referencia su comando,
+  entrypoint, directorio y usuario, y en Red puedes **publicar los puertos que
+  expone**.
+- **Comando** y **Entrypoint** se escriben como en una terminal
+  (`nginx -g 'daemon off;'`) y se dividen en argumentos, que ves debajo. No se
+  ejecuta ninguna shell: `$HOME` o `*` llegan tal cual.
+- El panel **Equivalente** muestra en todo momento el `docker run` (o
+  `docker create`) equivalente y el cuerpo que se enviará a la API. La
+  aplicación no ejecuta ese comando: usa la API, y la operación queda en el
+  panel de actividad.
+- **Revisión** lista los errores (en rojo, impiden crear) y las advertencias (en
+  ámbar: puertos privilegiados, carpetas delicadas montadas con escritura, modo
+  privilegiado…). Cada pestaña muestra cuántos errores tiene; pulsa un problema
+  para ir a su campo.
+- Los valores de variables como `PASSWORD`, `TOKEN` o `SECRET` se ocultan en
+  pantalla y en el panel de actividad (`********`), pero Docker los recibe
+  completos y cualquiera con acceso a Docker puede leerlos.
+- **Crear** crea el contenedor sin iniciarlo; **Crear e iniciar** también lo
+  inicia. Si se crea pero no puede iniciarse (p. ej. un puerto ocupado), el
+  detalle muestra el error de Docker y el contenedor queda creado.
+
+### Detalle de un contenedor
+
+Arriba, las acciones válidas para su estado, **Duplicar** y **Eliminar**.
+
+- **Resumen**: estado, fechas, código de salida, proceso, puertos, variables
+  (los valores sensibles se ocultan hasta pulsar *Mostrar*), política de
+  reinicio, límites, redes, montajes y etiquetas.
+- **Logs**: salida en directo (stdout normal, stderr en rojo). Puedes elegir
+  cuántas líneas anteriores cargar, filtrar, ver las marcas de tiempo, seguir el
+  final, copiar lo visible y dejar de seguir. Se conservan las últimas 10 000 líneas.
+- **Terminal**: pulsa **Abrir terminal** para iniciar una shell (`bash` si existe,
+  si no `sh`, o la que elijas) con `docker exec -it`. **Cerrar sesión** termina la
+  shell; la línea de estado indica cómo terminó.
+- **Estadísticas**: CPU, memoria, red, disco y procesos cada segundo, calculados
+  como `docker stats`.
+- **Inspección JSON**: la respuesta completa de `docker inspect`, con botón Copiar.
+
+Logs, estadísticas y terminal son operaciones reales que aparecen en el panel de
+actividad mientras están abiertas y se cierran al salir del detalle.
+
+**Duplicar** abre el asistente con la configuración del contenedor (con nombre
+`<nombre>-copia`) y avisa de los ajustes que no se trasladan.
+
 ## Imágenes
 
 Lista las imágenes locales (como `docker image ls`): etiquetas, ID corto,

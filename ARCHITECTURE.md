@@ -91,6 +91,19 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | Listar imágenes | `GET /images/json?all=false&shared-size=false&digests=false&manifests=false` + listado de contenedores para el uso | `docker image ls` |
 | Estado confirmado tras cada acción (D-031) | `GET /containers/{id}/json?size=false` | `docker container inspect --format '{{.State.Status}}' {id}` |
 | Versión de Compose (D-032) | proceso `docker compose version` y, si falta el plugin, `docker-compose version` (CLI, sin opciones) | — |
+| Crear contenedor (D-034) | `POST /containers/create?name=…&platform=` con el cuerpo de `ContainerSpec::to_create_body` | `docker create …` (`ContainerSpec::cli_args`, secretos ocultos, D-039) |
+| Inspeccionar | `GET /containers/{id}/json?size=false` | `docker container inspect {id}` |
+| Configuración de la imagen | `GET /images/{ref}/json` | `docker image inspect {ref}` |
+| Redes / volúmenes (para el asistente) | `GET /networks` · `GET /volumes` | `docker network ls` · `docker volume ls` |
+| Logs (flujo, D-036) | `GET /containers/{id}/logs?follow=true&stdout=true&stderr=true&timestamps=true&tail=N` | `docker logs --follow --timestamps --tail N {id}` |
+| Estadísticas (flujo) | `GET /containers/{id}/stats?stream=true&one-shot=false` | `docker stats {id}` |
+| Terminal (D-036, D-037) | `POST /containers/{id}/exec` → `POST /exec/{id}/start` (conexión secuestrada) → `POST /exec/{id}/resize` (no registrado, contado) → `GET /exec/{id}/json` | `docker exec --interactive --tty {id} <shell>` |
+
+### Especificación de contenedor (`spec.rs`, D-034)
+`ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
+
+### Flujos en la aplicación (`src-tauri/src/streams.rs`)
+`StreamRegistry` guarda, por identificador, el `CancellationToken` y, para la terminal, el canal de entrada. `logs_open`/`stats_open`/`terminal_open` devuelven el identificador y envían los eventos por un `Channel` de Tauri; al terminar mandan `end` con `StreamClosed { end: StreamEnd { reason, summary, exitCode } | error }` y se retiran del registro. `stream_close` cancela; al destruirse la ventana se cancelan todos.
 
 ## Comandos IPC
 
@@ -106,25 +119,37 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | `containers_list`, `container_action(id, name, action)` | Contenedores; la acción devuelve el estado confirmado (`ContainerState`) |
 | `container_remove(id, name, force, volumes, confirmed)` | Exige `confirmed = true` |
 | `images_list` | Imágenes con su uso |
+| `container_preview(spec)` | Valida y traduce sin hablar con Docker: problemas, `docker run`/`docker create` equivalentes, cuerpo JSON y nº de secretos ocultos |
+| `container_create(spec, start)` | Crea (y opcionalmente inicia); si no arranca devuelve el contenedor creado con `startError` |
+| `container_inspect(id, name)` · `container_duplicate_spec(id, name)` | Detalle (`ContainerDetails`) y especificación para duplicar (`DuplicateSpec`) |
+| `image_defaults(image)` · `networks_brief` · `volumes_brief` | Datos reales para ayudar a rellenar el asistente |
+| `logs_open(id, name, tail, onEvent)` · `stats_open(id, name, onEvent)` | Flujos; devuelven el identificador |
+| `terminal_open(id, name, shell, cols, rows, onEvent)` · `terminal_input(stream, data)` · `terminal_resize(stream, cols, rows)` | Terminal interactiva (salida en base64) |
+| `stream_close(stream)` | Cierra un flujo; `false` si ya había terminado |
 
-Errores: `CommandError { code, message, httpStatus }` con códigos `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.other`, `config.io`.
+Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.other`, `config.io`.
 
-Eventos: `activity://event`, `activity://resync`, `engine://state`.
+Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`).
 
 ## Interfaz
 - `features/engine/store.ts`: estado de conexión; `App` lo alimenta con `engine_state` y el evento `engine://state`. Al pasar a conectado se invalidan todas las consultas; al perder la conexión se descartan.
 - `RequireConnection` envuelve los apartados que necesitan Docker.
 - `diagnosis.ts` traduce el diagnóstico en pasos concretos (función pura, probada caso a caso).
 - Todas las peticiones son asíncronas; una operación en curso bloquea solo su fila.
+- `features/containers/store.ts`: navegación interna (lista, detalle con pestaña, asistente con especificación prellenada).
+- `create/CreateWizard.tsx`: pestañas General, Entorno, Red, Almacenamiento, Recursos y Avanzado; vista previa con retardo de 200 ms; `shellwords.ts` divide Comando y Entrypoint con reglas de comillas POSIX sin ejecutar ninguna shell.
+- `detail/`: `useStream` abre y cierra flujos ligados al ciclo de vida del componente; las pestañas con flujos se mantienen montadas tras visitarlas. La terminal usa xterm.js 5.5 (D-040).
+- `public/boot-guard.js` muestra los errores anteriores al arranque de la interfaz.
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 64 motor · 15 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 18 (una contra Docker real) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker` | 11 (2 requieren usuario no root; Compose se omite si no está instalado) |
+| Rust unitarias | `cargo test` | 22 actividad · 110 motor · 15 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 29 (dos contra Docker real) |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers` | 11 + 7 (2 requieren usuario no root; Compose se omite si no está instalado) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
-| Interfaz | Vitest + Testing Library | 74 |
-| Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto, shellcheck | — |
-| Manual | `scripts/verify-phase-2.sh` | M1–M15 |
+| Interfaz | Vitest + Testing Library | 109 |
+| Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
+| Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
+| Manual | `scripts/verify-phase-3.sh` | M1–M16 |

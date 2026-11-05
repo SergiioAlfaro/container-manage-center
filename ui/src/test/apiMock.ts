@@ -9,6 +9,18 @@ import type { Diagnosis } from "@/shared/ipc/bindings/Diagnosis";
 import type { ImageSummary } from "@/shared/ipc/bindings/ImageSummary";
 import type { SystemOverview } from "@/shared/ipc/bindings/SystemOverview";
 import type { AppConfig } from "@/shared/ipc/bindings/AppConfig";
+import type { ContainerDetails } from "@/shared/ipc/bindings/ContainerDetails";
+import type { ContainerSpec } from "@/shared/ipc/bindings/ContainerSpec";
+import type { CreateResult } from "@/shared/ipc/bindings/CreateResult";
+import type { DuplicateSpec } from "@/shared/ipc/bindings/DuplicateSpec";
+import type { ImageDefaults } from "@/shared/ipc/bindings/ImageDefaults";
+import type { LogEvent } from "@/shared/ipc/bindings/LogEvent";
+import type { NetworkBrief } from "@/shared/ipc/bindings/NetworkBrief";
+import type { SpecPreview } from "@/shared/ipc/bindings/SpecPreview";
+import type { StatsEvent } from "@/shared/ipc/bindings/StatsEvent";
+import type { TerminalEvent } from "@/shared/ipc/bindings/TerminalEvent";
+import type { VolumeBrief } from "@/shared/ipc/bindings/VolumeBrief";
+import { emptySpec } from "@/features/containers/specModel";
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
 const DEFAULT_CONFIG: AppConfig = {
@@ -114,6 +126,110 @@ export const images: ImageSummary[] = [
   { id: "sha256:9999ddddeeeeffff", repoTags: [], repoDigests: [], created: 1_750_000_000, size: 5_000_000, dangling: true, labels: {}, usedBy: [] },
 ];
 
+/**
+ * Flujos simulados: las pruebas empujan eventos con `streams.emit(id, evento)`
+ * igual que lo haría el backend por el canal de Tauri.
+ */
+export const streams = {
+  next: 0,
+  handlers: new Map<number, (e: never) => void>(),
+  closed: [] as number[],
+  add(h: (e: never) => void): number {
+    const id = ++this.next;
+    this.handlers.set(id, h);
+    return id;
+  },
+  emit<E>(id: number, e: E) {
+    (this.handlers.get(id) as ((e: E) => void) | undefined)?.(e);
+  },
+  /** Igual que el backend: cerrar provoca un evento `end` con el resumen. */
+  close(id: number): boolean {
+    const h = this.handlers.get(id) as ((e: unknown) => void) | undefined;
+    if (!h) return false;
+    this.handlers.delete(id);
+    this.closed.push(id);
+    h({ event: "end", closed: { end: { reason: "closed", summary: "Flujo cerrado por el usuario", exitCode: null }, error: null } });
+    return true;
+  },
+  reset() {
+    this.next = 0;
+    this.handlers.clear();
+    this.closed = [];
+  },
+};
+
+/** Vista previa mínima: lo justo para las pruebas de interfaz; la real está en Rust. */
+export function previewOf(spec: ContainerSpec): SpecPreview {
+  const issues: SpecPreview["issues"] = [];
+  if (!spec.image.trim()) issues.push({ severity: "error", field: "image", code: "image.required", params: {} });
+  if (spec.name && !/^[a-zA-Z0-9][a-zA-Z0-9_.-]+$/.test(spec.name)) issues.push({ severity: "error", field: "name", code: "name.invalid", params: {} });
+  spec.ports.forEach((p, i) => p.containerPort === 0 && issues.push({ severity: "error", field: `ports.${i}.containerPort`, code: "port.invalid", params: {} }));
+  if (spec.privileged) issues.push({ severity: "warning", field: "privileged", code: "privileged", params: {} });
+  const args = [
+    ...(spec.name ? ["--name", spec.name] : []),
+    ...spec.env.map((e) => `--env ${e.key}=${e.value}`),
+    ...spec.ports.map((p) => `--publish ${p.hostPort ?? ""}:${p.containerPort}/${p.protocol}`),
+    ...(spec.memoryBytes ? [`--memory ${spec.memoryBytes / 1024 ** 2}m`] : []),
+    ...(spec.privileged ? ["--privileged"] : []),
+  ];
+  const tail = [spec.image, ...spec.command].join(" ");
+  return { issues, runCommand: ["docker run --detach", ...args, tail].join(" "), createCommand: ["docker create", ...args, tail].join(" "), body: JSON.stringify({ Image: spec.image }), secretsHidden: 0 };
+}
+
+export function details(over: Partial<ContainerDetails> = {}): ContainerDetails {
+  const base: ContainerDetails = {
+    id: "a1b2c3d4e5f6a7b8c9d0",
+    name: "web",
+    image: "nginx:1.27",
+    imageId: "sha256:1111aaaabbbbcccc",
+    created: "2026-11-04T09:00:00.123Z",
+    status: "running",
+    running: true,
+    paused: false,
+    restarting: false,
+    oomKilled: false,
+    exitCode: 0,
+    error: null,
+    startedAt: "2026-11-04T09:00:01Z",
+    finishedAt: "0001-01-01T00:00:00Z",
+    health: null,
+    restartCount: 0,
+    pid: 4242,
+    command: ["nginx", "-g", "daemon off;"],
+    entrypoint: ["/docker-entrypoint.sh"],
+    workingDir: "",
+    user: "",
+    hostname: "a1b2c3d4e5f6",
+    tty: false,
+    openStdin: false,
+    env: [
+      { key: "PATH", value: "/usr/bin" },
+      { key: "DB_PASSWORD", value: "s3creto" },
+    ],
+    labels: { equipo: "web" },
+    networkMode: "bridge",
+    networks: [{ name: "bridge", ipAddress: "172.17.0.2", gateway: "172.17.0.1", macAddress: "02:42:ac:11:00:02", aliases: [] }],
+    ports: [
+      { ip: "0.0.0.0", privatePort: 80, publicPort: 8080, protocol: "tcp" },
+      { ip: "::", privatePort: 80, publicPort: 8080, protocol: "tcp" },
+      { ip: null, privatePort: 443, publicPort: null, protocol: "tcp" },
+    ],
+    mounts: [{ kind: "volume", name: "datos", source: "/var/lib/docker/volumes/datos/_data", destination: "/data", readOnly: false, driver: "local" }],
+    restart: { name: "onFailure", maxRetries: 3 },
+    cpus: 1.5,
+    memoryBytes: 512 * 1024 ** 2,
+    memoryReservationBytes: null,
+    privileged: false,
+    autoRemove: false,
+    readOnlyRootfs: false,
+    init: false,
+    composeProject: null,
+    raw: "",
+    ...over,
+  };
+  return { ...base, raw: over.raw ?? JSON.stringify({ Id: base.id, Name: `/${base.name}` }, null, 2) };
+}
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -128,13 +244,51 @@ export const api = {
   engineOverview: vi.fn(async () => overview),
   composeStatus: vi.fn(async (): Promise<import("@/shared/ipc/bindings/ComposeStatus").ComposeStatus> => ({ status: "available", version: "2.40.0", kind: "plugin", program: "/usr/bin/docker" })),
   containersList: vi.fn(async () => containers),
-  containerAction: vi.fn(async (id: string, _n: string | null, a: string) => ({
+  containerAction: vi.fn(async (id: string, n: string | null, a: string) => ({
     id,
+    name: n ?? id,
     status: a === "stop" ? "exited" : a === "pause" ? "paused" : "running",
     exitCode: a === "stop" ? 0 : null,
   })),
   containerRemove: vi.fn(async (_id: string, _n: string | null, _f: boolean, _v: boolean) => {}),
   imagesList: vi.fn(async () => images),
+  containerPreview: vi.fn(async (spec: ContainerSpec): Promise<SpecPreview> => previewOf(spec)),
+  containerCreate: vi.fn(async (spec: ContainerSpec, start: boolean): Promise<CreateResult> => ({
+    id: "f00dfeedf00dfeed",
+    name: spec.name || "nombre_generado",
+    warnings: [],
+    state: start ? { id: "f00dfeedf00dfeed", name: spec.name, status: "running", exitCode: null } : null,
+    startError: null,
+  })),
+  containerInspect: vi.fn(async (id: string, _n: string | null): Promise<ContainerDetails> => details({ id })),
+  containerDuplicateSpec: vi.fn(async (_id: string, n: string | null): Promise<DuplicateSpec> => ({
+    spec: { ...emptySpec(), image: "nginx:1.27", env: [{ key: "MODO", value: "produccion" }], ports: [{ hostIp: "", hostPort: 8080, containerPort: 80, protocol: "tcp" }] },
+    notes: ["composeLabels"],
+    sourceName: n ?? "web",
+  })),
+  imageDefaults: vi.fn(async (_r: string): Promise<ImageDefaults> => ({
+    id: "sha256:1111aaaabbbbcccc",
+    command: ["nginx", "-g", "daemon off;"],
+    entrypoint: ["/docker-entrypoint.sh"],
+    env: ["PATH=/usr/local/sbin:/usr/bin", "NGINX_VERSION=1.27.5"],
+    exposedPorts: ["80/tcp"],
+    workingDir: "",
+    user: "",
+    volumes: [],
+  })),
+  networksBrief: vi.fn(async (): Promise<NetworkBrief[]> => [
+    { name: "bridge", driver: "bridge", scope: "local" },
+    { name: "host", driver: "host", scope: "local" },
+    { name: "backend", driver: "bridge", scope: "local" },
+  ]),
+  volumesBrief: vi.fn(async (): Promise<VolumeBrief[]> => [{ name: "datos", driver: "local" }]),
+  logsOpen: vi.fn(async (_id: string, _n: string | null, _tail: number | null, h: (e: LogEvent) => void) => streams.add(h)),
+  statsOpen: vi.fn(async (_id: string, _n: string | null, h: (e: StatsEvent) => void) => streams.add(h)),
+  terminalOpen: vi.fn(async (_id: string, _n: string | null, _s: string, _c: number, _r: number, h: (e: TerminalEvent) => void) => streams.add(h)),
+  terminalInput: vi.fn(async (_s: number, _d: string) => {}),
+  terminalResize: vi.fn(async (_s: number, _c: number, _r: number) => {}),
+  streamClose: vi.fn(async (s: number) => streams.close(s)),
+  pickFolder: vi.fn(async (_t: string): Promise<string | null> => "/home/u/datos"),
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),
 };
 

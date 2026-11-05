@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pause, Play, RefreshCw, RotateCw, Search, Square, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { formatAbsolute, formatRelative, shortId, uniquePorts } from "@/shared/format";
@@ -9,40 +9,16 @@ import type { ContainerAction } from "@/shared/ipc/bindings/ContainerAction";
 import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";
 import { keys } from "@/shared/query";
 import { Button, Segmented, cx } from "@/shared/ui/controls";
-import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
+import { Banner, Spinner } from "@/shared/ui/feedback";
+import { ICONS, RemoveDialog, STATE_DOT, allowedActions } from "./containerUi";
+
+export { allowedActions };
+import { CreateWizard } from "./create/CreateWizard";
+import { ContainerDetail } from "./detail/ContainerDetail";
+import { useContainersNav } from "./store";
 
 type Filter = "all" | "running" | "stopped";
 type Op = ContainerAction | "remove";
-
-const STATE_DOT: Record<string, string> = {
-  running: "bg-ok",
-  paused: "bg-warn",
-  restarting: "bg-run",
-  created: "bg-line-strong",
-  exited: "bg-off",
-  dead: "bg-err",
-  removing: "bg-err",
-};
-
-/** Acciones válidas según el estado que informa Docker. */
-export function allowedActions(state: string): ContainerAction[] {
-  switch (state) {
-    case "running":
-      return ["stop", "restart", "pause"];
-    case "paused":
-      return ["unpause", "stop"];
-    case "restarting":
-      return ["stop"];
-    case "created":
-    case "exited":
-    case "dead":
-      return ["start"];
-    default:
-      return [];
-  }
-}
-
-const ICONS: Record<ContainerAction, typeof Play> = { start: Play, stop: Square, restart: RotateCw, pause: Pause, unpause: Play };
 
 export function matchesContainer(c: ContainerSummary, filter: Filter, query: string): boolean {
   if (filter === "running" && c.state !== "running") return false;
@@ -58,40 +34,6 @@ interface Failure {
   message: string;
 }
 
-function RemoveDialog({ c, onClose, onConfirm }: { c: ContainerSummary; onClose: () => void; onConfirm: (force: boolean, volumes: boolean) => void }) {
-  const { t } = useTranslation();
-  const active = c.state === "running" || c.state === "paused" || c.state === "restarting";
-  const [force, setForce] = useState(false);
-  const [volumes, setVolumes] = useState(false);
-  return (
-    <Dialog
-      title={t("containers.removeTitle", { name: c.name })}
-      onClose={onClose}
-      footer={
-        <>
-          <Button onClick={onClose}>{t("containers.cancel")}</Button>
-          <Button variant="danger" disabled={active && !force} onClick={() => onConfirm(force, volumes)}>
-            {t("containers.confirmRemove")}
-          </Button>
-        </>
-      }
-    >
-      <p>{t("containers.removeBody")}</p>
-      <p className="selectable flex gap-3 font-mono text-[12px] text-ink-3">
-        <span>{c.image}</span>
-        <span>{shortId(c.id)}</span>
-      </p>
-      {active && (
-        <>
-          <Banner tone="warn">{t("containers.removeRunning", { state: t(`containers.state.${c.state}`).toLowerCase() })}</Banner>
-          <Checkbox checked={force} onChange={setForce} label={t("containers.removeForce")} />
-        </>
-      )}
-      <Checkbox checked={volumes} onChange={setVolumes} label={t("containers.removeVolumes")} hint={t("containers.removeVolumesHint")} />
-    </Dialog>
-  );
-}
-
 function ContainersTable() {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
@@ -101,6 +43,7 @@ function ContainersTable() {
   const [busy, setBusy] = useState<Record<string, Op>>({});
   const [failure, setFailure] = useState<Failure | null>(null);
   const [removing, setRemoving] = useState<ContainerSummary | null>(null);
+  const nav = useContainersNav();
 
   const run = useMutation({
     mutationFn: async ({ c, op, force = false, volumes = false }: { c: ContainerSummary; op: Op; force?: boolean; volumes?: boolean }) =>
@@ -155,6 +98,10 @@ function ContainersTable() {
           {q.isFetching ? <Spinner size={14} /> : <RefreshCw size={14} />}
           {t("containers.refresh")}
         </Button>
+        <Button variant="primary" onClick={() => nav.showCreate()}>
+          <Plus size={15} />
+          {t("containers.create")}
+        </Button>
       </div>
 
       {failure && (
@@ -201,9 +148,14 @@ function ContainersTable() {
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <span aria-hidden className={cx("h-2 w-2 shrink-0 rounded-full", STATE_DOT[c.state] ?? "bg-off")} />
-                        <span className="selectable truncate font-medium" title={c.name}>
-                          {c.name}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => nav.showDetail(c.id, c.name)}
+                          title={t("containers.openDetail", { name: c.name })}
+                          className="truncate text-left font-medium hover:text-beacon-strong hover:underline"
+                        >
+                          <span>{c.name}</span>
+                        </button>
                       </div>
                       <div className="mt-0.5 flex items-center gap-2 pl-4 text-[11.5px] text-ink-3">
                         <span className="selectable font-mono">{shortId(c.id)}</span>
@@ -270,7 +222,6 @@ function ContainersTable() {
           {visible.length === 0 && <p className="px-4 py-10 text-center text-[13px] text-ink-2">{t("containers.noMatches")}</p>}
         </div>
       )}
-      <p className="mt-3 text-[12px] text-ink-3">{t("containers.later")}</p>
 
       {removing && (
         <RemoveDialog
@@ -287,10 +238,22 @@ function ContainersTable() {
   );
 }
 
+function ContainersPages() {
+  const page = useContainersNav((s) => s.page);
+  switch (page.kind) {
+    case "detail":
+      return <ContainerDetail key={page.id} id={page.id} name={page.name} tab={page.tab} />;
+    case "create":
+      return <CreateWizard initial={page.spec} notes={page.notes} sourceName={page.sourceName} />;
+    default:
+      return <ContainersTable />;
+  }
+}
+
 export function ContainersView() {
   return (
     <RequireConnection>
-      <ContainersTable />
+      <ContainersPages />
     </RequireConnection>
   );
 }

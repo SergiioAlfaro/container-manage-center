@@ -74,7 +74,7 @@ describe("Contenedores", () => {
   it("la interfaz sigue respondiendo mientras una operación está en curso", async () => {
     let release!: () => void;
     api.containerAction.mockImplementationOnce(
-      (id) => new Promise((r) => (release = () => r({ id, status: "exited", exitCode: 0 }))),
+      (id) => new Promise((r) => (release = () => r({ id, name: "web", status: "exited", exitCode: 0 }))),
     );
     renderWithQuery(<ContainersView />);
     await screen.findByText("web", { selector: "span" });

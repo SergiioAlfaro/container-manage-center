@@ -13,4 +13,9 @@ createCommand: string,
 /**
  * Cuerpo JSON de `POST /containers/create`.
  */
-body: string, };
+body: string, 
+/**
+ * Valores de variables sensibles sustituidos por `********` en los
+ * comandos y el cuerpo mostrados (a Docker se envían completos).
+ */
+secretsHidden: number, };

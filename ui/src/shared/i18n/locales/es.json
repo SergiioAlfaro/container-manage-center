@@ -183,7 +183,9 @@
     "dismiss": "Cerrar aviso",
     "unknown": "Desconocido",
     "loading": "Cargando…",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "yes": "Sí",
+    "no": "No"
   },
   "ops": {
     "system": {
@@ -199,13 +201,27 @@
       "pause": "Pausar contenedor",
       "unpause": "Reanudar contenedor",
       "remove": "Eliminar contenedor",
-      "state": "Comprobar estado del contenedor"
+      "state": "Comprobar estado del contenedor",
+      "create": "Crear contenedor",
+      "inspect": "Inspeccionar contenedor",
+      "logs": "Seguir logs",
+      "stats": "Seguir estadísticas",
+      "exec": "Sesión de terminal",
+      "exec_create": "Preparar terminal",
+      "exec_inspect": "Comprobar fin de la terminal"
     },
     "image": {
-      "list": "Listar imágenes"
+      "list": "Listar imágenes",
+      "inspect": "Inspeccionar imagen"
     },
     "compose": {
       "version": "Consultar versión de Compose"
+    },
+    "network": {
+      "list": "Listar redes"
+    },
+    "volume": {
+      "list": "Listar volúmenes"
     }
   },
   "conn": {
@@ -390,9 +406,8 @@
     "actionOn": "{{action}} {{name}}",
     "failed": "{{action}} {{name}}: {{message}}",
     "empty": "No hay contenedores",
-    "emptyBody": "Los contenedores que existan en Docker aparecerán aquí. La creación de contenedores llega en la fase 3.",
+    "emptyBody": "Los contenedores que existan en Docker aparecerán aquí. Usa «Crear contenedor» para crear uno a partir de una imagen local.",
     "noMatches": "Ningún contenedor coincide con la búsqueda.",
-    "later": "Creación, logs, inspección y terminal llegan en la fase 3.",
     "loadError": "No se pudo obtener la lista de contenedores: {{message}}",
     "removeTitle": "Eliminar {{name}}",
     "removeBody": "Se eliminará el contenedor y su capa de escritura. No se puede deshacer.",
@@ -402,7 +417,9 @@
     "removeVolumesHint": "Los volúmenes con nombre y los directorios vinculados no se tocan.",
     "cancel": "Cancelar",
     "confirmRemove": "Eliminar contenedor",
-    "dismiss": "Cerrar"
+    "dismiss": "Cerrar",
+    "create": "Crear contenedor",
+    "openDetail": "Abrir {{name}}"
   },
   "images": {
     "refresh": "Actualizar",
@@ -476,5 +493,373 @@
     "title": "La interfaz ha encontrado un error",
     "body": "Docker no se ha visto afectado. Puedes recargar la ventana; si el error se repite, copia este texto para notificarlo.",
     "reload": "Recargar ventana"
+  },
+  "restart": {
+    "no": "No reiniciar",
+    "always": "Siempre",
+    "unlessStopped": "Salvo si se detuvo a mano",
+    "onFailure": "Si falla"
+  },
+  "detail": {
+    "back": "Contenedores",
+    "duplicate": "Duplicar",
+    "duplicateFailed": "No se pudo leer la configuración para duplicarla: {{message}}",
+    "loadError": "No se pudo inspeccionar el contenedor: {{message}}",
+    "notFound": "El contenedor {{name}} ya no existe en Docker.",
+    "tabs": {
+      "summary": "Resumen",
+      "logs": "Logs",
+      "terminal": "Terminal",
+      "stats": "Estadísticas",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "General",
+      "process": "Proceso",
+      "ports": "Puertos publicados",
+      "restartResources": "Reinicio y recursos",
+      "env": "Variables de entorno",
+      "networks": "Redes",
+      "mounts": "Almacenamiento",
+      "labels": "Etiquetas"
+    },
+    "f": {
+      "id": "ID",
+      "image": "Imagen",
+      "created": "Creado",
+      "started": "Iniciado",
+      "finished": "Terminado",
+      "exitCode": "Código de salida",
+      "oom": "Terminado por falta de memoria",
+      "error": "Error",
+      "health": "Salud",
+      "pid": "PID",
+      "restartCount": "Reinicios",
+      "compose": "Proyecto Compose",
+      "entrypoint": "Entrypoint",
+      "command": "Comando",
+      "workingDir": "Directorio de trabajo",
+      "user": "Usuario",
+      "hostname": "Nombre de host",
+      "tty": "TTY",
+      "stdin": "STDIN abierto",
+      "restart": "Política de reinicio",
+      "cpus": "CPU",
+      "memory": "Memoria",
+      "memoryReservation": "Reserva de memoria",
+      "flags": "Opciones",
+      "network": "Red",
+      "gateway": "Puerta de enlace"
+    },
+    "imageDefault": "el de la imagen",
+    "maxRetries_one": "máx. {{count}} intento",
+    "maxRetries_other": "máx. {{count}} intentos",
+    "unlimited": "sin límite",
+    "noPorts": "No publica puertos en el equipo.",
+    "exposedOnly": "Expuestos sin publicar: {{ports}}",
+    "noEnv": "Sin variables.",
+    "revealSecrets_one": "Mostrar {{count}} valor oculto",
+    "revealSecrets_other": "Mostrar {{count}} valores ocultos",
+    "hideSecrets": "Ocultar valores sensibles",
+    "hidden": "oculto",
+    "reveal": "Mostrar valor",
+    "hide": "Ocultar valor",
+    "networkMode": "Modo de red: {{mode}}",
+    "noNetworks": "Sin redes.",
+    "noMounts": "Sin montajes.",
+    "readOnly": "solo lectura",
+    "noLabels": "Sin etiquetas.",
+    "inspectHint": "Salida completa de docker inspect {{name}}, tal como la devuelve Docker."
+  },
+  "logs": {
+    "tail": "Últimas",
+    "all": "Todas",
+    "lastN_one": "{{count}} línea",
+    "lastN_other": "{{count}} líneas",
+    "filter": "Filtrar líneas",
+    "timestamps": "Marcas de tiempo",
+    "follow": "Seguir al final",
+    "stop": "Dejar de seguir",
+    "reopen": "Volver a abrir",
+    "live": "Recibiendo logs en directo",
+    "count_one": "{{count}} línea",
+    "count_other": "{{count}} líneas",
+    "dropped": "Se muestran solo las últimas {{max}} líneas; las anteriores se descartaron.",
+    "opening": "Abriendo logs…",
+    "empty": "Todavía no hay salida.",
+    "noMatches": "Ninguna línea coincide con el filtro."
+  },
+  "terminal": {
+    "shell": "Shell",
+    "auto": "Automática",
+    "open": "Abrir terminal",
+    "reopen": "Abrir otra sesión",
+    "close": "Cerrar sesión",
+    "hint": "Ejecuta una shell con docker exec -it. Al cerrar la sesión se termina la shell.",
+    "live": "Sesión abierta",
+    "notRunning": "El contenedor no está en ejecución: inícialo para abrir una terminal."
+  },
+  "stats": {
+    "stop": "Dejar de recibir",
+    "reopen": "Volver a abrir",
+    "live": "Recibiendo estadísticas",
+    "samples_one": "{{count}} muestra",
+    "samples_other": "{{count}} muestras",
+    "notRunning": "El contenedor no está en ejecución: no hay estadísticas que mostrar.",
+    "cpu": "CPU",
+    "cpuSub_one": "{{count}} CPU disponible",
+    "cpuSub_other": "{{count}} CPU disponibles",
+    "cpuTrend": "Evolución del uso de CPU",
+    "memory": "Memoria",
+    "memorySub": "de {{limit}} · {{pct}}",
+    "memoryTrend": "Evolución del uso de memoria",
+    "pids": "Procesos",
+    "net": "Red (recibido / enviado)",
+    "block": "Disco",
+    "read": "leído",
+    "written": "escrito",
+    "formulaHint": "Valores calculados como docker stats: la CPU es el porcentaje sobre una CPU y la memoria descuenta la caché de páginas."
+  },
+  "stream": {
+    "opening": "Abriendo…",
+    "openFailed": "No se pudo abrir: {{message}}",
+    "failed": "El flujo terminó con un error: {{message}}",
+    "idle": "Cerrado."
+  },
+  "create": {
+    "title": "Crear contenedor",
+    "titleDuplicate": "Duplicar {{name}}",
+    "notesTitle": "Algunos ajustes del original no se trasladan:",
+    "tabs": {
+      "general": "General",
+      "env": "Entorno",
+      "network": "Red",
+      "storage": "Almacenamiento",
+      "resources": "Recursos",
+      "advanced": "Avanzado"
+    },
+    "f": {
+      "name": "Nombre",
+      "image": "Imagen",
+      "command": "Comando",
+      "entrypoint": "Entrypoint",
+      "workingDir": "Directorio de trabajo",
+      "network": "Red",
+      "hostname": "Nombre de host",
+      "hostIp": "IP del equipo",
+      "hostPort": "Puerto del equipo",
+      "containerPort": "Puerto del contenedor",
+      "protocol": "Protocolo",
+      "publishAll": "Publicar todos los puertos expuestos en puertos libres",
+      "mountKind": "Tipo de montaje",
+      "readOnly": "Solo lectura",
+      "volumeName": "Volumen",
+      "hostPath": "Carpeta del equipo",
+      "target": "Ruta en el contenedor",
+      "cpus": "CPU",
+      "memory": "Límite de memoria",
+      "memoryReservation": "Reserva de memoria",
+      "unit": "Unidad",
+      "restart": "Política",
+      "maxRetries": "Intentos máximos",
+      "user": "Usuario",
+      "tty": "Asignar una TTY",
+      "interactive": "Mantener STDIN abierto",
+      "init": "Usar un proceso init",
+      "readOnlyRootfs": "Sistema de archivos raíz de solo lectura",
+      "autoRemove": "Eliminar al terminar",
+      "privileged": "Modo privilegiado",
+      "capAdd": "Añadir capacidades",
+      "capDrop": "Quitar capacidades",
+      "key": "Clave {{n}}",
+      "value": "Valor {{n}}"
+    },
+    "h": {
+      "name": "Opcional: si lo dejas vacío, Docker genera uno.",
+      "image": "Debe existir en este equipo (las descargas llegan en la fase 4).",
+      "imageLocal": "Imagen local: {{ref}}",
+      "imageReading": "Leyendo la configuración de la imagen…",
+      "argv": "Se divide en argumentos con comillas como en la shell, pero no se ejecuta ninguna shell.",
+      "fromImage": "Vacío = el de la imagen: {{value}}",
+      "entrypointMulti": "Docker solo admite un ejecutable en --entrypoint: los demás elementos se envían al principio del comando.",
+      "network": "Las redes se gestionan en la fase 5.",
+      "publishAll": "Equivale a --publish-all.",
+      "volumeName": "Vacío = volumen anónimo. Si no existe, Docker lo crea.",
+      "cpus": "Por ejemplo 0.5 o 2.",
+      "maxRetries": "0 = sin límite.",
+      "user": "Nombre o UID[:GID]. Vacío = el de la imagen."
+    },
+    "ph": {
+      "name": "servidor-web",
+      "hostname": "el ID corto",
+      "allIps": "todas",
+      "anyPort": "uno libre",
+      "anonymous": "anónimo",
+      "unlimited": "sin límite"
+    },
+    "g": {
+      "process": "Proceso",
+      "processHint": "Lo que se ejecuta al iniciar el contenedor.",
+      "env": "Variables de entorno",
+      "envHint": "Los valores de claves como PASSWORD o TOKEN se ocultan en pantalla, pero se envían a Docker tal cual y cualquiera con acceso a Docker puede verlos.",
+      "labels": "Etiquetas",
+      "ports": "Puertos",
+      "portsHint": "Publica puertos del contenedor en este equipo.",
+      "hosts": "Entradas de /etc/hosts",
+      "hostsHint": "Nombre de host e IP (o host-gateway).",
+      "mounts": "Montajes",
+      "mountsHint": "Volúmenes de Docker o carpetas de este equipo (bind mounts).",
+      "limits": "Límites",
+      "limitsHint": "Vacío = sin límite.",
+      "restart": "Reinicio",
+      "restartHint": "Qué hace Docker cuando el proceso principal termina.",
+      "options": "Opciones",
+      "caps": "Capacidades del kernel",
+      "capsHint": "Separadas por comas, p. ej. NET_ADMIN o ALL."
+    },
+    "add": {
+      "env": "Añadir variable",
+      "label": "Añadir etiqueta",
+      "port": "Añadir puerto",
+      "host": "Añadir entrada",
+      "mount": "Añadir montaje"
+    },
+    "remove": {
+      "row": "Quitar fila {{n}}",
+      "port": "Quitar puerto {{n}}",
+      "mount": "Quitar montaje {{n}}"
+    },
+    "empty": {
+      "env": "Sin variables adicionales.",
+      "labels": "Sin etiquetas.",
+      "ports": "No se publica ningún puerto.",
+      "hosts": "Sin entradas.",
+      "mounts": "Sin montajes."
+    },
+    "mountKind": {
+      "volume": "Volumen",
+      "bind": "Carpeta del equipo"
+    },
+    "defaultNetwork": "Predeterminada (bridge)",
+    "addExposed": "Publicar los expuestos ({{ports}})",
+    "imageEnv_one": "La imagen ya define {{count}} variable",
+    "imageEnv_other": "La imagen ya define {{count}} variables",
+    "imageVolumes": "La imagen declara volúmenes en {{paths}}. Si no montas nada ahí, Docker crea volúmenes anónimos.",
+    "imageNotLocal": "La imagen {{ref}} no está en este equipo. Docker no la descargará al crear el contenedor; descárgala antes (fase 4) o elige una local.",
+    "imageDefaultsError": "No se pudo leer la configuración de la imagen: {{message}}",
+    "listError": "No se pudo obtener la lista: {{message}}",
+    "pickFolder": "Elegir carpeta",
+    "argsParsed": "Argumentos resultantes",
+    "equivalent": "Equivalente",
+    "apiBody": "API",
+    "equivalentHint": "Comando de la CLI de Docker equivalente. La aplicación no lo ejecuta: envía la petición a la API y la registra en el panel de actividad.",
+    "bodyHint": "Cuerpo de POST /containers/create que se enviará a Docker.",
+    "previewing": "Comprobando…",
+    "review": "Revisión",
+    "noIssues": "Sin problemas.",
+    "blocked_one": "Corrige {{count}} error para continuar.",
+    "blocked_other": "Corrige {{count}} errores para continuar.",
+    "create": "Crear",
+    "createStart": "Crear e iniciar",
+    "failed": "No se pudo crear el contenedor: {{message}}",
+    "startFailed": "El contenedor se creó, pero no pudo iniciarse: {{message}}",
+    "dockerWarning": "Aviso de Docker: {{message}}",
+    "secretsHidden_one": "{{count}} valor sensible aparece como ******** aquí y en el panel de actividad; a Docker se envía completo.",
+    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí y en el panel de actividad; a Docker se envían completos."
+  },
+  "issues": {
+    "name": {
+      "invalid": "Nombre no válido: usa letras, números, «_», «.» o «-», y empieza por letra o número."
+    },
+    "image": {
+      "required": "Indica una imagen.",
+      "invalid": "Referencia de imagen no válida."
+    },
+    "argv": {
+      "nul": "No puede contener el carácter nulo.",
+      "unclosedQuote": "Hay una comilla sin cerrar.",
+      "trailingEscape": "Termina en una barra invertida sin carácter detrás."
+    },
+    "path": {
+      "notAbsolute": "Debe ser una ruta absoluta (empezar por /)."
+    },
+    "user": {
+      "invalid": "El usuario no puede contener espacios."
+    },
+    "hostname": {
+      "invalid": "Nombre de host no válido (letras, números, «-» y «.», máximo 63)."
+    },
+    "env": {
+      "keyRequired": "Falta el nombre de la variable.",
+      "keyInvalid": "Nombre de variable no válido: {{key}}",
+      "duplicate": "{{key}} está repetida; se usará el último valor."
+    },
+    "label": {
+      "keyInvalid": "Clave de etiqueta no válida.",
+      "duplicate": "Etiqueta repetida: {{key}}"
+    },
+    "network": {
+      "invalid": "Nombre de red no válido."
+    },
+    "ports": {
+      "ignoredWithNetwork": "Con la red «{{network}}» Docker ignora los puertos publicados."
+    },
+    "port": {
+      "invalid": "Puerto no válido (1–65535).",
+      "duplicate": "El puerto {{port}} del equipo está repetido.",
+      "privileged": "El puerto {{port}} es privilegiado: con Docker rootless puede fallar."
+    },
+    "ip": {
+      "invalid": "IP no válida: {{ip}}"
+    },
+    "mount": {
+      "targetInvalid": "La ruta en el contenedor debe ser absoluta y distinta de /.",
+      "targetDuplicate": "Ya hay un montaje en {{target}}."
+    },
+    "volume": {
+      "invalid": "Nombre de volumen no válido."
+    },
+    "bind": {
+      "required": "Indica la carpeta del equipo.",
+      "missing": "La carpeta {{path}} no existe en este equipo.",
+      "sensitive": "Montar {{path}} con escritura da al contenedor control sobre el sistema. Márcalo como solo lectura si no lo necesitas."
+    },
+    "cpus": {
+      "range": "Indica un número de CPU entre 0,01 y 1024."
+    },
+    "memory": {
+      "min": "Docker exige al menos 6 MiB.",
+      "invalid": "Indica una cantidad numérica.",
+      "reservationAboveLimit": "La reserva no puede superar el límite."
+    },
+    "autoRemove": {
+      "restart": "«Eliminar al terminar» no es compatible con una política de reinicio."
+    },
+    "privileged": "El modo privilegiado da al contenedor acceso casi completo al equipo.",
+    "cap": {
+      "invalid": "Capacidad no válida: {{cap}}"
+    },
+    "host": {
+      "invalid": "Nombre de host no válido."
+    }
+  },
+  "dupNotes": {
+    "composeLabels": "Las etiquetas de Compose se han quitado: el duplicado no pertenecerá al proyecto.",
+    "portsConflict": "Los mismos puertos del equipo ya están en uso por el original; cámbialos o detén el original antes de iniciar.",
+    "mountTypeUnsupported": "Hay montajes de un tipo que el asistente no admite (tmpfs, npipe…).",
+    "namedVolumesShared": "Los volúmenes con nombre se comparten con el original, no se copian.",
+    "extraNetworks": "Solo se conecta a la primera red; las demás no se trasladan.",
+    "devices": "Los dispositivos (--device) no se trasladan.",
+    "dns": "La configuración DNS no se traslada.",
+    "securityOpt": "Las opciones de seguridad (--security-opt) no se trasladan.",
+    "tmpfs": "Los montajes tmpfs no se trasladan.",
+    "volumesFrom": "--volumes-from no se traslada.",
+    "ulimits": "Los ulimits no se trasladan.",
+    "cpuset": "La asignación de CPU concretas (--cpuset-cpus) no se traslada.",
+    "pidsLimit": "El límite de procesos no se traslada.",
+    "logConfig": "La configuración de logs no se traslada.",
+    "healthcheck": "La comprobación de salud personalizada no se traslada.",
+    "stopSignal": "La señal de parada personalizada no se traslada.",
+    "imageMissing": "La imagen original ya no está en este equipo: no se pudieron separar sus valores por defecto."
   }
 }

@@ -1,14 +1,14 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-04
+Última actualización: 2026-11-05
 
 ## Resumen
 
 | | |
 |---|---|
 | **Fase actual** | 3 · Gestión de contenedores |
-| **Versión** | 0.2.1 (Fase 2 validada); Fase 3 en desarrollo |
-| **Estado de la fase** | En desarrollo |
+| **Versión** | 0.3.0 |
+| **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
 | **Fases completadas (validadas)** | 1, 2 |
 | **Fases pendientes** | 3–10 |
 
@@ -16,7 +16,7 @@
 |---|---|
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
 | 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
-| 3. Contenedores (creación, logs, inspección, terminal) | En desarrollo |
+| 3. Contenedores (creación, logs, inspección, terminal) | Pendiente de validación externa (0.3.0) |
 | 4. Imágenes (descarga, construcción, etiquetado, eliminación) | No iniciada |
 | 5. Redes | No iniciada |
 | 6. Volúmenes y bind mounts | No iniciada |
@@ -214,10 +214,58 @@ El propietario comunicó que en su Debian 13 "todo funciona correctamente" y aut
 
 ---
 
+## Fase 3 · Gestión de contenedores
+
+### Objetivos
+Crear contenedores con un asistente por pestañas, duplicar su configuración, inspeccionarlos, seguir sus logs, abrir una terminal interactiva y ver estadísticas de CPU y memoria, mostrando puertos, variables y política de reinicio. Todo con operaciones reales y registradas.
+
+### Funcionalidades implementadas
+- **Asistente de creación** (General, Entorno, Red, Almacenamiento, Recursos, Avanzado): nombre, imagen local, comando, entrypoint, directorio de trabajo, variables, etiquetas, red, nombre de host, puertos (IP, puerto del equipo, puerto del contenedor, protocolo), publicar todos, entradas de /etc/hosts, volúmenes y bind mounts (con selector de carpeta y solo lectura), CPU, memoria y reserva, política de reinicio con intentos, usuario, TTY, STDIN, init, raíz de solo lectura, eliminar al terminar, modo privilegiado y capacidades.
+- Validación en vivo en el backend (sin hablar con Docker), problemas por pestaña con enlace al campo, comando `docker run`/`docker create` equivalente y cuerpo de la API; nueva validación al crear (D-034, D-035).
+- Ayudas con datos reales: imágenes locales, configuración de la imagen elegida (comando, entrypoint, variables, puertos expuestos, volúmenes), redes y volúmenes existentes.
+- **Detalle**: acciones, duplicar, eliminar y pestañas Resumen, Logs, Terminal, Estadísticas e Inspección JSON (D-036, D-037).
+- **Duplicar** con avisos de lo que no se traslada (D-038).
+- Valores sensibles ocultos en pantalla, vista previa y panel de actividad (D-039).
+- Arranque robusto: mensaje visible si la interfaz falla antes de arrancar; xterm.js 5.5 por `freezePrototype` (D-040).
+
+### Pruebas realizadas en el entorno de desarrollo (Ubuntu 24.04, Docker 29.9.2, cgroup v1, WebKitGTK 2.52)
+| Prueba | Resultado |
+|---|---|
+| Rust unitarias | 110 motor (25 de especificación, 6 de flujos), 22 actividad, 15 configuración: todas superadas |
+| IPC con el runtime simulado de Tauri | 29 superadas, de ellas 2 contra Docker real (`DCC_DOCKER_TESTS=1`) |
+| Contra Docker real, contenedores (`live_containers`) | 7 superadas, 5 de 5 ejecuciones seguidas sin restos: crear con una especificación completa, inspeccionar y duplicar (la especificación vuelve idéntica); especificación inválida sin tráfico; imagen inexistente; logs stdout/stderr y cierre; estadísticas; terminal con código de salida y 2 redimensionados contados; cierre de la terminal que termina la shell; listas de redes y volúmenes. El tráfico HTTP capturado coincide con el registro de actividad, y el registro no contiene el valor de una contraseña |
+| Contra Docker real, Fase 2 (`live_docker`) y carrera determinista | 11 + 1 superadas |
+| Interfaz (Vitest) | 109 superadas (asistente 13, detalle 14, utilidades) |
+| Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto |
+| Prototipo congelado | La interfaz compilada arranca en Chromium con `Object.prototype` congelado |
+| `verify-phase-3.sh` (como root con `DCC_VERIFY_ALLOW_ROOT=1`) | 29 correctas, 0 fallos, 2 omitidas justificadamente (pruebas de permisos, que no aplican a root), 1 aviso (ejecución como root). Sin recursos de prueba restantes |
+| Aplicación real bajo Xvfb (binario de release) | Lista → detalle; resumen con secretos ocultos; logs en directo con marcas de tiempo; terminal real (UTF-8 y colores, cierre que termina la shell confirmado con `docker top`); estadísticas en directo; panel de actividad con cada flujo; asistente completo hasta "Crear e iniciar", con la configuración confirmada por `docker inspect` (puerto, 64 MiB, 0,5 CPU, bind de solo lectura, variable); duplicado que no arranca por puerto ocupado con el error real de Docker; eliminación con confirmación |
+| Paquete .deb 0.3.0 | Construido (3,95 MiB; depende de `libwebkit2gtk-4.1-0` y `libgtk-3-0`), instalado con `apt`, arrancado desde `/usr/bin` (asistente con validación en vivo) y desinstalado sin restos en `/usr/bin` |
+
+### Problemas detectados y resueltos durante la fase
+- **Ventana en blanco en la aplicación real** (no en el navegador): xterm.js 6 falla al cargar con `freezePrototype`. Reproducido y corregido sin desactivar la protección (D-040).
+- Al cerrar la terminal, Ctrl+C y Ctrl+D enviados juntos perdían el Ctrl+D y la shell seguía viva (D-037).
+- `inspect_exec` no se registraba y las peticiones `GET /networks?` no coincidían con el registro: corregido tras compararlo con el tráfico real.
+- Logs y terminal crecían con la página en vez de desplazarse dentro de su recuadro; el selector de unidad de memoria ocupaba todo el ancho: corregidos tras verlo en la aplicación real.
+- La contraseña de una variable aparecía en la vista previa y en el panel de actividad: ahora se oculta (D-039).
+
+### Limitaciones y observaciones
+- El selector de carpetas del sistema se abrió en la aplicación real, pero en Xvfb (sin gestor de ventanas) no se pudo completar una selección; cancelarlo no cambia nada. Se comprueba en M4.
+- Los resúmenes de cierre de los flujos (p. ej. "Sesión cerrada por el usuario…") los redacta el backend en español y aparecen así también con la interfaz en inglés, igual que los resúmenes del panel de actividad.
+- El entorno de desarrollo usa cgroup v1; las estadísticas usan las mismas fórmulas que `docker stats` para v1 y v2. Debian 13 usa cgroup v2: se comprueba en M12.
+- La imagen de prueba no incluye `stty`/`tput`; el redimensionado se comprueba en la prueba real por el tráfico (`POST /exec/{id}/resize`) y en la interfaz, y en tu equipo con M10.
+- La imagen debe estar en el equipo: la descarga de imágenes es de la Fase 4.
+- Docker rootless sigue sin probarse con un daemon real.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario repite `bash scripts/verify-phase-2.sh` en Debian 13 y envía `verify-phase-2-report.txt`. Solo si el veredicto es "parte automática superada", realiza M1–M15.
-2. Corregir lo que surja y marcar la Fase 2 como validada.
-3. Fase 3: creación de contenedores con asistente por pestañas, duplicado, inspección, logs en tiempo real, terminal interactiva, estadísticas básicas.
+1. El propietario ejecuta `bash scripts/verify-phase-3.sh` en Debian 13 y envía `verify-phase-3-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.3.0 y realiza M1–M16.
+2. Corregir lo que surja y marcar la Fase 3 como validada.
+3. Fase 4: imágenes (descarga con progreso, construcción, etiquetado, eliminación con aviso de uso).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

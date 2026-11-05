@@ -252,3 +252,81 @@ nombres sin privilegios, arranque sin sesión gráfica. Al salir (también ante
 errores o Ctrl+C) se eliminan solo los recursos con la etiqueta `dcc.test=true`
 y se comprueba que no queda ninguno. `DCC_VERIFY_ALLOW_ROOT=1` permite
 ejecutarlo como root solo en entornos de desarrollo aislados.
+
+## Fase 3 · Gestión de contenedores
+
+### D-034 · Una sola especificación para validar, crear y traducir
+El asistente trabaja sobre `ContainerSpec` (`dcc-engine/src/spec.rs`), un tipo
+propio, compartido con la interfaz mediante ts-rs. De él salen, sin duplicar
+lógica: la validación (`validate`, con códigos de problema estables y
+traducibles, y comprobación en disco de las carpetas de los bind mounts), el
+cuerpo de `POST /containers/create` (`to_create_body`, que solo envía lo
+establecido) y los argumentos de la CLI equivalente (`cli_args`). La interfaz
+pide una vista previa (`container_preview`) que valida y traduce **sin hablar con
+Docker** (no aparece en el panel de actividad); al crear, el backend vuelve a
+validar y rechaza la especificación con `engine.invalidSpec` y la lista de
+problemas sin enviar nada a Docker. Las pruebas reales comparan el tráfico HTTP
+capturado con el registro de actividad.
+
+Decisiones derivadas: los bind mounts se envían con la API `Mounts` (no `Binds`)
+para que una carpeta inexistente sea un error y no una carpeta creada por root;
+la imagen debe existir localmente (la descarga llega en la Fase 4, y el asistente
+lo explica sin consultar Docker por imágenes que no están en la lista local).
+
+### D-035 · Entrypoint con varios elementos
+La API admite un entrypoint con varios elementos, pero `docker run --entrypoint`
+solo acepta un ejecutable. Para que el comando equivalente sea fiel, el primer
+elemento va a `--entrypoint` y el resto se antepone al comando, que es como lo
+ejecuta Docker. El asistente lo advierte cuando ocurre.
+
+### D-036 · Flujos (logs, estadísticas, terminal)
+Cada flujo es **una petición larga y un único registro** en el panel de actividad,
+que pasa a "Correcto" al cerrarse con un resumen real (líneas o muestras
+recibidas, bytes enviados y recibidos, código de salida). Los datos viajan a la
+interfaz por un `Channel` de Tauri; la interfaz guarda el identificador del
+flujo y lo cierra al salir de la vista o al cerrar la ventana (`close_all`).
+Los cambios de tamaño de la terminal (`POST /exec/{id}/resize`) no se registran
+uno a uno: se cuentan en el resumen de la sesión. `exec.create` y `exec.inspect`
+sí se registran (no tienen equivalente exacto en la CLI y así se indica).
+Los logs se agrupan cada 60 ms o 500 líneas y la interfaz conserva como máximo
+10 000 líneas.
+
+### D-037 · Cierre de la terminal
+Docker no termina el proceso de un `exec` cuando se desconecta el cliente. Al
+cerrar la sesión se envía Ctrl+C, se esperan 200 ms (la TTY descarta la entrada
+pendiente al recibir la interrupción, por lo que enviarlos juntos perdía el
+Ctrl+D) y se envía Ctrl+D; después se espera hasta 3 s a que el proceso termine y
+se consulta `GET /exec/{id}/json`. Si aún sigue en ejecución, el resumen lo dice
+expresamente.
+
+### D-038 · Duplicar contenedores
+`duplicate_spec` lee la configuración con inspect del contenedor y de su imagen
+(por ID) y descarta lo heredado de la imagen (CMD, ENTRYPOINT, ENV, etiquetas,
+directorio de trabajo, usuario), las etiquetas `com.docker.compose.*` y el
+nombre. Lo que el asistente no puede trasladar (dispositivos, DNS, opciones de
+seguridad, tmpfs, ulimits, cpuset, límite de procesos, configuración de logs,
+healthcheck y señal de parada personalizados, redes adicionales…) se devuelve
+como avisos que la interfaz muestra antes de crear. La prueba real comprueba que
+duplicar un contenedor creado con el asistente devuelve exactamente la misma
+especificación.
+
+### D-039 · Valores sensibles
+Las variables cuyo nombre contiene PASSWORD, PASSWD, SECRET, TOKEN, KEY,
+CREDENTIAL o PRIVATE se ocultan en la interfaz (con opción de mostrarlas) y se
+sustituyen por `********` en la vista previa del comando y en el comando y el
+cuerpo que quedan en el panel de actividad (`ContainerSpec::redacted`). A Docker
+se le envían completas: no es cifrado, y la interfaz avisa de que cualquiera con
+acceso a Docker puede leerlas. La pestaña Inspección JSON muestra la respuesta de
+Docker tal cual, igual que `docker inspect`.
+
+### D-040 · xterm.js 5.5 y `freezePrototype`
+La configuración de seguridad de Tauri congela `Object.prototype`
+(`freezePrototype: true`). xterm.js 6 incluye código heredado de VS Code que
+asigna `toString` a objetos planos, lo que con el prototipo congelado lanza
+`TypeError` al cargar el módulo y deja la ventana en blanco (reproducido en
+Chromium y en la aplicación real). En lugar de desactivar la protección se usa
+xterm.js 5.5.0 (`@xterm/addon-fit` 0.10.0), comprobado con el prototipo
+congelado. Además, `public/boot-guard.js` muestra el error si la interfaz falla
+antes de arrancar, y `scripts/dev/check-frozen-prototype.cjs` carga la
+interfaz compilada con el prototipo congelado (lo ejecuta `verify-phase-3.sh`
+si Playwright está disponible).

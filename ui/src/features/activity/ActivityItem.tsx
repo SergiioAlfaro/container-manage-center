@@ -7,6 +7,12 @@ import type { OperationRecord } from "@/shared/ipc/bindings/OperationRecord";
 import { CopyButton, cx } from "@/shared/ui/controls";
 import { describeTransport, formatDateTime, formatDuration, formatTime, headlineCommand } from "./logic";
 
+/** `container.exec.create` → `ops.container.exec_create`: las claves de i18n tienen dos niveles. */
+export function opKey(kind: string): string {
+  const [area, ...rest] = kind.split(".");
+  return rest.length ? `ops.${area}.${rest.join("_")}` : `ops.${area}`;
+}
+
 const STATUS_TEXT: Record<OpStatus, string> = {
   running: "text-run",
   succeeded: "text-ok",
@@ -99,7 +105,7 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
             {t(`activity.via.${r.transport.via}`)}
           </span>
           <span className="min-w-0 truncate text-ink-2">
-            {t(`ops.${r.kind}`, { defaultValue: r.kind })}
+            {t(opKey(r.kind), { defaultValue: r.kind })}
             {r.target && <span className="text-ink-3"> {r.target}</span>}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-2">

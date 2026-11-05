@@ -224,6 +224,26 @@ fn absolute(p: &str) -> bool {
 }
 
 /// Rutas del equipo cuyo montaje da control sobre el sistema.
+/// Valor que sustituye a los secretos en lo que se muestra o se registra.
+pub const REDACTED: &str = "********";
+
+/// Variables cuyo valor se oculta al mostrarlo o registrarlo (no al enviarlo a
+/// Docker). Debe coincidir con `isSecretKey` de la interfaz.
+pub fn is_secret_key(key: &str) -> bool {
+    let k = key.to_ascii_uppercase();
+    [
+        "PASSWORD",
+        "PASSWD",
+        "SECRET",
+        "TOKEN",
+        "KEY",
+        "CREDENTIAL",
+        "PRIVATE",
+    ]
+    .iter()
+    .any(|w| k.contains(w))
+}
+
 const SENSITIVE_BINDS: &[&str] = &[
     "/",
     "/etc",
@@ -638,6 +658,21 @@ impl ContainerSpec {
             ..Default::default()
         };
         (t(&self.name), body)
+    }
+
+    /// Copia con los valores de las variables sensibles sustituidos por
+    /// [`REDACTED`], para mostrarla o registrarla sin exponer credenciales
+    /// (el panel de actividad, la vista previa). Devuelve cuántos se ocultaron.
+    pub fn redacted(&self) -> (ContainerSpec, usize) {
+        let mut out = self.clone();
+        let mut n = 0;
+        for kv in &mut out.env {
+            if is_secret_key(&kv.key) && !kv.value.is_empty() {
+                kv.value = REDACTED.to_owned();
+                n += 1;
+            }
+        }
+        (out, n)
     }
 
     /// Argumentos de `docker create` (o `docker run --detach`) equivalentes.

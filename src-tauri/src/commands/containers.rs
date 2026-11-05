@@ -29,17 +29,22 @@ pub struct SpecPreview {
     pub create_command: String,
     /// Cuerpo JSON de `POST /containers/create`.
     pub body: String,
+    /// Valores de variables sensibles sustituidos por `********` en los
+    /// comandos y el cuerpo mostrados (a Docker se envían completos).
+    pub secrets_hidden: u32,
 }
 
 /// Valida y traduce la especificación sin hablar con Docker (D-034).
 #[tauri::command]
 pub fn container_preview(spec: ContainerSpec) -> SpecPreview {
-    let (_, body) = spec.to_create_body();
+    let (shown, hidden) = spec.redacted();
+    let (_, body) = shown.to_create_body();
     SpecPreview {
         issues: spec.validate(true),
-        run_command: spec.cli_command(true),
-        create_command: spec.cli_command(false),
+        run_command: shown.cli_command(true),
+        create_command: shown.cli_command(false),
         body: serde_json::to_string_pretty(&body).unwrap_or_default(),
+        secrets_hidden: hidden as u32,
     }
 }
 

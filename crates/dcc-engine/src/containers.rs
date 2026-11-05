@@ -384,6 +384,9 @@ impl Engine {
             return Err(EngineError::InvalidSpec { issues });
         }
         let (name, body) = spec.to_create_body();
+        // Lo que queda en el registro de actividad no incluye los secretos.
+        let (shown, _) = spec.redacted();
+        let shown_body = shown.to_create_body().1;
         let opts = bollard::query_parameters::CreateContainerOptions {
             name: name.clone(),
             platform: String::new(),
@@ -394,8 +397,8 @@ impl Engine {
             target: Some(name.clone().unwrap_or_else(|| spec.image.trim().to_owned())),
             method: "POST",
             path: path_with_query("/containers/create", &opts),
-            body: Some(serde_json::to_string_pretty(&body).unwrap_or_default()),
-            equivalent: Some(spec.cli_args(false)),
+            body: Some(serde_json::to_string_pretty(&shown_body).unwrap_or_default()),
+            equivalent: Some(shown.cli_args(false)),
             timeout: None,
         };
         let d = self.docker().clone();

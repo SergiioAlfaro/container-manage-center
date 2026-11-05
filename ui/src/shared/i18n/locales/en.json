@@ -183,7 +183,9 @@
     "dismiss": "Dismiss notice",
     "unknown": "Unknown",
     "loading": "Loading…",
-    "retry": "Retry"
+    "retry": "Retry",
+    "yes": "Yes",
+    "no": "No"
   },
   "ops": {
     "system": {
@@ -199,13 +201,27 @@
       "pause": "Pause container",
       "unpause": "Resume container",
       "remove": "Remove container",
-      "state": "Check container state"
+      "state": "Check container state",
+      "create": "Create container",
+      "inspect": "Inspect container",
+      "logs": "Follow logs",
+      "stats": "Follow statistics",
+      "exec": "Terminal session",
+      "exec_create": "Prepare terminal",
+      "exec_inspect": "Check terminal exit"
     },
     "image": {
-      "list": "List images"
+      "list": "List images",
+      "inspect": "Inspect image"
     },
     "compose": {
       "version": "Get Compose version"
+    },
+    "network": {
+      "list": "List networks"
+    },
+    "volume": {
+      "list": "List volumes"
     }
   },
   "conn": {
@@ -390,9 +406,8 @@
     "actionOn": "{{action}} {{name}}",
     "failed": "{{action}} {{name}}: {{message}}",
     "empty": "No containers",
-    "emptyBody": "Containers that exist in Docker will appear here. Creating containers arrives in phase 3.",
+    "emptyBody": "Containers that exist in Docker will appear here. Use “Create container” to create one from a local image.",
     "noMatches": "No containers match the search.",
-    "later": "Creation, logs, inspection and terminal arrive in phase 3.",
     "loadError": "Could not get the container list: {{message}}",
     "removeTitle": "Remove {{name}}",
     "removeBody": "The container and its writable layer will be removed. This cannot be undone.",
@@ -402,7 +417,9 @@
     "removeVolumesHint": "Named volumes and bind-mounted folders are not touched.",
     "cancel": "Cancel",
     "confirmRemove": "Remove container",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "create": "Create container",
+    "openDetail": "Open {{name}}"
   },
   "images": {
     "refresh": "Refresh",
@@ -476,5 +493,373 @@
     "title": "The interface hit an error",
     "body": "Docker has not been affected. You can reload the window; if it happens again, copy this text to report it.",
     "reload": "Reload window"
+  },
+  "restart": {
+    "no": "Don't restart",
+    "always": "Always",
+    "unlessStopped": "Unless stopped manually",
+    "onFailure": "On failure"
+  },
+  "detail": {
+    "back": "Containers",
+    "duplicate": "Duplicate",
+    "duplicateFailed": "Could not read the configuration to duplicate it: {{message}}",
+    "loadError": "Could not inspect the container: {{message}}",
+    "notFound": "Container {{name}} no longer exists in Docker.",
+    "tabs": {
+      "summary": "Summary",
+      "logs": "Logs",
+      "terminal": "Terminal",
+      "stats": "Statistics",
+      "inspect": "JSON inspection"
+    },
+    "s": {
+      "general": "General",
+      "process": "Process",
+      "ports": "Published ports",
+      "restartResources": "Restart and resources",
+      "env": "Environment variables",
+      "networks": "Networks",
+      "mounts": "Storage",
+      "labels": "Labels"
+    },
+    "f": {
+      "id": "ID",
+      "image": "Image",
+      "created": "Created",
+      "started": "Started",
+      "finished": "Finished",
+      "exitCode": "Exit code",
+      "oom": "Killed for lack of memory",
+      "error": "Error",
+      "health": "Health",
+      "pid": "PID",
+      "restartCount": "Restarts",
+      "compose": "Compose project",
+      "entrypoint": "Entrypoint",
+      "command": "Command",
+      "workingDir": "Working directory",
+      "user": "User",
+      "hostname": "Hostname",
+      "tty": "TTY",
+      "stdin": "STDIN open",
+      "restart": "Restart policy",
+      "cpus": "CPU",
+      "memory": "Memory",
+      "memoryReservation": "Memory reservation",
+      "flags": "Options",
+      "network": "Network",
+      "gateway": "Gateway"
+    },
+    "imageDefault": "image default",
+    "maxRetries_one": "max {{count}} attempt",
+    "maxRetries_other": "max {{count}} attempts",
+    "unlimited": "unlimited",
+    "noPorts": "No ports published on this computer.",
+    "exposedOnly": "Exposed but not published: {{ports}}",
+    "noEnv": "No variables.",
+    "revealSecrets_one": "Show {{count}} hidden value",
+    "revealSecrets_other": "Show {{count}} hidden values",
+    "hideSecrets": "Hide sensitive values",
+    "hidden": "hidden",
+    "reveal": "Show value",
+    "hide": "Hide value",
+    "networkMode": "Network mode: {{mode}}",
+    "noNetworks": "No networks.",
+    "noMounts": "No mounts.",
+    "readOnly": "read-only",
+    "noLabels": "No labels.",
+    "inspectHint": "Full output of docker inspect {{name}}, exactly as Docker returns it."
+  },
+  "logs": {
+    "tail": "Last",
+    "all": "All",
+    "lastN_one": "{{count}} line",
+    "lastN_other": "{{count}} lines",
+    "filter": "Filter lines",
+    "timestamps": "Timestamps",
+    "follow": "Follow output",
+    "stop": "Stop following",
+    "reopen": "Open again",
+    "live": "Receiving live logs",
+    "count_one": "{{count}} line",
+    "count_other": "{{count}} lines",
+    "dropped": "Only the last {{max}} lines are shown; older ones were discarded.",
+    "opening": "Opening logs…",
+    "empty": "No output yet.",
+    "noMatches": "No line matches the filter."
+  },
+  "terminal": {
+    "shell": "Shell",
+    "auto": "Automatic",
+    "open": "Open terminal",
+    "reopen": "Open another session",
+    "close": "Close session",
+    "hint": "Runs a shell with docker exec -it. Closing the session ends the shell.",
+    "live": "Session open",
+    "notRunning": "The container is not running: start it to open a terminal."
+  },
+  "stats": {
+    "stop": "Stop receiving",
+    "reopen": "Open again",
+    "live": "Receiving statistics",
+    "samples_one": "{{count}} sample",
+    "samples_other": "{{count}} samples",
+    "notRunning": "The container is not running: there are no statistics to show.",
+    "cpu": "CPU",
+    "cpuSub_one": "{{count}} CPU available",
+    "cpuSub_other": "{{count}} CPUs available",
+    "cpuTrend": "CPU usage over time",
+    "memory": "Memory",
+    "memorySub": "of {{limit}} · {{pct}}",
+    "memoryTrend": "Memory usage over time",
+    "pids": "Processes",
+    "net": "Network (received / sent)",
+    "block": "Disk",
+    "read": "read",
+    "written": "written",
+    "formulaHint": "Values computed like docker stats: CPU is a percentage of one CPU and memory excludes the page cache."
+  },
+  "stream": {
+    "opening": "Opening…",
+    "openFailed": "Could not open: {{message}}",
+    "failed": "The stream ended with an error: {{message}}",
+    "idle": "Closed."
+  },
+  "create": {
+    "title": "Create container",
+    "titleDuplicate": "Duplicate {{name}}",
+    "notesTitle": "Some settings of the original are not carried over:",
+    "tabs": {
+      "general": "General",
+      "env": "Environment",
+      "network": "Network",
+      "storage": "Storage",
+      "resources": "Resources",
+      "advanced": "Advanced"
+    },
+    "f": {
+      "name": "Name",
+      "image": "Image",
+      "command": "Command",
+      "entrypoint": "Entrypoint",
+      "workingDir": "Working directory",
+      "network": "Network",
+      "hostname": "Hostname",
+      "hostIp": "Host IP",
+      "hostPort": "Host port",
+      "containerPort": "Container port",
+      "protocol": "Protocol",
+      "publishAll": "Publish all exposed ports on free ports",
+      "mountKind": "Mount type",
+      "readOnly": "Read-only",
+      "volumeName": "Volume",
+      "hostPath": "Host folder",
+      "target": "Path in container",
+      "cpus": "CPU",
+      "memory": "Memory limit",
+      "memoryReservation": "Memory reservation",
+      "unit": "Unit",
+      "restart": "Policy",
+      "maxRetries": "Maximum attempts",
+      "user": "User",
+      "tty": "Allocate a TTY",
+      "interactive": "Keep STDIN open",
+      "init": "Use an init process",
+      "readOnlyRootfs": "Read-only root filesystem",
+      "autoRemove": "Remove when it exits",
+      "privileged": "Privileged mode",
+      "capAdd": "Add capabilities",
+      "capDrop": "Drop capabilities",
+      "key": "Key {{n}}",
+      "value": "Value {{n}}"
+    },
+    "h": {
+      "name": "Optional: if empty, Docker generates one.",
+      "image": "Must exist on this computer (pulling arrives in phase 4).",
+      "imageLocal": "Local image: {{ref}}",
+      "imageReading": "Reading the image configuration…",
+      "argv": "Split into arguments with shell-style quoting, but no shell is run.",
+      "fromImage": "Empty = image default: {{value}}",
+      "entrypointMulti": "Docker accepts a single executable in --entrypoint: the remaining items are sent at the start of the command.",
+      "network": "Networks are managed in phase 5.",
+      "publishAll": "Same as --publish-all.",
+      "volumeName": "Empty = anonymous volume. Docker creates it if it doesn't exist.",
+      "cpus": "For example 0.5 or 2.",
+      "maxRetries": "0 = no limit.",
+      "user": "Name or UID[:GID]. Empty = image default."
+    },
+    "ph": {
+      "name": "web-server",
+      "hostname": "the short ID",
+      "allIps": "all",
+      "anyPort": "any free",
+      "anonymous": "anonymous",
+      "unlimited": "unlimited"
+    },
+    "g": {
+      "process": "Process",
+      "processHint": "What runs when the container starts.",
+      "env": "Environment variables",
+      "envHint": "Values of keys such as PASSWORD or TOKEN are hidden on screen, but they are sent to Docker as-is and anyone with Docker access can read them.",
+      "labels": "Labels",
+      "ports": "Ports",
+      "portsHint": "Publish container ports on this computer.",
+      "hosts": "/etc/hosts entries",
+      "hostsHint": "Hostname and IP (or host-gateway).",
+      "mounts": "Mounts",
+      "mountsHint": "Docker volumes or folders on this computer (bind mounts).",
+      "limits": "Limits",
+      "limitsHint": "Empty = unlimited.",
+      "restart": "Restart",
+      "restartHint": "What Docker does when the main process exits.",
+      "options": "Options",
+      "caps": "Kernel capabilities",
+      "capsHint": "Comma separated, e.g. NET_ADMIN or ALL."
+    },
+    "add": {
+      "env": "Add variable",
+      "label": "Add label",
+      "port": "Add port",
+      "host": "Add entry",
+      "mount": "Add mount"
+    },
+    "remove": {
+      "row": "Remove row {{n}}",
+      "port": "Remove port {{n}}",
+      "mount": "Remove mount {{n}}"
+    },
+    "empty": {
+      "env": "No additional variables.",
+      "labels": "No labels.",
+      "ports": "No ports are published.",
+      "hosts": "No entries.",
+      "mounts": "No mounts."
+    },
+    "mountKind": {
+      "volume": "Volume",
+      "bind": "Host folder"
+    },
+    "defaultNetwork": "Default (bridge)",
+    "addExposed": "Publish exposed ports ({{ports}})",
+    "imageEnv_one": "The image already defines {{count}} variable",
+    "imageEnv_other": "The image already defines {{count}} variables",
+    "imageVolumes": "The image declares volumes at {{paths}}. If you mount nothing there, Docker creates anonymous volumes.",
+    "imageNotLocal": "Image {{ref}} is not on this computer. Docker won't pull it when creating the container; pull it first (phase 4) or choose a local one.",
+    "imageDefaultsError": "Could not read the image configuration: {{message}}",
+    "listError": "Could not get the list: {{message}}",
+    "pickFolder": "Choose folder",
+    "argsParsed": "Resulting arguments",
+    "equivalent": "Equivalent",
+    "apiBody": "API",
+    "equivalentHint": "Equivalent Docker CLI command. The app doesn't run it: it sends the request to the API and records it in the activity panel.",
+    "bodyHint": "Body of POST /containers/create that will be sent to Docker.",
+    "previewing": "Checking…",
+    "review": "Review",
+    "noIssues": "No problems.",
+    "blocked_one": "Fix {{count}} error to continue.",
+    "blocked_other": "Fix {{count}} errors to continue.",
+    "create": "Create",
+    "createStart": "Create and start",
+    "failed": "Could not create the container: {{message}}",
+    "startFailed": "The container was created but could not be started: {{message}}",
+    "dockerWarning": "Docker warning: {{message}}",
+    "secretsHidden_one": "{{count}} sensitive value is shown as ******** here and in the activity panel; Docker receives it in full.",
+    "secretsHidden_other": "{{count}} sensitive values are shown as ******** here and in the activity panel; Docker receives them in full."
+  },
+  "issues": {
+    "name": {
+      "invalid": "Invalid name: use letters, digits, “_”, “.” or “-”, starting with a letter or digit."
+    },
+    "image": {
+      "required": "Enter an image.",
+      "invalid": "Invalid image reference."
+    },
+    "argv": {
+      "nul": "Cannot contain the NUL character.",
+      "unclosedQuote": "There is an unclosed quote.",
+      "trailingEscape": "Ends with a backslash with nothing after it."
+    },
+    "path": {
+      "notAbsolute": "Must be an absolute path (start with /)."
+    },
+    "user": {
+      "invalid": "The user cannot contain spaces."
+    },
+    "hostname": {
+      "invalid": "Invalid hostname (letters, digits, “-” and “.”, 63 max)."
+    },
+    "env": {
+      "keyRequired": "The variable name is missing.",
+      "keyInvalid": "Invalid variable name: {{key}}",
+      "duplicate": "{{key}} is repeated; the last value wins."
+    },
+    "label": {
+      "keyInvalid": "Invalid label key.",
+      "duplicate": "Repeated label: {{key}}"
+    },
+    "network": {
+      "invalid": "Invalid network name."
+    },
+    "ports": {
+      "ignoredWithNetwork": "With the “{{network}}” network Docker ignores published ports."
+    },
+    "port": {
+      "invalid": "Invalid port (1–65535).",
+      "duplicate": "Host port {{port}} is repeated.",
+      "privileged": "Port {{port}} is privileged: it may fail with rootless Docker."
+    },
+    "ip": {
+      "invalid": "Invalid IP: {{ip}}"
+    },
+    "mount": {
+      "targetInvalid": "The container path must be absolute and not /.",
+      "targetDuplicate": "There is already a mount at {{target}}."
+    },
+    "volume": {
+      "invalid": "Invalid volume name."
+    },
+    "bind": {
+      "required": "Enter the host folder.",
+      "missing": "Folder {{path}} does not exist on this computer.",
+      "sensitive": "Mounting {{path}} writable gives the container control over the system. Mark it read-only if you don't need writes."
+    },
+    "cpus": {
+      "range": "Enter a number of CPUs between 0.01 and 1024."
+    },
+    "memory": {
+      "min": "Docker requires at least 6 MiB.",
+      "invalid": "Enter a numeric amount.",
+      "reservationAboveLimit": "The reservation cannot exceed the limit."
+    },
+    "autoRemove": {
+      "restart": "“Remove when it exits” is not compatible with a restart policy."
+    },
+    "privileged": "Privileged mode gives the container almost full access to the computer.",
+    "cap": {
+      "invalid": "Invalid capability: {{cap}}"
+    },
+    "host": {
+      "invalid": "Invalid hostname."
+    }
+  },
+  "dupNotes": {
+    "composeLabels": "Compose labels were removed: the duplicate won't belong to the project.",
+    "portsConflict": "The same host ports are in use by the original; change them or stop the original before starting.",
+    "mountTypeUnsupported": "There are mounts of a type the wizard doesn't support (tmpfs, npipe…).",
+    "namedVolumesShared": "Named volumes are shared with the original, not copied.",
+    "extraNetworks": "Only the first network is connected; the others are not carried over.",
+    "devices": "Devices (--device) are not carried over.",
+    "dns": "DNS settings are not carried over.",
+    "securityOpt": "Security options (--security-opt) are not carried over.",
+    "tmpfs": "tmpfs mounts are not carried over.",
+    "volumesFrom": "--volumes-from is not carried over.",
+    "ulimits": "ulimits are not carried over.",
+    "cpuset": "Pinned CPUs (--cpuset-cpus) are not carried over.",
+    "pidsLimit": "The process limit is not carried over.",
+    "logConfig": "Logging configuration is not carried over.",
+    "healthcheck": "The custom health check is not carried over.",
+    "stopSignal": "The custom stop signal is not carried over.",
+    "imageMissing": "The original image is no longer on this computer: its defaults could not be separated."
   }
 }

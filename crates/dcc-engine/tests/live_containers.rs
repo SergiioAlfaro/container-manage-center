@@ -120,6 +120,7 @@ async fn create_full_spec_inspect_and_duplicate_roundtrip() {
         env: vec![
             KeyValue::new("MODO", "prueba"),
             KeyValue::new("MSG", "hola mundo; $(id)"),
+            KeyValue::new("DB_PASSWORD", "no-debe-aparecer"),
         ],
         labels: vec![
             KeyValue::new("dcc.test", "true"),
@@ -160,7 +161,8 @@ async fn create_full_spec_inspect_and_duplicate_roundtrip() {
     let created = e.create_container(&spec).await.expect("crear");
     clean.containers.push(created.id.clone());
 
-    // Lo registrado coincide con el tráfico y lleva el cuerpo y el equivalente exactos.
+    // Lo registrado coincide con el tráfico y lleva el cuerpo y el equivalente
+    // exactos, salvo los valores sensibles, que se ocultan.
     let rec = log
         .snapshot()
         .into_iter()
@@ -170,7 +172,9 @@ async fn create_full_spec_inspect_and_duplicate_roundtrip() {
     assert_eq!(
         rec.equivalent_command.as_deref(),
         Some(
-            spec.cli_command(false)
+            spec.redacted()
+                .0
+                .cli_command(false)
                 .replacen(
                     "docker ",
                     &format!("docker --host unix://{} ", proxy.path.display()),
@@ -182,6 +186,17 @@ async fn create_full_spec_inspect_and_duplicate_roundtrip() {
     let body: serde_json::Value =
         serde_json::from_str(&rec.request_body.as_ref().unwrap().text).unwrap();
     assert_eq!(body["HostConfig"]["Memory"], 64 * 1024 * 1024);
+    assert!(body["Env"]
+        .as_array()
+        .unwrap()
+        .contains(&serde_json::json!("DB_PASSWORD=********")));
+    for r in log.snapshot() {
+        let all = format!("{r:?}");
+        assert!(
+            !all.contains("no-debe-aparecer"),
+            "secreto en el registro: {all}"
+        );
+    }
     assert_eq!(recorded(&log), proxy.requests());
     assert!(
         proxy.requests().iter().any(|(m, p)| m == "POST"
@@ -200,6 +215,10 @@ async fn create_full_spec_inspect_and_duplicate_roundtrip() {
     assert_eq!(d.entrypoint, vec!["/sleeper"]);
     assert_eq!(d.command, vec!["talk", "2"]);
     assert!(d.env.contains(&KeyValue::new("MSG", "hola mundo; $(id)")));
+    // A Docker sí se le envía el valor real.
+    assert!(d
+        .env
+        .contains(&KeyValue::new("DB_PASSWORD", "no-debe-aparecer")));
     assert!(
         d.env.contains(&KeyValue::new("DCC_FIXTURE", "2")),
         "hereda el ENV de la imagen"

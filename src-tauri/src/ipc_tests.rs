@@ -376,6 +376,17 @@ fn preview_validates_and_translates_without_docker() {
     assert_eq!(issues[0]["code"], "bind.missing");
     assert_eq!(issues[0]["severity"], "error");
     assert_eq!(issues[0]["field"], "mounts.0.source");
+    // Los secretos no aparecen en lo que se muestra.
+    let v = invoke(
+        &h,
+        "container_preview",
+        json!({ "spec": { "image": "postgres:17", "env": [{ "key": "POSTGRES_PASSWORD", "value": "s3creto" }] } }),
+    )
+    .unwrap();
+    assert_eq!(v["secretsHidden"], 1);
+    for k in ["runCommand", "createCommand", "body"] {
+        assert!(!v[k].as_str().unwrap().contains("s3creto"), "{k}: {}", v[k]);
+    }
     // Nada de esto habla con Docker: el registro de actividad sigue vacío.
     let list = invoke(&h, "activity_list", json!({})).unwrap();
     assert!(list

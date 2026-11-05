@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.3.0 — 2026-11-05 (Fase 3)
+- Asistente de creación de contenedores por pestañas con validación en vivo, comando `docker run` equivalente y cuerpo de la API (D-034, D-035).
+- Detalle de contenedor: resumen, logs en directo, terminal interactiva, estadísticas e inspección JSON (D-036, D-037).
+- Duplicar contenedores con aviso de los ajustes que no se trasladan (D-038).
+- Valores sensibles ocultos en pantalla y en el panel de actividad (D-039).
+- La interfaz muestra el error si falla antes de arrancar; xterm.js 5.5 por compatibilidad con `freezePrototype` (D-040).
+- `scripts/verify-phase-3.sh`.
+
 ## 0.2.1 — 2026-11-04 (corrección de la Fase 2)
 - Corregido: tras detener (u otra acción), la tabla de contenedores podía mostrar el estado anterior porque Docker actualiza el listado un instante después de responder. Ahora cada acción confirma el estado con `GET /containers/{id}/json` (D-031).
 - Corregido: la detección de Docker Compose usaba `--format json`, que falla con «unknown flag» cuando el plugin no está instalado. Ahora distingue Compose instalado (plugin o binario v2), no instalado, plugin inutilizable, Compose v1 no admitido y respuestas no reconocidas, e indica cómo instalarlo (D-032).
