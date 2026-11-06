@@ -114,6 +114,19 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 
 Módulos: `reference.rs` (gramática de referencias de `distribution/reference`), `registry_auth.rs` (credenciales, D-042), `pull.rs` (`PullTracker`: progreso por capa), `build/` (`ignore.rs` .dockerignore, `context.rs` recorrido y tar en flujo, `progress.rs` protobuf de BuildKit y salida plana, `http.rs` petición HTTP/1.1 sobre el socket, `mod.rs` `BuildSpec`).
 
+### Redes (Fase 5, `networks.rs`)
+| Operación | Petición real | Comando equivalente |
+|---|---|---|
+| Listar | `GET /networks` + `GET /containers/json?all=true` (para saber qué contenedores, en marcha o no, tienen cada red, D-047) | `docker network ls` |
+| Inspeccionar | `GET /networks/{id}` + lista de contenedores (los detenidos no aparecen en el inspect) | `docker network inspect <nombre>` |
+| Crear | `POST /networks/create` con el cuerpo de `NetworkSpec::wire_body()` (incluye `CheckDuplicate: true`, petición propia por `build/http.rs`, D-048) | `docker network create --driver … [--subnet … --ip-range … --gateway …] [--label …] [--opt …] [--ipv6] [--internal] [--attachable] <nombre>` |
+| Eliminar | `DELETE /networks/{id}` | `docker network rm <nombre>` |
+| Limpiar | `POST /networks/prune?` (filtro de etiqueta solo en pruebas) | `docker network prune --force` |
+| Conectar | `POST /networks/{id}/connect` con `{Container, EndpointConfig{Aliases, IPAMConfig}}` | `docker network connect [--alias …] [--ip …] [--ip6 …] <red> <contenedor>` |
+| Desconectar | `POST /networks/{id}/disconnect` con `{Container[, Force]}` | `docker network disconnect [--force] <red> <contenedor>` |
+
+Las operaciones usan siempre el ID de la red (Docker acepta nombres con espacios creados por otras herramientas); el nombre solo se usa para mostrar y en el comando equivalente. `NetworkSpec` es la fuente única de la validación (nombre, driver, subredes CIDR con la misma regla de dirección de red que Docker, puerta de enlace y rango dentro de la subred, familia IPv4/IPv6, etiquetas y opciones), del cuerpo y del comando, como `ContainerSpec` (D-034). `ConnectOptions` valida alias e IP fija (dentro de las subredes conocidas de la red). Eliminar y desconectar exigen confirmación; conectar y desconectar bloquean el contenedor (`container:{id}`), eliminar bloquea la red (`network:{id}`).
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 
@@ -148,6 +161,10 @@ Módulos: `reference.rs` (gramática de referencias de `distribution/reference`)
 | `image_pull_open(reference, auth, onEvent)` | Descarga en flujo: `PullEvent` (`progress` \| `end`); `auth` = `PullAuth` (`dockerConfig` \| `anonymous` \| `manual`) |
 | `build_preview(spec)` | Valida la construcción, resume el contexto y devuelve el comando y la petición (secretos ocultos), sin hablar con Docker |
 | `build_open(spec, onEvent)` | Construcción en flujo: `BuildEvent` (`progress` con pasos y líneas \| `end` con `BuildEnd` o error) |
+| `networks_list` · `network_details(id, name)` | Redes con sus contenedores (`NetworkSummary`) y detalle (`NetworkDetails`: IPAM, opciones, JSON completo) |
+| `network_preview(spec)` | Valida la red y devuelve problemas, comando equivalente, petición y cuerpo exacto, sin hablar con Docker |
+| `network_create(spec)` · `network_remove(id, name, confirmed)` · `networks_prune(confirmed)` | Crear (valida antes, también sin conexión), eliminar y limpiar (las dos últimas exigen `confirmed`) |
+| `network_connect(network, networkName, container, containerName, options, subnets)` · `network_disconnect(…, force, confirmed)` | Conectar (alias e IP fija) y desconectar (exige `confirmed`) |
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.other`, `config.io`.
 
@@ -162,17 +179,18 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por 
 - `create/CreateWizard.tsx`: pestañas General, Entorno, Red, Almacenamiento, Recursos y Avanzado; vista previa con retardo de 200 ms; `shellwords.ts` divide Comando y Entrypoint con reglas de comillas POSIX sin ejecutar ninguna shell.
 - `detail/`: `useStream` abre y cierra flujos ligados al ciclo de vida del componente; las pestañas con flujos se mantienen montadas tras visitarlas. La terminal usa xterm.js 5.5 (D-040).
 - `public/boot-guard.js` muestra los errores anteriores al arranque de la interfaz.
+- `features/networks/`: `store.ts` (lista, detalle, creación), `model.ts` (filtros, estimación de la limpieza, motivos por los que Docker rechazaría una conexión, comandos equivalentes; funciones puras), `dialogs.tsx` (eliminar, limpiar, conectar, desconectar: consultan a Docker al abrirse y no permiten confirmar con datos desactualizados, D-049), `CreateNetwork.tsx` (asistente con vista previa del backend), `NetworkDetail.tsx`.
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 161 motor · 15 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 38 (cuatro contra Docker real, una de ellas descarga completa y cancelada desde el registro local) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images` | 11 + 7 + 9 (2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
+| Rust unitarias | `cargo test` | 22 actividad · 175 motor · 15 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 42 (cinco contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes con conexión y desconexión) |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks` | 11 + 7 + 9 + 4 (redes: probadas con Docker 29 y 24; 2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
-| Interfaz | Vitest + Testing Library | 134 |
+| Interfaz | Vitest + Testing Library | 156 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Manual | `scripts/verify-phase-4.sh` | M1–M18 |
+| Manual | `scripts/verify-phase-5.sh` | M1–M16 |

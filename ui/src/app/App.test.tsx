@@ -46,10 +46,10 @@ describe("App", () => {
 
   it("navega entre apartados; los pendientes no tienen botones de acción falsos", async () => {
     await boot();
-    await userEvent.click(screen.getByRole("button", { name: "Redes" }));
-    expect(screen.getByRole("heading", { level: 1, name: "Redes" })).toBeInTheDocument();
-    expect(screen.getByText("Disponible a partir de la fase 5")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Redes" })).toHaveAttribute("aria-current", "page");
+    await userEvent.click(screen.getByRole("button", { name: "Volúmenes" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Volúmenes" })).toBeInTheDocument();
+    expect(screen.getByText("Disponible a partir de la fase 6")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Volúmenes" })).toHaveAttribute("aria-current", "page");
     // El área central de un apartado pendiente no contiene botones.
     const main = screen.getByRole("main");
     const content = main.querySelector(".overflow-y-auto")!;

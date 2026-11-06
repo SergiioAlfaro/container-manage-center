@@ -462,3 +462,71 @@ El CLI muestra "N/A"; la interfaz mostraba "hace 2027 años". Las fechas
 anteriores a 1970 se muestran como "—". El cambio está en el formateador
 compartido (`shared/format.ts`), así que también afecta a la lista de
 contenedores; las fechas válidas se muestran exactamente igual que antes.
+
+### D-047 · Redes: comportamiento de Docker que determina el diseño
+Comprobado con Docker 29.9.2 (containerd) y 24.0.7 (almacén clásico):
+
+* `GET /networks` no incluye los contenedores, y `GET /networks/{id}` solo los
+  que están en marcha. Los contenedores de una red (en marcha o no) se obtienen
+  cruzando con la lista de contenedores por nombre de red; el inspect aporta la
+  IP y la MAC de los que están en marcha.
+* `DELETE /networks/{id}` falla con 403 ("has active endpoints") si hay
+  contenedores en marcha, pero **elimina** la red aunque la tengan configurada
+  contenedores detenidos, que después no arrancan ("network … not found").
+  `docker network prune` también elimina esas redes. La interfaz avisa y exige
+  una confirmación expresa en ambos casos; la estimación de la limpieza las
+  incluye.
+* Docker acepta nombres de red con espacios (por la API). Las operaciones usan
+  el ID; la validación de la aplicación solo exige nombres sencillos al crear.
+* Docker solo admite IP fija si la subred se indicó al crear la red, y alias
+  solo en redes creadas por el usuario. La aplicación valida la IP contra las
+  subredes conocidas y oculta los alias en `bridge`; el resto lo decide Docker,
+  cuyo error se muestra tal cual.
+
+### D-048 · Creación de redes con `CheckDuplicate`
+Docker < 25 (API < 1.44; Debian 12 trae 20.10) crea una segunda red con el
+mismo nombre si la petición no lleva `CheckDuplicate: true` (solo devuelve un
+aviso); el CLI de esas versiones lo envía. Docker 25 retiró el campo porque
+siempre comprueba el nombre, y bollard 0.21 ya no lo tiene. La creación se hace
+con una petición propia (`build/http.rs`, `post_json`) con el cuerpo de
+`NetworkSpec::wire_body()`: el de `to_create_body()` más `CheckDuplicate: true`.
+Las versiones modernas ignoran el campo. Comprobado: con Docker 24.0.7 sin el
+campo se crean dos redes `dcc-dup`; con él, 409. La prueba real exige que tras
+el intento solo exista una red con ese nombre.
+
+### D-049 · Los diálogos de redes consultan a Docker al abrirse
+Visto en la aplicación real: con la lista sin actualizar (redes creadas desde la
+terminal), el diálogo de limpieza estimaba "no hay redes que eliminar" cuando
+Docker iba a eliminar dos. Eliminar, limpiar y conectar consultan a Docker al
+abrirse (`refetchOnMount: "always"`) y no permiten confirmar hasta tener los
+datos actuales; si la red ya no existe, lo dicen. El diálogo de limpieza de
+imágenes (Fase 4, validada) tiene el mismo riesgo; no se ha modificado (queda
+propuesto para que el propietario decida).
+
+### D-050 · Limpiar imágenes hace fallar las descargas en curso (containerd)
+**Hallazgo.** Durante la verificación de la Fase 5 falló una vez la prueba de
+descarga de la Fase 4 con un error del propio Docker ("failed commit on ref …
+rename … no such file or directory"). En el registro del daemon, en el mismo
+instante: "Error deleting lease … not found". Otra prueba ejecutaba a la vez
+`POST /images/prune`.
+
+**Reproducción con el CLI oficial, sin la aplicación** (registro local, 15
+descargas mientras otro proceso repite la operación):
+
+| Docker | Operación concurrente | Descargas fallidas |
+|---|---|---|
+| 29.9.2, containerd | ninguna | 0/15 |
+| 29.9.2, containerd | `docker tag` + `docker rmi` | 0/15 |
+| 29.9.2, containerd | `docker image prune -f --filter label=<inexistente>` | 15/15 ("lease does not exist") |
+| 24.0.7, clásico | `docker image prune -f --filter label=<inexistente>` | 0/15 |
+
+Una construcción con BuildKit no se ve afectada.
+
+**Decisión.**
+* Pruebas: la prueba que limpia imágenes no se solapa con las que descargan
+  (`RwLock` en `live_images.rs`). No se ha relajado ninguna aserción.
+* Aplicación (cambio en la Fase 4, con esta causa demostrada): el diálogo
+  **Limpiar** de Imágenes no permite limpiar mientras haya descargas en curso en
+  la aplicación y explica el motivo. Una limpieza lanzada desde fuera (CLI)
+  durante una descarga sigue haciendo fallar la descarga; la aplicación muestra
+  el error real de Docker.

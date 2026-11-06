@@ -6,19 +6,19 @@
 
 | | |
 |---|---|
-| **Fase actual** | 4 · Gestión de imágenes |
-| **Versión** | 0.4.1 (corrección de la Fase 4) |
+| **Fase actual** | 5 · Redes |
+| **Versión** | 0.5.0 |
 | **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
-| **Fases completadas (validadas)** | 1, 2, 3 |
-| **Fases pendientes** | 4–10 |
+| **Fases completadas (validadas)** | 1, 2, 3, 4 |
+| **Fases pendientes** | 5–10 |
 
 | Fase | Estado |
 |---|---|
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
 | 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
 | 3. Contenedores (creación, logs, inspección, terminal) | **Validada** (2026-11-06, versión 0.3.0) |
-| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | Pendiente de validación externa (0.4.1; la 0.4.0 falló 2 pruebas reales en Debian 13) |
-| 5. Redes | No iniciada |
+| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | **Validada** (2026-11-06, Debian 13, versión 0.4.1) |
+| 5. Redes | Pendiente de validación externa (0.5.0) |
 | 6. Volúmenes y bind mounts | No iniciada |
 | 7. Docker Compose | No iniciada |
 | 8. Actividad, eventos y monitorización | No iniciada |
@@ -346,10 +346,55 @@ Ver la tabla de abajo; se ejecutaron con tres daemons: Docker 29.9.2 con contain
 
 ---
 
+## Fase 5 · Redes
+
+### Objetivos
+Listar, crear, eliminar e inspeccionar redes; conectar y desconectar contenedores; ver los contenedores conectados. Todo con operaciones reales y registradas.
+
+### Funcionalidades implementadas
+- **Lista** con driver, ámbito, subredes, distintivos (predefinida, interna, conectable, IPv6, Compose) y contenedores de cada red, en marcha o no (D-047); filtros y búsqueda.
+- **Asistente de creación**: nombre, driver (bridge, macvlan, ipvlan, overlay u otro), red interna, conectable, subred/puerta de enlace/rango IPv4 e IPv6, opciones del driver y metadatos. Validación con las reglas de Docker antes de enviar; comando, petición y cuerpo exactos. Creación con `CheckDuplicate` (D-048).
+- **Detalle**: resumen, IPAM, opciones, metadatos, contenedores con IP y MAC, inspección JSON.
+- **Conectar** (alias, IPv4/IPv6 fija; contenedores que Docker no aceptaría desactivados con el motivo) y **desconectar** (con confirmación).
+- **Eliminar** y **limpiar** con avisos: contenedores en marcha (Docker lo rechaza) y detenidos (Docker elimina la red y no podrán arrancar). Los diálogos consultan el estado actual a Docker al abrirse (D-049).
+
+### Pruebas realizadas en el entorno de desarrollo (Ubuntu 24.04; Docker 29.9.2 con containerd y Docker 24.0.7 con almacén clásico, extraído en una carpeta temporal sin instalarlo)
+| Prueba | Resultado |
+|---|---|
+| Rust unitarias | 175 motor (15 nuevas de redes: CIDR, validación, cuerpo y comando, conexión, miembros), 22 actividad, 15 configuración |
+| IPC con el runtime simulado de Tauri | 42 (vista previa, sin conexión, confirmación y validación; 5 contra Docker real, una de redes) |
+| Contra Docker real, redes (`live_networks`, 4) | Superadas con Docker 29 y 24: creación con subred, puerta, rango, etiqueta y opción; listado y detalle; conexión con alias e IP fija (comprobadas en el contenedor); conexión repetida rechazada; contenedor detenido conectado; eliminación rechazada con contenedor en marcha; desconexión; eliminación con contenedor detenido (que después no arranca); nombre repetido rechazado con una sola red resultante; solapamiento de subred; red predefinida; alias en bridge; limpieza que coincide con la estimación; IPv6 (en este entorno Docker lo rechaza y se comprueba el error registrado). Tráfico del socket igual al registro |
+| Contra Docker real, fases anteriores | 11 + 7 + 9 superadas con ambos daemons |
+| Interfaz (Vitest) | 156 (redes: 21 nuevas; imágenes: 1 nueva) |
+| Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto |
+| `verify-phase-5.sh` | Docker 29 (containerd), con `--deb`: 32 correctas, 0 fallos, 2 omitidas justificadamente (permisos, no aplican a root), 1 aviso (root). Docker 24 (clásico): 31 correctas, 0 fallos, mismas omisiones. Sin recursos de prueba restantes |
+| Aplicación real bajo Xvfb (Docker 29) | Lista real; asistente con errores de subred y puerta de enlace detectados y corregidos; red creada (comprobada con `docker network inspect`); conexión con alias e IP 10.213.250.50 (comprobada con `docker inspect`); contenedor detenido conectado; eliminación bloqueada con contenedor en marcha; desconexión; eliminación con confirmación y contenedor detenido que después no arranca; limpieza de redes creadas desde la terminal; todas las operaciones en el panel de actividad |
+| Paquete .deb 0.5.0 | Construido (4,5 MiB), instalado con `apt`, arrancado en inglés y tema oscuro (apartado Redes traducido) y desinstalado sin restos |
+
+### Problemas detectados y resueltos durante la fase
+- **Docker < 25 crea redes con nombre repetido** si no se envía `CheckDuplicate` (comprobado con Docker 24: dos redes `dcc-dup`). bollard 0.21 no tiene el campo: la creación usa una petición propia con el campo (D-048).
+- **Diálogos con datos desactualizados** (visto en la aplicación real): con redes creadas desde la terminal, la limpieza estimaba "no hay redes que eliminar" y Docker eliminaba dos. Ahora consultan a Docker al abrirse y no permiten confirmar hasta tener datos actuales (D-049).
+- **Limpiar imágenes hace fallar las descargas en curso con containerd** (una prueba de la Fase 4 falló una vez durante la verificación). Reproducido con el CLI oficial: 15/15 descargas fallidas en Docker 29 con containerd, 0/15 en Docker 24 clásico. Corrección en la Fase 4 con esta causa demostrada: no se permite limpiar imágenes con descargas en curso; la prueba de limpieza no se solapa con las de descarga (D-050).
+- La prueba de la aplicación que usaba Redes como ejemplo de apartado pendiente pasa a usar Volúmenes (Fase 6), con las mismas comprobaciones.
+- Una prueba IPC dejaba la red creada si fallaba a mitad: ahora la limpia una guarda.
+- Con Docker 24, una red repetida con la misma subred falla por solapamiento antes que por nombre: la prueba de nombre repetido se hace sin subred.
+
+### Limitaciones y observaciones
+- IPv6 no está disponible en este entorno (Docker no puede configurarlo); se comprueba que el error real queda registrado. Con IPv6 se comprueba en M14.
+- overlay requiere Swarm; macvlan/ipvlan dependen de las interfaces del equipo. Se envía lo indicado y se muestra el error real de Docker.
+- Docker 26.1.5 (Debian 13) no se ha podido probar aquí: se ha probado con 24.0.7 y 29.9.2.
+- El diálogo de limpieza de imágenes (Fase 4) estima con la lista cargada, igual que hacían los de redes antes de D-049. No se ha cambiado: queda como propuesta.
+- Los resúmenes de las operaciones los redacta el backend en español.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-4.sh` con la 0.4.1 en Debian 13 y envía `verify-phase-4-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.4.1 y realiza M1–M18.
-2. Corregir lo que surja y marcar la Fase 4 como validada.
-3. Fase 5: redes (listado, creación, eliminación, inspección, conexión y desconexión de contenedores).
+1. El propietario ejecuta `bash scripts/verify-phase-5.sh` en Debian 13 y envía `verify-phase-5-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.5.0 y realiza M1–M16.
+2. Corregir lo que surja y marcar la Fase 5 como validada.
+3. Fase 6: volúmenes y directorios vinculados.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

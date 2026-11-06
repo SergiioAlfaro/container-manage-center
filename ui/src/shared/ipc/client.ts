@@ -38,6 +38,12 @@ import type { BuildPreview } from "./bindings/BuildPreview";
 import type { BuildSpec } from "./bindings/BuildSpec";
 import type { ImageDetails } from "./bindings/ImageDetails";
 import type { ImageLayer } from "./bindings/ImageLayer";
+import type { ConnectOptions } from "./bindings/ConnectOptions";
+import type { CreatedNetwork } from "./bindings/CreatedNetwork";
+import type { NetworkDetails } from "./bindings/NetworkDetails";
+import type { NetworkPreview } from "./bindings/NetworkPreview";
+import type { NetworkSpec } from "./bindings/NetworkSpec";
+import type { NetworkSummary } from "./bindings/NetworkSummary";
 import type { ImageRef } from "./bindings/ImageRef";
 import type { PruneResult } from "./bindings/PruneResult";
 import type { PullAuth } from "./bindings/PullAuth";
@@ -124,6 +130,18 @@ export const api = {
   /** Valida y resume el contexto sin hablar con Docker. */
   buildPreview: (spec: BuildSpec) => call<BuildPreview>("build_preview", { spec }),
   buildOpen: (spec: BuildSpec, onEvent: (e: BuildEvent) => void) => call<number>("build_open", { spec, onEvent: channel(onEvent) }),
+
+  networksList: () => call<NetworkSummary[]>("networks_list"),
+  networkDetails: (id: string, name: string | null) => call<NetworkDetails>("network_details", { id, name }),
+  /** Valida la red y muestra la petición exacta sin hablar con Docker. */
+  networkPreview: (spec: NetworkSpec) => call<NetworkPreview>("network_preview", { spec }),
+  networkCreate: (spec: NetworkSpec) => call<CreatedNetwork>("network_create", { spec }),
+  networkRemove: (id: string, name: string | null) => call<void>("network_remove", { id, name, confirmed: true }),
+  networksPrune: () => call<string[]>("networks_prune", { confirmed: true }),
+  networkConnect: (network: string, networkName: string | null, container: string, containerName: string | null, options: ConnectOptions, subnets: string[]) =>
+    call<void>("network_connect", { network, networkName, container, containerName, options, subnets }),
+  networkDisconnect: (network: string, networkName: string | null, container: string, containerName: string | null, force: boolean) =>
+    call<void>("network_disconnect", { network, networkName, container, containerName, force, confirmed: true }),
 
   /** Selector de archivo del sistema (Dockerfile). */
   pickFile: async (title: string, defaultPath?: string): Promise<string | null> => {

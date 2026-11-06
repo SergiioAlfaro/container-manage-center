@@ -17,5 +17,6 @@ export const keys = {
   overview: ["overview"] as const,
   containers: ["containers"] as const,
   images: ["images"] as const,
+  networks: ["networks"] as const,
   compose: ["compose"] as const,
 };

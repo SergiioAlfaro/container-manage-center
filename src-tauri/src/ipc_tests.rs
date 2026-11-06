@@ -865,3 +865,236 @@ fn live_pull_and_cancel_via_ipc() {
     assert!(invoke(&h, "image_details", json!({ "reference": reference })).is_err());
     remove(&reference);
 }
+
+#[test]
+fn network_preview_validates_and_shows_exact_request() {
+    let h = harness();
+    let v = invoke(
+        &h,
+        "network_preview",
+        json!({ "spec": { "name": "front", "ipv4": { "subnet": "10.240.0.0/24", "gateway": "10.240.0.1" }, "labels": [{ "key": "app", "value": "mi web" }], "internal": true } }),
+    )
+    .unwrap();
+    assert_eq!(v["issues"], json!([]));
+    assert_eq!(
+        v["command"],
+        "docker network create --driver bridge --subnet 10.240.0.0/24 --gateway 10.240.0.1 --label 'app=mi web' --internal front"
+    );
+    assert_eq!(v["request"], "POST /networks/create");
+    let body: serde_json::Value = serde_json::from_str(v["body"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        body,
+        json!({ "Name": "front", "Driver": "bridge", "Internal": true, "Labels": { "app": "mi web" }, "CheckDuplicate": true,
+                "IPAM": { "Driver": "default", "Config": [{ "Subnet": "10.240.0.0/24", "Gateway": "10.240.0.1" }] } })
+    );
+    let v = invoke(
+        &h,
+        "network_preview",
+        json!({ "spec": { "name": "bridge", "ipv4": { "subnet": "10.241.0.5/24" } } }),
+    )
+    .unwrap();
+    let codes: Vec<_> = v["issues"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["code"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(codes, ["name.reserved", "subnet.hostBits"]);
+    assert_eq!(v["issues"][1]["params"]["fixed"], "10.241.0.0/24");
+    // Nada de esto habla con Docker.
+    let list = invoke(&h, "activity_list", json!({})).unwrap();
+    assert!(list
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|r| r["category"] == "system"));
+}
+
+#[test]
+fn phase5_commands_fail_cleanly_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    for (cmd, args) in [
+        ("networks_list", json!({})),
+        ("network_details", json!({ "id": "front", "name": null })),
+        ("network_create", json!({ "spec": { "name": "front" } })),
+        (
+            "network_remove",
+            json!({ "id": "front", "name": "front", "confirmed": true }),
+        ),
+        ("networks_prune", json!({ "confirmed": true })),
+        (
+            "network_connect",
+            json!({ "network": "front", "networkName": "front", "container": "web", "containerName": "web", "options": {}, "subnets": [] }),
+        ),
+        (
+            "network_disconnect",
+            json!({ "network": "front", "networkName": "front", "container": "web", "containerName": "web", "force": false, "confirmed": true }),
+        ),
+    ] {
+        let err = invoke(&h, cmd, args).unwrap_err();
+        assert_eq!(err["code"], "engine.notConnected", "{cmd}: {err}");
+    }
+    // Confirmación y validación antes de necesitar Docker.
+    for (cmd, args) in [
+        (
+            "network_remove",
+            json!({ "id": "front", "name": null, "confirmed": false }),
+        ),
+        ("networks_prune", json!({ "confirmed": false })),
+        (
+            "network_disconnect",
+            json!({ "network": "front", "networkName": null, "container": "web", "containerName": null, "force": false, "confirmed": false }),
+        ),
+    ] {
+        let err = invoke(&h, cmd, args).unwrap_err();
+        assert_eq!(err["code"], "engine.notConfirmed", "{cmd}: {err}");
+    }
+    let e = invoke(
+        &h,
+        "network_create",
+        json!({ "spec": { "name": "mi red" } }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.invalidSpec");
+    assert_eq!(e["issues"][0]["code"], "name.invalid");
+    let e = invoke(
+        &h,
+        "network_connect",
+        json!({ "network": "front", "networkName": null, "container": "web", "containerName": null,
+                "options": { "ipv4": "10.9.0.5" }, "subnets": ["10.8.0.0/24"] }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.invalidInput", "{e}");
+}
+
+/// Contra Docker real: crear, listar, conectar, ver el detalle, desconectar y
+/// eliminar una red con los comandos que usa la ventana.
+#[test]
+fn live_networks_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let name = format!("dcc-test-ipc-net-{}", std::process::id());
+    let created = invoke(
+        &h,
+        "network_create",
+        json!({ "spec": { "name": name, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+    )
+    .unwrap();
+    let id = created["id"].as_str().unwrap().to_owned();
+    /// Elimina la red y el contenedor de prueba aunque la prueba falle.
+    struct Guard<'a>(&'a Harness, String, std::cell::RefCell<Option<String>>);
+    impl Drop for Guard<'_> {
+        fn drop(&mut self) {
+            if let Some(c) = self.2.borrow().as_ref() {
+                let _ = invoke(
+                    self.0,
+                    "container_remove",
+                    json!({ "id": c, "name": null, "force": true, "volumes": true, "confirmed": true }),
+                );
+            }
+            let _ = invoke(
+                self.0,
+                "network_remove",
+                json!({ "id": self.1, "name": null, "confirmed": true }),
+            );
+        }
+    }
+    let guard = Guard(&h, id.clone(), std::cell::RefCell::new(None));
+    let list = invoke(&h, "networks_list", json!({})).unwrap();
+    let n = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["name"] == name.as_str())
+        .cloned();
+    let n = n.expect("la red aparece en la lista");
+    assert_eq!(n["predefined"], false);
+    assert_eq!(n["labels"]["dcc.test"], "true");
+    let subnets = n["subnets"].clone();
+
+    // Un contenedor detenido cualquiera de prueba: se crea con la imagen de prueba
+    // si existe; si no, solo se prueba la red.
+    let has_fixture = invoke(&h, "images_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|i| {
+            i["repoTags"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|t| t == "dcc-test/sleeper:2")
+        });
+    if has_fixture {
+        let cname = format!("dcc-test-ipc-net-c-{}", std::process::id());
+        let c = invoke(
+            &h,
+            "container_create",
+            json!({ "spec": { "name": cname, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }] }, "start": false }),
+        )
+        .unwrap();
+        let cid = c["id"].as_str().unwrap().to_owned();
+        *guard.2.borrow_mut() = Some(cid.clone());
+        invoke(
+            &h,
+            "network_connect",
+            json!({ "network": id, "networkName": name, "container": cid, "containerName": cname,
+                    "options": { "aliases": ["web"] }, "subnets": subnets }),
+        )
+        .unwrap();
+        let d = invoke(&h, "network_details", json!({ "id": id, "name": name })).unwrap();
+        assert_eq!(d["summary"]["containers"][0]["name"], cname.as_str(), "{d}");
+        invoke(
+            &h,
+            "network_disconnect",
+            json!({ "network": id, "networkName": name, "container": cid, "containerName": cname, "force": false, "confirmed": true }),
+        )
+        .unwrap();
+        let d = invoke(&h, "network_details", json!({ "id": id, "name": name })).unwrap();
+        assert_eq!(d["summary"]["containers"], json!([]));
+        invoke(
+            &h,
+            "container_remove",
+            json!({ "id": cid, "name": cname, "force": true, "volumes": true, "confirmed": true }),
+        )
+        .unwrap();
+        *guard.2.borrow_mut() = None;
+    } else {
+        eprintln!("omitida (parcial): sin la imagen de prueba no se conecta ningún contenedor");
+    }
+    invoke(
+        &h,
+        "network_remove",
+        json!({ "id": id, "name": name, "confirmed": true }),
+    )
+    .unwrap();
+    let e = invoke(&h, "network_details", json!({ "id": id, "name": name })).unwrap_err();
+    assert_eq!(e["httpStatus"], 404, "{e}");
+    let kinds: Vec<String> = invoke(&h, "activity_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["kind"].as_str().unwrap().to_owned())
+        .filter(|k| k.starts_with("network."))
+        .collect();
+    for k in ["network.create", "network.list", "network.remove"] {
+        assert!(kinds.iter().any(|x| x == k), "{k}: {kinds:?}");
+    }
+}

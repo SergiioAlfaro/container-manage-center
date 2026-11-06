@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.5.0 — 2026-11-06 (Fase 5: redes)
+- Apartado **Redes**: lista con driver, subredes y contenedores (en marcha o no), filtros y búsqueda.
+- Asistente de creación con subred, puerta de enlace, rango, IPv6, red interna, conectable, opciones del driver y metadatos; validación con las reglas de Docker antes de enviar, comando y cuerpo exactos.
+- Conexión de contenedores con alias e IP fija, y desconexión con confirmación.
+- Eliminación y limpieza con avisos de contenedores en marcha (Docker lo rechaza) y detenidos (Docker la elimina y no podrán arrancar) (D-047).
+- Detalle con IPAM, opciones, contenedores con IP y MAC, e inspección JSON.
+- Creación con `CheckDuplicate` para no crear redes con nombre repetido en Docker < 25 (D-048).
+- Los diálogos consultan el estado actual a Docker al abrirse (D-049).
+- `verify-phase-5.sh` con pruebas reales de redes y comprobaciones manuales M1–M16.
+- Imágenes (corrección): no se permite limpiar imágenes mientras hay descargas en curso, porque con el almacén de containerd Docker las hace fallar (D-050). La prueba de limpieza ya no se solapa con las de descarga.
+
 ## 0.4.1 — 2026-11-06 (corrección de la Fase 4)
 - Corregidas las pruebas de descarga que fallaban con el almacén de imágenes clásico (overlay2, Debian 13): el registro de prueba servía una imagen que el daemon ya tenía, así que Docker no descargaba ninguna capa. Ahora cada prueba descarga una imagen nueva, con aserciones más estrictas: progreso parcial real, una sola petición de la capa, conexión cortada al cancelar, nueva descarga completa tras cancelar, un registro por descarga (D-045).
 - Nueva prueba del caso "contenido ya presente" y nueva prueba IPC contra Docker real de descarga completa y cancelada.

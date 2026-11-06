@@ -1,9 +1,11 @@
-//! Petición HTTP/1.1 mínima sobre el socket Unix de Docker para `POST /build`.
+//! Petición HTTP/1.1 mínima sobre el socket Unix de Docker.
 //!
-//! bollard 0.21 no permite construir con BuildKit sin su integración gRPC ni
-//! enviar varias etiquetas (`t` repetido), así que esta petición se hace
-//! directamente: cuerpo tar en *chunked transfer encoding* y respuesta leída
-//! como una secuencia de objetos JSON.
+//! - `POST /build`: bollard 0.21 no permite construir con BuildKit sin su
+//!   integración gRPC ni enviar varias etiquetas (`t` repetido), así que esta
+//!   petición se hace directamente: cuerpo tar en *chunked transfer encoding* y
+//!   respuesta leída como una secuencia de objetos JSON.
+//! - `POST /networks/create`: el cuerpo de bollard 0.21 no tiene el campo
+//!   `CheckDuplicate`, imprescindible con Docker < 25 (D-048).
 
 use std::io;
 
@@ -37,11 +39,46 @@ pub async fn post_stream(
     socket: &str,
     path: &str,
     headers: &[(String, String)],
+    body: mpsc::Receiver<Result<Bytes, io::Error>>,
+) -> Result<Response, EngineError> {
+    post_with(socket, path, "application/x-tar", headers, body).await
+}
+
+/// Envía un cuerpo JSON completo y devuelve el JSON de la respuesta, o el
+/// error de Docker con su código HTTP.
+pub async fn post_json(
+    socket: &str,
+    path: &str,
+    json: Vec<u8>,
+) -> Result<serde_json::Value, EngineError> {
+    let (tx, rx) = mpsc::channel(1);
+    tx.send(Ok(Bytes::from(json)))
+        .await
+        .map_err(|_| EngineError::Other {
+            message: "no se pudo preparar la petición".into(),
+        })?;
+    drop(tx);
+    let mut r = post_with(socket, path, "application/json", &[], rx).await?;
+    if !(200..300).contains(&r.status) {
+        let message = r.error_message().await;
+        return Err(EngineError::Docker {
+            status: r.status,
+            message,
+        });
+    }
+    Ok(r.next_json().await?.unwrap_or(serde_json::Value::Null))
+}
+
+async fn post_with(
+    socket: &str,
+    path: &str,
+    content_type: &str,
+    headers: &[(String, String)],
     mut body: mpsc::Receiver<Result<Bytes, io::Error>>,
 ) -> Result<Response, EngineError> {
     let stream = UnixStream::connect(socket).await.map_err(io_err)?;
     let (rd, mut wr) = stream.into_split();
-    let mut head = format!("POST {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\nContent-Type: application/x-tar\r\nTransfer-Encoding: chunked\r\n");
+    let mut head = format!("POST {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\nContent-Type: {content_type}\r\nTransfer-Encoding: chunked\r\n");
     for (k, v) in headers {
         head.push_str(&format!("{k}: {v}\r\n"));
     }
@@ -189,7 +226,7 @@ impl Response {
                     Some(Err(e)) if e.is_eof() => {}
                     Some(Err(e)) => {
                         return Err(EngineError::InvalidResponse {
-                            message: format!("respuesta de /build no válida: {e}"),
+                            message: format!("respuesta de Docker no válida: {e}"),
                         });
                     }
                     None => {}
@@ -203,7 +240,7 @@ impl Response {
                     }
                     return Err(EngineError::InvalidResponse {
                         message: format!(
-                            "respuesta de /build cortada: {}",
+                            "respuesta de Docker cortada: {}",
                             String::from_utf8_lossy(&self.buf)
                         ),
                     });

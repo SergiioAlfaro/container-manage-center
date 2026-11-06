@@ -20,6 +20,7 @@ mod error;
 pub mod images;
 pub mod manager;
 mod model;
+pub mod networks;
 pub mod probe;
 pub mod pull;
 pub mod reference;

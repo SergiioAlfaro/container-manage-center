@@ -170,6 +170,24 @@ describe("Lista de imágenes", () => {
   });
 });
 
+describe("Limpieza y descargas", () => {
+  beforeEach(reset);
+
+  it("no deja limpiar mientras hay una descarga en curso (Docker la haría fallar, D-050)", async () => {
+    usePulls.setState({ items: [{ key: 1, reference: "python:3.13", stream: 1, status: "running", layers: [], messages: [], summary: null, error: null, cancelRequested: false }] });
+    renderWithQuery(<ImagesView />);
+    await screen.findByText("nginx:1.27");
+    await userEvent.click(screen.getByRole("button", { name: "Limpiar" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/Hay 1 descarga en curso. Espera a que termine/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Limpiar" })).toBeDisabled();
+    // Al terminar la descarga se puede limpiar.
+    act(() => usePulls.setState({ items: [{ key: 1, reference: "python:3.13", stream: null, status: "done", layers: [], messages: [], summary: "ok", error: null, cancelRequested: false }] }));
+    expect(within(dialog).queryByText(/descarga en curso/)).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Limpiar" })).toBeEnabled();
+  });
+});
+
 describe("Búsqueda", () => {
   beforeEach(reset);
 

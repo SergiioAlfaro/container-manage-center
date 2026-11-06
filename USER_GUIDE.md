@@ -169,6 +169,8 @@ etiquetar, descargar de nuevo (para actualizarla desde su registro) y eliminar.
   confirmar; Docker no elimina imágenes de contenedores en ejecución.
 - **Limpiar** elimina las imágenes sin etiqueta que no usa ningún contenedor o,
   con confirmación adicional, todas las que no usa ningún contenedor.
+  No se puede limpiar mientras hay descargas en curso: con el almacén de
+  imágenes de containerd, Docker las haría fallar.
 
 ### Construir
 
@@ -187,6 +189,69 @@ Durante la construcción se ven los pasos con su estado y duración y la salida
 como `docker build --progress=plain`. Puedes cancelarla o cambiar de apartado
 (vuelves con **Ver progreso**). Al terminar: **Ver imagen**, **Crear
 contenedor** o **Volver al formulario** con los mismos datos.
+
+## Redes
+
+Lista las redes de Docker (como `docker network ls`): nombre, ID corto, driver,
+subredes y los contenedores que tienen configurada cada red (en marcha o no).
+Las redes **bridge**, **host** y **none** las crea Docker («Predefinida») y no se
+pueden eliminar. Filtros **Todas / En uso / Sin uso / Creadas por el usuario** y
+búsqueda por nombre, ID, subred o contenedor. Pulsa el nombre para abrir su
+detalle.
+
+### Crear una red
+
+**Crear red** abre el asistente:
+
+- **Nombre** y **driver**: `bridge` (red privada en este equipo, la habitual),
+  `macvlan` o `ipvlan` (salen por una interfaz física: indícala en la opción
+  `parent`), `overlay` (requiere Docker Swarm) u otro driver de un plugin.
+- **Red interna** (sin salida al exterior) y **conectable manualmente** (para
+  overlay).
+- **Direcciones IPv4**: subred (`172.30.0.0/24`), puerta de enlace y rango
+  asignable. Son opcionales: sin subred, Docker elige una libre. Para poder dar
+  a un contenedor una **IP fija** en la red, hay que indicar la subred aquí.
+- **IPv6**: requiere que el sistema y Docker lo admitan.
+- **Opciones del driver** (`--opt`) y **metadatos** (`--label`).
+
+A la derecha se ven el comando `docker network create` equivalente, la petición
+y su cuerpo exactos, y la revisión: los errores (subred mal escrita, puerta de
+enlace fuera de la subred…) se marcan antes de enviar nada a Docker.
+
+### Conectar y desconectar contenedores
+
+**Conectar** (en la fila o en el detalle) elige un contenedor, en marcha o
+detenido. Los que Docker no aceptaría aparecen desactivados con el motivo (ya
+conectado, contenedor en modo host o sin red). Opcionalmente:
+
+- **Alias**: nombres adicionales con los que los demás contenedores de la red lo
+  encuentran (no disponibles en la red predefinida bridge).
+- **IPv4/IPv6 fija** dentro de la subred de la red.
+
+En la pestaña **Contenedores** del detalle se ve la IP y la MAC de cada
+contenedor en marcha; los detenidos reciben la dirección al arrancar.
+**Desconectar** pide confirmación: un contenedor en marcha pierde al instante la
+conexión por esa red.
+
+### Eliminar y limpiar
+
+- **Eliminar**: Docker no elimina una red con contenedores en marcha conectados
+  (el diálogo lo indica y no deja continuar). Si solo la tienen configurada
+  contenedores detenidos, Docker **sí** la elimina y esos contenedores no podrán
+  arrancar hasta que los desconectes o vuelvas a crear la red: el diálogo los
+  lista y pide confirmarlo expresamente.
+- **Limpiar** elimina las redes creadas por el usuario sin contenedores en
+  marcha (como `docker network prune`), también las que solo usan contenedores
+  detenidos, con el mismo aviso.
+
+Los diálogos consultan a Docker el estado actual al abrirse, así que tienen en
+cuenta los cambios hechos desde la terminal u otros programas.
+
+### Detalle de una red
+
+Pestañas **Resumen** (driver, ámbito, fecha, interna, IPv4/IPv6, subredes,
+puertas de enlace, rangos, opciones del driver y metadatos), **Contenedores** e
+**Inspección JSON** (como `docker network inspect`).
 
 ## Panel de actividad
 

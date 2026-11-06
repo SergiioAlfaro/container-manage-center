@@ -225,7 +225,13 @@
       "version": "Consultar versión de Compose"
     },
     "network": {
-      "list": "Listar redes"
+      "list": "Listar redes",
+      "inspect": "Inspeccionar red",
+      "create": "Crear red",
+      "remove": "Eliminar red",
+      "prune": "Limpiar redes",
+      "connect": "Conectar contenedor a red",
+      "disconnect": "Desconectar contenedor de red"
     },
     "volume": {
       "list": "Listar volúmenes"
@@ -789,7 +795,9 @@
   },
   "issues": {
     "name": {
-      "invalid": "Nombre no válido: usa letras, números, «_», «.» o «-», y empieza por letra o número."
+      "invalid": "Nombre no válido: usa letras, números, «_», «.» o «-», y empieza por letra o número.",
+      "required": "El nombre es obligatorio.",
+      "reserved": "{{value}} es una red predefinida de Docker."
     },
     "image": {
       "required": "Indica una imagen.",
@@ -894,6 +902,36 @@
     },
     "target": {
       "invalid": "Nombre de etapa no válido."
+    },
+    "driver": {
+      "invalid": "Nombre de driver no válido.",
+      "singleton": "Solo puede haber una red con el driver {{value}} (la predefinida).",
+      "swarm": "Las redes overlay requieren Docker Swarm: sin él, Docker rechazará la creación.",
+      "noParent": "Sin la opción «parent», la red no tendrá salida por ninguna interfaz física."
+    },
+    "subnet": {
+      "required": "Indica la subred para usar puerta de enlace o rango.",
+      "invalid": "Subred no válida: usa notación CIDR (p. ej. 172.30.0.0/24).",
+      "hostBits": "{{value}} no es una dirección de red; debería ser {{fixed}}.",
+      "family": "{{value}} no es de esta familia de direcciones."
+    },
+    "gateway": {
+      "invalid": "Dirección no válida.",
+      "outside": "{{value}} no está dentro de {{subnet}}.",
+      "family": "{{value}} no es de esta familia de direcciones."
+    },
+    "ipRange": {
+      "invalid": "Rango no válido: usa notación CIDR.",
+      "outside": "{{value}} no está dentro de {{subnet}}.",
+      "hostBits": "{{value}} no es una dirección de red; debería ser {{fixed}}.",
+      "family": "{{value}} no es de esta familia de direcciones."
+    },
+    "ipv6": {
+      "disabled": "Activa IPv6 para usar una subred IPv6."
+    },
+    "option": {
+      "keyInvalid": "Nombre de opción no válido: {{key}}",
+      "duplicate": "Opción repetida: {{key}}"
     }
   },
   "dupNotes": {
@@ -1038,7 +1076,9 @@
     "pruneEstimate_other": "Según la lista actual se eliminarían {{count}} imágenes ({{size}}).",
     "pruneNote": "La decisión final es de Docker, que también elimina la caché de construcción asociada. No se puede deshacer.",
     "pruneSure": "Entiendo que tendré que volver a descargar o construir esas imágenes",
-    "pruned": "Limpieza terminada: {{count}} elementos eliminados, {{size}} recuperados."
+    "pruned": "Limpieza terminada: {{count}} elementos eliminados, {{size}} recuperados.",
+    "pruneWhilePulling_one": "Hay {{count}} descarga en curso. Espera a que termine: con el almacén de imágenes de containerd, Docker hace fallar las descargas en curso al limpiar.",
+    "pruneWhilePulling_other": "Hay {{count}} descargas en curso. Espera a que terminen: con el almacén de imágenes de containerd, Docker hace fallar las descargas en curso al limpiar."
   },
   "build": {
     "title": "Construir imagen",
@@ -1113,5 +1153,193 @@
       "failed": "La construcción falló",
       "cancelled": "Construcción cancelada"
     }
+  },
+  "networks": {
+    "create": "Crear red",
+    "prune": "Limpiar",
+    "refresh": "Actualizar",
+    "search": "Buscar por nombre, ID, subred o contenedor",
+    "filterLabel": "Filtro",
+    "filter": {
+      "all": "Todas",
+      "inUse": "En uso",
+      "unused": "Sin uso",
+      "custom": "Creadas por el usuario"
+    },
+    "count_one": "{{count}} red",
+    "count_other": "{{count}} redes",
+    "columns": {
+      "name": "Red",
+      "id": "ID",
+      "driver": "Driver",
+      "subnet": "Subred",
+      "containers": "Contenedores",
+      "actions": "Acciones"
+    },
+    "badge": {
+      "predefined": "Predefinida",
+      "internal": "Interna",
+      "attachable": "Conectable",
+      "compose": "Compose: {{project}}"
+    },
+    "noContainers": "Sin contenedores",
+    "members_one": "{{count}} contenedor ({{running}} en marcha)",
+    "members_other": "{{count}} contenedores ({{running}} en marcha)",
+    "empty": "No hay redes.",
+    "noMatches": "Ninguna red coincide con la búsqueda.",
+    "loadError": "No se pudo obtener la lista de redes: {{message}}",
+    "open": "Abrir {{name}}",
+    "connectAction": "Conectar un contenedor a {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "netDetail": {
+    "back": "Redes",
+    "tabs": {
+      "summary": "Resumen",
+      "containers": "Contenedores",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "General",
+      "ipam": "Direcciones (IPAM)",
+      "options": "Opciones del driver",
+      "labels": "Metadatos (labels)"
+    },
+    "f": {
+      "id": "ID",
+      "driver": "Driver",
+      "scope": "Ámbito",
+      "created": "Creada",
+      "internal": "Interna (sin salida al exterior)",
+      "attachable": "Conectable manualmente",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "compose": "Proyecto Compose",
+      "subnet": "Subred",
+      "gateway": "Puerta de enlace",
+      "ipRange": "Rango asignable",
+      "aux": "Direcciones reservadas"
+    },
+    "ipamDriver": "Driver de IPAM: {{driver}}",
+    "noPools": "Docker no ha asignado subredes a esta red.",
+    "wholeSubnet": "Toda la subred",
+    "noOptions": "Sin opciones.",
+    "membersHint": "Contenedores que tienen esta red configurada, en marcha o no. Las direcciones solo existen mientras el contenedor está en marcha.",
+    "noMembers": "Ningún contenedor usa esta red.",
+    "c": {
+      "name": "Contenedor",
+      "state": "Estado",
+      "ip": "Dirección IP",
+      "mac": "MAC"
+    },
+    "ipWhenRunning": "Se asigna al arrancar",
+    "inspectHint": "Respuesta completa de Docker, como «docker network inspect {{name}}».",
+    "notFound": "La red {{name}} ya no existe.",
+    "loadError": "No se pudo inspeccionar la red: {{message}}"
+  },
+  "netCreate": {
+    "title": "Crear red",
+    "g": {
+      "general": "General",
+      "ipv4": "Direcciones IPv4",
+      "ipv4Hint": "Opcional: sin subred, Docker elige una libre.",
+      "ipv6": "IPv6",
+      "options": "Opciones del driver",
+      "optionsHint": "Se envían tal cual al driver (--opt).",
+      "labels": "Metadatos (labels)"
+    },
+    "f": {
+      "name": "Nombre",
+      "driver": "Driver",
+      "driverName": "Nombre del driver",
+      "internal": "Red interna",
+      "attachable": "Conectable manualmente",
+      "subnet": "Subred",
+      "gateway": "Puerta de enlace",
+      "ipRange": "Rango asignable",
+      "ipv6": "Activar IPv6"
+    },
+    "h": {
+      "name": "Letras, números, «_», «.» o «-».",
+      "driver": {
+        "bridge": "Red privada en este equipo; los contenedores se comunican entre sí por nombre.",
+        "macvlan": "Cada contenedor obtiene su propia MAC en la red física. Indica la interfaz en la opción «parent».",
+        "ipvlan": "Comparte la MAC de la interfaz física. Indica la interfaz en la opción «parent».",
+        "overlay": "Red entre varios equipos: requiere Docker Swarm.",
+        "other": "Driver de un plugin instalado en Docker."
+      },
+      "internal": "Sin acceso al exterior (--internal).",
+      "attachable": "Para redes overlay: permite conectar contenedores sueltos (--attachable).",
+      "subnet": "En notación CIDR, p. ej. 172.30.0.0/24.",
+      "gateway": "Debe estar dentro de la subred.",
+      "ipRange": "Parte de la subred que Docker asigna automáticamente.",
+      "ipv6": "Requiere que el kernel y Docker tengan IPv6 (--ipv6)."
+    },
+    "otherDriver": "Otro",
+    "addOption": "Añadir opción",
+    "noOptions": "Sin opciones.",
+    "body": "Cuerpo de la petición",
+    "ready": "Lista para crear.",
+    "submit": "Crear red"
+  },
+  "netOps": {
+    "failed": "Docker rechazó la operación: {{message}}",
+    "removeTitle": "Eliminar la red {{name}}",
+    "remove": "Eliminar red",
+    "removeBody": "Se elimina la red. No se puede deshacer.",
+    "predefined": "Docker crea las redes bridge, host y none, y no permite eliminarlas.",
+    "runningBlocks_one": "Hay {{count}} contenedor en marcha conectado: Docker no eliminará la red hasta que lo desconectes o lo detengas.",
+    "runningBlocks_other": "Hay {{count}} contenedores en marcha conectados: Docker no eliminará la red hasta que los desconectes o los detengas.",
+    "stoppedBreak_one": "{{count}} contenedor detenido tiene configurada esta red. Docker la eliminará igualmente y ese contenedor no podrá arrancar hasta que lo desconectes o vuelvas a crear la red:",
+    "stoppedBreak_other": "{{count}} contenedores detenidos tienen configurada esta red. Docker la eliminará igualmente y esos contenedores no podrán arrancar hasta que los desconectes o vuelvas a crear la red:",
+    "stoppedSure": "Entiendo que esos contenedores no podrán arrancar",
+    "removed": "Red {{name}} eliminada.",
+    "pruneTitle": "Limpiar redes",
+    "prune": "Limpiar redes",
+    "pruneBody": "Se eliminan las redes creadas por el usuario que no tienen contenedores en marcha. Las predefinidas no se tocan.",
+    "pruneEstimate_one": "Según la lista actual se eliminará {{count}} red:",
+    "pruneEstimate_other": "Según la lista actual se eliminarán {{count}} redes:",
+    "pruneEstimate_zero": "Según la lista actual no hay redes que eliminar.",
+    "usedByStopped": "la usan contenedores detenidos: {{names}}",
+    "pruneStoppedWarn_one": "{{count}} de esas redes está configurada en contenedores detenidos: Docker la elimina igualmente y esos contenedores no podrán arrancar.",
+    "pruneStoppedWarn_other": "{{count}} de esas redes están configuradas en contenedores detenidos: Docker las elimina igualmente y esos contenedores no podrán arrancar.",
+    "pruned_one": "{{count}} red eliminada: {{names}}",
+    "pruned_other": "{{count}} redes eliminadas: {{names}}",
+    "pruned_zero": "No había redes que eliminar.",
+    "connectTitle": "Conectar un contenedor a {{name}}",
+    "connect": "Conectar",
+    "connectShort": "Conectar contenedor",
+    "container": "Contenedor",
+    "containerHint": "Se puede conectar en marcha o detenido.",
+    "noContainers": "No hay contenedores.",
+    "block": {
+      "already": "Ya está conectado a esta red.",
+      "host": "Los contenedores en modo host no se pueden conectar a otras redes, ni otros a la red host.",
+      "none": "Un contenedor sin red (none) no se puede conectar a otras redes, ni otros a la red none."
+    },
+    "blockShort": {
+      "already": "ya conectado",
+      "host": "modo host",
+      "none": "sin red"
+    },
+    "aliases": "Alias en esta red",
+    "aliasesHint": "Nombres adicionales con los que otros contenedores de la red lo encuentran, separados por espacios.",
+    "noAliases": "La red predefinida bridge no admite alias.",
+    "ipv4": "IPv4 fija",
+    "ipv6": "IPv6 fija",
+    "auto": "Automática",
+    "ipHint": "Dentro de {{subnets}}. Docker solo admite IP fija si la subred se indicó al crear la red.",
+    "ipAuto": "Docker solo admite IP fija si la subred se indicó al crear la red.",
+    "connected": "{{container}} conectado a {{network}}.",
+    "disconnectTitle": "Desconectar {{container}} de {{network}}",
+    "disconnect": "Desconectar",
+    "disconnectAction": "Desconectar {{container}}",
+    "disconnectRunning": "El contenedor está en marcha: pierde al instante la conexión por esta red.",
+    "disconnectStopped": "El contenedor deja de tener configurada esta red.",
+    "force": "Forzar",
+    "forceHint": "Solo si Docker no puede desconectarlo normalmente (--force).",
+    "disconnected": "{{container}} desconectado de {{network}}.",
+    "checking": "Consultando a Docker el estado actual…",
+    "gone": "La red {{name}} ya no existe."
   }
 }

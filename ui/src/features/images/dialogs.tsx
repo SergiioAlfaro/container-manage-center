@@ -11,6 +11,7 @@ import { keys } from "@/shared/query";
 import { Button } from "@/shared/ui/controls";
 import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
 import { Field, TextInput } from "@/features/containers/create/fields";
+import { usePulls } from "./pull/pulls";
 import { familiar, useRefCheck } from "./useRefCheck";
 
 type Img = Pick<ImageSummary, "id" | "repoTags" | "usedBy" | "size">;
@@ -178,6 +179,8 @@ export function PruneDialog({ images, onClose, onDone }: { images: ImageSummary[
   const [sure, setSure] = useState(false);
   const affected = images.filter((i) => i.usedBy.length === 0 && (all || i.dangling));
   const bytes = affected.reduce((a, i) => a + i.size, 0);
+  // Con el almacén de containerd, limpiar hace fallar las descargas en curso (D-050).
+  const pulling = usePulls((s) => s.items.filter((p) => p.status === "starting" || p.status === "running").length);
   const m = useMutation({
     mutationFn: () => api.imagesPrune(all),
     onSuccess: (r) => {
@@ -193,7 +196,7 @@ export function PruneDialog({ images, onClose, onDone }: { images: ImageSummary[
       footer={
         <>
           <Button onClick={onClose}>{t("containers.cancel")}</Button>
-          <Button variant="danger" disabled={(all && !sure) || m.isPending} onClick={() => m.mutate()}>
+          <Button variant="danger" disabled={pulling > 0 || (all && !sure) || m.isPending} onClick={() => m.mutate()}>
             {m.isPending ? <Spinner size={14} /> : <Trash2 size={14} />}
             {t("imageOps.prune")}
           </Button>
@@ -225,6 +228,7 @@ export function PruneDialog({ images, onClose, onDone }: { images: ImageSummary[
         </ul>
       )}
       <p className="text-[12px] text-ink-3">{t("imageOps.pruneNote")}</p>
+      {pulling > 0 && <Banner tone="warn">{t("imageOps.pruneWhilePulling", { count: pulling })}</Banner>}
       {all && <Checkbox checked={sure} onChange={setSure} label={t("imageOps.pruneSure")} />}
       {m.error && <Banner tone="error">{t("imageOps.failed", { message: errMsg(m.error) })}</Banner>}
     </Dialog>

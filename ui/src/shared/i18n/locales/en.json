@@ -225,7 +225,13 @@
       "version": "Get Compose version"
     },
     "network": {
-      "list": "List networks"
+      "list": "List networks",
+      "inspect": "Inspect network",
+      "create": "Create network",
+      "remove": "Remove network",
+      "prune": "Prune networks",
+      "connect": "Connect container to network",
+      "disconnect": "Disconnect container from network"
     },
     "volume": {
       "list": "List volumes"
@@ -789,7 +795,9 @@
   },
   "issues": {
     "name": {
-      "invalid": "Invalid name: use letters, digits, “_”, “.” or “-”, starting with a letter or digit."
+      "invalid": "Invalid name: use letters, digits, “_”, “.” or “-”, starting with a letter or digit.",
+      "required": "The name is required.",
+      "reserved": "{{value}} is a predefined Docker network."
     },
     "image": {
       "required": "Enter an image.",
@@ -894,6 +902,36 @@
     },
     "target": {
       "invalid": "Invalid stage name."
+    },
+    "driver": {
+      "invalid": "Invalid driver name.",
+      "singleton": "There can only be one network with the {{value}} driver (the predefined one).",
+      "swarm": "Overlay networks require Docker Swarm: without it, Docker will reject the creation.",
+      "noParent": "Without the \"parent\" option, the network has no way out through any physical interface."
+    },
+    "subnet": {
+      "required": "Set the subnet to use a gateway or range.",
+      "invalid": "Invalid subnet: use CIDR notation (e.g. 172.30.0.0/24).",
+      "hostBits": "{{value}} is not a network address; it should be {{fixed}}.",
+      "family": "{{value}} is not of this address family."
+    },
+    "gateway": {
+      "invalid": "Invalid address.",
+      "outside": "{{value}} is not inside {{subnet}}.",
+      "family": "{{value}} is not of this address family."
+    },
+    "ipRange": {
+      "invalid": "Invalid range: use CIDR notation.",
+      "outside": "{{value}} is not inside {{subnet}}.",
+      "hostBits": "{{value}} is not a network address; it should be {{fixed}}.",
+      "family": "{{value}} is not of this address family."
+    },
+    "ipv6": {
+      "disabled": "Enable IPv6 to use an IPv6 subnet."
+    },
+    "option": {
+      "keyInvalid": "Invalid option name: {{key}}",
+      "duplicate": "Duplicate option: {{key}}"
     }
   },
   "dupNotes": {
@@ -1038,7 +1076,9 @@
     "pruneEstimate_other": "Based on the current list, {{count}} images would be removed ({{size}}).",
     "pruneNote": "Docker makes the final decision and also removes the related build cache. This cannot be undone.",
     "pruneSure": "I understand I will have to pull or build those images again",
-    "pruned": "Pruning finished: {{count}} items removed, {{size}} reclaimed."
+    "pruned": "Pruning finished: {{count}} items removed, {{size}} reclaimed.",
+    "pruneWhilePulling_one": "{{count}} download is in progress. Wait for it to finish: with the containerd image store, Docker makes ongoing downloads fail when pruning.",
+    "pruneWhilePulling_other": "{{count}} downloads are in progress. Wait for them to finish: with the containerd image store, Docker makes ongoing downloads fail when pruning."
   },
   "build": {
     "title": "Build image",
@@ -1113,5 +1153,193 @@
       "failed": "The build failed",
       "cancelled": "Build cancelled"
     }
+  },
+  "networks": {
+    "create": "Create network",
+    "prune": "Prune",
+    "refresh": "Refresh",
+    "search": "Search by name, ID, subnet or container",
+    "filterLabel": "Filter",
+    "filter": {
+      "all": "All",
+      "inUse": "In use",
+      "unused": "Unused",
+      "custom": "User-defined"
+    },
+    "count_one": "{{count}} network",
+    "count_other": "{{count}} networks",
+    "columns": {
+      "name": "Network",
+      "id": "ID",
+      "driver": "Driver",
+      "subnet": "Subnet",
+      "containers": "Containers",
+      "actions": "Actions"
+    },
+    "badge": {
+      "predefined": "Predefined",
+      "internal": "Internal",
+      "attachable": "Attachable",
+      "compose": "Compose: {{project}}"
+    },
+    "noContainers": "No containers",
+    "members_one": "{{count}} container ({{running}} running)",
+    "members_other": "{{count}} containers ({{running}} running)",
+    "empty": "There are no networks.",
+    "noMatches": "No network matches the search.",
+    "loadError": "Could not get the network list: {{message}}",
+    "open": "Open {{name}}",
+    "connectAction": "Connect a container to {{name}}",
+    "removeAction": "Remove {{name}}"
+  },
+  "netDetail": {
+    "back": "Networks",
+    "tabs": {
+      "summary": "Summary",
+      "containers": "Containers",
+      "inspect": "JSON inspect"
+    },
+    "s": {
+      "general": "General",
+      "ipam": "Addresses (IPAM)",
+      "options": "Driver options",
+      "labels": "Metadata (labels)"
+    },
+    "f": {
+      "id": "ID",
+      "driver": "Driver",
+      "scope": "Scope",
+      "created": "Created",
+      "internal": "Internal (no outside access)",
+      "attachable": "Manually attachable",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "compose": "Compose project",
+      "subnet": "Subnet",
+      "gateway": "Gateway",
+      "ipRange": "Assignable range",
+      "aux": "Reserved addresses"
+    },
+    "ipamDriver": "IPAM driver: {{driver}}",
+    "noPools": "Docker has not assigned subnets to this network.",
+    "wholeSubnet": "Whole subnet",
+    "noOptions": "No options.",
+    "membersHint": "Containers that have this network configured, running or not. Addresses only exist while the container is running.",
+    "noMembers": "No container uses this network.",
+    "c": {
+      "name": "Container",
+      "state": "State",
+      "ip": "IP address",
+      "mac": "MAC"
+    },
+    "ipWhenRunning": "Assigned on start",
+    "inspectHint": "Full Docker response, like \"docker network inspect {{name}}\".",
+    "notFound": "The network {{name}} no longer exists.",
+    "loadError": "Could not inspect the network: {{message}}"
+  },
+  "netCreate": {
+    "title": "Create network",
+    "g": {
+      "general": "General",
+      "ipv4": "IPv4 addresses",
+      "ipv4Hint": "Optional: without a subnet, Docker picks a free one.",
+      "ipv6": "IPv6",
+      "options": "Driver options",
+      "optionsHint": "Sent as is to the driver (--opt).",
+      "labels": "Metadata (labels)"
+    },
+    "f": {
+      "name": "Name",
+      "driver": "Driver",
+      "driverName": "Driver name",
+      "internal": "Internal network",
+      "attachable": "Manually attachable",
+      "subnet": "Subnet",
+      "gateway": "Gateway",
+      "ipRange": "Assignable range",
+      "ipv6": "Enable IPv6"
+    },
+    "h": {
+      "name": "Letters, digits, \"_\", \".\" or \"-\".",
+      "driver": {
+        "bridge": "Private network on this machine; containers reach each other by name.",
+        "macvlan": "Each container gets its own MAC on the physical network. Set the interface in the \"parent\" option.",
+        "ipvlan": "Shares the MAC of the physical interface. Set the interface in the \"parent\" option.",
+        "overlay": "Network across several machines: requires Docker Swarm.",
+        "other": "Driver from a plugin installed in Docker."
+      },
+      "internal": "No outside access (--internal).",
+      "attachable": "For overlay networks: lets standalone containers connect (--attachable).",
+      "subnet": "In CIDR notation, e.g. 172.30.0.0/24.",
+      "gateway": "Must be inside the subnet.",
+      "ipRange": "Part of the subnet Docker assigns automatically.",
+      "ipv6": "Requires IPv6 support in the kernel and Docker (--ipv6)."
+    },
+    "otherDriver": "Other",
+    "addOption": "Add option",
+    "noOptions": "No options.",
+    "body": "Request body",
+    "ready": "Ready to create.",
+    "submit": "Create network"
+  },
+  "netOps": {
+    "failed": "Docker rejected the operation: {{message}}",
+    "removeTitle": "Remove the network {{name}}",
+    "remove": "Remove network",
+    "removeBody": "The network is removed. This cannot be undone.",
+    "predefined": "Docker creates the bridge, host and none networks and does not allow removing them.",
+    "runningBlocks_one": "{{count}} running container is connected: Docker will not remove the network until you disconnect or stop it.",
+    "runningBlocks_other": "{{count}} running containers are connected: Docker will not remove the network until you disconnect or stop them.",
+    "stoppedBreak_one": "{{count}} stopped container has this network configured. Docker removes it anyway and that container will not start until you disconnect it or recreate the network:",
+    "stoppedBreak_other": "{{count}} stopped containers have this network configured. Docker removes it anyway and those containers will not start until you disconnect them or recreate the network:",
+    "stoppedSure": "I understand those containers will not start",
+    "removed": "Network {{name}} removed.",
+    "pruneTitle": "Prune networks",
+    "prune": "Prune networks",
+    "pruneBody": "User-defined networks without running containers are removed. Predefined networks are not touched.",
+    "pruneEstimate_one": "According to the current list, {{count}} network will be removed:",
+    "pruneEstimate_other": "According to the current list, {{count}} networks will be removed:",
+    "pruneEstimate_zero": "According to the current list, there are no networks to remove.",
+    "usedByStopped": "used by stopped containers: {{names}}",
+    "pruneStoppedWarn_one": "{{count}} of those networks is configured in stopped containers: Docker removes it anyway and those containers will not start.",
+    "pruneStoppedWarn_other": "{{count}} of those networks are configured in stopped containers: Docker removes them anyway and those containers will not start.",
+    "pruned_one": "{{count}} network removed: {{names}}",
+    "pruned_other": "{{count}} networks removed: {{names}}",
+    "pruned_zero": "There were no networks to remove.",
+    "connectTitle": "Connect a container to {{name}}",
+    "connect": "Connect",
+    "connectShort": "Connect container",
+    "container": "Container",
+    "containerHint": "It can be connected running or stopped.",
+    "noContainers": "There are no containers.",
+    "block": {
+      "already": "It is already connected to this network.",
+      "host": "Containers in host mode cannot join other networks, and others cannot join the host network.",
+      "none": "A container without networking (none) cannot join other networks, and others cannot join the none network."
+    },
+    "blockShort": {
+      "already": "already connected",
+      "host": "host mode",
+      "none": "no network"
+    },
+    "aliases": "Aliases on this network",
+    "aliasesHint": "Extra names other containers on the network can use to reach it, separated by spaces.",
+    "noAliases": "The predefined bridge network does not support aliases.",
+    "ipv4": "Fixed IPv4",
+    "ipv6": "Fixed IPv6",
+    "auto": "Automatic",
+    "ipHint": "Inside {{subnets}}. Docker only accepts a fixed IP if the subnet was set when creating the network.",
+    "ipAuto": "Docker only accepts a fixed IP if the subnet was set when creating the network.",
+    "connected": "{{container}} connected to {{network}}.",
+    "disconnectTitle": "Disconnect {{container}} from {{network}}",
+    "disconnect": "Disconnect",
+    "disconnectAction": "Disconnect {{container}}",
+    "disconnectRunning": "The container is running: it loses connectivity through this network immediately.",
+    "disconnectStopped": "The container no longer has this network configured.",
+    "force": "Force",
+    "forceHint": "Only if Docker cannot disconnect it normally (--force).",
+    "disconnected": "{{container}} disconnected from {{network}}.",
+    "checking": "Checking the current state with Docker…",
+    "gone": "The network {{name}} no longer exists."
   }
 }

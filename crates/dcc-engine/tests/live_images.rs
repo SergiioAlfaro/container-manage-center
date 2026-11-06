@@ -180,6 +180,13 @@ fn last_record(log: &ActivityLog, kind: &str) -> dcc_activity::OperationRecord {
         .unwrap_or_else(|| panic!("sin registro {kind}"))
 }
 
+/// Con el almacén de containerd, `POST /images/prune` (incluso con un filtro que
+/// no coincide con nada) hace fallar las descargas en curso ("lease does not
+/// exist" / "failed commit on ref"); comprobado con el CLI oficial y Docker 29.9
+/// (15/15 descargas fallidas), no con Docker 24 y el almacén clásico (D-050).
+/// La prueba que limpia no se solapa con las que descargan.
+static PULLS: tokio::sync::RwLock<()> = tokio::sync::RwLock::const_new(());
+
 /// `true` si el daemon usa el almacén de imágenes de containerd.
 async fn containerd_store(docker: &bollard::Docker) -> bool {
     let info = docker.info().await.unwrap();
@@ -202,6 +209,7 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
     if !enabled() {
         return;
     }
+    let _pulls = PULLS.read().await;
     let dir = tempfile::tempdir().unwrap();
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
     // Imagen que el daemon no puede tener: tiene que descargar la capa con
@@ -336,6 +344,7 @@ async fn pull_of_content_already_present_is_a_real_finished_pull() {
     if !enabled() {
         return;
     }
+    let _pulls = PULLS.read().await;
     let dir = tempfile::tempdir().unwrap();
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
     let containerd = containerd_store(&docker).await;
@@ -407,6 +416,7 @@ async fn pull_with_credentials_never_records_them() {
     if !enabled() {
         return;
     }
+    let _pulls = PULLS.read().await;
     let dir = tempfile::tempdir().unwrap();
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
     let secret = "clave-dcc-no-debe-aparecer";
@@ -504,6 +514,7 @@ async fn cancelled_pull_stops_and_is_recorded_as_cancelled() {
     if !enabled() {
         return;
     }
+    let _pulls = PULLS.read().await;
     let dir = tempfile::tempdir().unwrap();
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
     let containerd = containerd_store(&docker).await;
@@ -734,10 +745,14 @@ async fn inspect_history_tag_remove_and_prune() {
         .await
         .unwrap();
     let dangling = built.image_id.unwrap();
-    let p = engine
-        .prune_images_filtered(false, Some(&mark), true)
-        .await
-        .unwrap();
+    let p = {
+        // Sin descargas en curso de otras pruebas (D-050).
+        let _no_pulls = PULLS.write().await;
+        engine
+            .prune_images_filtered(false, Some(&mark), true)
+            .await
+            .unwrap()
+    };
     assert!(p.deleted.contains(&dangling), "{p:?} no incluye {dangling}");
     assert!(docker.inspect_image(&dangling).await.is_err());
     let rec = last_record(&log, "image.prune");

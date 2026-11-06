@@ -31,6 +31,12 @@ import type { PullAuth } from "@/shared/ipc/bindings/PullAuth";
 import type { PullEvent } from "@/shared/ipc/bindings/PullEvent";
 import type { RemoveResult } from "@/shared/ipc/bindings/RemoveResult";
 import type { SearchResult } from "@/shared/ipc/bindings/SearchResult";
+import type { NetworkDetails } from "@/shared/ipc/bindings/NetworkDetails";
+import type { NetworkPreview } from "@/shared/ipc/bindings/NetworkPreview";
+import type { NetworkSpec } from "@/shared/ipc/bindings/NetworkSpec";
+import type { NetworkSummary } from "@/shared/ipc/bindings/NetworkSummary";
+import type { ConnectOptions } from "@/shared/ipc/bindings/ConnectOptions";
+import type { CreatedNetwork } from "@/shared/ipc/bindings/CreatedNetwork";
 import { emptySpec } from "@/features/containers/specModel";
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
@@ -315,6 +321,67 @@ export function buildPreviewOf(spec: BuildSpec): BuildPreview {
   };
 }
 
+export function network(over: Partial<NetworkSummary> = {}): NetworkSummary {
+  return {
+    id: "n1n1n1n1n1n1n1n1",
+    name: "backend",
+    driver: "bridge",
+    scope: "local",
+    created: "2026-11-01T10:00:00Z",
+    internal: false,
+    attachable: false,
+    ingress: false,
+    enableIpv4: true,
+    enableIpv6: false,
+    subnets: ["172.30.0.0/24"],
+    gateways: ["172.30.0.1"],
+    labels: { "com.example.app": "tienda" },
+    predefined: false,
+    composeProject: null,
+    containers: [
+      { id: "a1b2c3d4e5f6a7b8c9d0", name: "web", state: "running", ipv4: null, ipv6: null, mac: null },
+      { id: "b2b2b2b2b2b2", name: "db", state: "exited", ipv4: null, ipv6: null, mac: null },
+    ],
+    ...over,
+  };
+}
+
+export const networks: NetworkSummary[] = [
+  network({ id: "b0b0b0b0b0b0b0b0", name: "bridge", predefined: true, subnets: ["172.17.0.0/16"], gateways: ["172.17.0.1"], labels: {}, containers: [{ id: "c3c3c3c3c3c3", name: "cache", state: "paused", ipv4: null, ipv6: null, mac: null }] }),
+  network({ id: "h0h0h0h0h0h0h0h0", name: "host", driver: "host", predefined: true, subnets: [], gateways: [], labels: {}, containers: [] }),
+  network({ id: "e0e0e0e0e0e0e0e0", name: "none", driver: "null", predefined: true, subnets: [], gateways: [], labels: {}, containers: [] }),
+  network(),
+  network({ id: "v1v1v1v1v1v1v1v1", name: "vieja", subnets: ["172.31.0.0/24"], gateways: [], labels: {}, containers: [{ id: "b2b2b2b2b2b2", name: "db", state: "exited", ipv4: null, ipv6: null, mac: null }] }),
+  network({ id: "s1s1s1s1s1s1s1s1", name: "aislada", internal: true, subnets: ["172.32.0.0/24"], gateways: [], labels: {}, containers: [], composeProject: "blog" }),
+];
+
+export function networkDetails(id: string): NetworkDetails {
+  const n = networks.find((x) => x.id === id) ?? network({ id });
+  return {
+    summary: {
+      ...n,
+      containers: n.containers.map((m) => (m.state === "running" ? { ...m, ipv4: "172.30.0.2/24", mac: "02:42:ac:1e:00:02" } : m)),
+    },
+    ipamDriver: "default",
+    pools: n.subnets.map((s, i) => ({ subnet: s, gateway: n.gateways[i] ?? "", ipRange: "", auxiliary: {} })),
+    options: { "com.docker.network.driver.mtu": "1500" },
+    raw: JSON.stringify({ Name: n.name, Id: n.id }, null, 2),
+  };
+}
+
+/** Imita lo esencial de la validación del backend (las reglas reales se prueban en Rust). */
+export function networkPreviewOf(spec: NetworkSpec): NetworkPreview {
+  const issues: NetworkPreview["issues"] = [];
+  if (!spec.name.trim()) issues.push({ severity: "error", field: "name", code: "name.required", params: {} });
+  if (spec.ipv4.subnet === "10.0.0.5/24") issues.push({ severity: "error", field: "ipv4.subnet", code: "subnet.hostBits", params: { value: "10.0.0.5/24", fixed: "10.0.0.0/24" } });
+  if (spec.driver === "overlay") issues.push({ severity: "warning", field: "driver", code: "driver.swarm", params: {} });
+  const parts = ["docker", "network", "create", "--driver", spec.driver];
+  if (spec.ipv4.subnet) parts.push("--subnet", spec.ipv4.subnet);
+  if (spec.internal) parts.push("--internal");
+  parts.push(spec.name.trim());
+  return { issues, command: parts.join(" "), request: "POST /networks/create", body: JSON.stringify({ Name: spec.name.trim(), Driver: spec.driver }, null, 2) };
+}
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -394,6 +461,14 @@ export const api = {
   buildOpen: vi.fn(async (s: BuildSpec, h: (e: BuildEvent) => void) =>
     streams.add(h, { event: "end", closed: { result: { end: { reason: "closed", summary: "Construcción cancelada por el usuario (2 pasos iniciados)", exitCode: null }, imageId: null, tags: s.tags }, error: null } }),
   ),
+  networksList: vi.fn(async (): Promise<NetworkSummary[]> => networks),
+  networkDetails: vi.fn(async (id: string, _n: string | null): Promise<NetworkDetails> => networkDetails(id)),
+  networkPreview: vi.fn(async (spec: NetworkSpec): Promise<NetworkPreview> => networkPreviewOf(spec)),
+  networkCreate: vi.fn(async (_spec: NetworkSpec): Promise<CreatedNetwork> => ({ id: "f00df00df00df00d", warning: null })),
+  networkRemove: vi.fn(async (_id: string, _n: string | null) => {}),
+  networksPrune: vi.fn(async (): Promise<string[]> => ["vieja", "aislada"]),
+  networkConnect: vi.fn(async (_n: string, _nn: string | null, _c: string, _cn: string | null, _o: ConnectOptions, _s: string[]) => {}),
+  networkDisconnect: vi.fn(async (_n: string, _nn: string | null, _c: string, _cn: string | null, _f: boolean) => {}),
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),
 };
 

@@ -74,6 +74,14 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::images::image_pull_open,
             commands::images::build_preview,
             commands::images::build_open,
+            commands::networks::networks_list,
+            commands::networks::network_details,
+            commands::networks::network_preview,
+            commands::networks::network_create,
+            commands::networks::network_remove,
+            commands::networks::networks_prune,
+            commands::networks::network_connect,
+            commands::networks::network_disconnect,
         ])
 }
 
