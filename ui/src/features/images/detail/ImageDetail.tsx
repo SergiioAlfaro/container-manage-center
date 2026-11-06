@@ -64,7 +64,8 @@ function Summary({ d }: { d: ImageDetails }) {
   const [reveal, setReveal] = useState(false);
   const secrets = d.env.filter((e) => isSecretKey(e.key)).length;
   const labels = Object.entries(d.labels).sort(([a], [b]) => a.localeCompare(b));
-  const created = d.created ? new Date(d.created) : null;
+  // Sin fecha, Docker envía la fecha cero de Go (0001-01-01T00:00:00Z).
+  const created = d.created && !d.created.startsWith("0001-01-01") ? new Date(d.created) : null;
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <Section title={t("imageDetail.s.general")}>

@@ -394,8 +394,8 @@ que continúen si el usuario cambia de apartado.
 ### D-043 · Pruebas de descarga con un registro local
 En el entorno de desarrollo Docker no tiene acceso a Docker Hub. Las pruebas
 levantan un registro mínimo (API de distribución v2, `tests/common/registry.rs`)
-que sirve la imagen de prueba exportada con `GET /images/{name}/get`, con la
-capa en gzip y un manifiesto schema 2, opcionalmente con autenticación básica y
+que sirve una imagen con la capa en gzip y un manifiesto schema 2 (desde la
+0.4.1, una imagen nueva en cada prueba; ver D-045), opcionalmente con autenticación básica y
 con retraso de blobs para probar la cancelación. El daemon real descarga de él:
 la prueba es real de extremo a extremo. Al intentar primero TLS (byte 0x16), el
 registro responde en HTTP plano como un servidor Go, que es lo que hace que
@@ -422,3 +422,43 @@ con datos simulados y se valida en M6.
 * "Descargar de nuevo" se ofrece para toda imagen con nombre: con el almacén de
   containerd también las imágenes construidas localmente tienen digest, así que
   no sirve para saber si vienen de un registro.
+
+### D-045 · Pruebas de descarga independientes del almacén de imágenes
+**Contexto.** En Debian 13 (Docker 26.1.5, almacén clásico overlay2) fallaron
+dos pruebas de descarga de la 0.4.0. El registro de prueba servía la imagen de
+prueba exportada del propio daemon. El almacén clásico reconoce la imagen por su
+configuración y no descarga capas; el de containerd compara capas comprimidas y
+la recomprimida le parecía nueva. Las pruebas dependían, sin saberlo, del almacén.
+
+**Decisión.**
+* El registro de prueba genera en cada prueba una imagen nueva (capa aleatoria,
+  etiqueta `dcc.test=true`) que ningún daemon puede tener, y puede enviar las
+  capas a ritmo controlado y anotar los blobs cuya conexión cierra el cliente.
+* La prueba de descarga exige progreso parcial real (`Downloading` con
+  0 < actual < total y total igual al tamaño servido), una sola petición de la
+  capa y "1 capas descargadas, 0 ya existían".
+* La prueba de cancelación exige: fin de la operación en menos de 6 s, que
+  Docker pidiera la capa y **no la recibiera entera** (el registro la envía
+  despacio, así que si Docker siguiera descargando la completaría), que no
+  quede imagen y que una nueva descarga baje la capa entera (no quedan restos).
+  Con containerd exige además que el corte sea inmediato.
+* El caso que ocurrió en Debian 13 tiene su propia prueba, con aserciones
+  exactas para cada almacén.
+
+**Comportamiento de Docker con el almacén clásico.** Al cancelar, el daemon
+deja de procesar la descarga al momento (`context canceled`), pero su conexión
+con el registro sigue abierta hasta que el registro empieza a responder; entonces
+la corta. `docker pull` interrumpido con Ctrl+C se comporta igual (comprobado con
+Docker 29 y 24). La aplicación no puede hacer más que el CLI: cerrar la petición
+a Docker. No queda imagen ni capa.
+
+**Comprobado con** Docker 29.9.2 (containerd), Docker 29.9.2 (clásico) y
+Docker 24.0.7 (clásico).
+
+### D-046 · Fechas ausentes
+Docker envía la fecha cero de Go (0001-01-01T00:00:00Z, `Created: -62135596800`)
+para objetos sin fecha, por ejemplo imágenes cuya configuración no la incluye.
+El CLI muestra "N/A"; la interfaz mostraba "hace 2027 años". Las fechas
+anteriores a 1970 se muestran como "—". El cambio está en el formateador
+compartido (`shared/format.ts`), así que también afecta a la lista de
+contenedores; las fechas válidas se muestran exactamente igual que antes.

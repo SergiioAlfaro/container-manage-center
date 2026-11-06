@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Fase actual** | 4 · Gestión de imágenes |
-| **Versión** | 0.4.0 |
+| **Versión** | 0.4.1 (corrección de la Fase 4) |
 | **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
 | **Fases completadas (validadas)** | 1, 2, 3 |
 | **Fases pendientes** | 4–10 |
@@ -17,7 +17,7 @@
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
 | 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
 | 3. Contenedores (creación, logs, inspección, terminal) | **Validada** (2026-11-06, versión 0.3.0) |
-| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | Pendiente de validación externa (0.4.0) |
+| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | Pendiente de validación externa (0.4.1; la 0.4.0 falló 2 pruebas reales en Debian 13) |
 | 5. Redes | No iniciada |
 | 6. Volúmenes y bind mounts | No iniciada |
 | 7. Docker Compose | No iniciada |
@@ -309,10 +309,45 @@ Visualizar imágenes locales, descargarlas de registros, buscarlas, inspeccionar
 ### Errores conocidos
 Ninguno abierto.
 
+### Verificación del propietario de la 0.4.0 (Debian 13) — 2026-11-06
+`verify-phase-4.sh`: 28 correctas, 1 bloque fallido, 2 omitidas, 0 avisos; 260 pruebas Rust y 133 de interfaz correctas; compilación, Clippy, TypeScript y Vite correctos. Fallaron dos pruebas contra Docker real de `live_images`:
+- `cancelled_pull_stops_and_is_recorded_as_cancelled` (línea 432): `Finished` en lugar de `Closed`.
+- `pull_from_local_registry_reports_progress_and_records_once` (línea 225): el resumen no contenía "1 capas descargadas".
+
+### Análisis y corrección (0.4.1)
+**Reproducción.** Con un daemon con el almacén de imágenes clásico (overlay2) se reproducen exactamente los dos fallos en las mismas líneas: con Docker 29.9.2 configurado con `containerd-snapshotter=false` y con Docker 24.0.7 (paquete de Ubuntu extraído en una carpeta temporal, sin instalar). Debian 13 usa Docker 26.1.5 con ese almacén. En el entorno de desarrollo el daemon usaba el almacén de containerd y las pruebas pasaban.
+
+**Causa.** El registro de prueba servía la imagen de prueba exportada del propio daemon. El almacén clásico identifica la imagen por su configuración, ve que ya la tiene y **no descarga ninguna capa**: solo envía "Pulling from…", "Digest: …" y "Status: Downloaded newer image" (mensajes capturados). Por eso:
+- `Finished` es correcto: la descarga terminó de verdad (la imagen queda con el nuevo nombre, el mismo ID). El retraso de 20 s del blob no se aplicaba porque Docker no pidió el blob, y la cancelación a los 2 s llegaba con la descarga ya terminada.
+- El resumen decía "0 capas descargadas, 0 ya existían". containerd compara las capas comprimidas y la capa recomprimida por el registro le parecía nueva, de ahí que en desarrollo sí descargara.
+
+No había error en el ciclo de vida de la descarga, la cancelación, el progreso ni el registro de actividad: las pruebas daban por hecho un comportamiento que depende del almacén de imágenes.
+
+**Correcciones.**
+- Pruebas: el registro local sirve en cada prueba una imagen nueva (capa de 3 MiB aleatoria) que ningún daemon puede tener, enviada a ritmo controlado. Las aserciones no se han relajado; se han reforzado (ver D-045).
+- Nueva prueba `pull_of_content_already_present_is_a_real_finished_pull`: el caso de Debian 13, con aserciones exactas para cada almacén.
+- Producción: si Docker no informa de ninguna capa, el resumen dice "Docker ya tenía todo su contenido, no ha descargado capas" en lugar de "0 capas descargadas, 0 ya existían".
+- Producción (visto en la aplicación real durante la reproducción): una imagen sin fecha de creación aparecía como "hace 2027 años", porque Docker envía la fecha cero de Go (0001-01-01). Ahora se muestra "—", como el "N/A" del CLI (D-046).
+- Infraestructura de pruebas: con un daemon sin la imagen de prueba, varias pruebas en paralelo la importaban a la vez y quedaba una imagen sin etiqueta. La creación se serializa.
+- Nueva prueba IPC contra Docker real `live_pull_and_cancel_via_ipc`: descarga completa y cancelada con los comandos que usa la ventana.
+- `verify-phase-4.sh`: separa infraestructura y calidad (5.1), pruebas funcionales deterministas (5.2) y pruebas funcionales contra Docker real (5.3, con el resultado de cada prueba por nombre); indica el almacén de imágenes del daemon.
+
+**Cancelación con el almacén clásico.** La operación se cancela al momento y Docker registra `Not continuing with pull after error: context canceled`, pero mantiene su conexión con el registro hasta que este empieza a responder y entonces la corta sin leer la capa. `docker pull` interrumpido con Ctrl+C hace exactamente lo mismo (comprobado). Con containerd el corte es inmediato. En ningún caso queda la imagen ni la capa: una nueva descarga baja la capa entera (D-045).
+
+### Pruebas de la 0.4.1 en el entorno de desarrollo
+Ver la tabla de abajo; se ejecutaron con tres daemons: Docker 29.9.2 con containerd, Docker 29.9.2 con almacén clásico y Docker 24.0.7 con almacén clásico.
+
+| Prueba | Resultado |
+|---|---|
+| `live_images` (9) | Superadas con los tres daemons, varias veces seguidas, partiendo también de un daemon vacío; solo queda la imagen de prueba `dcc-test/sleeper:2`, que elimina el script |
+| IPC contra Docker real (4) | Superadas con los tres daemons |
+| `live_docker` (11) y `live_containers` (7) | Superadas con los tres daemons (sin cambios en fases anteriores) |
+| Aplicación real bajo Xvfb con Docker 24.0.7 (almacén clásico) y un registro local que envía 8 MiB despacio | Progreso total y por capa ("Downloading · 1,4 MiB / 8 MiB"); descarga completa con "1 capas descargadas"; cancelación: la operación se cerró en 12 ms, el registro vio a Docker cortar la conexión a mitad de la capa, no quedó imagen ni temporales, un único registro de actividad con "cancelada por el usuario" |
+
 ---
 
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-4.sh` en Debian 13 y envía `verify-phase-4-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.4.0 y realiza M1–M18.
+1. El propietario ejecuta `bash scripts/verify-phase-4.sh` con la 0.4.1 en Debian 13 y envía `verify-phase-4-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.4.1 y realiza M1–M18.
 2. Corregir lo que surja y marcar la Fase 4 como validada.
 3. Fase 5: redes (listado, creación, eliminación, inspección, conexión y desconexión de contenedores).
 

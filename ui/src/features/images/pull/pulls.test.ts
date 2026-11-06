@@ -46,6 +46,23 @@ describe("descargas", () => {
     expect(done).toHaveBeenCalledWith(true);
   });
 
+  it("una descarga sin capas (Docker ya tenía el contenido) termina bien con su resumen", async () => {
+    const done = vi.fn();
+    await usePulls.getState().start("127.0.0.1:5000/app:1", { mode: "anonymous" }, done);
+    // Almacén clásico: solo mensajes generales, ninguna capa.
+    streams.emit(1, { event: "progress", update: { layers: [], messages: ["1: Pulling from app", "Digest: sha256:a974", "Status: Downloaded newer image for 127.0.0.1:5000/app:1"] } });
+    let p = usePulls.getState().items[0]!;
+    expect(p.layers).toEqual([]);
+    expect(overallProgress(p.layers)).toBeNull();
+    const summary = "127.0.0.1:5000/app:1: Downloaded newer image for 127.0.0.1:5000/app:1 (sha256:a974); Docker ya tenía todo su contenido, no ha descargado capas; sin credenciales";
+    streams.emit(1, { event: "end", closed: { end: { reason: "finished", summary, exitCode: null }, error: null } });
+    p = usePulls.getState().items[0]!;
+    expect(p.status).toBe("done");
+    expect(p.summary).toBe(summary);
+    expect(p.messages).toHaveLength(3);
+    expect(done).toHaveBeenCalledWith(true);
+  });
+
   it("cancelar cierra el flujo y queda como cancelada", async () => {
     const key = await usePulls.getState().start("nginx", { mode: "anonymous" });
     usePulls.getState().cancel(key);

@@ -196,7 +196,13 @@ int main(int argc, char **argv) {
     }
 
     /// Crea (una sola vez) la imagen de prueba importando un rootfs local.
+    ///
+    /// Las pruebas de un mismo binario se ejecutan en paralelo: sin el cerrojo,
+    /// con un daemon que aún no tiene la imagen, varias la importaban a la vez
+    /// y las perdedoras quedaban como imágenes sin etiqueta.
     pub async fn ensure_image(docker: &bollard::Docker) {
+        static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        let _guard = LOCK.lock().await;
         if docker.inspect_image(IMAGE).await.is_ok() {
             return;
         }

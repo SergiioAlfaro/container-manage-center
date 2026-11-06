@@ -11,7 +11,8 @@
 # Recursos de prueba: las pruebas crean contenedores con la etiqueta
 # dcc.test=true, volúmenes llamados dcc-test-vol-* y una imagen local
 # dcc-test/sleeper:2 (etiqueta dcc.test=true), compilada en el momento sin
-# descargar nada. Al terminar, pase lo que pase, se eliminan SOLO esos recursos
+# descargar nada. Las pruebas de descarga levantan un registro en 127.0.0.1 con
+# imágenes generadas en el momento (también con dcc.test=true). Al terminar, pase lo que pase, se eliminan SOLO esos recursos
 # y se comprueba que no queda ninguno.
 #
 # Resultado: verify-phase-4-report.txt. Código de salida 0 solo si no hay
@@ -120,6 +121,12 @@ if [ $HAVE_DOCKER_CLI -eq 1 ]; then
   if [ -n "$CLIV" ] && ver_ge "$CLIV" 20.10.0; then ok "CLI de Docker $CLIV ($(command -v docker))"; else warn "Versión del CLI de Docker no reconocida o anterior a 20.10: '${CLIV:-?}'"; fi
   if SV=$(docker version --format '{{.Server.Version}} (API {{.Server.APIVersion}})' 2>/dev/null) && [ -n "$SV" ]; then
     ok "El CLI de Docker habla con Docker Engine $SV"
+    DRV=$(docker info --format '{{.Driver}} {{json .DriverStatus}}' 2>/dev/null)
+    case "$DRV" in
+      *io.containerd.snapshotter*) say "  Almacén de imágenes: containerd (${DRV%% *})" ;;
+      "") ;;
+      *) say "  Almacén de imágenes: clásico (${DRV%% *})" ;;
+    esac
   else
     warn "El CLI de Docker no puede hablar con el daemon: $(docker info 2>&1 | grep -iE 'permission denied|cannot connect|error' | head -1)"
   fi
@@ -174,39 +181,36 @@ fi
 say ""
 
 # ------------------------------------------------------------------ 5. pruebas
-say "5. Pruebas automatizadas"
-if run_step "Pruebas Rust deterministas (sin Docker)" cargo test --workspace --locked; then
-  grep -h "^test result" "$LAST_LOG" | awk '{s+=$4; f+=$6} END {printf "             %d correctas, %d fallidas (las pruebas contra Docker real no hacen nada en este paso; se ejecutan a continuación)\n", s, f}' | tee -a "$REPORT"
-fi
-if [ -n "$SOCK" ]; then
-  export DCC_DOCKER_TESTS=1 DCC_DOCKER_SOCKET="$SOCK"
-  if run_step "Pruebas contra Docker real (motor)" cargo test --locked -p dcc-engine --test live_docker -- --nocapture --test-threads=2; then
-    T=$(grep -h "^test result" "$LAST_LOG" | awk '{print $4}')
-    O=$(grep -c "omitida:" "$LAST_LOG" || true)
-    say "             $T superadas, de ellas $O sin aplicar en este equipo (abajo) y $((T - O)) ejecutadas de verdad"
-    while IFS= read -r l; do skip "Prueba real sin aplicar: ${l#*omitida: }"; done < <(grep -o "omitida: .*" "$LAST_LOG")
+# Pruebas contra Docker real: una línea por prueba con su resultado, para que un
+# bloque fallido indique exactamente qué prueba falla y por qué.
+list_tests() {
+  local log="$1" n_ok n_fail
+  grep -E "^test [^ ]+ \.\.\. (ok|FAILED|ignored)$" "$log" | sort -u | while read -r _ name _ res; do
+    case "$res" in
+      ok) say "             [ok]     $name" ;;
+      FAILED) say "             [FALLA]  $name" ;;
+      *) say "             [ignorada] $name" ;;
+    esac
+  done
+  n_ok=$(grep -cE "^test [^ ]+ \.\.\. ok$" "$log" || true)
+  n_fail=$(grep -cE "^test [^ ]+ \.\.\. FAILED$" "$log" || true)
+  say "             $n_ok pruebas superadas, $n_fail fallidas"
+}
+live_block() {
+  # live_block "Nombre" paquete binario [hilos]
+  local name="$1" pkg="$2" bin="$3" threads="${4:-2}" rc
+  if [ "$bin" = "-" ]; then
+    run_step "$name" cargo test --locked -p "$pkg" live_ -- --show-output --test-threads="$threads"; rc=$?
+  else
+    run_step "$name" cargo test --locked -p "$pkg" --test "$bin" -- --show-output --test-threads="$threads"; rc=$?
   fi
-  if run_step "Pruebas contra Docker real (contenedores: asistente, inspección, duplicado, logs, estadísticas, terminal)" cargo test --locked -p dcc-engine --test live_containers -- --nocapture --test-threads=2; then
-    T=$(grep -h "^test result" "$LAST_LOG" | awk '{print $4}')
-    say "             $T superadas contra Docker real; tráfico HTTP comprobado contra el registro de actividad"
-  fi
-  if run_step "Pruebas contra Docker real (imágenes: descarga desde un registro local con y sin credenciales, cancelación, búsqueda, inspección, capas, etiquetado, eliminación, limpieza, construcción BuildKit y clásica)" cargo test --locked -p dcc-engine --test live_images -- --nocapture --test-threads=2; then
-    T=$(grep -h "^test result" "$LAST_LOG" | awk '{print $4}')
-    say "             $T superadas contra Docker real; tráfico HTTP comprobado contra el registro de actividad"
-    if grep -q "búsqueda con Internet" "$LAST_LOG"; then
-      say "             Búsqueda en Docker Hub: $(grep -o 'búsqueda con Internet: .*' "$LAST_LOG" | head -1)"
-    else
-      say "             Búsqueda en Docker Hub: el daemon no tiene Internet; se comprobó el error y su registro ($(grep -o 'búsqueda sin Internet en el daemon: .*' "$LAST_LOG" | head -1 | cut -c1-120))"
-    fi
-  fi
-  if run_step "Pruebas contra Docker real (aplicación Tauri: IPC)" cargo test --locked -p docker-control-center live_ -- --nocapture; then
-    while IFS= read -r l; do skip "Prueba IPC real sin aplicar: ${l#*omitida: }"; done < <(grep -o "omitida: .*" "$LAST_LOG")
-  fi
-  run_step "Carrera de estado de Docker 26 (prueba determinista, D-031)" cargo test --locked -p dcc-engine --test stale_list
-  unset DCC_DOCKER_TESTS DCC_DOCKER_SOCKET
-else
-  bad "Pruebas contra Docker real NO ejecutadas: no hay conexión con Docker (son obligatorias)"
-fi
+  list_tests "$LAST_LOG"
+  return $rc
+}
+
+say "5. Pruebas"
+say ""
+say "5.1 Infraestructura y calidad del código (no prueban funcionalidad)"
 run_step "Clippy sin avisos" cargo clippy --workspace --all-targets --locked -- -D warnings
 run_step "Formato Rust" cargo fmt --all -- --check
 run_step "Tipos TypeScript" npx tsc --noEmit
@@ -216,8 +220,38 @@ if node -e "require('playwright')" >/dev/null 2>&1; then
 else
   skip "Comprobación con prototipo congelado: requiere el paquete playwright (opcional; la cubre M1)"
 fi
+say ""
+say "5.2 Pruebas funcionales deterministas (sin Docker)"
+if run_step "Pruebas Rust deterministas (unitarias, de protocolo e IPC)" cargo test --workspace --locked; then
+  grep -h "^test result" "$LAST_LOG" | awk '{s+=$4; f+=$6} END {printf "             %d correctas, %d fallidas (las pruebas contra Docker real no hacen nada en este paso; se ejecutan en 5.3)\n", s, f}' | tee -a "$REPORT"
+fi
 if run_step "Pruebas de interfaz (Vitest)" npx vitest run; then
   grep -hE "Tests +[0-9]" "$LAST_LOG" | sed 's/^/             /' | tee -a "$REPORT"
+fi
+run_step "Carrera de estado de Docker 26 (prueba determinista, D-031)" cargo test --locked -p dcc-engine --test stale_list
+say ""
+say "5.3 Pruebas funcionales contra Docker real (crean y eliminan recursos dcc.test)"
+if [ -n "$SOCK" ]; then
+  export DCC_DOCKER_TESTS=1 DCC_DOCKER_SOCKET="$SOCK"
+  if live_block "Motor: conexión, listados, ciclo de vida (Fases 1-3)" dcc-engine live_docker; then
+    O=$(grep -c "omitida:" "$LAST_LOG" || true)
+    [ "$O" -gt 0 ] && say "             de ellas $O sin aplicar en este equipo (abajo)"
+    while IFS= read -r l; do skip "Prueba real sin aplicar: ${l#*omitida: }"; done < <(grep -o "omitida: .*" "$LAST_LOG" | sort -u)
+  fi
+  live_block "Contenedores: asistente, inspección, duplicado, logs, estadísticas, terminal (Fase 3)" dcc-engine live_containers
+  if live_block "Imágenes: descarga (progreso, credenciales, cancelación, contenido ya presente), búsqueda, inspección, capas, etiquetado, eliminación, limpieza, construcción BuildKit y clásica (Fase 4)" dcc-engine live_images; then
+    if grep -q "búsqueda con Internet" "$LAST_LOG"; then
+      say "             Búsqueda en Docker Hub: $(grep -o 'búsqueda con Internet: .*' "$LAST_LOG" | head -1)"
+    else
+      say "             Búsqueda en Docker Hub: el daemon no tiene Internet; se comprobó el error y su registro ($(grep -o 'búsqueda sin Internet en el daemon: .*' "$LAST_LOG" | head -1 | cut -c1-120))"
+    fi
+  fi
+  if live_block "Aplicación Tauri: IPC contra Docker real" docker-control-center - 1; then
+    while IFS= read -r l; do skip "Prueba IPC real sin aplicar: ${l#*omitida: }"; done < <(grep -o "omitida: .*" "$LAST_LOG" | sort -u)
+  fi
+  unset DCC_DOCKER_TESTS DCC_DOCKER_SOCKET
+else
+  bad "Pruebas contra Docker real NO ejecutadas: no hay conexión con Docker (son obligatorias)"
 fi
 say ""
 
@@ -306,8 +340,10 @@ cat <<'EOF' | tee -a "$REPORT"
            capa y termina en "Descargada" con el digest. La imagen aparece en la lista y en
            "docker image ls". En el panel de actividad hay UNA operación "Descargar imagen".
    [ ] M4  Descarga una imagen más grande (p. ej. python:3.13) y pulsa Cancelar a mitad:
-           queda "Cancelada", "docker image ls" no la muestra y la actividad dice
-           "cancelada por el usuario".
+           queda "Cancelada" al momento, "docker image ls" no la muestra y la actividad tiene
+           UNA operación que dice "cancelada por el usuario". Después descárgala entera: termina
+           en "Descargada" y en el panel de actividad hay una segunda operación correcta. Bórrala
+           al terminar (docker image rm python:3.13).
    [ ] M5  Una imagen que no existe (dcc-no-existe-12345/app) termina con el error real de Docker
            (pull access denied / not found).
    [ ] M6  Buscar en Docker Hub "postgres" con "Solo imágenes oficiales": resultados reales con

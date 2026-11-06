@@ -168,11 +168,11 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por 
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 159 motor · 15 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 37 (tres contra Docker real) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images` | 11 + 7 + 8 (2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local, D-043) |
+| Rust unitarias | `cargo test` | 22 actividad · 161 motor · 15 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 38 (cuatro contra Docker real, una de ellas descarga completa y cancelada desde el registro local) |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images` | 11 + 7 + 9 (2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
-| Interfaz | Vitest + Testing Library | 133 |
+| Interfaz | Vitest + Testing Library | 134 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
 | Manual | `scripts/verify-phase-4.sh` | M1–M18 |

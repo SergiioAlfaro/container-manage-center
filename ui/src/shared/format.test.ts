@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatPort, formatRelative, shortId, uniquePorts } from "./format";
+import { formatAbsolute, formatBytes, formatPort, formatRelative, shortId, uniquePorts } from "./format";
 
 describe("format", () => {
   it("bytes en unidades binarias", () => {
@@ -27,5 +27,9 @@ describe("format", () => {
     const now = Date.UTC(2026, 10, 4, 12);
     expect(formatRelative(now / 1000 - 7200, "es", now)).toBe("hace 2 horas");
     expect(formatRelative(now / 1000 - 30, "en", now)).toBe("30 seconds ago");
+    // Imagen sin fecha: Docker envía la fecha cero de Go.
+    expect(formatRelative(-62135596800, "es", now)).toBe("—");
+    expect(formatAbsolute(-62135596800, "es")).toBe("—");
+    expect(formatRelative(0, "en", now)).toMatch(/years ago/);
   });
 });

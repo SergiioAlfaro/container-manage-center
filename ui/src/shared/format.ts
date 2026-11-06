@@ -18,8 +18,17 @@ export function formatBytes(bytes: number | null | undefined, lang: string): str
   return `${nf.format(v)} ${units[i]}`;
 }
 
-/** "hace 3 horas" a partir de una marca Unix en segundos. */
+/**
+ * Docker devuelve la fecha cero de Go (0001-01-01, -62135596800 s) cuando un
+ * objeto no tiene fecha; el CLI la muestra como "N/A". Aquí se muestra "—".
+ */
+export function hasDate(unixSeconds: number): boolean {
+  return Number.isFinite(unixSeconds) && unixSeconds >= 0;
+}
+
+/** "hace 3 horas" a partir de una marca Unix en segundos; "—" sin fecha. */
 export function formatRelative(unixSeconds: number, lang: string, now = Date.now()): string {
+  if (!hasDate(unixSeconds)) return "—";
   const diff = unixSeconds * 1000 - now;
   const rtf = new Intl.RelativeTimeFormat(localeOf(lang), { numeric: "auto" });
   const abs = Math.abs(diff);
@@ -37,6 +46,7 @@ export function formatRelative(unixSeconds: number, lang: string, now = Date.now
 }
 
 export function formatAbsolute(unixSeconds: number, lang: string): string {
+  if (!hasDate(unixSeconds)) return "—";
   return new Date(unixSeconds * 1000).toLocaleString(localeOf(lang));
 }
 

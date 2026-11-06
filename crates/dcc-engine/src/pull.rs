@@ -143,6 +143,31 @@ impl PullTracker {
             .count()
     }
 
+    /// Resumen de una descarga terminada. Si Docker no informó de ninguna capa
+    /// (ya tenía todo el contenido, por ejemplo la misma imagen con otro
+    /// nombre en el almacén clásico) se dice así, en lugar de "0 capas".
+    pub fn finished_summary(&self, shown: &str, auth_note: &str) -> String {
+        let head = format!(
+            "{shown}: {}{}",
+            self.final_status.as_deref().unwrap_or("descarga terminada"),
+            self.digest
+                .as_deref()
+                .map(|d| format!(" ({d})"))
+                .unwrap_or_default(),
+        );
+        if self.layers.is_empty() {
+            format!(
+                "{head}; Docker ya tenía todo su contenido, no ha descargado capas; {auth_note}"
+            )
+        } else {
+            format!(
+                "{head}; {} capas descargadas, {} ya existían; {auth_note}",
+                self.downloaded(),
+                self.existing()
+            )
+        }
+    }
+
     pub fn existing(&self) -> usize {
         self.layers
             .values()
@@ -242,20 +267,7 @@ impl Engine {
         let auth_note = resolved.source.describe();
         match result {
             Ok(EndReason::Finished) => {
-                let summary = format!(
-                    "{shown}: {}{}; {} capas descargadas, {} ya existían; {auth_note}",
-                    tracker
-                        .final_status
-                        .as_deref()
-                        .unwrap_or("descarga terminada"),
-                    tracker
-                        .digest
-                        .as_deref()
-                        .map(|d| format!(" ({d})"))
-                        .unwrap_or_default(),
-                    tracker.downloaded(),
-                    tracker.existing(),
-                );
+                let summary = tracker.finished_summary(&shown, &auth_note);
                 handle.succeed(Outcome {
                     summary: Some(summary.clone()),
                     ..Default::default()
@@ -342,6 +354,32 @@ mod tests {
             Some("Downloaded newer image for nginx:1.27")
         );
         assert_eq!((t.downloaded(), t.existing()), (1, 1));
+        assert_eq!(
+            t.finished_summary("nginx:1.27", "sin credenciales"),
+            "nginx:1.27: Downloaded newer image for nginx:1.27 (sha256:abc); 1 capas descargadas, 1 ya existían; sin credenciales"
+        );
+    }
+
+    /// Almacén clásico con la imagen ya presente con otro nombre: Docker solo
+    /// envía estos tres mensajes (comprobado con Docker 29 y overlay2).
+    #[test]
+    fn summary_without_layers_says_nothing_was_downloaded() {
+        let mut t = PullTracker::default();
+        t.push(Some("1"), Some("Pulling from dcc-test/pulled"), None, None);
+        t.push(None, Some("Digest: sha256:a974"), None, None);
+        t.push(
+            None,
+            Some("Status: Downloaded newer image for 127.0.0.1:5000/dcc-test/pulled:1"),
+            None,
+            None,
+        );
+        let u = t.take_update().unwrap();
+        assert!(u.layers.is_empty());
+        assert_eq!(u.messages.len(), 3);
+        assert_eq!(
+            t.finished_summary("127.0.0.1:5000/dcc-test/pulled:1", "sin credenciales"),
+            "127.0.0.1:5000/dcc-test/pulled:1: Downloaded newer image for 127.0.0.1:5000/dcc-test/pulled:1 (sha256:a974); Docker ya tenía todo su contenido, no ha descargado capas; sin credenciales"
+        );
     }
 
     #[test]

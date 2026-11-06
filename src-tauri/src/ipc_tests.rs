@@ -730,3 +730,138 @@ fn live_images_via_ipc() {
         .iter()
         .any(|u| u.as_str().unwrap().ends_with(&tag)));
 }
+
+#[path = "../../crates/dcc-engine/tests/common/registry.rs"]
+mod test_registry;
+
+fn pull_records(h: &Harness) -> Vec<serde_json::Value> {
+    invoke(h, "activity_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["kind"] == "image.pull")
+        .cloned()
+        .collect()
+}
+
+fn wait_long<F: Fn() -> bool>(what: &str, secs: u64, f: F) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(secs);
+    while !f() {
+        assert!(std::time::Instant::now() < deadline, "sin {what}");
+        std::thread::sleep(Duration::from_millis(100));
+    }
+}
+
+/// Contra Docker real: descarga completa y cancelada desde un registro local a
+/// través de los mismos comandos que usa la ventana (`image_pull_open` y
+/// `stream_close`). Un registro de actividad por descarga.
+#[test]
+fn live_pull_and_cancel_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let remove = |r: &str| {
+        let _ = invoke(
+            &h,
+            "image_remove",
+            json!({ "reference": r, "force": true, "confirmed": true }),
+        );
+    };
+
+    // Descarga completa.
+    let served = test_registry::unique(1024 * 1024);
+    let layer = served.layers()[0].0.clone();
+    let reg = rt.block_on(test_registry::Registry::start(
+        served,
+        test_registry::Options {
+            chunk_delay: Some(Duration::from_millis(5)),
+            ..Default::default()
+        },
+    ));
+    let reference = format!("{}/dcc-test/ipc-descarga:1", reg.addr);
+    let sid = invoke(
+        &h,
+        "image_pull_open",
+        json!({ "reference": reference, "auth": { "mode": "anonymous" }, "onEvent": "__CHANNEL__:31" }),
+    )
+    .unwrap();
+    assert!(sid.as_u64().is_some());
+    wait_long("fin de la descarga", 60, || {
+        pull_records(&h)
+            .first()
+            .is_some_and(|r| r["status"] != "running")
+    });
+    let recs = pull_records(&h);
+    assert_eq!(recs.len(), 1, "{recs:?}");
+    assert_eq!(recs[0]["status"], "succeeded", "{:?}", recs[0]);
+    let summary = recs[0]["summary"].as_str().unwrap();
+    assert!(
+        summary.contains("1 capas descargadas, 0 ya existían"),
+        "{summary}"
+    );
+    assert_eq!(reg.layer_gets(&layer), 1);
+    invoke(&h, "image_details", json!({ "reference": reference })).expect("imagen descargada");
+    remove(&reference);
+
+    // Descarga cancelada con stream_close, como el botón Cancelar.
+    let served = test_registry::unique(1024 * 1024);
+    let layer = served.layers()[0].0.clone();
+    let slow = rt.block_on(test_registry::Registry::start(
+        served,
+        test_registry::Options {
+            blob_delay: Some(Duration::from_secs(12)),
+            chunk_delay: Some(Duration::from_millis(5)),
+            ..Default::default()
+        },
+    ));
+    let reference = format!("{}/dcc-test/ipc-cancelada:1", slow.addr);
+    let sid = invoke(
+        &h,
+        "image_pull_open",
+        json!({ "reference": reference, "auth": { "mode": "anonymous" }, "onEvent": "__CHANNEL__:32" }),
+    )
+    .unwrap();
+    wait_long("petición de la capa", 10, || slow.layer_gets(&layer) == 1);
+    let t0 = std::time::Instant::now();
+    assert_eq!(
+        invoke(&h, "stream_close", json!({ "stream": sid })).unwrap(),
+        json!(true)
+    );
+    wait_long("registro cancelado", 5, || {
+        pull_records(&h)
+            .first()
+            .is_some_and(|r| r["status"] != "running")
+    });
+    assert!(t0.elapsed() < Duration::from_secs(5));
+    let recs = pull_records(&h);
+    assert_eq!(recs.len(), 2, "un registro por descarga: {recs:?}");
+    assert_eq!(recs[0]["status"], "failed");
+    assert!(
+        recs[0]["error"]
+            .as_str()
+            .unwrap()
+            .contains("cancelada por el usuario"),
+        "{:?}",
+        recs[0]
+    );
+    // Docker no llega a recibir la capa entera (ver D-045).
+    wait_long("cierre de la conexión con el registro", 25, || {
+        !slow.aborted.lock().unwrap().is_empty()
+    });
+    assert_eq!(*slow.aborted.lock().unwrap(), vec![layer]);
+    assert!(invoke(&h, "image_details", json!({ "reference": reference })).is_err());
+    remove(&reference);
+}

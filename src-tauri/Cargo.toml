@@ -34,4 +34,11 @@ dcc-engine.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+# Registro de imágenes de prueba compartido con dcc-engine (descarga real por IPC).
+bollard = { version = "0.21", default-features = false, features = ["pipe"] }
+flate2 = "1"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+sha2 = "0.10"
+tar = "0.4"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
 tauri = { version = "2", features = ["test"] }

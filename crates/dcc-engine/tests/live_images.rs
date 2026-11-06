@@ -180,6 +180,23 @@ fn last_record(log: &ActivityLog, kind: &str) -> dcc_activity::OperationRecord {
         .unwrap_or_else(|| panic!("sin registro {kind}"))
 }
 
+/// `true` si el daemon usa el almacén de imágenes de containerd.
+async fn containerd_store(docker: &bollard::Docker) -> bool {
+    let info = docker.info().await.unwrap();
+    format!("{:?}", info.driver_status).contains("io.containerd.snapshotter")
+}
+
+/// Tamaño de la capa de las imágenes únicas: suficiente para que Docker
+/// informe del progreso de la descarga.
+const LAYER: usize = 3 * 1024 * 1024;
+
+fn pull_records(log: &ActivityLog) -> Vec<dcc_activity::OperationRecord> {
+    log.snapshot()
+        .into_iter()
+        .filter(|r| r.kind == "image.pull")
+        .collect()
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn pull_from_local_registry_reports_progress_and_records_once() {
     if !enabled() {
@@ -187,9 +204,18 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
     }
     let dir = tempfile::tempdir().unwrap();
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
+    // Imagen que el daemon no puede tener: tiene que descargar la capa con
+    // cualquier almacén de imágenes.
+    let served = registry::unique(LAYER);
+    let layers = served.layers();
+    assert_eq!(layers.len(), 1);
+    let (layer_digest, layer_size) = layers[0].clone();
     let reg = Registry::start(
-        registry::export(&docker, fixture::IMAGE).await,
-        Default::default(),
+        served,
+        registry::Options {
+            chunk_delay: Some(Duration::from_millis(15)),
+            ..Default::default()
+        },
     )
     .await;
     let reference = format!("{}/dcc-test/pulled:1", reg.addr);
@@ -198,13 +224,6 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
         images: vec![reference.clone()],
         containers: vec![],
     };
-    let _ = docker
-        .remove_image(
-            &reference,
-            None::<bollard::query_parameters::RemoveImageOptions>,
-            None,
-        )
-        .await;
 
     let (updates, sink) = collect_pull();
     let end = engine
@@ -223,14 +242,26 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
         end.summary
     );
     assert!(
-        end.summary.contains("1 capas descargadas"),
+        end.summary.contains("1 capas descargadas, 0 ya existían"),
         "{}",
         end.summary
     );
     let ups = updates.lock().unwrap().clone();
     assert!(!ups.is_empty());
+    // Progreso real: alguna actualización muestra la capa a medias, con el
+    // tamaño comprimido que sirvió el registro.
+    let id = &layer_digest["sha256:".len().."sha256:".len() + 12];
+    let partial = ups.iter().flat_map(|u| &u.layers).find(|l| {
+        l.id == id
+            && l.status == "Downloading"
+            && matches!((l.current, l.total), (Some(c), Some(t)) if c > 0 && c < t)
+    });
+    let partial =
+        partial.unwrap_or_else(|| panic!("sin progreso parcial de la capa {id}: {ups:?}"));
+    assert_eq!(partial.total, Some(layer_size as i64), "{partial:?}");
     let last = ups.iter().rev().find(|u| !u.layers.is_empty()).unwrap();
     assert_eq!(last.layers.len(), 1);
+    assert_eq!(last.layers[0].id, id);
     assert!(
         matches!(
             last.layers[0].status.as_str(),
@@ -248,7 +279,7 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
         .inspect_image(&reference)
         .await
         .expect("imagen descargada");
-    // El registro recibió el manifiesto y los blobs.
+    // El registro recibió el manifiesto y la capa entera una sola vez.
     let paths = reg.paths();
     assert!(
         paths
@@ -256,10 +287,8 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
             .any(|p| p.contains("/v2/dcc-test/pulled/manifests/1")),
         "{paths:?}"
     );
-    assert!(
-        paths.iter().any(|p| p.contains("/blobs/sha256:")),
-        "{paths:?}"
-    );
+    assert_eq!(reg.layer_gets(&layer_digest), 1, "{paths:?}");
+    assert!(reg.aborted.lock().unwrap().is_empty());
 
     // Una sola operación, con la ruta y el equivalente exactos.
     let r = last_record(&log, "image.pull");
@@ -274,15 +303,9 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
             .as_str()
         )
     );
-    assert_eq!(
-        log.snapshot()
-            .iter()
-            .filter(|r| r.kind == "image.pull")
-            .count(),
-        1
-    );
+    assert_eq!(pull_records(&log).len(), 1);
 
-    // Segunda descarga: ya está al día.
+    // Segunda descarga: ya está al día y no vuelve a pedir la capa.
     let (_, sink) = collect_pull();
     let end = engine
         .pull_image(
@@ -298,6 +321,84 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
         "{}",
         end.summary
     );
+    assert_eq!(reg.layer_gets(&layer_digest), 1);
+    let pulls = pull_records(&log);
+    assert_eq!(pulls.len(), 2);
+    assert!(pulls.iter().all(|r| r.status == OpStatus::Succeeded));
+    assert_eq!(recorded(&log), proxy.requests());
+}
+
+/// Lo que ocurrió en Debian 13 (almacén clásico): la imagen ya estaba en el
+/// equipo con otro nombre. Docker no descarga nada y la operación termina bien,
+/// con un resumen que lo dice.
+#[tokio::test(flavor = "multi_thread")]
+async fn pull_of_content_already_present_is_a_real_finished_pull() {
+    if !enabled() {
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
+    let containerd = containerd_store(&docker).await;
+    let served = registry::export(&docker, fixture::IMAGE).await;
+    let layer_digests: Vec<String> = served.layers().into_iter().map(|(d, _)| d).collect();
+    let reg = Registry::start(served, Default::default()).await;
+    let reference = format!("{}/dcc-test/presente:1", reg.addr);
+    let _c = Cleanup {
+        docker: docker.clone(),
+        images: vec![reference.clone()],
+        containers: vec![],
+    };
+    let (updates, sink) = collect_pull();
+    let end = engine
+        .pull_image(
+            &reference,
+            &PullAuth::Anonymous,
+            CancellationToken::new(),
+            sink,
+        )
+        .await
+        .unwrap();
+    assert_eq!(end.reason, EndReason::Finished);
+    assert!(
+        end.summary.contains("Downloaded newer image"),
+        "{}",
+        end.summary
+    );
+    let layers: Vec<_> = updates
+        .lock()
+        .unwrap()
+        .iter()
+        .flat_map(|u| u.layers.clone())
+        .collect();
+    if containerd {
+        // containerd compara capas comprimidas: la recomprimida es "nueva".
+        assert!(
+            end.summary.contains("1 capas descargadas"),
+            "{}",
+            end.summary
+        );
+    } else {
+        // El almacén clásico reconoce la imagen y no pide ninguna capa.
+        assert!(layers.is_empty(), "{layers:?}");
+        assert!(
+            end.summary
+                .contains("Docker ya tenía todo su contenido, no ha descargado capas"),
+            "{}",
+            end.summary
+        );
+        for d in &layer_digests {
+            assert_eq!(reg.layer_gets(d), 0, "{:?}", reg.paths());
+        }
+    }
+    // Con cualquier almacén la imagen queda disponible con el nuevo nombre.
+    let new = docker.inspect_image(&reference).await.unwrap();
+    let orig = docker.inspect_image(fixture::IMAGE).await.unwrap();
+    if !containerd {
+        assert_eq!(new.id, orig.id, "misma imagen, otro nombre");
+    }
+    let pulls = pull_records(&log);
+    assert_eq!(pulls.len(), 1);
+    assert_eq!(pulls[0].status, OpStatus::Succeeded);
     assert_eq!(recorded(&log), proxy.requests());
 }
 
@@ -309,8 +410,10 @@ async fn pull_with_credentials_never_records_them() {
     let dir = tempfile::tempdir().unwrap();
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
     let secret = "clave-dcc-no-debe-aparecer";
+    let served = registry::unique(64 * 1024);
+    let layer_digest = served.layers()[0].0.clone();
     let reg = Registry::start(
-        registry::export(&docker, fixture::IMAGE).await,
+        served,
         registry::Options {
             auth: Some(("ana".into(), secret.into())),
             ..Default::default()
@@ -346,7 +449,7 @@ async fn pull_with_credentials_never_records_them() {
         .pull_image(&reference, &bad, CancellationToken::new(), sink)
         .await
         .is_err());
-    // Correcta: descarga.
+    // Correcta: descarga (la capa se pide con las credenciales).
     let (_, sink) = collect_pull();
     let good = PullAuth::Manual {
         username: "ana".into(),
@@ -363,27 +466,28 @@ async fn pull_with_credentials_never_records_them() {
         "{}",
         end.summary
     );
+    assert!(
+        end.summary.contains("1 capas descargadas"),
+        "{}",
+        end.summary
+    );
     docker
         .inspect_image(&reference)
         .await
         .expect("imagen privada descargada");
-    // El daemon recibió las credenciales (las envió al registro)…
+    // El daemon envió las credenciales al registro al pedir la capa…
     assert!(reg
         .requests
         .lock()
         .unwrap()
         .iter()
-        .any(|(_, _, a)| a.is_some()));
+        .any(|(m, p, a)| m == "GET" && p.ends_with(&layer_digest) && a.is_some()));
     // …pero no aparecen en ningún registro de actividad ni en los errores.
     for r in log.snapshot() {
         let all = format!("{r:?}");
         assert!(!all.contains(secret), "secreto en el registro: {all}");
     }
-    let pulls: Vec<_> = log
-        .snapshot()
-        .into_iter()
-        .filter(|r| r.kind == "image.pull")
-        .collect();
+    let pulls = pull_records(&log);
     assert_eq!(pulls.len(), 3);
     assert_eq!(
         pulls
@@ -401,11 +505,19 @@ async fn cancelled_pull_stops_and_is_recorded_as_cancelled() {
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let (engine, log, _proxy, docker) = engine_via_proxy(&dir).await;
+    let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
+    let containerd = containerd_store(&docker).await;
+    // Imagen nueva: Docker tiene que pedir la capa. El registro la retiene 12 s
+    // y después la envía despacio (~0,7 s), así que si Docker siguiera
+    // descargando tras la cancelación llegaría a recibirla entera.
+    let delay = Duration::from_secs(12);
+    let served = registry::unique(LAYER);
+    let layer_digest = served.layers()[0].0.clone();
     let reg = Registry::start(
-        registry::export(&docker, fixture::IMAGE).await,
+        served,
         registry::Options {
-            blob_delay: Some(Duration::from_secs(20)),
+            blob_delay: Some(delay),
+            chunk_delay: Some(Duration::from_millis(15)),
             ..Default::default()
         },
     )
@@ -429,11 +541,34 @@ async fn cancelled_pull_stops_and_is_recorded_as_cancelled() {
         .await
         .unwrap();
     canceller.await.unwrap();
-    assert_eq!(end.reason, EndReason::Closed);
+    assert_eq!(end.reason, EndReason::Closed, "{}", end.summary);
+    let cancelled_at = t0.elapsed();
     assert!(
-        t0.elapsed() < Duration::from_secs(10),
-        "la cancelación no esperó al blob"
+        cancelled_at < Duration::from_secs(6),
+        "la cancelación esperó al blob: {cancelled_at:?}"
     );
+    // Docker pidió la capa antes de la cancelación…
+    assert_eq!(reg.layer_gets(&layer_digest), 1, "{:?}", reg.paths());
+    // …y no llegó a recibirla: cerró la conexión con el registro. Con el almacén
+    // de containerd lo hace al momento; con el clásico, Docker mantiene la
+    // conexión hasta que el registro empieza a responder y entonces la corta
+    // (igual que "docker pull" interrumpido con Ctrl+C; ver D-045).
+    let deadline = t0 + delay + Duration::from_secs(10);
+    while reg.aborted.lock().unwrap().is_empty() && std::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    let closed_after = t0.elapsed();
+    assert_eq!(
+        *reg.aborted.lock().unwrap(),
+        vec![layer_digest.clone()],
+        "Docker recibió la capa entera tras la cancelación"
+    );
+    if containerd {
+        assert!(
+            closed_after < Duration::from_secs(6),
+            "containerd debería cortar al momento: {closed_after:?}"
+        );
+    }
     let r = last_record(&log, "image.pull");
     assert_eq!(r.status, OpStatus::Failed);
     assert!(
@@ -448,6 +583,36 @@ async fn cancelled_pull_stops_and_is_recorded_as_cancelled() {
         docker.inspect_image(&reference).await.is_err(),
         "no debe quedar la imagen"
     );
+
+    // Sin restos: una nueva descarga baja la capa entera desde el principio.
+    reg.set_blob_delay(None);
+    let (_, sink) = collect_pull();
+    let end = engine
+        .pull_image(
+            &reference,
+            &PullAuth::Anonymous,
+            CancellationToken::new(),
+            sink,
+        )
+        .await
+        .unwrap();
+    assert_eq!(end.reason, EndReason::Finished);
+    assert!(
+        end.summary.contains("1 capas descargadas, 0 ya existían"),
+        "{}",
+        end.summary
+    );
+    assert_eq!(reg.layer_gets(&layer_digest), 2);
+    docker.inspect_image(&reference).await.unwrap();
+    let pulls = pull_records(&log);
+    assert_eq!(pulls.len(), 2, "un registro por descarga");
+    assert_eq!(
+        pulls[0].status,
+        OpStatus::Succeeded,
+        "la más reciente primero"
+    );
+    assert_eq!(pulls[1].status, OpStatus::Failed);
+    assert_eq!(recorded(&log), proxy.requests());
 }
 
 #[tokio::test(flavor = "multi_thread")]
