@@ -37,6 +37,13 @@ import type { NetworkSpec } from "@/shared/ipc/bindings/NetworkSpec";
 import type { NetworkSummary } from "@/shared/ipc/bindings/NetworkSummary";
 import type { ConnectOptions } from "@/shared/ipc/bindings/ConnectOptions";
 import type { CreatedNetwork } from "@/shared/ipc/bindings/CreatedNetwork";
+import type { BindSummary } from "@/shared/ipc/bindings/BindSummary";
+import type { VolumeDetails } from "@/shared/ipc/bindings/VolumeDetails";
+import type { VolumePreview } from "@/shared/ipc/bindings/VolumePreview";
+import type { VolumePruneResult } from "@/shared/ipc/bindings/VolumePruneResult";
+import type { VolumeSize } from "@/shared/ipc/bindings/VolumeSize";
+import type { VolumeSpec } from "@/shared/ipc/bindings/VolumeSpec";
+import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import { emptySpec } from "@/features/containers/specModel";
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
@@ -126,6 +133,7 @@ export function container(over: Partial<ContainerSummary> = {}): ContainerSummar
     ],
     networks: ["bridge"],
     mounts: 0,
+    mountPoints: [],
     composeProject: null,
     labels: {},
     ...over,
@@ -133,8 +141,24 @@ export function container(over: Partial<ContainerSummary> = {}): ContainerSummar
 }
 
 export const containers: ContainerSummary[] = [
-  container(),
-  container({ id: "b2b2b2b2b2b2", name: "db", image: "postgres:17", state: "exited", status: "Exited (0) 2 hours ago", ports: [], imageId: "sha256:2222" }),
+  container({
+    mounts: 2,
+    mountPoints: [
+      { kind: "volume", name: "datos", source: "/var/lib/docker/volumes/datos/_data", destination: "/var/lib/app", rw: true, mode: "z", propagation: "" },
+      { kind: "bind", name: null, source: "/srv/web", destination: "/usr/share/nginx/html", rw: false, mode: "ro", propagation: "rprivate" },
+    ],
+  }),
+  container({
+    id: "b2b2b2b2b2b2",
+    name: "db",
+    image: "postgres:17",
+    state: "exited",
+    status: "Exited (0) 2 hours ago",
+    ports: [],
+    imageId: "sha256:2222",
+    mounts: 1,
+    mountPoints: [{ kind: "volume", name: "datos", source: "/var/lib/docker/volumes/datos/_data", destination: "/backup", rw: false, mode: "ro", propagation: "" }],
+  }),
   container({ id: "c3c3c3c3c3c3", name: "cache", image: "redis:8", state: "paused", status: "Up 3 hours (Paused)", ports: [], composeProject: "blog" }),
 ];
 
@@ -382,6 +406,85 @@ export function networkPreviewOf(spec: NetworkSpec): NetworkPreview {
   return { issues, command: parts.join(" "), request: "POST /networks/create", body: JSON.stringify({ Name: spec.name.trim(), Driver: spec.driver }, null, 2) };
 }
 
+export function volume(over: Partial<VolumeSummary> = {}): VolumeSummary {
+  return {
+    name: "datos",
+    driver: "local",
+    scope: "local",
+    mountpoint: "/var/lib/docker/volumes/datos/_data",
+    created: "2026-11-01T10:00:00Z",
+    labels: { "com.example.app": "tienda" },
+    options: {},
+    anonymous: false,
+    composeProject: null,
+    containers: [
+      { id: "b2b2b2b2b2b2", name: "db", state: "exited", destination: "/backup", rw: false },
+      { id: "a1b2c3d4e5f6a7b8c9d0", name: "web", state: "running", destination: "/var/lib/app", rw: true },
+    ],
+    ...over,
+  };
+}
+
+const ANON = "3f1c9e2b7a6d5c4b3a291807f6e5d4c3b2a19087f6e5d4c3b2a1908f7e6d5c4b";
+
+export const volumes: VolumeSummary[] = [
+  volume(),
+  volume({ name: "copias", labels: {}, containers: [{ id: "b2b2b2b2b2b2", name: "db", state: "exited", destination: "/dump", rw: true }] }),
+  volume({ name: "huerfano", labels: {}, containers: [], composeProject: "blog" }),
+  volume({ name: ANON, labels: { "com.docker.volume.anonymous": "" }, anonymous: true, containers: [] }),
+];
+
+export const volumeSizes: VolumeSize[] = [
+  { name: "datos", size: 52_428_800, refCount: 2 },
+  { name: "copias", size: 1_048_576, refCount: 1 },
+  { name: "huerfano", size: 0, refCount: 0 },
+  { name: ANON, size: 4096, refCount: 0 },
+];
+
+export function volumeDetails(name: string): VolumeDetails {
+  const v = volumes.find((x) => x.name === name) ?? volume({ name });
+  return { summary: v, status: {}, raw: JSON.stringify({ Name: v.name, Driver: v.driver, Mountpoint: v.mountpoint }, null, 2) };
+}
+
+/** Imita lo esencial de la validación del backend (las reglas reales se prueban en Rust). */
+export function volumePreviewOf(spec: VolumeSpec): VolumePreview {
+  const issues: VolumePreview["issues"] = [];
+  const n = spec.name.trim();
+  if (n.length === 1) issues.push({ severity: "error", field: "name", code: "volumeName.short", params: { value: n } });
+  else if (n && !/^[A-Za-z0-9][A-Za-z0-9_.-]+$/.test(n)) issues.push({ severity: "error", field: "name", code: "volumeName.invalid", params: { value: n } });
+  const parts = ["docker", "volume", "create", "--driver", spec.driver];
+  for (const o of spec.driverOpts.filter((x) => x.key)) parts.push("--opt", `${o.key}=${o.value}`);
+  if (n) parts.push(n);
+  return { issues, command: parts.join(" "), request: "POST /volumes/create", body: JSON.stringify({ Name: n || undefined, Driver: spec.driver }, null, 2) };
+}
+
+export const binds: BindSummary[] = [
+  {
+    source: "/srv/web",
+    host: { kind: "directory", uid: 1000, mode: 0o755, readable: true },
+    risk: null,
+    writable: true,
+    containers: [
+      { id: "b2b2b2b2b2b2", name: "db", state: "exited", destination: "/work", rw: true, propagation: "rprivate" },
+      { id: "a1b2c3d4e5f6a7b8c9d0", name: "web", state: "running", destination: "/usr/share/nginx/html", rw: false, propagation: "rprivate" },
+    ],
+  },
+  {
+    source: "/var/run/docker.sock",
+    host: { kind: "socket", uid: 0, mode: 0o660, readable: false },
+    risk: "dockerSocket",
+    writable: true,
+    containers: [{ id: "c3c3c3c3c3c3", name: "cache", state: "paused", destination: "/var/run/docker.sock", rw: true, propagation: "rprivate" }],
+  },
+  {
+    source: "/home/u/borrado",
+    host: { kind: "missing", uid: null, mode: null, readable: false },
+    risk: null,
+    writable: false,
+    containers: [{ id: "b2b2b2b2b2b2", name: "db", state: "exited", destination: "/import", rw: false, propagation: "rprivate" }],
+  },
+];
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -469,6 +572,14 @@ export const api = {
   networksPrune: vi.fn(async (): Promise<string[]> => ["vieja", "aislada"]),
   networkConnect: vi.fn(async (_n: string, _nn: string | null, _c: string, _cn: string | null, _o: ConnectOptions, _s: string[]) => {}),
   networkDisconnect: vi.fn(async (_n: string, _nn: string | null, _c: string, _cn: string | null, _f: boolean) => {}),
+  volumesList: vi.fn(async (): Promise<VolumeSummary[]> => volumes),
+  volumeDetails: vi.fn(async (name: string): Promise<VolumeDetails> => volumeDetails(name)),
+  volumeSizes: vi.fn(async (): Promise<VolumeSize[]> => volumeSizes),
+  volumePreview: vi.fn(async (spec: VolumeSpec): Promise<VolumePreview> => volumePreviewOf(spec)),
+  volumeCreate: vi.fn(async (spec: VolumeSpec): Promise<VolumeSummary> => volume({ name: spec.name || ANON, anonymous: !spec.name, containers: [] })),
+  volumeRemove: vi.fn(async (_name: string) => {}),
+  volumesPrune: vi.fn(async (all: boolean): Promise<VolumePruneResult> => ({ deleted: all ? [ANON, "huerfano"] : [ANON], spaceReclaimed: 4096 })),
+  bindsList: vi.fn(async (): Promise<BindSummary[]> => binds),
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),
 };
 

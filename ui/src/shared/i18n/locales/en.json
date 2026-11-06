@@ -234,7 +234,12 @@
       "disconnect": "Disconnect container from network"
     },
     "volume": {
-      "list": "List volumes"
+      "list": "List volumes",
+      "inspect": "Inspect volume",
+      "usage": "Measure volumes",
+      "create": "Create volume",
+      "remove": "Remove volume",
+      "prune": "Prune volumes"
     },
     "registry": {
       "credentials": "Get registry credentials"
@@ -932,6 +937,15 @@
     "option": {
       "keyInvalid": "Invalid option name: {{key}}",
       "duplicate": "Duplicate option: {{key}}"
+    },
+    "volumeName": {
+      "short": "The name must have at least two characters.",
+      "invalid": "Invalid name: use letters, digits, \"_\", \".\" or \"-\", starting with a letter or digit.",
+      "exists": "A volume named {{value}} already exists. Docker would return the existing one without applying these changes."
+    },
+    "volumeOpt": {
+      "unknownLocal": "The local driver only uses type, device and o: \"{{key}}\" will be sent anyway.",
+      "deviceWithoutType": "\"device\" usually needs \"type\" (e.g. none with o=bind, nfs or tmpfs)."
     }
   },
   "dupNotes": {
@@ -1341,5 +1355,176 @@
     "disconnected": "{{container}} disconnected from {{network}}.",
     "checking": "Checking the current state with Docker…",
     "gone": "The network {{name}} no longer exists."
+  },
+  "volumes": {
+    "create": "Create volume",
+    "prune": "Prune",
+    "refresh": "Refresh",
+    "sizes": "Calculate sizes",
+    "sizesAgain": "Recalculate",
+    "sizesNote": "Sizes calculated by Docker (\"docker system df -v\"); this may take a while with large volumes.",
+    "sizesError": "Could not calculate sizes: {{message}}",
+    "sizeUnknown": "Not available",
+    "search": "Search by name, driver, container or label",
+    "filterLabel": "Filter",
+    "filter": {
+      "all": "All",
+      "inUse": "In use",
+      "unused": "Unused",
+      "anonymous": "Anonymous"
+    },
+    "count_one": "{{count}} volume",
+    "count_other": "{{count}} volumes",
+    "columns": {
+      "name": "Volume",
+      "driver": "Driver",
+      "size": "Size",
+      "containers": "Containers",
+      "actions": "Actions"
+    },
+    "anonymous": "Anonymous",
+    "unused": "Unused",
+    "users_one": "{{count}} mount",
+    "users_other": "{{count}} mounts",
+    "empty": "There are no volumes",
+    "emptyBody": "Create a volume to keep data that outlives containers.",
+    "noMatches": "No volume matches the search.",
+    "loadError": "Could not get the volume list: {{message}}",
+    "createContainer": "Create a container with {{name}}",
+    "removeAction": "Remove {{name}}"
+  },
+  "volDetail": {
+    "back": "Volumes",
+    "tabs": {
+      "summary": "Summary",
+      "containers": "Containers",
+      "inspect": "JSON inspect"
+    },
+    "s": {
+      "general": "General",
+      "options": "Driver options",
+      "status": "Driver status"
+    },
+    "f": {
+      "name": "Name",
+      "driver": "Driver",
+      "scope": "Scope",
+      "mountpoint": "Directory on this machine",
+      "created": "Created",
+      "size": "Size"
+    },
+    "sizeNotMeasured": "Not calculated",
+    "measure": "Calculate",
+    "noOptions": "No options.",
+    "noContainers": "No container mounts this volume.",
+    "c": {
+      "destination": "Path in the container",
+      "access": "Access"
+    },
+    "rw": "Read and write",
+    "ro": "Read only",
+    "createContainer": "Create container with it",
+    "inspectHint": "Full Docker response, like \"docker volume inspect {{name}}\".",
+    "notFound": "The volume {{name}} no longer exists.",
+    "loadError": "Could not inspect the volume: {{message}}"
+  },
+  "volCreate": {
+    "title": "Create volume",
+    "g": {
+      "general": "General",
+      "options": "Driver options",
+      "optionsHint": "For the local driver they match those of \"mount\": type, device and o."
+    },
+    "f": {
+      "name": "Name",
+      "kind": "Type"
+    },
+    "h": {
+      "name": "Optional: without a name Docker creates an anonymous volume. Letters, digits, \"_\", \".\" or \"-\" (at least 2).",
+      "preset": {
+        "plain": "Directory managed by Docker on this machine (the usual choice).",
+        "tmpfs": "In memory: lost when the last container using it stops.",
+        "nfs": "NFS share: adjust the server address and the path.",
+        "bind": "Named volume that points to an existing folder on this machine.",
+        "other": "Driver from a plugin installed in Docker."
+      }
+    },
+    "ph": {
+      "name": "empty = anonymous"
+    },
+    "preset": {
+      "plain": "Local",
+      "tmpfs": "tmpfs",
+      "nfs": "NFS",
+      "bind": "Folder",
+      "other": "Other driver"
+    },
+    "readyAnonymous": "Ready to create an anonymous volume.",
+    "submit": "Create volume"
+  },
+  "volOps": {
+    "failed": "Docker rejected the operation: {{message}}",
+    "removeTitle": "Remove the volume {{name}}",
+    "remove": "Remove volume",
+    "removeBody": "The volume and all its data are removed. This cannot be undone.",
+    "inUse_one": "{{count}} container mounts it: Docker does not remove a volume in use, not even by a stopped container. Remove the container first.",
+    "inUse_other": "{{count}} containers mount it: Docker does not remove a volume in use, not even by stopped containers. Remove the containers first.",
+    "sure": "I understand its data will be deleted",
+    "gone": "The volume {{name}} no longer exists.",
+    "removed": "Volume {{name}} removed.",
+    "pruneTitle": "Prune volumes",
+    "prune": "Prune volumes",
+    "pruneAnonymous": "Only anonymous volumes not mounted by any container",
+    "pruneAll": "All volumes not mounted by any container (named ones too)",
+    "legacy": "This Docker version (API {{api}}) removes all unused volumes, named ones too: it does not distinguish anonymous from named.",
+    "pruneEstimate_one": "According to the current state, {{count}} volume will be removed",
+    "pruneEstimate_other": "According to the current state, {{count}} volumes will be removed",
+    "pruneEstimate_zero": "According to the current state, there are no volumes to remove",
+    "pruneBytes": "({{size}} according to the last calculation)",
+    "pruneNote": "An unused volume may hold important data (for example, from a database whose container you removed).",
+    "pruneSure_one": "I understand the data of {{count}} named volume will be deleted",
+    "pruneSure_other": "I understand the data of {{count}} named volumes will be deleted",
+    "pruned_one": "{{count}} volume removed; {{size}} reclaimed.",
+    "pruned_other": "{{count}} volumes removed; {{size}} reclaimed.",
+    "pruned_zero": "There were no volumes to remove."
+  },
+  "binds": {
+    "bindFolder": "Bind a folder…",
+    "pickTitle": "Folder the container will see",
+    "intro": "Folders on this machine mounted inside containers. Docker cannot add mounts to an existing container: to bind a folder, a new container is created with the wizard.",
+    "search": "Search by path or container",
+    "filter": {
+      "all": "All",
+      "writable": "Writable",
+      "attention": "Need attention ({{count}})"
+    },
+    "count_one": "{{count}} folder",
+    "count_other": "{{count}} folders",
+    "kind": {
+      "directory": "Folder",
+      "file": "File",
+      "socket": "Socket",
+      "other": "Other",
+      "missing": "Missing"
+    },
+    "writable": "Writable",
+    "readOnly": "Read only",
+    "permissions": "Permissions and owner on this machine",
+    "notReadable": "Your user cannot read it",
+    "newContainer": "New container with it",
+    "newContainerHint": "Opens the container wizard with this folder already bound",
+    "risk": {
+      "dockerSocket": "Docker socket: the container can control Docker and, in practice, the whole machine (except with rootless Docker).",
+      "hostRoot": "The root of this machine's file system.",
+      "system": "A system directory."
+    },
+    "riskWritable": "It is mounted writable: the container can modify it.",
+    "missing": "It does not exist on this machine. If the container was created with \"-v\", Docker creates it again, empty (as root), when starting it.",
+    "attentionBanner_one": "{{count}} bind needs attention (Docker socket, system directory or missing folder).",
+    "attentionBanner_other": "{{count}} binds need attention (Docker socket, system directories or missing folders).",
+    "empty": "No container has bound folders",
+    "emptyBody": "Bind a folder so a container can work with files on this machine.",
+    "noMatches": "No folder matches the search.",
+    "loadError": "Could not get the container list: {{message}}"
   }
 }

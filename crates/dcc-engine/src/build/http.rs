@@ -6,6 +6,8 @@
 //!   respuesta leída como una secuencia de objetos JSON.
 //! - `POST /networks/create`: el cuerpo de bollard 0.21 no tiene el campo
 //!   `CheckDuplicate`, imprescindible con Docker < 25 (D-048).
+//! - `GET /system/df?type=volume`: la respuesta cambia de formato según la
+//!   versión de Docker y el tipo de bollard 0.21 solo conoce el nuevo (D-051).
 
 use std::io;
 
@@ -69,6 +71,29 @@ pub async fn post_json(
     Ok(r.next_json().await?.unwrap_or(serde_json::Value::Null))
 }
 
+/// `GET` que devuelve el JSON de la respuesta, o el error de Docker.
+pub async fn get_json(socket: &str, path: &str) -> Result<serde_json::Value, EngineError> {
+    let stream = UnixStream::connect(socket).await.map_err(io_err)?;
+    let (rd, mut wr) = stream.into_split();
+    let head =
+        format!("GET {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\n\r\n");
+    let writer = tokio::spawn(async move {
+        wr.write_all(head.as_bytes()).await?;
+        wr.flush().await?;
+        std::future::pending::<()>().await;
+        Ok(())
+    });
+    let mut r = read_response(rd, writer).await?;
+    if !(200..300).contains(&r.status) {
+        let message = r.error_message().await;
+        return Err(EngineError::Docker {
+            status: r.status,
+            message,
+        });
+    }
+    Ok(r.next_json().await?.unwrap_or(serde_json::Value::Null))
+}
+
 async fn post_with(
     socket: &str,
     path: &str,
@@ -101,6 +126,14 @@ async fn post_with(
         std::future::pending::<()>().await;
         Ok(())
     });
+    read_response(rd, writer).await
+}
+
+/// Lee la línea de estado y las cabeceras.
+async fn read_response(
+    rd: tokio::net::unix::OwnedReadHalf,
+    writer: tokio::task::JoinHandle<io::Result<()>>,
+) -> Result<Response, EngineError> {
     let mut reader = BufReader::new(rd);
     let mut line = String::new();
     reader.read_line(&mut line).await.map_err(io_err)?;

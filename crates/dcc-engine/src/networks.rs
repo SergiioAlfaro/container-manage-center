@@ -1438,6 +1438,7 @@ mod tests {
             ports: vec![],
             networks: nets.iter().map(|s| s.to_string()).collect(),
             mounts: 0,
+            mount_points: vec![],
             compose_project: None,
             labels: Default::default(),
         };

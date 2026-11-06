@@ -127,6 +127,19 @@ Módulos: `reference.rs` (gramática de referencias de `distribution/reference`)
 
 Las operaciones usan siempre el ID de la red (Docker acepta nombres con espacios creados por otras herramientas); el nombre solo se usa para mostrar y en el comando equivalente. `NetworkSpec` es la fuente única de la validación (nombre, driver, subredes CIDR con la misma regla de dirección de red que Docker, puerta de enlace y rango dentro de la subred, familia IPv4/IPv6, etiquetas y opciones), del cuerpo y del comando, como `ContainerSpec` (D-034). `ConnectOptions` valida alias e IP fija (dentro de las subredes conocidas de la red). Eliminar y desconectar exigen confirmación; conectar y desconectar bloquean el contenedor (`container:{id}`), eliminar bloquea la red (`network:{id}`).
 
+### Volúmenes y directorios vinculados (Fase 6, `volumes.rs`, `binds.rs`)
+| Operación | Petición real | Comando equivalente |
+|---|---|---|
+| Listar volúmenes | `GET /volumes` + `GET /containers/json?all=true` (montajes de cada contenedor) | `docker volume ls` |
+| Inspeccionar | `GET /volumes/{nombre}` + lista de contenedores | `docker volume inspect <nombre>` |
+| Tamaños (bajo demanda) | `GET /system/df?type=volume` (petición propia, lee los formatos de Docker ≤ 28 y ≥ 29, D-051) | `docker system df --verbose` |
+| Crear | `GET /volumes?filters={"name":[…]}` (comprobar si existe) + `POST /volumes/create` | `docker volume create --driver … [--opt …] [--label …] [nombre]` |
+| Eliminar | `DELETE /volumes/{nombre}` | `docker volume rm <nombre>` |
+| Limpiar | `POST /volumes/prune?filters={"all":["true"]}` (sin filtro: solo anónimos) | `docker volume prune --force [--all]` |
+| Directorios vinculados | `GET /containers/json?all=true`; el estado de cada ruta se consulta en el sistema de archivos local (no es una operación de Docker) | — |
+
+`ContainerSummary` incluye ahora `mountPoints` (los `Mounts` de la lista de contenedores). `VolumeSpec` es la fuente única de la validación (regla de nombres del driver local, driver, opciones y etiquetas), del cuerpo y del comando. `binds.rs` agrupa los montajes `bind` por ruta del equipo, comprueba si existen (tipo, propietario, permisos, lectura) y marca los riesgos (socket de Docker, raíz, directorios del sistema). Docker no permite añadir montajes a un contenedor existente: vincular una carpeta abre el asistente de contenedores con el montaje (D-052).
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 
@@ -165,6 +178,10 @@ Las operaciones usan siempre el ID de la red (Docker acepta nombres con espacios
 | `network_preview(spec)` | Valida la red y devuelve problemas, comando equivalente, petición y cuerpo exacto, sin hablar con Docker |
 | `network_create(spec)` · `network_remove(id, name, confirmed)` · `networks_prune(confirmed)` | Crear (valida antes, también sin conexión), eliminar y limpiar (las dos últimas exigen `confirmed`) |
 | `network_connect(network, networkName, container, containerName, options, subnets)` · `network_disconnect(…, force, confirmed)` | Conectar (alias e IP fija) y desconectar (exige `confirmed`) |
+| `volumes_list` · `volume_details(name)` · `volume_sizes` | Volúmenes con los contenedores que los montan, detalle (con JSON completo) y tamaños bajo demanda |
+| `volume_preview(spec)` · `volume_create(spec)` | Vista previa sin hablar con Docker; creación (error `engine.invalidSpec` con `volumeName.exists` si ya existe) |
+| `volume_remove(name, confirmed)` · `volumes_prune(all, confirmed)` | Eliminar y limpiar (exigen `confirmed`) |
+| `binds_list` | Directorios vinculados agrupados por ruta, con su estado en el equipo y sus riesgos |
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.other`, `config.io`.
 
@@ -180,17 +197,19 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por 
 - `detail/`: `useStream` abre y cierra flujos ligados al ciclo de vida del componente; las pestañas con flujos se mantienen montadas tras visitarlas. La terminal usa xterm.js 5.5 (D-040).
 - `public/boot-guard.js` muestra los errores anteriores al arranque de la interfaz.
 - `features/networks/`: `store.ts` (lista, detalle, creación), `model.ts` (filtros, estimación de la limpieza, motivos por los que Docker rechazaría una conexión, comandos equivalentes; funciones puras), `dialogs.tsx` (eliminar, limpiar, conectar, desconectar: consultan a Docker al abrirse y no permiten confirmar con datos desactualizados, D-049), `CreateNetwork.tsx` (asistente con vista previa del backend), `NetworkDetail.tsx`.
+- `features/volumes/`: lista con tamaños bajo demanda, detalle, asistente de creación (tipos habituales del driver local: tmpfs, NFS, carpeta), diálogos de eliminación y limpieza que consultan a Docker al abrirse; `model.ts` con la estimación de la limpieza según la versión de la API.
+- `features/binds/BindsView.tsx`: carpetas vinculadas con su estado, riesgos y contenedores; "Vincular una carpeta…" usa el selector de carpetas del sistema y abre el asistente de contenedores.
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 175 motor · 15 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 42 (cinco contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes con conexión y desconexión) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks` | 11 + 7 + 9 + 4 (redes: probadas con Docker 29 y 24; 2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
+| Rust unitarias | `cargo test` | 22 actividad · 196 motor · 15 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 46 (seis contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes) |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes` | 11 + 7 + 9 + 4 + 4 (redes y volúmenes: probados con Docker 29 y 24; 2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
-| Interfaz | Vitest + Testing Library | 156 |
+| Interfaz | Vitest + Testing Library | 179 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Manual | `scripts/verify-phase-5.sh` | M1–M16 |
+| Manual | `scripts/verify-phase-6.sh` | M1–M15 |

@@ -82,6 +82,14 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::networks::networks_prune,
             commands::networks::network_connect,
             commands::networks::network_disconnect,
+            commands::volumes::volumes_list,
+            commands::volumes::volume_details,
+            commands::volumes::volume_sizes,
+            commands::volumes::volume_preview,
+            commands::volumes::volume_create,
+            commands::volumes::volume_remove,
+            commands::volumes::volumes_prune,
+            commands::volumes::binds_list,
         ])
 }
 

@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.6.0 — 2026-11-06 (Fase 6: volúmenes y directorios vinculados)
+- Apartado **Volúmenes**: lista con contenedores que montan cada volumen, distintivo de anónimos, tamaños bajo demanda, filtros y búsqueda.
+- Asistente de creación (local, tmpfs, NFS, carpeta u otro driver) con validación, comando y cuerpo exactos; aviso de nombre ya existente, que Docker ignoraría en silencio (D-051).
+- Detalle con directorio, opciones, metadatos, tamaño, contenedores (ruta y acceso) e inspección JSON; crear un contenedor con el volumen.
+- Eliminación (Docker la rechaza si lo monta cualquier contenedor) y limpieza de anónimos o de todos los sin uso, con estimación actualizada al abrir.
+- Apartado **Directorios vinculados**: carpetas montadas en contenedores con su estado real en el equipo, permisos, contenedores y riesgos (socket de Docker, directorios del sistema, rutas inexistentes); vincular una carpeta con el selector del sistema abre el asistente de contenedores (D-052).
+- La lista de contenedores incluye sus montajes (`mountPoints`).
+- `verify-phase-6.sh` con pruebas reales de volúmenes y comprobaciones manuales M1–M15.
+
 ## 0.5.0 — 2026-11-06 (Fase 5: redes)
 - Apartado **Redes**: lista con driver, subredes y contenedores (en marcha o no), filtros y búsqueda.
 - Asistente de creación con subred, puerta de enlace, rango, IPv6, red interna, conectable, opciones del driver y metadatos; validación con las reglas de Docker antes de enviar, comando y cuerpo exactos.

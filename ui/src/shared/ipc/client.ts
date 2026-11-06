@@ -44,6 +44,13 @@ import type { NetworkDetails } from "./bindings/NetworkDetails";
 import type { NetworkPreview } from "./bindings/NetworkPreview";
 import type { NetworkSpec } from "./bindings/NetworkSpec";
 import type { NetworkSummary } from "./bindings/NetworkSummary";
+import type { BindSummary } from "./bindings/BindSummary";
+import type { VolumeDetails } from "./bindings/VolumeDetails";
+import type { VolumePreview } from "./bindings/VolumePreview";
+import type { VolumePruneResult } from "./bindings/VolumePruneResult";
+import type { VolumeSize } from "./bindings/VolumeSize";
+import type { VolumeSpec } from "./bindings/VolumeSpec";
+import type { VolumeSummary } from "./bindings/VolumeSummary";
 import type { ImageRef } from "./bindings/ImageRef";
 import type { PruneResult } from "./bindings/PruneResult";
 import type { PullAuth } from "./bindings/PullAuth";
@@ -142,6 +149,17 @@ export const api = {
     call<void>("network_connect", { network, networkName, container, containerName, options, subnets }),
   networkDisconnect: (network: string, networkName: string | null, container: string, containerName: string | null, force: boolean) =>
     call<void>("network_disconnect", { network, networkName, container, containerName, force, confirmed: true }),
+
+  volumesList: () => call<VolumeSummary[]>("volumes_list"),
+  volumeDetails: (name: string) => call<VolumeDetails>("volume_details", { name }),
+  /** Tamaños de los volúmenes (`docker system df --verbose`); puede tardar. */
+  volumeSizes: () => call<VolumeSize[]>("volume_sizes"),
+  /** Valida el volumen y muestra la petición exacta sin hablar con Docker. */
+  volumePreview: (spec: VolumeSpec) => call<VolumePreview>("volume_preview", { spec }),
+  volumeCreate: (spec: VolumeSpec) => call<VolumeSummary>("volume_create", { spec }),
+  volumeRemove: (name: string) => call<void>("volume_remove", { name, confirmed: true }),
+  volumesPrune: (all: boolean) => call<VolumePruneResult>("volumes_prune", { all, confirmed: true }),
+  bindsList: () => call<BindSummary[]>("binds_list"),
 
   /** Selector de archivo del sistema (Dockerfile). */
   pickFile: async (title: string, defaultPath?: string): Promise<string | null> => {

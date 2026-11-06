@@ -6,11 +6,11 @@
 
 | | |
 |---|---|
-| **Fase actual** | 5 · Redes |
-| **Versión** | 0.5.0 |
+| **Fase actual** | 6 · Volúmenes y directorios vinculados |
+| **Versión** | 0.6.0 |
 | **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
-| **Fases completadas (validadas)** | 1, 2, 3, 4 |
-| **Fases pendientes** | 5–10 |
+| **Fases completadas (validadas)** | 1, 2, 3, 4, 5 |
+| **Fases pendientes** | 6–10 |
 
 | Fase | Estado |
 |---|---|
@@ -18,8 +18,8 @@
 | 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
 | 3. Contenedores (creación, logs, inspección, terminal) | **Validada** (2026-11-06, versión 0.3.0) |
 | 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | **Validada** (2026-11-06, Debian 13, versión 0.4.1) |
-| 5. Redes | Pendiente de validación externa (0.5.0) |
-| 6. Volúmenes y bind mounts | No iniciada |
+| 5. Redes | **Validada** (2026-11-06, Debian 13, versión 0.5.0) |
+| 6. Volúmenes y bind mounts | Pendiente de validación externa (0.6.0) |
 | 7. Docker Compose | No iniciada |
 | 8. Actividad, eventos y monitorización | No iniciada |
 | 9. Configuración y optimización | No iniciada |
@@ -391,10 +391,61 @@ Ninguno abierto.
 
 ---
 
+## Fase 6 · Volúmenes y directorios vinculados
+
+### Objetivos
+Listar, crear e inspeccionar volúmenes; ver qué contenedores usan cada volumen; avisar antes de eliminar volúmenes en uso. Mostrar las carpetas vinculadas (origen, destino, contenedores, lectura/escritura) y permitir elegir carpetas con el explorador del sistema.
+
+### Funcionalidades implementadas
+- **Volúmenes**: lista con contenedores que los montan (en marcha o no), distintivo de anónimos y de Compose, tamaños bajo demanda, filtros y búsqueda.
+- **Crear volumen**: nombre opcional, tipos habituales del driver local (tmpfs, NFS, carpeta) u otro driver, opciones y metadatos; validación con la regla de Docker; comando y cuerpo exactos; aviso de nombre existente mientras se escribe y comprobación en el backend (D-051).
+- **Detalle**: directorio, opciones, metadatos, tamaño, contenedores con ruta y acceso, inspección JSON; crear un contenedor con el volumen.
+- **Eliminar** (bloqueado si lo monta cualquier contenedor) y **limpiar** (anónimos, o todos con confirmación; aviso para la API < 1.42). Los diálogos consultan a Docker al abrirse.
+- **Directorios vinculados**: carpetas y archivos montados agrupados por ruta, con tipo, permisos, propietario, si existen, contenedores, destino y acceso; avisos de socket de Docker, raíz, directorios del sistema y rutas inexistentes; vincular una carpeta con el selector del sistema o desde una tarjeta abre el asistente de contenedores con el montaje (D-052).
+
+### Pruebas realizadas en el entorno de desarrollo
+`scripts/verify-phase-6.sh` ejecutado completo con dos daemons reales, los dos con veredicto "parte automática superada", 0 fallos y sin recursos de prueba sobrantes:
+
+| | Docker 29.9.2 (containerd, API 1.56) | Docker 24.0.7 (almacenamiento clásico, API 1.43) |
+|---|---|---|
+| Rust deterministas | 315 correctas | 315 correctas |
+| Vitest | 179 | 179 |
+| Contra Docker real (imágenes, descarga, construcción, redes, volúmenes, IPC) | 11 + 7 + 9 + 4 + 4 + 6 | 11 + 7 + 9 + 4 + 4 + 6 |
+| Resultado | 33 correctas (con `--deb`), 2 omitidas, 1 aviso | 32 correctas (sin `--deb`), 2 omitidas, 1 aviso |
+
+- Omitidas, como en fases anteriores: las dos pruebas de permiso denegado, porque root ignora los permisos de archivo. El aviso es el de ejecutar como root en desarrollo.
+- `live_volumes` se ha ejecutado por primera vez con Docker 24. Con la API 1.43 se comprueban la limpieza con `all=true` y el rechazo 409 de un volumen montado solo por un contenedor detenido.
+- Prueba en la aplicación real con Docker 29:
+  - la lista y los tamaños coinciden con `docker system df -v`;
+  - un nombre repetido se detiene en el formulario sin llegar a Docker;
+  - no se puede eliminar un volumen en uso;
+  - la limpieza por defecto solo borra los anónimos;
+  - la vista de vinculados muestra el aviso del socket de Docker;
+  - "Nuevo contenedor con ella" abre el asistente con el montaje.
+- Paquete 0.6.0 instalado con `apt`, ejecutado en inglés y con tema oscuro, con Volúmenes y Directorios vinculados funcionando, y desinstalado sin dejar archivos.
+
+### Problemas detectados y resueltos durante la fase
+- **Docker ignora en silencio la creación de un volumen con un nombre existente** (201 con el volumen antiguo, sin las etiquetas ni opciones pedidas). La aplicación lo comprueba antes y lo indica en el formulario (D-051).
+- **El tamaño de los volúmenes llega en formatos distintos según la versión de Docker** y el tipo de bollard solo conoce el nuevo: petición propia que lee ambos (D-051).
+- Visto en la aplicación real: el asistente solo detectaba el nombre repetido al pulsar Crear; ahora avisa mientras se escribe. La estimación de la limpieza estaba mal puntuada.
+- Durante la verificación: `Cargo.lock` no se había regenerado tras subir la versión (el script usa `--locked` y falló al compilar); y el disco del entorno se llenó con artefactos de compilación acumulados (26 GB). Ambos eran del entorno de desarrollo, no del producto; se corrigieron y la verificación se repitió completa.
+- La prueba de la aplicación que usaba Volúmenes como ejemplo de apartado pendiente pasa a usar Docker Compose (Fase 7).
+
+### Limitaciones y observaciones
+- El selector de carpetas del sistema no se puede manejar en Xvfb (como en fases anteriores): se comprueba en M9.
+- La limpieza con Docker anterior a la API 1.42 (Docker 20.10 de Debian 12) se ha implementado según la documentación de Docker pero no se ha podido probar con ese daemon.
+- No se ofrece explorar el contenido de un volumen (requeriría un contenedor auxiliar).
+- Docker 26.1.5 (Debian 13) no se ha podido probar aquí: se ha probado con 24.0.7 y 29.9.2.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-5.sh` en Debian 13 y envía `verify-phase-5-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.5.0 y realiza M1–M16.
-2. Corregir lo que surja y marcar la Fase 5 como validada.
-3. Fase 6: volúmenes y directorios vinculados.
+1. El propietario ejecuta `bash scripts/verify-phase-6.sh` en Debian 13 y envía `verify-phase-6-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.6.0 y realiza M1–M15.
+2. Corregir lo que surja y marcar la Fase 6 como validada.
+3. Fase 7: Docker Compose.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

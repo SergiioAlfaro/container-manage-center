@@ -9,6 +9,8 @@ import { ConnectionBadge } from "@/features/engine/ConnectionBadge";
 import { useEngine } from "@/features/engine/store";
 import { ImagesView } from "@/features/images/ImagesView";
 import { NetworksView } from "@/features/networks/NetworksView";
+import { VolumesView } from "@/features/volumes/VolumesView";
+import { BindsView } from "@/features/binds/BindsView";
 import { PendingSection } from "@/features/pending/PendingSection";
 import { useQueryClient } from "@tanstack/react-query";
 import { SettingsView } from "@/features/settings/SettingsView";
@@ -81,6 +83,10 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <ImagesView />;
     case "networks":
       return <NetworksView />;
+    case "volumes":
+      return <VolumesView />;
+    case "binds":
+      return <BindsView />;
     case "settings":
       return <SettingsView />;
     default:

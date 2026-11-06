@@ -1098,3 +1098,138 @@ fn live_networks_via_ipc() {
         assert!(kinds.iter().any(|x| x == k), "{k}: {kinds:?}");
     }
 }
+
+#[test]
+fn volume_preview_validates_and_shows_exact_request() {
+    let h = harness();
+    let v = invoke(
+        &h,
+        "volume_preview",
+        json!({ "spec": { "name": "datos", "driverOpts": [{ "key": "type", "value": "tmpfs" }, { "key": "device", "value": "tmpfs" }], "labels": [{ "key": "app", "value": "web" }] } }),
+    )
+    .unwrap();
+    assert_eq!(v["issues"], json!([]));
+    assert_eq!(
+        v["command"],
+        "docker volume create --driver local --opt device=tmpfs --opt type=tmpfs --label app=web datos"
+    );
+    assert_eq!(v["request"], "POST /volumes/create");
+    let body: serde_json::Value = serde_json::from_str(v["body"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        body,
+        json!({ "Name": "datos", "Driver": "local", "DriverOpts": { "type": "tmpfs", "device": "tmpfs" }, "Labels": { "app": "web" } })
+    );
+    let v = invoke(&h, "volume_preview", json!({ "spec": { "name": "a" } })).unwrap();
+    assert_eq!(v["issues"][0]["code"], "volumeName.short");
+    let list = invoke(&h, "activity_list", json!({})).unwrap();
+    assert!(list
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|r| r["category"] == "system"));
+}
+
+#[test]
+fn phase6_commands_fail_cleanly_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    for (cmd, args) in [
+        ("volumes_list", json!({})),
+        ("volume_details", json!({ "name": "datos" })),
+        ("volume_sizes", json!({})),
+        ("volume_create", json!({ "spec": { "name": "datos" } })),
+        (
+            "volume_remove",
+            json!({ "name": "datos", "confirmed": true }),
+        ),
+        ("volumes_prune", json!({ "all": false, "confirmed": true })),
+        ("binds_list", json!({})),
+    ] {
+        let err = invoke(&h, cmd, args).unwrap_err();
+        assert_eq!(err["code"], "engine.notConnected", "{cmd}: {err}");
+    }
+    for (cmd, args) in [
+        (
+            "volume_remove",
+            json!({ "name": "datos", "confirmed": false }),
+        ),
+        ("volumes_prune", json!({ "all": true, "confirmed": false })),
+    ] {
+        let err = invoke(&h, cmd, args).unwrap_err();
+        assert_eq!(err["code"], "engine.notConfirmed", "{cmd}: {err}");
+    }
+    let e = invoke(&h, "volume_create", json!({ "spec": { "name": "a b" } })).unwrap_err();
+    assert_eq!(e["code"], "engine.invalidSpec");
+    assert_eq!(e["issues"][0]["code"], "volumeName.invalid");
+}
+
+/// Contra Docker real: crear, listar, ver el detalle, medir y eliminar un
+/// volumen, y listar directorios vinculados, con los comandos de la ventana.
+#[test]
+fn live_volumes_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let name = format!("dcc-test-ipc-vol-{}", std::process::id());
+    struct Guard<'a>(&'a Harness, String);
+    impl Drop for Guard<'_> {
+        fn drop(&mut self) {
+            let _ = invoke(
+                self.0,
+                "volume_remove",
+                json!({ "name": self.1, "confirmed": true }),
+            );
+        }
+    }
+    let created = invoke(
+        &h,
+        "volume_create",
+        json!({ "spec": { "name": name, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+    )
+    .unwrap();
+    let _g = Guard(&h, name.clone());
+    assert_eq!(created["name"], name.as_str());
+    // Repetido: error de validación con el código volumeName.exists.
+    let e = invoke(&h, "volume_create", json!({ "spec": { "name": name } })).unwrap_err();
+    assert_eq!(e["code"], "engine.invalidSpec", "{e}");
+    assert_eq!(e["issues"][0]["code"], "volumeName.exists");
+    let list = invoke(&h, "volumes_list", json!({})).unwrap();
+    assert!(list
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|v| v["name"] == name.as_str()));
+    let d = invoke(&h, "volume_details", json!({ "name": name })).unwrap();
+    assert_eq!(d["summary"]["labels"]["dcc.test"], "true");
+    let sizes = invoke(&h, "volume_sizes", json!({})).unwrap();
+    assert!(
+        sizes
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["name"] == name.as_str()),
+        "{sizes}"
+    );
+    assert!(invoke(&h, "binds_list", json!({})).unwrap().is_array());
+    invoke(
+        &h,
+        "volume_remove",
+        json!({ "name": name, "confirmed": true }),
+    )
+    .unwrap();
+    let e = invoke(&h, "volume_details", json!({ "name": name })).unwrap_err();
+    assert_eq!(e["httpStatus"], 404, "{e}");
+}

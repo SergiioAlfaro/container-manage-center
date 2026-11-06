@@ -234,7 +234,12 @@
       "disconnect": "Desconectar contenedor de red"
     },
     "volume": {
-      "list": "Listar volúmenes"
+      "list": "Listar volúmenes",
+      "inspect": "Inspeccionar volumen",
+      "usage": "Medir volúmenes",
+      "create": "Crear volumen",
+      "remove": "Eliminar volumen",
+      "prune": "Limpiar volúmenes"
     },
     "registry": {
       "credentials": "Obtener credenciales del registro"
@@ -932,6 +937,15 @@
     "option": {
       "keyInvalid": "Nombre de opción no válido: {{key}}",
       "duplicate": "Opción repetida: {{key}}"
+    },
+    "volumeName": {
+      "short": "El nombre debe tener al menos dos caracteres.",
+      "invalid": "Nombre no válido: usa letras, números, «_», «.» o «-», y empieza por letra o número.",
+      "exists": "Ya existe un volumen llamado {{value}}. Docker devolvería el existente sin aplicar estos cambios."
+    },
+    "volumeOpt": {
+      "unknownLocal": "El driver local solo usa type, device y o: «{{key}}» se enviará igualmente.",
+      "deviceWithoutType": "Con «device» suele hacer falta «type» (p. ej. none con o=bind, nfs o tmpfs)."
     }
   },
   "dupNotes": {
@@ -1341,5 +1355,176 @@
     "disconnected": "{{container}} desconectado de {{network}}.",
     "checking": "Consultando a Docker el estado actual…",
     "gone": "La red {{name}} ya no existe."
+  },
+  "volumes": {
+    "create": "Crear volumen",
+    "prune": "Limpiar",
+    "refresh": "Actualizar",
+    "sizes": "Calcular tamaños",
+    "sizesAgain": "Volver a calcular",
+    "sizesNote": "Tamaños calculados por Docker («docker system df -v»); pueden tardar con volúmenes grandes.",
+    "sizesError": "No se pudieron calcular los tamaños: {{message}}",
+    "sizeUnknown": "No disponible",
+    "search": "Buscar por nombre, driver, contenedor o metadato",
+    "filterLabel": "Filtro",
+    "filter": {
+      "all": "Todos",
+      "inUse": "En uso",
+      "unused": "Sin uso",
+      "anonymous": "Anónimos"
+    },
+    "count_one": "{{count}} volumen",
+    "count_other": "{{count}} volúmenes",
+    "columns": {
+      "name": "Volumen",
+      "driver": "Driver",
+      "size": "Tamaño",
+      "containers": "Contenedores",
+      "actions": "Acciones"
+    },
+    "anonymous": "Anónimo",
+    "unused": "Sin uso",
+    "users_one": "{{count}} montaje",
+    "users_other": "{{count}} montajes",
+    "empty": "No hay volúmenes",
+    "emptyBody": "Crea un volumen para guardar datos que sobrevivan a los contenedores.",
+    "noMatches": "Ningún volumen coincide con la búsqueda.",
+    "loadError": "No se pudo obtener la lista de volúmenes: {{message}}",
+    "createContainer": "Crear un contenedor con {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "volDetail": {
+    "back": "Volúmenes",
+    "tabs": {
+      "summary": "Resumen",
+      "containers": "Contenedores",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "General",
+      "options": "Opciones del driver",
+      "status": "Estado del driver"
+    },
+    "f": {
+      "name": "Nombre",
+      "driver": "Driver",
+      "scope": "Ámbito",
+      "mountpoint": "Directorio en el equipo",
+      "created": "Creado",
+      "size": "Tamaño"
+    },
+    "sizeNotMeasured": "Sin calcular",
+    "measure": "Calcular",
+    "noOptions": "Sin opciones.",
+    "noContainers": "Ningún contenedor monta este volumen.",
+    "c": {
+      "destination": "Ruta en el contenedor",
+      "access": "Acceso"
+    },
+    "rw": "Lectura y escritura",
+    "ro": "Solo lectura",
+    "createContainer": "Crear contenedor con él",
+    "inspectHint": "Respuesta completa de Docker, como «docker volume inspect {{name}}».",
+    "notFound": "El volumen {{name}} ya no existe.",
+    "loadError": "No se pudo inspeccionar el volumen: {{message}}"
+  },
+  "volCreate": {
+    "title": "Crear volumen",
+    "g": {
+      "general": "General",
+      "options": "Opciones del driver",
+      "optionsHint": "Para el driver local equivalen a las de «mount»: type, device y o."
+    },
+    "f": {
+      "name": "Nombre",
+      "kind": "Tipo"
+    },
+    "h": {
+      "name": "Opcional: sin nombre, Docker crea un volumen anónimo. Letras, números, «_», «.» o «-» (al menos 2).",
+      "preset": {
+        "plain": "Directorio gestionado por Docker en este equipo (lo habitual).",
+        "tmpfs": "En memoria: se pierde al detener el último contenedor que lo usa.",
+        "nfs": "Carpeta compartida por NFS: ajusta la dirección del servidor y la ruta.",
+        "bind": "Volumen con nombre que apunta a una carpeta existente del equipo.",
+        "other": "Driver de un plugin instalado en Docker."
+      }
+    },
+    "ph": {
+      "name": "vacío = anónimo"
+    },
+    "preset": {
+      "plain": "Local",
+      "tmpfs": "tmpfs",
+      "nfs": "NFS",
+      "bind": "Carpeta",
+      "other": "Otro driver"
+    },
+    "readyAnonymous": "Listo para crear un volumen anónimo.",
+    "submit": "Crear volumen"
+  },
+  "volOps": {
+    "failed": "Docker rechazó la operación: {{message}}",
+    "removeTitle": "Eliminar el volumen {{name}}",
+    "remove": "Eliminar volumen",
+    "removeBody": "Se eliminan el volumen y todos sus datos. No se puede deshacer.",
+    "inUse_one": "Lo monta {{count}} contenedor: Docker no elimina un volumen en uso, ni siquiera de un contenedor detenido. Elimina antes el contenedor.",
+    "inUse_other": "Lo montan {{count}} contenedores: Docker no elimina un volumen en uso, ni siquiera de contenedores detenidos. Elimina antes los contenedores.",
+    "sure": "Entiendo que se borrarán sus datos",
+    "gone": "El volumen {{name}} ya no existe.",
+    "removed": "Volumen {{name}} eliminado.",
+    "pruneTitle": "Limpiar volúmenes",
+    "prune": "Limpiar volúmenes",
+    "pruneAnonymous": "Solo los volúmenes anónimos que no monta ningún contenedor",
+    "pruneAll": "Todos los volúmenes que no monta ningún contenedor (también los que tienen nombre)",
+    "legacy": "Esta versión de Docker (API {{api}}) elimina todos los volúmenes sin uso, también los que tienen nombre: no distingue entre anónimos y con nombre.",
+    "pruneEstimate_one": "Según el estado actual se eliminará {{count}} volumen",
+    "pruneEstimate_other": "Según el estado actual se eliminarán {{count}} volúmenes",
+    "pruneEstimate_zero": "Según el estado actual no hay volúmenes que eliminar",
+    "pruneBytes": "({{size}} según el último cálculo)",
+    "pruneNote": "Un volumen sin uso puede guardar datos importantes (por ejemplo, de una base de datos cuyo contenedor eliminaste).",
+    "pruneSure_one": "Entiendo que se borrarán los datos de {{count}} volumen con nombre",
+    "pruneSure_other": "Entiendo que se borrarán los datos de {{count}} volúmenes con nombre",
+    "pruned_one": "{{count}} volumen eliminado; {{size}} recuperados.",
+    "pruned_other": "{{count}} volúmenes eliminados; {{size}} recuperados.",
+    "pruned_zero": "No había volúmenes que eliminar."
+  },
+  "binds": {
+    "bindFolder": "Vincular una carpeta…",
+    "pickTitle": "Carpeta que verá el contenedor",
+    "intro": "Carpetas de este equipo montadas dentro de contenedores. Docker no permite añadir montajes a un contenedor existente: para vincular una carpeta se crea un contenedor nuevo con el asistente.",
+    "search": "Buscar por ruta o contenedor",
+    "filter": {
+      "all": "Todas",
+      "writable": "Con escritura",
+      "attention": "Requieren atención ({{count}})"
+    },
+    "count_one": "{{count}} carpeta",
+    "count_other": "{{count}} carpetas",
+    "kind": {
+      "directory": "Carpeta",
+      "file": "Archivo",
+      "socket": "Socket",
+      "other": "Otro",
+      "missing": "No existe"
+    },
+    "writable": "Con escritura",
+    "readOnly": "Solo lectura",
+    "permissions": "Permisos y propietario en el equipo",
+    "notReadable": "Tu usuario no puede leerla",
+    "newContainer": "Nuevo contenedor con ella",
+    "newContainerHint": "Abre el asistente de contenedores con esta carpeta ya vinculada",
+    "risk": {
+      "dockerSocket": "Socket de Docker: el contenedor puede controlar Docker y, en la práctica, todo el equipo (salvo con Docker rootless).",
+      "hostRoot": "La raíz del sistema de archivos del equipo.",
+      "system": "Un directorio del sistema."
+    },
+    "riskWritable": "Se monta con escritura: el contenedor puede modificarlo.",
+    "missing": "No existe en este equipo. Si el contenedor se creó con «-v», Docker volverá a crearla vacía (como root) al arrancarlo.",
+    "attentionBanner_one": "{{count}} vinculación requiere atención (socket de Docker, directorio del sistema o carpeta inexistente).",
+    "attentionBanner_other": "{{count}} vinculaciones requieren atención (socket de Docker, directorios del sistema o carpetas inexistentes).",
+    "empty": "Ningún contenedor tiene carpetas vinculadas",
+    "emptyBody": "Vincula una carpeta para que un contenedor trabaje con archivos de este equipo.",
+    "noMatches": "Ninguna carpeta coincide con la búsqueda.",
+    "loadError": "No se pudo obtener la lista de contenedores: {{message}}"
   }
 }

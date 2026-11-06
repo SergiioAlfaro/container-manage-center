@@ -18,5 +18,8 @@ export const keys = {
   containers: ["containers"] as const,
   images: ["images"] as const,
   networks: ["networks"] as const,
+  volumes: ["volumes"] as const,
+  volumeSizes: ["volumeSizes"] as const,
+  binds: ["binds"] as const,
   compose: ["compose"] as const,
 };

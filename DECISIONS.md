@@ -530,3 +530,41 @@ Una construcción con BuildKit no se ve afectada.
   la aplicación y explica el motivo. Una limpieza lanzada desde fuera (CLI)
   durante una descarga sigue haciendo fallar la descarga; la aplicación muestra
   el error real de Docker.
+
+### D-051 · Volúmenes: comportamiento de Docker que determina el diseño
+Comprobado con Docker 29.9.2 (containerd) y 24.0.7 (clásico):
+
+* `POST /volumes/create` con un nombre existente devuelve 201 con el volumen
+  existente, **sin aplicar** el driver, las opciones ni las etiquetas pedidas
+  (el CLI tampoco avisa). La aplicación comprueba antes con
+  `GET /volumes?filters={"name":[…]}` (coincidencia exacta en el código) y
+  devuelve `engine.invalidSpec` con `volumeName.exists`; el asistente también
+  avisa mientras se escribe con la lista actual.
+* `DELETE /volumes/{nombre}` falla con 409 si lo monta cualquier contenedor, en
+  marcha o detenido, también con `force` (que solo sirve para errores del
+  driver): la aplicación no ofrece forzar.
+* `POST /volumes/prune` (API ≥ 1.42) elimina por defecto solo los anónimos sin
+  uso; con `all=true`, también los que tienen nombre. Antes de la API 1.42
+  elimina todos los sin uso y no admite `all`: la interfaz lo detecta por la
+  versión de la API, avisa, no envía `all` y estima con todos (no probado con
+  un daemon real de esa versión).
+* El tamaño solo lo da `GET /system/df?type=volume`. Docker ≤ 28 lo devuelve en
+  `Volumes`; Docker 29 en `VolumeUsage.Items` (y `Volumes` vacío según los
+  parámetros); el tipo de bollard 0.21 solo conoce el formato nuevo. Se usa una
+  petición propia (`build/http.rs`, `get_json`) y se leen los dos formatos. Se
+  calcula bajo demanda porque puede ser lento.
+* Con `HostConfig.Mounts`, Docker rechaza una carpeta que no existe; con
+  `HostConfig.Binds` (`-v`) la crea como root al arrancar. La lista de
+  directorios vinculados lo explica cuando una ruta ya no existe.
+
+### D-052 · Directorios vinculados
+No son un objeto de Docker: se obtienen de los montajes `bind` de la lista de
+contenedores y se agrupan por ruta del equipo. El estado de la ruta (existe,
+tipo, uid, permisos, si el usuario puede leerla) se consulta en el sistema de
+archivos local, que es el del daemon porque el socket es local (también con
+Docker rootless); no es una operación de Docker y no se registra. Se marcan el
+socket de Docker, la raíz y los directorios del sistema (la misma lista que usa
+el asistente de contenedores, más /usr, /bin, /sbin, /lib y /var/lib/docker).
+Como Docker no permite añadir montajes a un contenedor existente, "vincular una
+carpeta" abre el asistente de contenedores con el montaje (selector de carpetas
+del sistema).

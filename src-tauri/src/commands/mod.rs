@@ -8,3 +8,4 @@ pub mod engine;
 pub mod images;
 pub mod networks;
 pub mod resources;
+pub mod volumes;

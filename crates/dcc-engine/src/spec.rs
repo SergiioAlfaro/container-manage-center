@@ -244,7 +244,7 @@ pub fn is_secret_key(key: &str) -> bool {
     .any(|w| k.contains(w))
 }
 
-const SENSITIVE_BINDS: &[&str] = &[
+pub(crate) const SENSITIVE_BINDS: &[&str] = &[
     "/",
     "/etc",
     "/root",

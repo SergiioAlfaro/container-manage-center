@@ -253,6 +253,42 @@ Pestañas **Resumen** (driver, ámbito, fecha, interna, IPv4/IPv6, subredes,
 puertas de enlace, rangos, opciones del driver y metadatos), **Contenedores** e
 **Inspección JSON** (como `docker network inspect`).
 
+## Volúmenes
+
+Lista los volúmenes (como `docker volume ls`) con su driver y los contenedores
+que los montan, en marcha o no. Los volúmenes **anónimos** (los que Docker crea
+sin nombre) se marcan como tales. **Calcular tamaños** pide a Docker el espacio
+que ocupa cada uno (como `docker system df -v`); con volúmenes grandes puede
+tardar, por eso no se hace automáticamente.
+
+- **Crear volumen**: nombre (opcional: sin nombre se crea uno anónimo) y tipo:
+  local (lo habitual), tmpfs (en memoria), NFS, una carpeta del equipo u otro
+  driver. Las opciones se pueden editar y se ven el comando y la petición
+  exactos. Si ya existe un volumen con ese nombre, se avisa: Docker devolvería
+  el existente sin aplicar los cambios.
+- **Detalle**: directorio en el equipo, opciones, metadatos, tamaño, contenedores
+  con la ruta y el modo de acceso, e inspección JSON. **Crear contenedor con
+  él** abre el asistente de contenedores con el volumen montado en `/data`.
+- **Eliminar**: Docker no elimina un volumen que monte cualquier contenedor, ni
+  siquiera uno detenido; el diálogo lo indica y no deja continuar.
+- **Limpiar**: elimina los volúmenes anónimos sin uso o, con confirmación,
+  todos los volúmenes sin uso (también los que tienen nombre). Con Docker
+  anterior a la versión 23 la limpieza siempre elimina también los que tienen
+  nombre; el diálogo lo avisa.
+
+## Directorios vinculados
+
+Carpetas (y archivos) de este equipo montados dentro de contenedores, agrupados
+por ruta: tipo, permisos y propietario, si existen, qué contenedores los montan,
+dónde y con qué acceso. Se señalan los que requieren atención: el **socket de
+Docker** (da control de Docker al contenedor), la raíz o directorios del sistema,
+y las rutas que ya no existen.
+
+Docker no permite añadir una carpeta a un contenedor que ya existe. **Vincular
+una carpeta…** abre el selector de carpetas del sistema y después el asistente
+de contenedores con esa carpeta montada en `/mnt/<nombre>`; **Nuevo contenedor
+con ella** hace lo mismo con una carpeta de la lista.
+
 ## Panel de actividad
 
 Cada operación que la aplicación ejecuta sobre Docker aparece aquí: hora,

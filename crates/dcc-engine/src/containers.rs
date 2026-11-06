@@ -47,9 +47,28 @@ pub struct ContainerSummary {
     pub ports: Vec<PortMapping>,
     pub networks: Vec<String>,
     pub mounts: u32,
+    /// Montajes (volúmenes, carpetas del equipo, tmpfs…) tal como los da la lista.
+    pub mount_points: Vec<MountPoint>,
     /// Proyecto Compose al que pertenece, si lo hay.
     pub compose_project: Option<String>,
     pub labels: BTreeMap<String, String>,
+}
+
+/// Un montaje de un contenedor (`Mounts` de `GET /containers/json`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MountPoint {
+    /// volume, bind, tmpfs, npipe, cluster, image.
+    pub kind: String,
+    /// Nombre del volumen (solo `volume`).
+    pub name: Option<String>,
+    /// Ruta en el equipo (carpeta vinculada o directorio del volumen).
+    pub source: String,
+    pub destination: String,
+    pub rw: bool,
+    pub mode: String,
+    pub propagation: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -159,7 +178,21 @@ impl Engine {
                         .and_then(|n| n.networks)
                         .map(|n| n.into_keys().collect())
                         .unwrap_or_default(),
-                    mounts: c.mounts.map(|m| m.len() as u32).unwrap_or(0),
+                    mounts: c.mounts.as_ref().map(|m| m.len() as u32).unwrap_or(0),
+                    mount_points: c
+                        .mounts
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|m| MountPoint {
+                            kind: state_str(m.typ),
+                            name: m.name.filter(|n| !n.is_empty()),
+                            source: m.source.unwrap_or_default(),
+                            destination: m.destination.unwrap_or_default(),
+                            rw: m.rw.unwrap_or(true),
+                            mode: m.mode.unwrap_or_default(),
+                            propagation: m.propagation.unwrap_or_default(),
+                        })
+                        .collect(),
                     compose_project: labels.get("com.docker.compose.project").cloned(),
                     labels,
                 }
