@@ -64,6 +64,16 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::containers::terminal_input,
             commands::containers::terminal_resize,
             commands::containers::stream_close,
+            commands::images::image_details,
+            commands::images::image_history,
+            commands::images::image_tag,
+            commands::images::image_remove,
+            commands::images::images_prune,
+            commands::images::images_search,
+            commands::images::image_ref_parse,
+            commands::images::image_pull_open,
+            commands::images::build_preview,
+            commands::images::build_open,
         ])
 }
 

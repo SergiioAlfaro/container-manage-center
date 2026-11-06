@@ -126,6 +126,8 @@ pub fn recorded(log: &ActivityLog) -> Vec<(String, String)> {
     v
 }
 
+pub mod registry;
+
 pub mod fixture {
     use bollard::models::ContainerCreateBody;
     use bollard::query_parameters::{

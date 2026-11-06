@@ -5,4 +5,5 @@ pub mod app;
 pub mod config;
 pub mod containers;
 pub mod engine;
+pub mod images;
 pub mod resources;

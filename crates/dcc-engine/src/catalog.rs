@@ -54,7 +54,7 @@ impl Engine {
         Ok(self.inspect_image_full(reference).await?.config)
     }
 
-    async fn inspect_image_full(
+    pub(crate) async fn inspect_image_full(
         &self,
         reference: &str,
     ) -> Result<bollard::models::ImageInspect, EngineError> {

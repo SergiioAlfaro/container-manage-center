@@ -518,3 +518,215 @@ fn live_create_inspect_duplicate_via_ipc() {
     )
     .unwrap();
 }
+
+// ------------------------------------------------------------------ Fase 4
+
+#[test]
+fn image_ref_parse_normalizes_and_reports_stable_codes() {
+    let h = harness();
+    let v = invoke(&h, "image_ref_parse", json!({ "reference": "nginx" })).unwrap();
+    assert_eq!(
+        v,
+        json!({ "registry": "docker.io", "repository": "library/nginx", "tag": null, "digest": null })
+    );
+    let e = invoke(&h, "image_ref_parse", json!({ "reference": "Nginx:1" })).unwrap_err();
+    assert_eq!(e["code"], "ref.invalidRepository");
+    let e = invoke(&h, "image_ref_parse", json!({ "reference": "nginx:-x" })).unwrap_err();
+    assert_eq!(e["code"], "ref.invalidTag");
+}
+
+#[test]
+fn build_preview_validates_scans_context_and_hides_secrets_without_docker() {
+    let h = harness();
+    let v = invoke(
+        &h,
+        "build_preview",
+        json!({ "spec": { "context": "/no/existe/dcc", "tags": ["app:1"] } }),
+    )
+    .unwrap();
+    assert_eq!(v["issues"][0]["code"], "context.missing");
+    assert!(v["context"].is_null());
+
+    let d = tempfile::tempdir().unwrap();
+    std::fs::write(d.path().join("Dockerfile"), "FROM alpine\n").unwrap();
+    std::fs::write(d.path().join(".dockerignore"), "*.log\n").unwrap();
+    std::fs::write(d.path().join("a.log"), "x").unwrap();
+    std::fs::write(d.path().join("app.txt"), "hola").unwrap();
+    let ctx = d.path().to_string_lossy().into_owned();
+    let v = invoke(
+        &h,
+        "build_preview",
+        json!({ "spec": { "context": ctx, "tags": ["app:1"], "buildArgs": [{ "key": "NPM_TOKEN", "value": "s3creto" }], "builder": "classic" } }),
+    )
+    .unwrap();
+    assert_eq!(v["context"]["files"], 3, "{v}");
+    assert_eq!(v["context"]["excluded"], 1);
+    assert_eq!(v["secretsHidden"], 1);
+    let cmd = v["command"].as_str().unwrap();
+    assert!(
+        cmd.starts_with(
+            "DOCKER_BUILDKIT=0 docker build --tag app:1 --build-arg 'NPM_TOKEN=********'"
+        ),
+        "{cmd}"
+    );
+    assert!(!v["request"].as_str().unwrap().contains("s3creto"));
+    assert_eq!(v["issues"][0]["code"], "arg.secret");
+    // Nada de esto habla con Docker.
+    let list = invoke(&h, "activity_list", json!({})).unwrap();
+    assert!(list
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|r| r["category"] == "system"));
+}
+
+#[test]
+fn phase4_commands_fail_cleanly_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    let d = tempfile::tempdir().unwrap();
+    std::fs::write(d.path().join("Dockerfile"), "FROM alpine\n").unwrap();
+    let ctx = d.path().to_string_lossy().into_owned();
+    for (cmd, args) in [
+        ("image_details", json!({ "reference": "nginx" })),
+        ("image_history", json!({ "reference": "nginx" })),
+        (
+            "image_tag",
+            json!({ "source": "nginx", "repo": "web", "tag": "1" }),
+        ),
+        (
+            "image_remove",
+            json!({ "reference": "nginx", "force": false, "confirmed": true }),
+        ),
+        ("images_prune", json!({ "all": false, "confirmed": true })),
+        (
+            "images_search",
+            json!({ "term": "nginx", "limit": 10, "officialOnly": false }),
+        ),
+        (
+            "image_pull_open",
+            json!({ "reference": "nginx", "auth": { "mode": "dockerConfig" }, "onEvent": "__CHANNEL__:7" }),
+        ),
+        (
+            "image_pull_open",
+            json!({ "reference": "reg.io/app", "auth": { "mode": "manual", "username": "ana", "password": "x" }, "onEvent": "__CHANNEL__:8" }),
+        ),
+        (
+            "build_open",
+            json!({ "spec": { "context": ctx, "tags": ["app:1"] }, "onEvent": "__CHANNEL__:9" }),
+        ),
+    ] {
+        let err = invoke(&h, cmd, args).unwrap_err();
+        assert_eq!(err["code"], "engine.notConnected", "{cmd}: {err}");
+    }
+    // La confirmación y la validación se comprueban antes de necesitar Docker.
+    let e = invoke(
+        &h,
+        "image_remove",
+        json!({ "reference": "nginx", "force": false, "confirmed": false }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.notConfirmed");
+    let e = invoke(
+        &h,
+        "images_prune",
+        json!({ "all": true, "confirmed": false }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.notConfirmed");
+    let e = invoke(
+        &h,
+        "image_pull_open",
+        json!({ "reference": "Mal", "auth": { "mode": "anonymous" }, "onEvent": "__CHANNEL__:10" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "ref.invalidRepository");
+    let e = invoke(
+        &h,
+        "build_open",
+        json!({ "spec": { "context": "/no/existe/dcc" }, "onEvent": "__CHANNEL__:11" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.invalidSpec");
+    assert_eq!(e["issues"][0]["code"], "context.missing");
+}
+
+/// Contra Docker real: inspeccionar, capas y construir a través de la IPC.
+#[test]
+fn live_images_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let images = invoke(&h, "images_list", json!({})).unwrap();
+    let Some(image) = images.as_array().unwrap().iter().find_map(|i| {
+        i["repoTags"]
+            .as_array()
+            .and_then(|t| t.first())
+            .and_then(|t| t.as_str())
+            .map(str::to_owned)
+    }) else {
+        eprintln!("omitida: no hay imágenes locales con etiqueta");
+        return;
+    };
+    let d = invoke(&h, "image_details", json!({ "reference": image })).unwrap();
+    assert!(d["repoTags"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|t| t == image.as_str()));
+    assert!(d["raw"].as_str().unwrap().contains("\"Id\""));
+    let layers = invoke(&h, "image_history", json!({ "reference": image })).unwrap();
+    assert!(!layers.as_array().unwrap().is_empty());
+
+    // Construcción real: el resultado se observa en Docker.
+    let ctx = tempfile::tempdir().unwrap();
+    std::fs::write(
+        ctx.path().join("Dockerfile"),
+        format!("FROM {image}\nLABEL dcc.test=true\n"),
+    )
+    .unwrap();
+    let tag = format!("dcc-test/ipc-construida-{}:1", std::process::id());
+    let sid = invoke(
+        &h,
+        "build_open",
+        json!({ "spec": { "context": ctx.path().to_string_lossy(), "tags": [tag] }, "onEvent": "__CHANNEL__:21" }),
+    )
+    .unwrap();
+    assert!(sid.as_u64().is_some());
+    let deadline = std::time::Instant::now() + Duration::from_secs(120);
+    let built = loop {
+        if let Ok(v) = invoke(&h, "image_details", json!({ "reference": tag })) {
+            break v;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "la construcción no terminó"
+        );
+        std::thread::sleep(Duration::from_millis(500));
+    };
+    assert_eq!(built["labels"]["dcc.test"], "true");
+    let r = invoke(
+        &h,
+        "image_remove",
+        json!({ "reference": tag, "force": false, "confirmed": true }),
+    )
+    .unwrap();
+    assert!(r["untagged"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|u| u.as_str().unwrap().ends_with(&tag)));
+}

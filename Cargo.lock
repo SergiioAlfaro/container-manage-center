@@ -609,14 +609,17 @@ dependencies = [
 name = "dcc-engine"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "bollard",
  "bytes",
  "chrono",
  "dcc-activity",
  "dirs 6.0.0",
+ "flate2",
  "futures-util",
  "libc",
  "parking_lot",
+ "regex",
  "serde",
  "serde_json",
  "serde_urlencoded",

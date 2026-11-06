@@ -8,6 +8,7 @@
 //! - [`cli`]: ejecución sin shell del CLI de Docker (Compose, D-005).
 //! - [`manager::EngineManager`]: conexión, diagnóstico, vigilancia y reconexión.
 
+pub mod build;
 pub mod catalog;
 pub mod cli;
 pub mod client;
@@ -20,6 +21,9 @@ pub mod images;
 pub mod manager;
 mod model;
 pub mod probe;
+pub mod pull;
+pub mod reference;
+pub mod registry_auth;
 pub mod resources;
 pub mod spec;
 pub mod streams;

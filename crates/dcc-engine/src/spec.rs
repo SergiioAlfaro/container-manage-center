@@ -182,7 +182,7 @@ pub struct SpecIssue {
     pub params: BTreeMap<String, String>,
 }
 
-fn issue(
+pub(crate) fn issue(
     sev: Severity,
     field: impl Into<String>,
     code: &str,
