@@ -212,7 +212,14 @@
     },
     "image": {
       "list": "Listar imágenes",
-      "inspect": "Inspeccionar imagen"
+      "inspect": "Inspeccionar imagen",
+      "pull": "Descargar imagen",
+      "build": "Construir imagen",
+      "history": "Consultar capas",
+      "tag": "Etiquetar imagen",
+      "remove": "Eliminar imagen",
+      "prune": "Limpiar imágenes",
+      "search": "Buscar imágenes"
     },
     "compose": {
       "version": "Consultar versión de Compose"
@@ -222,6 +229,9 @@
     },
     "volume": {
       "list": "Listar volúmenes"
+    },
+    "registry": {
+      "credentials": "Obtener credenciales del registro"
     }
   },
   "conn": {
@@ -437,17 +447,27 @@
       "id": "ID",
       "size": "Tamaño",
       "created": "Creada",
-      "usage": "Uso"
+      "usage": "Uso",
+      "actions": "Acciones"
     },
     "dangling": "Sin etiqueta",
     "usedBy_one": "{{count}} contenedor",
     "usedBy_other": "{{count}} contenedores",
     "unused": "Sin uso",
     "empty": "No hay imágenes locales",
-    "emptyBody": "Las imágenes que existan en Docker aparecerán aquí. La descarga y construcción de imágenes llegan en la fase 4.",
+    "emptyBody": "Descarga una imagen de un registro o construye una a partir de un Dockerfile.",
     "noMatches": "Ninguna imagen coincide con la búsqueda.",
-    "later": "Descarga, construcción, etiquetado, inspección y eliminación llegan en la fase 4.",
-    "loadError": "No se pudo obtener la lista de imágenes: {{message}}"
+    "loadError": "No se pudo obtener la lista de imágenes: {{message}}",
+    "pull": "Descargar imagen",
+    "searchHub": "Buscar en Docker Hub",
+    "build": "Construir imagen",
+    "prune": "Limpiar",
+    "buildRunning": "Hay una construcción en curso.",
+    "buildShow": "Ver progreso",
+    "open": "Abrir {{name}}",
+    "createContainer": "Crear contenedor con {{name}}",
+    "tagAction": "Etiquetar {{name}}",
+    "removeAction": "Eliminar {{name}}"
   },
   "settingsDocker": {
     "title": "Conexión con Docker",
@@ -841,6 +861,39 @@
     },
     "host": {
       "invalid": "Nombre de host no válido."
+    },
+    "ref": {
+      "empty": "Indica una imagen.",
+      "tooLong": "La referencia es demasiado larga.",
+      "invalidRegistry": "El nombre del registro no es válido.",
+      "invalidRepository": "Nombre no válido: solo minúsculas, números y los separadores . _ -",
+      "invalidTag": "Etiqueta no válida: letras, números, _ . - (máximo 128, sin empezar por . o -).",
+      "invalidDigest": "Digest no válido (sha256:<64 caracteres hexadecimales>)."
+    },
+    "context": {
+      "required": "Indica la carpeta de contexto.",
+      "missing": "La carpeta {{path}} no existe.",
+      "notDir": "{{path}} no es una carpeta.",
+      "huge": "Usar {{path}} como contexto enviaría una cantidad enorme de archivos."
+    },
+    "dockerfile": {
+      "invalid": "Ruta no válida: debe ser relativa y estar dentro del contexto.",
+      "missing": "No existe {{path}} en la carpeta de contexto."
+    },
+    "tags": {
+      "none": "Sin etiquetas, la imagen quedará sin nombre (<none>)."
+    },
+    "tag": {
+      "invalid": "Etiqueta no válida: {{tag}}",
+      "duplicate": "Etiqueta repetida: {{tag}}"
+    },
+    "arg": {
+      "keyInvalid": "Nombre no válido: {{key}}",
+      "duplicate": "Repetido: {{key}}",
+      "secret": "{{key}} parece un secreto: los argumentos quedan en el historial de la imagen."
+    },
+    "target": {
+      "invalid": "Nombre de etapa no válido."
     }
   },
   "dupNotes": {
@@ -861,5 +914,202 @@
     "healthcheck": "La comprobación de salud personalizada no se traslada.",
     "stopSignal": "La señal de parada personalizada no se traslada.",
     "imageMissing": "La imagen original ya no está en este equipo: no se pudieron separar sus valores por defecto."
+  },
+  "pull": {
+    "title": "Descargar imagen",
+    "start": "Descargar",
+    "reference": "Imagen",
+    "referenceHint": "Nombre con etiqueta opcional: nginx:1.27, usuario/app, registro.ejemplo.com:5000/app:v2. Sin etiqueta se usa latest.",
+    "resolved": "Se descargará {{name}} con la etiqueta {{tag}}.",
+    "auth": "Credenciales",
+    "authDocker": "Las de Docker",
+    "authAnonymous": "Ninguna",
+    "authManual": "Usuario y contraseña",
+    "authHint": {
+      "dockerConfig": "Como docker pull: usa las credenciales guardadas con docker login (o su credential helper), si las hay para ese registro.",
+      "anonymous": "Descarga anónima, sin credenciales.",
+      "manual": "Solo para esta descarga: no se guardan en ningún sitio ni aparecen en el panel de actividad."
+    },
+    "username": "Usuario",
+    "password": "Contraseña o token",
+    "equivalent": "Equivale a",
+    "panel": "Descargas",
+    "clear": "Quitar terminadas",
+    "cancel": "Cancelar",
+    "progress": "Progreso de {{ref}}",
+    "layers_one": "{{count}} capa",
+    "layers_other": "{{count}} capas",
+    "status": {
+      "starting": "Iniciando…",
+      "running": "Descargando",
+      "done": "Descargada",
+      "failed": "Error",
+      "cancelled": "Cancelada"
+    }
+  },
+  "search": {
+    "title": "Buscar en Docker Hub",
+    "term": "Término de búsqueda",
+    "placeholder": "nginx, postgres, python…",
+    "officialOnly": "Solo imágenes oficiales",
+    "limit": "Resultados",
+    "submit": "Buscar",
+    "hint": "La búsqueda la hace Docker Engine en Docker Hub (docker search); necesita que Docker tenga acceso a Internet.",
+    "failed": "La búsqueda falló: {{message}}",
+    "failedHint": "Si Docker no tiene acceso a Internet o a Docker Hub, la búsqueda no es posible.",
+    "none": "Sin resultados.",
+    "name": "Nombre",
+    "description": "Descripción",
+    "stars": "Estrellas",
+    "official": "Oficial",
+    "pull": "Descargar",
+    "pullName": "Descargar {{name}}"
+  },
+  "imageDetail": {
+    "back": "Imágenes",
+    "createContainer": "Crear contenedor",
+    "pullAgain": "Descargar de nuevo",
+    "notFound": "La imagen {{name}} ya no existe en Docker.",
+    "loadError": "No se pudo inspeccionar la imagen: {{message}}",
+    "tabs": {
+      "summary": "Resumen",
+      "layers": "Capas",
+      "containers": "Contenedores",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "General",
+      "config": "Configuración de ejecución"
+    },
+    "f": {
+      "id": "ID",
+      "tags": "Etiquetas",
+      "digests": "Digests",
+      "created": "Creada",
+      "size": "Tamaño",
+      "platform": "Plataforma",
+      "layers": "Capas",
+      "author": "Autor",
+      "ports": "Puertos expuestos",
+      "volumes": "Volúmenes",
+      "stopSignal": "Señal de parada",
+      "healthcheck": "Comprobación de salud"
+    },
+    "localOnly": "ninguno (imagen construida o importada en este equipo)",
+    "layersSummary_one": "{{count}} entrada en el historial, {{data}} con datos, {{size}} en total.",
+    "layersSummary_other": "{{count}} entradas en el historial, {{data}} con datos, {{size}} en total.",
+    "layersError": "No se pudo obtener el historial: {{message}}",
+    "instruction": "Instrucción",
+    "noContainers": "Ningún contenedor usa esta imagen.",
+    "inspectHint": "Salida completa de docker image inspect {{name}}, tal como la devuelve Docker."
+  },
+  "imageOps": {
+    "tagTitle": "Etiquetar imagen",
+    "tag": "Etiquetar",
+    "tagSource": "Imagen de origen:",
+    "repository": "Repositorio",
+    "repositoryHint": "Por ejemplo miapp, usuario/miapp o registro.ejemplo.com:5000/miapp.",
+    "tagName": "Etiqueta",
+    "tagged": "Etiquetada como {{target}}.",
+    "failed": "Docker rechazó la operación: {{message}}",
+    "removeTitle": "Eliminar {{name}}",
+    "removeWhat": "Qué eliminar",
+    "onlyTag": "Solo la etiqueta",
+    "wholeImage_one": "La imagen completa",
+    "wholeImage_other": "La imagen completa (sus {{count}} etiquetas)",
+    "removeTag": "Quitar etiqueta",
+    "removeImage": "Eliminar imagen",
+    "removeTagBody": "Se quita esta etiqueta. Si es la única, Docker elimina también la imagen y sus capas sin uso.",
+    "removeImageBody": "Se eliminan la imagen y sus capas que no use otra imagen. No se puede deshacer: habría que descargarla o construirla de nuevo.",
+    "inUse_one": "La usa {{count}} contenedor:",
+    "inUse_other": "La usan {{count}} contenedores:",
+    "runningRefuses": "Docker no elimina una imagen que usa un contenedor en ejecución, ni forzando: detenlo y elimínalo antes.",
+    "stoppedNeedForce": "Para eliminarla hay que forzar; los contenedores seguirán existiendo, pero sin su imagen no podrás recrearlos.",
+    "force": "Forzar la eliminación",
+    "forceMulti": "Necesario para eliminar una imagen con varias etiquetas (--force).",
+    "forceUsed": "Necesario porque la usan contenedores detenidos (--force).",
+    "removed": "{{untagged}} etiquetas quitadas y {{deleted}} capas o imágenes eliminadas.",
+    "pruneTitle": "Limpiar imágenes",
+    "prune": "Limpiar",
+    "pruneDangling": "Solo las imágenes sin etiqueta que no usa ningún contenedor",
+    "pruneAll": "Todas las imágenes que no usa ningún contenedor, también las etiquetadas",
+    "pruneEstimate_one": "Según la lista actual se eliminaría {{count}} imagen ({{size}}).",
+    "pruneEstimate_other": "Según la lista actual se eliminarían {{count}} imágenes ({{size}}).",
+    "pruneNote": "La decisión final es de Docker, que también elimina la caché de construcción asociada. No se puede deshacer.",
+    "pruneSure": "Entiendo que tendré que volver a descargar o construir esas imágenes",
+    "pruned": "Limpieza terminada: {{count}} elementos eliminados, {{size}} recuperados."
+  },
+  "build": {
+    "title": "Construir imagen",
+    "g": {
+      "context": "Contexto",
+      "contextHint": "Carpeta cuyo contenido se envía a Docker (respetando .dockerignore) y Dockerfile dentro de ella.",
+      "tags": "Nombres de la imagen",
+      "tagsHint": "repositorio:etiqueta de la imagen resultante (docker build --tag). Sin nombre, la imagen queda como <none>.",
+      "args": "Argumentos de construcción",
+      "argsHint": "Valores para las instrucciones ARG (--build-arg). Quedan en el historial de la imagen: no los uses para secretos.",
+      "labels": "Metadatos (LABEL)",
+      "options": "Opciones"
+    },
+    "f": {
+      "context": "Carpeta de contexto",
+      "dockerfile": "Dockerfile",
+      "target": "Etapa final",
+      "builder": "Constructor",
+      "noCache": "No usar la caché",
+      "pull": "Buscar versiones nuevas de las imágenes base"
+    },
+    "h": {
+      "dockerfile": "Ruta relativa a la carpeta de contexto.",
+      "target": "Solo en Dockerfiles multietapa (--target).",
+      "buildKit": "El constructor actual de Docker (el que usa docker build).",
+      "classic": "El constructor anterior, obsoleto; equivale a DOCKER_BUILDKIT=0 docker build."
+    },
+    "ph": {
+      "target": "la última"
+    },
+    "classic": "Clásico",
+    "pickContext": "Elegir carpeta de contexto",
+    "pickDockerfile": "Elegir Dockerfile",
+    "outsideContext": "El Dockerfile debe estar dentro de la carpeta de contexto.",
+    "addTag": "Añadir nombre",
+    "removeTag": "Quitar nombre {{n}}",
+    "tagN": "Nombre {{n}}",
+    "noTags": "Sin nombres.",
+    "addArg": "Añadir argumento",
+    "noArgs": "Sin argumentos.",
+    "secretsHidden_one": "{{count}} valor sensible aparece como ******** aquí y en el panel de actividad.",
+    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí y en el panel de actividad.",
+    "context": "Contexto que se enviará",
+    "contextPending": "Elige una carpeta con un Dockerfile.",
+    "contextSummary": "{{files}} archivos en {{dirs}} carpetas, {{size}} en total.",
+    "excluded_one": ".dockerignore excluye {{count}} entrada.",
+    "excluded_other": ".dockerignore excluye {{count}} entradas.",
+    "noDockerignore": "Sin .dockerignore: se envía todo.",
+    "patterns_one": "{{count}} patrón de .dockerignore",
+    "patterns_other": "{{count}} patrones de .dockerignore",
+    "badIgnore": "Líneas de .dockerignore no válidas: {{lines}}",
+    "special_one": "{{count}} archivo especial (socket, dispositivo o FIFO) no se envía.",
+    "special_other": "{{count}} archivos especiales (sockets, dispositivos o FIFO) no se envían.",
+    "unreadable": "No se pueden leer: {{files}}. La construcción fallaría.",
+    "bigContext": "El contexto es grande: considera excluir carpetas con .dockerignore.",
+    "largest": "Archivos más grandes",
+    "start": "Construir",
+    "cancel": "Cancelar",
+    "edit": "Volver al formulario",
+    "viewImage": "Ver imagen",
+    "steps": "Pasos",
+    "sending": "Enviando el contexto…",
+    "waiting": "Esperando la salida de Docker…",
+    "cached": "caché",
+    "dropped": "Se descartaron {{count}} líneas antiguas.",
+    "failed": "La construcción falló: {{message}}",
+    "status": {
+      "starting": "Enviando el contexto a Docker…",
+      "running": "Construyendo…",
+      "done": "Imagen construida",
+      "failed": "La construcción falló",
+      "cancelled": "Construcción cancelada"
+    }
   }
 }

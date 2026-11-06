@@ -19,7 +19,7 @@ interface ContainersNav {
   showDetail: (id: string, name: string, tab?: DetailTab, notices?: Notice[]) => void;
   dismissNotices: () => void;
   setTab: (tab: DetailTab) => void;
-  showCreate: (prefill?: { spec: ContainerSpec; notes: string[]; sourceName: string }) => void;
+  showCreate: (prefill?: { spec: ContainerSpec; notes: string[]; sourceName: string | null }) => void;
 }
 
 /** Navegación dentro de la sección Contenedores (lista, detalle, asistente). */

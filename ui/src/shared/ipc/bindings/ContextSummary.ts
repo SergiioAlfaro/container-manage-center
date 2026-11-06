@@ -4,15 +4,15 @@ import type { ContextFile } from "./ContextFile";
 /**
  * Resumen del contexto antes de construir (no habla con Docker).
  */
-export type ContextSummary = { files: bigint, dirs: bigint, symlinks: bigint, bytes: number, 
+export type ContextSummary = { files: number, dirs: number, symlinks: number, bytes: number, 
 /**
  * Entradas excluidas por `.dockerignore`.
  */
-excluded: bigint, 
+excluded: number, 
 /**
  * Sockets, dispositivos y FIFO, que no se envían.
  */
-skippedSpecial: bigint, dockerignore: boolean, ignorePatterns: Array<string>, invalidIgnoreLines: Array<string>, 
+skippedSpecial: number, dockerignore: boolean, ignorePatterns: Array<string>, invalidIgnoreLines: Array<string>, 
 /**
  * Los cinco archivos más grandes que se enviarán.
  */

@@ -33,6 +33,17 @@ import type { SpecPreview } from "./bindings/SpecPreview";
 import type { StatsEvent } from "./bindings/StatsEvent";
 import type { TerminalEvent } from "./bindings/TerminalEvent";
 import type { VolumeBrief } from "./bindings/VolumeBrief";
+import type { BuildEvent } from "./bindings/BuildEvent";
+import type { BuildPreview } from "./bindings/BuildPreview";
+import type { BuildSpec } from "./bindings/BuildSpec";
+import type { ImageDetails } from "./bindings/ImageDetails";
+import type { ImageLayer } from "./bindings/ImageLayer";
+import type { ImageRef } from "./bindings/ImageRef";
+import type { PruneResult } from "./bindings/PruneResult";
+import type { PullAuth } from "./bindings/PullAuth";
+import type { PullEvent } from "./bindings/PullEvent";
+import type { RemoveResult } from "./bindings/RemoveResult";
+import type { SearchResult } from "./bindings/SearchResult";
 
 export const ACTIVITY_EVENT = "activity://event";
 export const ACTIVITY_RESYNC = "activity://resync";
@@ -99,6 +110,27 @@ export const api = {
   terminalInput: (stream: number, data: string) => call<void>("terminal_input", { stream, data }),
   terminalResize: (stream: number, cols: number, rows: number) => call<void>("terminal_resize", { stream, cols, rows }),
   streamClose: (stream: number) => call<boolean>("stream_close", { stream }),
+
+  imageDetails: (reference: string) => call<ImageDetails>("image_details", { reference }),
+  imageHistory: (reference: string) => call<ImageLayer[]>("image_history", { reference }),
+  imageTag: (source: string, repo: string, tag: string) => call<string>("image_tag", { source, repo, tag }),
+  imageRemove: (reference: string, force: boolean) => call<RemoveResult>("image_remove", { reference, force, confirmed: true }),
+  imagesPrune: (all: boolean) => call<PruneResult>("images_prune", { all, confirmed: true }),
+  imagesSearch: (term: string, limit: number, officialOnly: boolean) => call<SearchResult[]>("images_search", { term, limit, officialOnly }),
+  /** Interpreta una referencia como Docker, sin hablar con Docker. */
+  imageRefParse: (reference: string) => call<ImageRef>("image_ref_parse", { reference }),
+  /** Descarga en flujo. La contraseña (modo manual) solo viaja en esta llamada. */
+  imagePullOpen: (reference: string, auth: PullAuth, onEvent: (e: PullEvent) => void) => call<number>("image_pull_open", { reference, auth, onEvent: channel(onEvent) }),
+  /** Valida y resume el contexto sin hablar con Docker. */
+  buildPreview: (spec: BuildSpec) => call<BuildPreview>("build_preview", { spec }),
+  buildOpen: (spec: BuildSpec, onEvent: (e: BuildEvent) => void) => call<number>("build_open", { spec, onEvent: channel(onEvent) }),
+
+  /** Selector de archivo del sistema (Dockerfile). */
+  pickFile: async (title: string, defaultPath?: string): Promise<string | null> => {
+    if (!isTauri()) return null;
+    const r = await openDialog({ directory: false, multiple: false, title, defaultPath });
+    return typeof r === "string" ? r : null;
+  },
 
   /** Selector de carpeta del sistema (para los bind mounts). */
   pickFolder: async (title: string): Promise<string | null> => {

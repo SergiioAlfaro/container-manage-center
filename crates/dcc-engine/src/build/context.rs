@@ -30,14 +30,19 @@ pub struct ContextFile {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ContextSummary {
+    #[ts(type = "number")]
     pub files: u64,
+    #[ts(type = "number")]
     pub dirs: u64,
+    #[ts(type = "number")]
     pub symlinks: u64,
     #[ts(type = "number")]
     pub bytes: u64,
     /// Entradas excluidas por `.dockerignore`.
+    #[ts(type = "number")]
     pub excluded: u64,
     /// Sockets, dispositivos y FIFO, que no se envían.
+    #[ts(type = "number")]
     pub skipped_special: u64,
     pub dockerignore: bool,
     pub ignore_patterns: Vec<String>,

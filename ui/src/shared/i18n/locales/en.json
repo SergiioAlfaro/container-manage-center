@@ -212,7 +212,14 @@
     },
     "image": {
       "list": "List images",
-      "inspect": "Inspect image"
+      "inspect": "Inspect image",
+      "pull": "Pull image",
+      "build": "Build image",
+      "history": "Get layers",
+      "tag": "Tag image",
+      "remove": "Remove image",
+      "prune": "Prune images",
+      "search": "Search images"
     },
     "compose": {
       "version": "Get Compose version"
@@ -222,6 +229,9 @@
     },
     "volume": {
       "list": "List volumes"
+    },
+    "registry": {
+      "credentials": "Get registry credentials"
     }
   },
   "conn": {
@@ -437,17 +447,27 @@
       "id": "ID",
       "size": "Size",
       "created": "Created",
-      "usage": "Usage"
+      "usage": "Usage",
+      "actions": "Actions"
     },
     "dangling": "Untagged",
     "usedBy_one": "{{count}} container",
     "usedBy_other": "{{count}} containers",
     "unused": "Unused",
     "empty": "No local images",
-    "emptyBody": "Images that exist in Docker will appear here. Pulling and building images arrive in phase 4.",
+    "emptyBody": "Pull an image from a registry or build one from a Dockerfile.",
     "noMatches": "No images match the search.",
-    "later": "Pull, build, tag, inspect and remove arrive in phase 4.",
-    "loadError": "Could not get the image list: {{message}}"
+    "loadError": "Could not get the image list: {{message}}",
+    "pull": "Pull image",
+    "searchHub": "Search Docker Hub",
+    "build": "Build image",
+    "prune": "Prune",
+    "buildRunning": "A build is in progress.",
+    "buildShow": "Show progress",
+    "open": "Open {{name}}",
+    "createContainer": "Create container with {{name}}",
+    "tagAction": "Tag {{name}}",
+    "removeAction": "Remove {{name}}"
   },
   "settingsDocker": {
     "title": "Docker connection",
@@ -841,6 +861,39 @@
     },
     "host": {
       "invalid": "Invalid hostname."
+    },
+    "ref": {
+      "empty": "Enter an image.",
+      "tooLong": "The reference is too long.",
+      "invalidRegistry": "Invalid registry name.",
+      "invalidRepository": "Invalid name: lowercase letters, digits and the separators . _ - only",
+      "invalidTag": "Invalid tag: letters, digits, _ . - (128 max, not starting with . or -).",
+      "invalidDigest": "Invalid digest (sha256:<64 hex characters>)."
+    },
+    "context": {
+      "required": "Enter the context folder.",
+      "missing": "Folder {{path}} does not exist.",
+      "notDir": "{{path}} is not a folder.",
+      "huge": "Using {{path}} as context would send a huge number of files."
+    },
+    "dockerfile": {
+      "invalid": "Invalid path: it must be relative and inside the context.",
+      "missing": "{{path}} does not exist in the context folder."
+    },
+    "tags": {
+      "none": "Without tags, the image will have no name (<none>)."
+    },
+    "tag": {
+      "invalid": "Invalid tag: {{tag}}",
+      "duplicate": "Repeated tag: {{tag}}"
+    },
+    "arg": {
+      "keyInvalid": "Invalid name: {{key}}",
+      "duplicate": "Repeated: {{key}}",
+      "secret": "{{key}} looks like a secret: arguments stay in the image history."
+    },
+    "target": {
+      "invalid": "Invalid stage name."
     }
   },
   "dupNotes": {
@@ -861,5 +914,202 @@
     "healthcheck": "The custom health check is not carried over.",
     "stopSignal": "The custom stop signal is not carried over.",
     "imageMissing": "The original image is no longer on this computer: its defaults could not be separated."
+  },
+  "pull": {
+    "title": "Pull image",
+    "start": "Pull",
+    "reference": "Image",
+    "referenceHint": "Name with optional tag: nginx:1.27, user/app, registry.example.com:5000/app:v2. Without a tag, latest is used.",
+    "resolved": "{{name}} will be pulled with tag {{tag}}.",
+    "auth": "Credentials",
+    "authDocker": "Docker's",
+    "authAnonymous": "None",
+    "authManual": "Username and password",
+    "authHint": {
+      "dockerConfig": "Like docker pull: uses the credentials saved with docker login (or its credential helper), if there are any for that registry.",
+      "anonymous": "Anonymous pull, no credentials.",
+      "manual": "For this pull only: they are not saved anywhere and don't appear in the activity panel."
+    },
+    "username": "Username",
+    "password": "Password or token",
+    "equivalent": "Equivalent to",
+    "panel": "Downloads",
+    "clear": "Clear finished",
+    "cancel": "Cancel",
+    "progress": "Progress of {{ref}}",
+    "layers_one": "{{count}} layer",
+    "layers_other": "{{count}} layers",
+    "status": {
+      "starting": "Starting…",
+      "running": "Pulling",
+      "done": "Pulled",
+      "failed": "Error",
+      "cancelled": "Cancelled"
+    }
+  },
+  "search": {
+    "title": "Search Docker Hub",
+    "term": "Search term",
+    "placeholder": "nginx, postgres, python…",
+    "officialOnly": "Official images only",
+    "limit": "Results",
+    "submit": "Search",
+    "hint": "Docker Engine runs the search on Docker Hub (docker search); Docker needs Internet access.",
+    "failed": "The search failed: {{message}}",
+    "failedHint": "If Docker has no access to the Internet or Docker Hub, searching is not possible.",
+    "none": "No results.",
+    "name": "Name",
+    "description": "Description",
+    "stars": "Stars",
+    "official": "Official",
+    "pull": "Pull",
+    "pullName": "Pull {{name}}"
+  },
+  "imageDetail": {
+    "back": "Images",
+    "createContainer": "Create container",
+    "pullAgain": "Pull again",
+    "notFound": "Image {{name}} no longer exists in Docker.",
+    "loadError": "Could not inspect the image: {{message}}",
+    "tabs": {
+      "summary": "Summary",
+      "layers": "Layers",
+      "containers": "Containers",
+      "inspect": "JSON inspection"
+    },
+    "s": {
+      "general": "General",
+      "config": "Run configuration"
+    },
+    "f": {
+      "id": "ID",
+      "tags": "Tags",
+      "digests": "Digests",
+      "created": "Created",
+      "size": "Size",
+      "platform": "Platform",
+      "layers": "Layers",
+      "author": "Author",
+      "ports": "Exposed ports",
+      "volumes": "Volumes",
+      "stopSignal": "Stop signal",
+      "healthcheck": "Health check"
+    },
+    "localOnly": "none (image built or imported on this computer)",
+    "layersSummary_one": "{{count}} history entry, {{data}} with data, {{size}} in total.",
+    "layersSummary_other": "{{count}} history entries, {{data}} with data, {{size}} in total.",
+    "layersError": "Could not get the history: {{message}}",
+    "instruction": "Instruction",
+    "noContainers": "No container uses this image.",
+    "inspectHint": "Full output of docker image inspect {{name}}, exactly as Docker returns it."
+  },
+  "imageOps": {
+    "tagTitle": "Tag image",
+    "tag": "Tag",
+    "tagSource": "Source image:",
+    "repository": "Repository",
+    "repositoryHint": "For example myapp, user/myapp or registry.example.com:5000/myapp.",
+    "tagName": "Tag",
+    "tagged": "Tagged as {{target}}.",
+    "failed": "Docker rejected the operation: {{message}}",
+    "removeTitle": "Remove {{name}}",
+    "removeWhat": "What to remove",
+    "onlyTag": "Only the tag",
+    "wholeImage_one": "The whole image",
+    "wholeImage_other": "The whole image (its {{count}} tags)",
+    "removeTag": "Remove tag",
+    "removeImage": "Remove image",
+    "removeTagBody": "This tag is removed. If it is the only one, Docker also removes the image and its unused layers.",
+    "removeImageBody": "The image and the layers no other image uses are removed. This cannot be undone: you would have to pull or build it again.",
+    "inUse_one": "Used by {{count}} container:",
+    "inUse_other": "Used by {{count}} containers:",
+    "runningRefuses": "Docker won't remove an image used by a running container, even when forced: stop and remove it first.",
+    "stoppedNeedForce": "Removing it requires forcing; the containers will still exist, but without their image you won't be able to recreate them.",
+    "force": "Force removal",
+    "forceMulti": "Needed to remove an image with several tags (--force).",
+    "forceUsed": "Needed because stopped containers use it (--force).",
+    "removed": "{{untagged}} tags removed and {{deleted}} layers or images deleted.",
+    "pruneTitle": "Prune images",
+    "prune": "Prune",
+    "pruneDangling": "Only untagged images no container uses",
+    "pruneAll": "All images no container uses, including tagged ones",
+    "pruneEstimate_one": "Based on the current list, {{count}} image would be removed ({{size}}).",
+    "pruneEstimate_other": "Based on the current list, {{count}} images would be removed ({{size}}).",
+    "pruneNote": "Docker makes the final decision and also removes the related build cache. This cannot be undone.",
+    "pruneSure": "I understand I will have to pull or build those images again",
+    "pruned": "Pruning finished: {{count}} items removed, {{size}} reclaimed."
+  },
+  "build": {
+    "title": "Build image",
+    "g": {
+      "context": "Context",
+      "contextHint": "Folder whose contents are sent to Docker (honoring .dockerignore) and the Dockerfile inside it.",
+      "tags": "Image names",
+      "tagsHint": "repository:tag of the resulting image (docker build --tag). Without a name, the image shows as <none>.",
+      "args": "Build arguments",
+      "argsHint": "Values for ARG instructions (--build-arg). They stay in the image history: don't use them for secrets.",
+      "labels": "Metadata (LABEL)",
+      "options": "Options"
+    },
+    "f": {
+      "context": "Context folder",
+      "dockerfile": "Dockerfile",
+      "target": "Target stage",
+      "builder": "Builder",
+      "noCache": "Don't use the cache",
+      "pull": "Look for newer base images"
+    },
+    "h": {
+      "dockerfile": "Path relative to the context folder.",
+      "target": "Only for multi-stage Dockerfiles (--target).",
+      "buildKit": "Docker's current builder (the one docker build uses).",
+      "classic": "The previous, deprecated builder; same as DOCKER_BUILDKIT=0 docker build."
+    },
+    "ph": {
+      "target": "the last one"
+    },
+    "classic": "Classic",
+    "pickContext": "Choose context folder",
+    "pickDockerfile": "Choose Dockerfile",
+    "outsideContext": "The Dockerfile must be inside the context folder.",
+    "addTag": "Add name",
+    "removeTag": "Remove name {{n}}",
+    "tagN": "Name {{n}}",
+    "noTags": "No names.",
+    "addArg": "Add argument",
+    "noArgs": "No arguments.",
+    "secretsHidden_one": "{{count}} sensitive value is shown as ******** here and in the activity panel.",
+    "secretsHidden_other": "{{count}} sensitive values are shown as ******** here and in the activity panel.",
+    "context": "Context to be sent",
+    "contextPending": "Choose a folder with a Dockerfile.",
+    "contextSummary": "{{files}} files in {{dirs}} folders, {{size}} in total.",
+    "excluded_one": ".dockerignore excludes {{count}} entry.",
+    "excluded_other": ".dockerignore excludes {{count}} entries.",
+    "noDockerignore": "No .dockerignore: everything is sent.",
+    "patterns_one": "{{count}} .dockerignore pattern",
+    "patterns_other": "{{count}} .dockerignore patterns",
+    "badIgnore": "Invalid .dockerignore lines: {{lines}}",
+    "special_one": "{{count}} special file (socket, device or FIFO) is not sent.",
+    "special_other": "{{count}} special files (sockets, devices or FIFOs) are not sent.",
+    "unreadable": "Cannot read: {{files}}. The build would fail.",
+    "bigContext": "The context is large: consider excluding folders with .dockerignore.",
+    "largest": "Largest files",
+    "start": "Build",
+    "cancel": "Cancel",
+    "edit": "Back to the form",
+    "viewImage": "View image",
+    "steps": "Steps",
+    "sending": "Sending the context…",
+    "waiting": "Waiting for Docker's output…",
+    "cached": "cache",
+    "dropped": "{{count}} old lines were discarded.",
+    "failed": "The build failed: {{message}}",
+    "status": {
+      "starting": "Sending the context to Docker…",
+      "running": "Building…",
+      "done": "Image built",
+      "failed": "The build failed",
+      "cancelled": "Build cancelled"
+    }
   }
 }
