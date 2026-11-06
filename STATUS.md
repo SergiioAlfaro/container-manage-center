@@ -6,18 +6,18 @@
 
 | | |
 |---|---|
-| **Fase actual** | 3 · Gestión de contenedores |
-| **Versión** | 0.3.0 |
-| **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
-| **Fases completadas (validadas)** | 1, 2 |
-| **Fases pendientes** | 3–10 |
+| **Fase actual** | 4 · Gestión de imágenes |
+| **Versión** | 0.3.0 (Fase 3 validada); Fase 4 en desarrollo |
+| **Estado de la fase** | En desarrollo |
+| **Fases completadas (validadas)** | 1, 2, 3 |
+| **Fases pendientes** | 4–10 |
 
 | Fase | Estado |
 |---|---|
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
 | 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
-| 3. Contenedores (creación, logs, inspección, terminal) | Pendiente de validación externa (0.3.0) |
-| 4. Imágenes (descarga, construcción, etiquetado, eliminación) | No iniciada |
+| 3. Contenedores (creación, logs, inspección, terminal) | **Validada** (2026-11-06, versión 0.3.0) |
+| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | En desarrollo |
 | 5. Redes | No iniciada |
 | 6. Volúmenes y bind mounts | No iniciada |
 | 7. Docker Compose | No iniciada |
@@ -259,6 +259,9 @@ Crear contenedores con un asistente por pestañas, duplicar su configuración, i
 
 ### Errores conocidos
 Ninguno abierto.
+
+### Validación externa (2026-11-06)
+El propietario comunicó que "está todo correcto" y autorizó pasar a la Fase 4. Se entiende que incluye `verify-phase-3.sh` y M1–M16; el informe no se adjuntó, por lo que no hay detalle de omisiones.
 
 ---
 
