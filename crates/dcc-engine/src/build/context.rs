@@ -100,7 +100,7 @@ fn walk(
             let ft = meta.file_type();
             let is_excluded = ignore.excluded(&rel);
             if ft.is_dir() {
-                if is_excluded && !ignore.has_exceptions() {
+                if is_excluded && !ignore.may_include_inside(&rel) {
                     excluded += 1;
                     continue;
                 }
@@ -348,6 +348,13 @@ mod tests {
         assert_eq!(s.dirs, 2);
         assert_eq!(s.symlinks, 1);
         assert_eq!(s.excluded, 3, "debug.log, secretos/ y secretos/clave.pem");
+
+        // Sin excepciones que afecten, una carpeta excluida no se recorre.
+        std::fs::create_dir_all(d.path().join("node_modules/a/b")).unwrap();
+        std::fs::write(d.path().join("node_modules/a/b/x.js"), "x").unwrap();
+        std::fs::write(d.path().join(".dockerignore"), "node_modules\n").unwrap();
+        let s2 = scan(d.path(), "Dockerfile").unwrap();
+        assert_eq!(s2.excluded, 1, "solo la carpeta node_modules: {s2:?}");
         assert!(s.dockerignore);
         assert_eq!(s.largest[0].path, ".dockerignore");
         assert!(s.unreadable.is_empty());

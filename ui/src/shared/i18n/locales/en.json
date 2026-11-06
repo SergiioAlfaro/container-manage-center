@@ -881,7 +881,7 @@
       "missing": "{{path}} does not exist in the context folder."
     },
     "tags": {
-      "none": "Without tags, the image will have no name (<none>)."
+      "none": "Without a name, the image will show as <none>."
     },
     "tag": {
       "invalid": "Invalid tag: {{tag}}",
@@ -979,7 +979,8 @@
     },
     "s": {
       "general": "General",
-      "config": "Run configuration"
+      "config": "Run configuration",
+      "labels": "Metadata (LABEL)"
     },
     "f": {
       "id": "ID",
@@ -1066,7 +1067,8 @@
       "classic": "The previous, deprecated builder; same as DOCKER_BUILDKIT=0 docker build."
     },
     "ph": {
-      "target": "the last one"
+      "target": "the last one",
+      "context": "/home/user/project"
     },
     "classic": "Classic",
     "pickContext": "Choose context folder",

@@ -127,8 +127,66 @@ actividad mientras están abiertas y se cierran al salir del detalle.
 
 Lista las imágenes locales (como `docker image ls`): etiquetas, ID corto,
 tamaño, antigüedad y qué contenedores las usan. Filtros **Todas / En uso /
-Sin uso / Sin etiqueta** y búsqueda por etiqueta o ID. Descargar, construir,
-etiquetar, inspeccionar y eliminar llegan en la Fase 4.
+Sin uso / Sin etiqueta** y búsqueda por etiqueta o ID. En cada fila: **Crear
+contenedor** (abre el asistente con la imagen puesta), **Etiquetar** y
+**Eliminar**. Pulsa el nombre para abrir su detalle.
+
+### Descargar
+
+**Descargar imagen** pide la referencia (`nginx:1.27`, `usuario/app`,
+`registro.ejemplo.com:5000/app:v2`; sin etiqueta se usa `latest`) y la comprueba
+con las mismas reglas que Docker. Credenciales:
+
+| Opción | Qué hace |
+|---|---|
+| Las de Docker | Como `docker pull`: usa lo guardado con `docker login` (o su *credential helper*) para ese registro, si lo hay |
+| Ninguna | Descarga anónima |
+| Usuario y contraseña | Solo para esta descarga: no se guardan ni aparecen en el panel de actividad |
+
+El panel **Descargas** muestra el progreso total y por capa; puedes cambiar de
+apartado mientras tanto. **Cancelar** detiene la descarga en Docker.
+
+### Buscar en Docker Hub
+
+Busca como `docker search`, con la opción de ver solo imágenes oficiales. La
+búsqueda la hace Docker Engine, que necesita acceso a Internet; si no lo tiene,
+se muestra el error de Docker. **Descargar** en un resultado abre el diálogo de
+descarga con el nombre puesto.
+
+### Detalle de una imagen
+
+Pestañas **Resumen** (ID, etiquetas, digests, fecha, tamaño, plataforma,
+comando, entrypoint, variables —con los valores sensibles ocultos—, puertos,
+volúmenes y metadatos LABEL), **Capas** (como `docker image history`),
+**Contenedores** que la usan e **Inspección JSON**. Acciones: crear contenedor,
+etiquetar, descargar de nuevo (para actualizarla desde su registro) y eliminar.
+
+### Etiquetar, eliminar y limpiar
+
+- **Etiquetar** añade un nombre (`repositorio:etiqueta`) a la imagen.
+- **Eliminar**: si la imagen tiene varias etiquetas puedes quitar solo una; la
+  imagen completa exige forzar. Si la usan contenedores, se listan antes de
+  confirmar; Docker no elimina imágenes de contenedores en ejecución.
+- **Limpiar** elimina las imágenes sin etiqueta que no usa ningún contenedor o,
+  con confirmación adicional, todas las que no usa ningún contenedor.
+
+### Construir
+
+**Construir imagen** abre el asistente:
+
+1. **Contexto**: la carpeta que se envía a Docker (respetando `.dockerignore`) y
+   el Dockerfile dentro de ella. A la derecha verás cuántos archivos y cuánto
+   ocupan, cuántos excluye `.dockerignore` y si alguno no se puede leer.
+2. **Nombres de la imagen** (`--tag`), **argumentos** (`--build-arg`; los
+   valores de claves como `TOKEN` se ocultan, pero recuerda que quedan en el
+   historial de la imagen) y **metadatos** (`--label`).
+3. **Opciones**: etapa final, sin caché, buscar imágenes base nuevas y
+   constructor (**BuildKit**, el de `docker build`, o el **clásico**).
+
+Durante la construcción se ven los pasos con su estado y duración y la salida
+como `docker build --progress=plain`. Puedes cancelarla o cambiar de apartado
+(vuelves con **Ver progreso**). Al terminar: **Ver imagen**, **Crear
+contenedor** o **Volver al formulario** con los mismos datos.
 
 ## Panel de actividad
 

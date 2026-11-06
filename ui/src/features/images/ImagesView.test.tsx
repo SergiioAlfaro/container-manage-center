@@ -226,13 +226,29 @@ describe("Detalle de imagen", () => {
     expect(useContainersNav.getState().page).toMatchObject({ kind: "detail", id: "a1b2c3d4e5f6a7b8c9d0" });
   });
 
-  it("descargar de nuevo solo aparece para imágenes que vienen de un registro", async () => {
-    api.imageDetails.mockResolvedValueOnce(imageDetails("miapp:1", { repoTags: ["miapp:1"], repoDigests: [] }));
-    useImagesNav.getState().showDetail("sha256:1111aaaabbbbcccc", "miapp:1");
+  it("una imagen sin nombre no se puede descargar de nuevo ni usar para crear contenedores", async () => {
+    api.imageDetails.mockResolvedValueOnce(imageDetails("sha256:9999ddddeeeeffff", { id: "sha256:9999ddddeeeeffff", repoTags: [], repoDigests: [] }));
+    useImagesNav.getState().showDetail("sha256:9999ddddeeeeffff", "9999ddddeeee");
     renderWithQuery(<ImagesView />);
     await screen.findByRole("tab", { name: "Resumen" });
     expect(screen.queryByRole("button", { name: "Descargar de nuevo" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Crear contenedor" })).not.toBeInTheDocument();
     expect(screen.getByText(/imagen construida o importada en este equipo/)).toBeInTheDocument();
+  });
+
+  it("eliminar desde el detalle vuelve a la lista sin volver a pedir la imagen borrada", async () => {
+    api.imageRemove.mockResolvedValueOnce({ untagged: ["nginx:1.27", "nginx:latest"], deleted: ["sha256:1111aaaabbbbcccc"] });
+    useImagesNav.getState().showDetail("sha256:1111aaaabbbbcccc", "nginx:1.27");
+    renderWithQuery(<ImagesView />);
+    await screen.findByRole("tab", { name: "Resumen" });
+    expect(api.imageDetails).toHaveBeenCalledTimes(1);
+    await userEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("radio", { name: /La imagen completa/ }));
+    await userEvent.click(within(dialog).getByRole("checkbox", { name: /Forzar/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Eliminar imagen" }));
+    await waitFor(() => expect(useImagesNav.getState().page.kind).toBe("list"));
+    expect(api.imageDetails).toHaveBeenCalledTimes(1);
   });
 });
 

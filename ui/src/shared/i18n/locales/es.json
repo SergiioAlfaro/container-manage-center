@@ -881,7 +881,7 @@
       "missing": "No existe {{path}} en la carpeta de contexto."
     },
     "tags": {
-      "none": "Sin etiquetas, la imagen quedará sin nombre (<none>)."
+      "none": "Sin nombre, la imagen quedará como <none>."
     },
     "tag": {
       "invalid": "Etiqueta no válida: {{tag}}",
@@ -979,7 +979,8 @@
     },
     "s": {
       "general": "General",
-      "config": "Configuración de ejecución"
+      "config": "Configuración de ejecución",
+      "labels": "Metadatos (LABEL)"
     },
     "f": {
       "id": "ID",
@@ -1066,7 +1067,8 @@
       "classic": "El constructor anterior, obsoleto; equivale a DOCKER_BUILDKIT=0 docker build."
     },
     "ph": {
-      "target": "la última"
+      "target": "la última",
+      "context": "/home/usuario/proyecto"
     },
     "classic": "Clásico",
     "pickContext": "Elegir carpeta de contexto",

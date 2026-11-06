@@ -109,7 +109,7 @@ function BuildForm({ initial }: { initial: BuildSpec }) {
           <Field label={t("build.f.context")} issues={of("context")}>
             {(id, inv) => (
               <div className="flex gap-1.5">
-                <TextInput id={id} invalid={inv} value={spec.context} onChange={(e) => set("context", e.target.value)} placeholder="/home/usuario/proyecto" />
+                <TextInput id={id} invalid={inv} value={spec.context} onChange={(e) => set("context", e.target.value)} placeholder={t("build.ph.context")} />
                 <Button size="sm" className="h-8 shrink-0" onClick={pickContext} aria-label={t("build.pickContext")} title={t("build.pickContext")}>
                   <FolderOpen size={14} />
                 </Button>

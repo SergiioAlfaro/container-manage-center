@@ -1,14 +1,14 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-05
+Última actualización: 2026-11-06
 
 ## Resumen
 
 | | |
 |---|---|
 | **Fase actual** | 4 · Gestión de imágenes |
-| **Versión** | 0.3.0 (Fase 3 validada); Fase 4 en desarrollo |
-| **Estado de la fase** | En desarrollo |
+| **Versión** | 0.4.0 |
+| **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
 | **Fases completadas (validadas)** | 1, 2, 3 |
 | **Fases pendientes** | 4–10 |
 
@@ -17,7 +17,7 @@
 | 1. Arquitectura y estructura inicial | **Validada** (2026-11-04, Debian 13, GNOME Wayland) |
 | 2. Integración con Docker Engine (ampliada con contenedores e imágenes, D-020) | **Validada** (2026-11-05, Debian 13, versión 0.2.1) |
 | 3. Contenedores (creación, logs, inspección, terminal) | **Validada** (2026-11-06, versión 0.3.0) |
-| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | En desarrollo |
+| 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | Pendiente de validación externa (0.4.0) |
 | 5. Redes | No iniciada |
 | 6. Volúmenes y bind mounts | No iniciada |
 | 7. Docker Compose | No iniciada |
@@ -265,10 +265,56 @@ El propietario comunicó que "está todo correcto" y autorizó pasar a la Fase 4
 
 ---
 
+## Fase 4 · Gestión de imágenes
+
+### Objetivos
+Visualizar imágenes locales, descargarlas de registros, buscarlas, inspeccionarlas (etiquetas, identificadores, tamaño, fecha, capas, contenedores que las usan), etiquetarlas, eliminarlas y construirlas a partir de un Dockerfile con un asistente. Todo con operaciones reales y registradas.
+
+### Funcionalidades implementadas
+- **Descarga** con progreso total y por capa, cancelación y tres modos de credenciales (las de Docker con *credential helpers*, ninguna, o usuario y contraseña solo para esa descarga), sin guardar credenciales (D-042).
+- **Búsqueda** en Docker Hub a través del daemon, con filtro de oficiales y descarga directa del resultado.
+- **Detalle** de imagen: resumen, capas (historial), contenedores que la usan e inspección JSON; crear contenedor con la imagen, etiquetar, descargar de nuevo y eliminar.
+- **Etiquetado** con validación de la referencia según la gramática de Docker.
+- **Eliminación** de una etiqueta o de la imagen completa, con aviso de los contenedores que la usan, y **limpieza** (sin etiqueta o todas las sin uso) con estimación previa (D-044).
+- **Asistente de construcción**: contexto con `.dockerignore`, Dockerfile, nombres, argumentos (secretos ocultos), metadatos, etapa final, sin caché, `--pull`, BuildKit o constructor clásico; resumen del contexto antes de enviar; pasos y salida en directo; cancelación (D-041).
+- Descargas y construcción continúan al cambiar de apartado.
+
+### Pruebas realizadas en el entorno de desarrollo (Ubuntu 24.04, Docker 29.9.2 con almacén containerd, cgroup v1, sin acceso a Docker Hub)
+| Prueba | Resultado |
+|---|---|
+| Rust unitarias | 159 motor (referencias, credenciales con *helper* falso, progreso de descarga, `.dockerignore`, contexto en tar, protobuf de BuildKit, HTTP de `/build`, `BuildSpec`), 22 actividad, 15 configuración |
+| IPC con el runtime simulado de Tauri | 37, de ellas 3 contra Docker real (inspección, capas y construcción a través de la IPC) |
+| Contra Docker real, imágenes (`live_images`) | 8 superadas en varias ejecuciones seguidas, sin restos: descarga desde un registro local con progreso y una sola operación registrada, segunda descarga "up to date"; registro con autenticación (sin credenciales y con contraseña errónea fallan, con la correcta descarga; la contraseña no aparece en ningún registro); descarga cancelada; inspección, capas, etiquetado, eliminación (409 o desetiquetado según versión) y limpieza filtrada; búsqueda (error real de Docker por falta de Internet, registrado); construcción BuildKit con dos etiquetas, argumento, metadatos y `.dockerignore` comprobado en la salida del `RUN`; constructor clásico; `RUN` fallido con ambos constructores (sin contenedores intermedios); especificación inválida sin tráfico; construcción cancelada. Tráfico HTTP capturado igual al registro de actividad |
+| Contra Docker real, fases anteriores | 11 + 7 + carrera determinista: superadas |
+| Interfaz (Vitest) | 133 superadas (imágenes 27 y descargas 5 nuevas) |
+| Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto, shellcheck |
+| `verify-phase-4.sh` (como root con `DCC_VERIFY_ALLOW_ROOT=1`) | 30 correctas, 0 fallos, 2 omitidas justificadamente (pruebas de permisos, que no aplican a root), 1 aviso (ejecución como root). Sin recursos de prueba restantes |
+| Aplicación real bajo Xvfb (binario de release) | Lista con acciones; descarga desde un registro local (127.0.0.1:5555) con su operación en el panel; búsqueda con el error real de Docker (sin Internet) y apertura automática del panel; detalle y capas de la imagen descargada; asistente de construcción con contexto real (3 archivos, 2 excluidos), nombre y argumento, pasos y salida de BuildKit, "Ver imagen" con la etiqueta `dcc.version=1.2.3`; registro de la construcción con petición, equivalente y cuerpo; eliminación confirmada |
+| Paquete .deb 0.4.0 | Construido (4,4 MiB; depende de `libwebkit2gtk-4.1-0` y `libgtk-3-0`), instalado con `apt`, arrancado desde `/usr/bin` (en inglés y tema oscuro: apartado Imágenes y asistente de construcción traducidos) y desinstalado sin restos en `/usr/bin` |
+
+### Problemas detectados y resueltos durante la fase
+- bollard 0.21 no permite BuildKit sin gRPC ni varias etiquetas: petición `/build` propia y decodificador protobuf mínimo (D-041).
+- El daemon no pasaba a HTTP con el registro de prueba porque este cerraba la conexión al recibir TLS; ahora responde como un servidor Go (D-043).
+- Con el almacén containerd la última fase de cada capa es "Download complete": el resumen contaba 0 capas descargadas.
+- El constructor clásico dejaba el contenedor de un paso fallido: se envía `forcerm=1`.
+- Una prueba de limpieza borraba imágenes intermedias de otra prueba en paralelo: ahora filtra por una etiqueta propia; las imágenes intermedias del constructor clásico las elimina su propia prueba.
+- Vistos en la aplicación real: las excepciones internas de `.dockerignore` hacían recorrer carpetas excluidas como `node_modules`; una fila de nombre vacía mostraba "Etiqueta no válida" y enviaba `--tag ''`; tras eliminar desde el detalle se pedía la imagen borrada (404 en el registro); "Etiquetas" se usaba para nombres y para LABEL; "Descargar de nuevo" dependía del digest, que con containerd también tienen las imágenes locales.
+
+### Limitaciones y observaciones
+- Sin acceso a Docker Hub en este entorno: la descarga desde Docker Hub, la búsqueda con resultados y las credenciales de un registro real con *credential helper* se comprueban en M3–M7. La descarga se probó de verdad contra un registro local.
+- El selector de archivos y carpetas del sistema no se pudo completar en Xvfb (igual que en la Fase 3); se comprueba en M11.
+- Los resúmenes de las operaciones largas los redacta el backend en español.
+- Docker rootless sigue sin probarse con un daemon real.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-3.sh` en Debian 13 y envía `verify-phase-3-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.3.0 y realiza M1–M16.
-2. Corregir lo que surja y marcar la Fase 3 como validada.
-3. Fase 4: imágenes (descarga con progreso, construcción, etiquetado, eliminación con aviso de uso).
+1. El propietario ejecuta `bash scripts/verify-phase-4.sh` en Debian 13 y envía `verify-phase-4-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.4.0 y realiza M1–M18.
+2. Corregir lo que surja y marcar la Fase 4 como validada.
+3. Fase 5: redes (listado, creación, eliminación, inspección, conexión y desconexión de contenedores).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

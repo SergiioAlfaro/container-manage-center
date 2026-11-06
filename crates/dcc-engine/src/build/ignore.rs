@@ -14,6 +14,8 @@ struct Pattern {
     text: String,
     re: Regex,
     exception: bool,
+    /// Añadido por la aplicación (Dockerfile y `.dockerignore`), no por el usuario.
+    builtin: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -121,6 +123,7 @@ impl IgnoreMatcher {
                     text: p,
                     re,
                     exception,
+                    builtin: false,
                 }),
                 None => invalid.push(line.to_owned()),
             }
@@ -136,6 +139,23 @@ impl IgnoreMatcher {
         self.patterns.iter().any(|p| p.exception)
     }
 
+    /// ¿Puede alguna excepción incluir algo dentro de `dir` (excluido)? Si no,
+    /// el recorrido no entra en la carpeta (p. ej. `node_modules`).
+    pub fn may_include_inside(&self, dir: &str) -> bool {
+        let dir = clean(dir);
+        let with_slash = format!("{dir}/");
+        self.patterns.iter().filter(|p| p.exception).any(|p| {
+            // Parte literal del patrón, hasta el primer comodín.
+            let lit: String = p
+                .text
+                .chars()
+                .take_while(|c| !matches!(c, '*' | '?' | '[' | '\\'))
+                .collect();
+            let wild = lit.len() < p.text.len();
+            lit.starts_with(&with_slash) || (wild && with_slash.starts_with(&lit))
+        })
+    }
+
     /// Añade excepciones al final (el Dockerfile y el propio `.dockerignore`
     /// siempre se envían, como hace el CLI).
     pub fn keep(&mut self, path: &str) {
@@ -145,6 +165,7 @@ impl IgnoreMatcher {
                 text: p,
                 re,
                 exception: true,
+                builtin: true,
             });
         }
     }
@@ -174,10 +195,11 @@ impl IgnoreMatcher {
         matched
     }
 
-    /// Patrones leídos, para mostrarlos.
+    /// Patrones del usuario, para mostrarlos.
     pub fn patterns(&self) -> Vec<String> {
         self.patterns
             .iter()
+            .filter(|p| !p.builtin)
             .map(|p| {
                 if p.exception {
                     format!("!{}", p.text)
@@ -266,6 +288,28 @@ mod tests {
         i.keep(".dockerignore");
         assert!(!i.excluded("Dockerfile") && !i.excluded(".dockerignore"));
         assert!(i.excluded("otro"));
+        assert_eq!(
+            i.patterns(),
+            vec!["*"],
+            "las excepciones internas no se muestran"
+        );
+    }
+
+    #[test]
+    fn only_relevant_exceptions_open_excluded_directories() {
+        let mut i = m("node_modules\ndocs\n!docs/keep.txt\nbuild\n!**/*.md\n");
+        i.keep("Dockerfile");
+        i.keep(".dockerignore");
+        assert!(i.may_include_inside("docs"));
+        assert!(
+            i.may_include_inside("node_modules"),
+            "!**/*.md puede incluir algo en cualquier carpeta"
+        );
+        let mut j = m("node_modules\n");
+        j.keep("Dockerfile");
+        j.keep("docker/Dockerfile.prod");
+        assert!(!j.may_include_inside("node_modules"));
+        assert!(j.may_include_inside("docker"));
     }
 
     #[test]

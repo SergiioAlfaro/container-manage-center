@@ -94,6 +94,15 @@ fn valid_dockerfile(p: &str) -> bool {
 }
 
 impl BuildSpec {
+    /// Nombres no vacíos (las filas en blanco del formulario se ignoran).
+    pub fn tag_list(&self) -> Vec<String> {
+        self.tags
+            .iter()
+            .map(|t| t.trim().to_owned())
+            .filter(|t| !t.is_empty())
+            .collect()
+    }
+
     pub fn dockerfile_path(&self) -> PathBuf {
         Path::new(&self.context).join(&self.dockerfile)
     }
@@ -129,25 +138,29 @@ impl BuildSpec {
                 )),
             }
         }
-        if self.tags.is_empty() {
+        if self.tag_list().is_empty() {
             v.push(warn("tags", "tags.none", &[]));
         }
         let mut seen = std::collections::HashSet::new();
         for (i, t) in self.tags.iter().enumerate() {
+            let t = t.trim();
+            if t.is_empty() {
+                continue;
+            }
             match ImageRef::parse(t) {
                 Ok(r) if r.digest.is_none() => {
                     if !seen.insert(r.familiar()) {
                         v.push(err(
                             format!("tags.{i}"),
                             "tag.duplicate",
-                            &[("tag", t.clone())],
+                            &[("tag", t.to_owned())],
                         ));
                     }
                 }
                 _ => v.push(err(
                     format!("tags.{i}"),
                     "tag.invalid",
-                    &[("tag", t.clone())],
+                    &[("tag", t.to_owned())],
                 )),
             }
         }
@@ -205,8 +218,8 @@ impl BuildSpec {
     /// Parámetros de `POST /build`, en el orden en que se envían.
     pub fn query(&self) -> Vec<(String, String)> {
         let mut q: Vec<(String, String)> = vec![("dockerfile".into(), self.dockerfile.clone())];
-        for t in &self.tags {
-            q.push(("t".into(), t.trim().to_owned()));
+        for t in self.tag_list() {
+            q.push(("t".into(), t));
         }
         if !self.build_args.is_empty() {
             let m: BTreeMap<&str, &str> = self
@@ -269,9 +282,9 @@ impl BuildSpec {
             a.push("--file".into());
             a.push(self.dockerfile_path().to_string_lossy().into_owned());
         }
-        for t in &self.tags {
+        for t in self.tag_list() {
             a.push("--tag".into());
-            a.push(t.trim().to_owned());
+            a.push(t);
         }
         for kv in &self.build_args {
             a.push("--build-arg".into());
@@ -414,8 +427,8 @@ impl Engine {
         if spec.builder == Builder::Classic {
             equivalent = format!("DOCKER_BUILDKIT=0 {equivalent}");
         }
-        let target = spec
-            .tags
+        let tags = spec.tag_list();
+        let target = tags
             .first()
             .cloned()
             .unwrap_or_else(|| spec.context.clone());
@@ -497,10 +510,10 @@ impl Engine {
                     id.as_deref()
                         .map(|i| format!(" {}", &i[..i.len().min(19)]))
                         .unwrap_or_default(),
-                    if spec.tags.is_empty() {
+                    if tags.is_empty() {
                         String::new()
                     } else {
-                        format!(" ({})", spec.tags.join(", "))
+                        format!(" ({})", tags.join(", "))
                     },
                     tracker.cached,
                 );
@@ -515,7 +528,7 @@ impl Engine {
                         exit_code: None,
                     },
                     image_id: id,
-                    tags: spec.tags.clone(),
+                    tags: tags.clone(),
                 })
             }
             Ok(EndReason::Finished) => {
@@ -543,7 +556,7 @@ impl Engine {
                         exit_code: None,
                     },
                     image_id: None,
-                    tags: spec.tags.clone(),
+                    tags: tags.clone(),
                 })
             }
             Err(e) => {
@@ -641,6 +654,15 @@ mod tests {
                 "arg.duplicate",
                 "target.invalid"
             ]
+        );
+        let blanks = BuildSpec {
+            tags: vec!["".into(), "  ".into()],
+            ..s.clone()
+        };
+        assert!(codes(&blanks).contains(&"tags.none".to_string()));
+        assert!(
+            !blanks.path().contains("&t="),
+            "las filas en blanco no se envían"
         );
         let empty = BuildSpec::default();
         assert_eq!(codes(&empty), vec!["context.required", "tags.none"]);

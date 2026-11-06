@@ -330,3 +330,95 @@ congelado. Además, `public/boot-guard.js` muestra el error si la interfaz falla
 antes de arrancar, y `scripts/dev/check-frozen-prototype.cjs` carga la
 interfaz compilada con el prototipo congelado (lo ejecuta `verify-phase-3.sh`
 si Playwright está disponible).
+
+## Fase 4 · Gestión de imágenes
+
+### D-041 · Construcción: petición `/build` propia, BuildKit por defecto
+bollard 0.21 solo construye con BuildKit si se activa su integración gRPC
+(sesión, decenas de dependencias) y no admite varias etiquetas (`t` repetido).
+Se comprobó contra Docker 29 que `POST /build?version=2` con el contexto en tar
+en el cuerpo funciona **sin sesión** (Docker lo trata como contexto remoto
+subido), así que la aplicación hace esa petición directamente sobre el socket
+(`build/http.rs`: HTTP/1.1 con *chunked transfer encoding*, sin shell ni CLI).
+
+* El progreso de BuildKit llega como mensajes `moby.buildkit.trace` con un
+  `StatusResponse` en protobuf (base64). Se decodifica con un lector mínimo de
+  protobuf propio (`build/progress.rs`) que solo extrae los campos de
+  `api/services/control/control.proto` necesarios (vértices, estados, logs y
+  avisos). Se prueba con mensajes construidos a mano y con uno capturado del
+  daemon real.
+* El constructor clásico (`version=1`, obsoleto) queda como alternativa. Su
+  equivalente se muestra como `DOCKER_BUILDKIT=0 docker build …`, y se envía
+  `forcerm=1` (`--force-rm`) para que un paso fallido no deje su contenedor.
+* La salida se presenta como `docker build --progress=plain` (`#N …`) y como
+  lista de pasos con estado y duración.
+* El contexto se empaqueta en tar **en flujo** (bloques de 64 KiB) desde un hilo,
+  sin cargarlo en memoria. Como el CLI: rutas relativas, propietario 0:0,
+  enlaces simbólicos como enlaces y sin archivos especiales.
+* `.dockerignore` sigue la semántica de `moby/patternmatcher` (`build/ignore.rs`):
+  `*`, `?`, `**`, clases, `\`, excepciones con `!` (gana la última) y exclusión
+  de directorios completos. El Dockerfile y el propio `.dockerignore` se envían
+  siempre. Las carpetas excluidas no se recorren salvo que una excepción pueda
+  incluir algo dentro (p. ej. `node_modules`).
+* Antes de construir se muestra el resumen del contexto (archivos, tamaño,
+  excluidos, archivos ilegibles) sin hablar con Docker.
+* Credenciales: solo se envían (`X-Registry-Config`) las de los registros de las
+  imágenes base citadas en `FROM`, no todas las del usuario.
+
+### D-042 · Descarga y credenciales de registro
+`POST /images/create` con `fromImage=<nombre completo>&tag=<etiqueta o digest>`,
+como el CLI. Las referencias se analizan con la gramática de
+`distribution/reference` (`reference.rs`): se rechaza lo mismo que rechazaría
+`docker pull` y se normaliza igual (`nginx` → `docker.io/library/nginx:latest`).
+
+La aplicación **no guarda credenciales**. Modos:
+* *Las de Docker* (por defecto, como `docker pull`): `credHelpers`/`credsStore`
+  de `~/.docker/config.json` (o `$DOCKER_CONFIG`), ejecutando
+  `docker-credential-<helper> get` sin shell y con el servidor por la entrada
+  estándar; la ejecución se registra, su salida nunca. Si no, la entrada `auths`
+  que escribió `docker login`.
+* *Ninguna*: descarga anónima.
+* *Usuario y contraseña*: solo para esa descarga; viajan en la cabecera
+  `X-Registry-Auth` y se descartan al terminar. `PullAuth` no muestra la
+  contraseña ni en `Debug` ni en `Display`.
+
+El progreso se agrega por capa y se envía cada 150 ms. Cancelar cierra la
+conexión y Docker interrumpe la descarga; el registro queda como fallido con
+"cancelada por el usuario". Con el almacén de imágenes de containerd (Docker 29)
+el estado final de una capa es "Download complete" en vez de "Pull complete":
+se tienen en cuenta ambos.
+
+Las descargas y la construcción viven en almacenes globales de la interfaz para
+que continúen si el usuario cambia de apartado.
+
+### D-043 · Pruebas de descarga con un registro local
+En el entorno de desarrollo Docker no tiene acceso a Docker Hub. Las pruebas
+levantan un registro mínimo (API de distribución v2, `tests/common/registry.rs`)
+que sirve la imagen de prueba exportada con `GET /images/{name}/get`, con la
+capa en gzip y un manifiesto schema 2, opcionalmente con autenticación básica y
+con retraso de blobs para probar la cancelación. El daemon real descarga de él:
+la prueba es real de extremo a extremo. Al intentar primero TLS (byte 0x16), el
+registro responde en HTTP plano como un servidor Go, que es lo que hace que
+Docker pase a HTTP con registros locales.
+
+La búsqueda (`GET /images/search`) la hace el daemon contra Docker Hub; la
+prueba acepta ambos resultados (resultados reales con Internet, error de Docker
+sin él) y comprueba en los dos el registro y el tráfico. Sin Internet en el
+entorno de desarrollo, la búsqueda con resultados solo se ha visto en la interfaz
+con datos simulados y se valida en M6.
+
+### D-044 · Eliminación y limpieza
+* Con varias etiquetas, el diálogo permite quitar solo una (`docker image rm
+  <etiqueta>`) o eliminar la imagen completa por su ID, que exige `--force`.
+* Si la usan contenedores, se listan antes de confirmar. Docker decide: no
+  elimina imágenes de contenedores en ejecución ni forzando, y quitar una
+  etiqueta en uso exige forzar en unas versiones (409) y no en otras (Docker 29
+  con containerd); la interfaz muestra el mensaje de Docker tal cual.
+* Tras eliminar desde el detalle no se vuelve a pedir la imagen (evita un 404
+  inútil en el registro de actividad).
+* `docker image prune`: solo imágenes sin etiqueta y sin uso, o todas las que no
+  usa ningún contenedor (confirmación adicional). El motor admite filtrar por
+  etiqueta, que usan las pruebas para no tocar imágenes ajenas.
+* "Descargar de nuevo" se ofrece para toda imagen con nombre: con el almacén de
+  containerd también las imágenes construidas localmente tienen digest, así que
+  no sirve para saber si vienen de un registro.

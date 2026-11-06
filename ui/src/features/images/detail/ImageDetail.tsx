@@ -114,7 +114,7 @@ function Summary({ d }: { d: ImageDetails }) {
           </ul>
         )}
       </Section>
-      <Section title={t("detail.s.labels")} count={labels.length}>
+      <Section title={t("imageDetail.s.labels")} count={labels.length}>
         {labels.length === 0 ? (
           <p className="text-[13px] text-ink-3">{t("detail.noLabels")}</p>
         ) : (
@@ -218,7 +218,7 @@ export function ImageDetail({ id, name, tab }: { id: string; name: string; tab: 
                 <Tag size={14} />
                 {t("imageOps.tag")}
               </Button>
-              {d.repoTags.length > 0 && d.repoDigests.length > 0 && (
+              {d.repoTags.length > 0 && (
                 <Button size="sm" onClick={() => setDialog("pull")}>
                   <Download size={14} />
                   {t("imageDetail.pullAgain")}

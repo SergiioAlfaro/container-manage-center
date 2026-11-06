@@ -6,7 +6,7 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.3.0_amd64.deb
+sudo apt install ./docker-control-center_0.4.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`).
@@ -121,11 +121,22 @@ vigila la conexión activa cada 10 s.
 |---|---|
 | `DCC_CONFIG` | Ruta alternativa del archivo de configuración |
 | `DCC_LOG` | Nivel de registro del backend (`error`, `warn`, `info`, `debug`, `trace`) |
-| `DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CONFIG` | Se respetan en la detección automática |
+| `DOCKER_HOST`, `DOCKER_CONTEXT` | Se respetan en la detección automática |
+| `DOCKER_CONFIG` | Carpeta de la configuración de Docker: contexto y credenciales de registro (`config.json`) |
 
 ## Funcionamiento sin Internet
 
 La aplicación no necesita Internet: las fuentes y recursos van empaquetados, la
 política de seguridad de la ventana bloquea cualquier conexión externa y Docker
-se usa a través del socket local. Solo las operaciones que Docker haga contra
-registros remotos (descargar imágenes, Fase 4) necesitarán red.
+se usa a través del socket local. Solo las operaciones que **Docker Engine** hace
+contra registros remotos necesitan que Docker tenga red: descargar imágenes,
+buscar en Docker Hub y construir con imágenes base que no estén en el equipo.
+
+## Credenciales de registros privados
+
+La aplicación no guarda credenciales. Con la opción "Las de Docker" usa las que
+guardó `docker login` (en `~/.docker/config.json` o en el *credential helper*
+configurado allí, como `docker-credential-secretservice` o
+`docker-credential-pass`). Si el helper no está instalado, la descarga sigue sin
+credenciales y se avisa. También puedes escribir usuario y contraseña para una
+sola descarga.

@@ -99,6 +99,21 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | Estadísticas (flujo) | `GET /containers/{id}/stats?stream=true&one-shot=false` | `docker stats {id}` |
 | Terminal (D-036, D-037) | `POST /containers/{id}/exec` → `POST /exec/{id}/start` (conexión secuestrada) → `POST /exec/{id}/resize` (no registrado, contado) → `GET /exec/{id}/json` | `docker exec --interactive --tty {id} <shell>` |
 
+### Imágenes (Fase 4)
+| Operación | Petición real | Comando equivalente |
+|---|---|---|
+| Descargar (flujo, D-042) | `POST /images/create?fromImage=<nombre completo>&tag=<etiqueta>&platform=` + `X-Registry-Auth` si hay credenciales | `docker pull <ref>` |
+| Obtener credenciales | proceso `docker-credential-<helper> get` (sin shell; la salida no se registra) | — |
+| Buscar | `GET /images/search?term=…&limit=N[&filters=…]` | `docker search --limit N [--filter is-official=true] <término>` |
+| Inspeccionar | `GET /images/{ref}/json` | `docker image inspect <ref>` |
+| Capas | `GET /images/{ref}/history` | `docker image history --no-trunc <ref>` |
+| Etiquetar | `POST /images/{ref}/tag?repo=…&tag=…` | `docker tag <ref> <repo>:<tag>` |
+| Eliminar | `DELETE /images/{ref}?force=…&noprune=false` | `docker image rm [--force] <ref>` |
+| Limpiar | `POST /images/prune?filters={"dangling":["true"\|"false"]}` | `docker image prune --force [--all]` |
+| Construir (flujo, D-041) | `POST /build?dockerfile=…&t=…&buildargs=…&labels=…&target=…&nocache=1&pull=1&rm=1[&forcerm=1]&version=2\|1`, cuerpo tar en flujo (petición propia, `build/http.rs`) | `docker build …` / `DOCKER_BUILDKIT=0 docker build … --force-rm` |
+
+Módulos: `reference.rs` (gramática de referencias de `distribution/reference`), `registry_auth.rs` (credenciales, D-042), `pull.rs` (`PullTracker`: progreso por capa), `build/` (`ignore.rs` .dockerignore, `context.rs` recorrido y tar en flujo, `progress.rs` protobuf de BuildKit y salida plana, `http.rs` petición HTTP/1.1 sobre el socket, `mod.rs` `BuildSpec`).
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 
@@ -126,6 +141,13 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | `logs_open(id, name, tail, onEvent)` · `stats_open(id, name, onEvent)` | Flujos; devuelven el identificador |
 | `terminal_open(id, name, shell, cols, rows, onEvent)` · `terminal_input(stream, data)` · `terminal_resize(stream, cols, rows)` | Terminal interactiva (salida en base64) |
 | `stream_close(stream)` | Cierra un flujo; `false` si ya había terminado |
+| `image_details(reference)` · `image_history(reference)` | Detalle (`ImageDetails`, con el JSON completo) y capas |
+| `image_tag(source, repo, tag)` · `image_remove(reference, force, confirmed)` · `images_prune(all, confirmed)` | Etiquetar, eliminar y limpiar (las dos últimas exigen `confirmed`) |
+| `images_search(term, limit, officialOnly)` | Búsqueda en Docker Hub a través del daemon |
+| `image_ref_parse(reference)` | Analiza una referencia como Docker, sin hablar con Docker (errores `ref.*`) |
+| `image_pull_open(reference, auth, onEvent)` | Descarga en flujo: `PullEvent` (`progress` \| `end`); `auth` = `PullAuth` (`dockerConfig` \| `anonymous` \| `manual`) |
+| `build_preview(spec)` | Valida la construcción, resume el contexto y devuelve el comando y la petición (secretos ocultos), sin hablar con Docker |
+| `build_open(spec, onEvent)` | Construcción en flujo: `BuildEvent` (`progress` con pasos y líneas \| `end` con `BuildEnd` o error) |
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.other`, `config.io`.
 
@@ -140,16 +162,17 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por 
 - `create/CreateWizard.tsx`: pestañas General, Entorno, Red, Almacenamiento, Recursos y Avanzado; vista previa con retardo de 200 ms; `shellwords.ts` divide Comando y Entrypoint con reglas de comillas POSIX sin ejecutar ninguna shell.
 - `detail/`: `useStream` abre y cierra flujos ligados al ciclo de vida del componente; las pestañas con flujos se mantienen montadas tras visitarlas. La terminal usa xterm.js 5.5 (D-040).
 - `public/boot-guard.js` muestra los errores anteriores al arranque de la interfaz.
+- `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 110 motor · 15 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 29 (dos contra Docker real) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers` | 11 + 7 (2 requieren usuario no root; Compose se omite si no está instalado) |
+| Rust unitarias | `cargo test` | 22 actividad · 159 motor · 15 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 37 (tres contra Docker real) |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images` | 11 + 7 + 8 (2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local, D-043) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
-| Interfaz | Vitest + Testing Library | 109 |
+| Interfaz | Vitest + Testing Library | 133 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Manual | `scripts/verify-phase-3.sh` | M1–M16 |
+| Manual | `scripts/verify-phase-4.sh` | M1–M18 |

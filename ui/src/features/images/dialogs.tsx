@@ -17,12 +17,13 @@ type Img = Pick<ImageSummary, "id" | "repoTags" | "usedBy" | "size">;
 
 const errMsg = (e: unknown) => (e as { message: string }).message;
 
-function useInvalidate() {
+/** Recarga lo afectado. Tras eliminar no se recarga el detalle: la imagen puede ya no existir. */
+function useInvalidate(details = true) {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: keys.images });
     void qc.invalidateQueries({ queryKey: keys.overview });
-    void qc.invalidateQueries({ queryKey: ["image"] });
+    if (details) void qc.invalidateQueries({ queryKey: ["image"] });
   };
 }
 
@@ -89,7 +90,7 @@ type RemoveMode = { kind: "tag"; tag: string } | { kind: "image" };
  */
 export function RemoveImageDialog({ image, onClose, onDone }: { image: Img; onClose: () => void; onDone: (r: RemoveResult) => void }) {
   const { t, i18n } = useTranslation();
-  const invalidate = useInvalidate();
+  const invalidate = useInvalidate(false);
   const multi = image.repoTags.length > 1;
   const [mode, setMode] = useState<RemoveMode>(multi ? { kind: "tag", tag: image.repoTags[0]! } : { kind: "image" });
   const running = image.usedBy.filter((u) => u.state === "running" || u.state === "paused" || u.state === "restarting");
@@ -172,7 +173,7 @@ export function RemoveImageDialog({ image, onClose, onDone }: { image: Img; onCl
 
 export function PruneDialog({ images, onClose, onDone }: { images: ImageSummary[]; onClose: () => void; onDone: (r: PruneResult) => void }) {
   const { t, i18n } = useTranslation();
-  const invalidate = useInvalidate();
+  const invalidate = useInvalidate(false);
   const [all, setAll] = useState(false);
   const [sure, setSure] = useState(false);
   const affected = images.filter((i) => i.usedBy.length === 0 && (all || i.dangling));

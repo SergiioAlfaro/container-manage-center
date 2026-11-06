@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.4.0 — 2026-11-06 (Fase 4)
+- Descarga de imágenes con progreso por capa, cancelación y credenciales de Docker, anónimas o solo para esa descarga (D-042).
+- Búsqueda en Docker Hub, detalle de imagen con capas, contenedores e inspección, etiquetado, eliminación con aviso de uso y limpieza (D-044).
+- Asistente de construcción con BuildKit o el constructor clásico, `.dockerignore`, resumen del contexto, pasos y salida en directo (D-041).
+- Pruebas reales de descarga con un registro local (D-043).
+- `scripts/verify-phase-4.sh`.
+
 ## 0.3.0 — 2026-11-05 (Fase 3)
 - Asistente de creación de contenedores por pestañas con validación en vivo, comando `docker run` equivalente y cuerpo de la API (D-034, D-035).
 - Detalle de contenedor: resumen, logs en directo, terminal interactiva, estadísticas e inspección JSON (D-036, D-037).

@@ -56,6 +56,56 @@ struct Cleanup {
     containers: Vec<String>,
 }
 
+/// El constructor clásico guarda una imagen intermedia sin etiqueta por paso
+/// (su caché). Esta guarda elimina las que crearon las construcciones de la
+/// prueba: sin etiqueta, heredadas de la imagen de prueba y posteriores al inicio.
+struct IntermediateCleanup {
+    docker: bollard::Docker,
+    since: i64,
+}
+
+impl Drop for IntermediateCleanup {
+    fn drop(&mut self) {
+        let d = self.docker.clone();
+        let since = self.since;
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async {
+                let mut filters = std::collections::HashMap::new();
+                filters.insert("dangling".to_string(), vec!["true".to_string()]);
+                filters.insert("label".to_string(), vec!["dcc.test=true".to_string()]);
+                let list = d
+                    .list_images(Some(bollard::query_parameters::ListImagesOptions {
+                        filters: Some(filters),
+                        ..Default::default()
+                    }))
+                    .await
+                    .unwrap_or_default();
+                for i in list {
+                    // Las imágenes sin etiqueta de la prueba de limpieza no son de esta prueba.
+                    if i.created >= since && !i.labels.contains_key("dcc.prune") {
+                        let _ = d
+                            .remove_image(
+                                &i.id,
+                                Some(bollard::query_parameters::RemoveImageOptions {
+                                    force: true,
+                                    ..Default::default()
+                                }),
+                                None,
+                            )
+                            .await;
+                    }
+                }
+            });
+        })
+        .join()
+        .unwrap();
+    }
+}
+
 impl Drop for Cleanup {
     fn drop(&mut self) {
         let d = self.docker.clone();
@@ -674,6 +724,10 @@ async fn classic_builder_also_works_and_failures_are_reported() {
     let (engine, log, proxy, docker) = engine_via_proxy(&dir).await;
     let pid = std::process::id();
     let tag = format!("dcc-test/clasica-{pid}:1");
+    let _intermediates = IntermediateCleanup {
+        docker: docker.clone(),
+        since: chrono::Utc::now().timestamp() - 1,
+    };
     let _c = Cleanup {
         docker: docker.clone(),
         images: vec![tag.clone()],
