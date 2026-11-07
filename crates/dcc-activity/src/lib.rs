@@ -5,10 +5,12 @@
 //! [`ActivityLog::begin`], de modo que el panel de actividad solo pueda mostrar
 //! operaciones que han ocurrido.
 
+pub mod history;
 mod log;
 mod model;
 pub mod quote;
 
+pub use history::HistoryEntry;
 pub use log::{
     capture, ActivityLog, Failure, OperationHandle, OperationSpec, Outcome, DEFAULT_CAPACITY,
     DEFAULT_CAPTURE_LIMIT,

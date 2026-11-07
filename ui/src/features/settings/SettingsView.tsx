@@ -122,6 +122,13 @@ export function SettingsView() {
         >
           <MaxRecordsInput value={config.activity.maxRecords} onCommit={(maxRecords) => void updateConfig({ activity: { maxRecords } })} />
         </Row>
+        <Row label={t("settings.keepHistory")} hint={t("settings.keepHistoryHint")}>
+          <Switch
+            label={t("settings.keepHistory")}
+            checked={config.activity.keepHistory}
+            onChange={(keepHistory) => void updateConfig({ activity: { keepHistory } })}
+          />
+        </Row>
       </Group>
 
       <DockerSettings />

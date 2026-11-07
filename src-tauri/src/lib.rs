@@ -3,6 +3,7 @@
 mod commands;
 mod error;
 mod events;
+mod journal;
 mod state;
 mod streams;
 
@@ -32,7 +33,9 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             }
         })
         .setup(move |app| {
-            events::spawn_activity_bridge(app.handle().clone(), activity);
+            events::spawn_activity_bridge(app.handle().clone(), activity.clone());
+            journal::spawn_history_bridge(app.handle().clone(), activity);
+            journal::spawn_events_watcher(app.handle().clone(), engine.clone());
             events::spawn_engine(app.handle().clone(), engine);
             Ok(())
         })
@@ -101,6 +104,12 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::compose::compose_file_save,
             commands::compose::compose_file_create,
             commands::compose::compose_find_file,
+            commands::events::events_recent,
+            commands::events::events_journal,
+            commands::events::events_query,
+            commands::events::events_journal_clear,
+            commands::events::history_list,
+            commands::events::history_clear,
         ])
 }
 

@@ -17,6 +17,8 @@ pub struct AppState {
     config: Mutex<AppConfig>,
     /// Aviso generado al cargar la configuración (archivo corrupto, etc.).
     pub startup_warning: Option<String>,
+    /// Historial de operaciones y diario de eventos (Fase 8).
+    pub journals: crate::journal::Journals,
 }
 
 /// Traduce la configuración persistida al modo de conexión del motor.
@@ -42,13 +44,20 @@ impl AppState {
         };
         let activity = ActivityLog::new(config.activity.max_records as usize);
         let engine = EngineManager::new(activity.clone(), connection_mode(&config.docker));
+        let (journals, journal_warning) =
+            crate::journal::Journals::open(crate::journal::state_dir(store.path()));
+        let startup_warning = match (warning, journal_warning) {
+            (Some(a), Some(b)) => Some(format!("{a} {b}")),
+            (a, b) => a.or(b),
+        };
         Self {
             activity,
             store,
             engine,
             streams: Default::default(),
             config: Mutex::new(config),
-            startup_warning: warning,
+            startup_warning,
+            journals,
         }
     }
 

@@ -44,17 +44,18 @@ describe("App", () => {
     ]);
   });
 
-  it("navega entre apartados; los pendientes no tienen botones de acción falsos", async () => {
+  it("navega entre apartados; desde la Fase 8 ninguno queda pendiente", async () => {
     await boot();
     await userEvent.click(screen.getByRole("button", { name: "Eventos y registros" }));
     expect(screen.getByRole("heading", { level: 1, name: "Eventos y registros" })).toBeInTheDocument();
-    expect(screen.getByText("Disponible a partir de la fase 8")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Eventos y registros" })).toHaveAttribute("aria-current", "page");
-    // El área central de un apartado pendiente no contiene botones.
-    const main = screen.getByRole("main");
-    const content = main.querySelector(".overflow-y-auto")!;
-    const centralButtons = within(content as HTMLElement).queryAllByRole("button");
-    expect(centralButtons).toHaveLength(0);
+    expect(screen.getByRole("radio", { name: "En directo" })).toBeInTheDocument();
+    // Ningún apartado del menú muestra el aviso de "disponible a partir de la fase N".
+    const nav = screen.getByRole("navigation", { name: "Navegación principal" });
+    for (const item of within(nav).getAllByRole("button").filter((b) => b.textContent && !/Contraer|Expandir/.test(b.textContent))) {
+      await userEvent.click(item);
+      expect(screen.queryByText(/Disponible a partir de la fase/)).not.toBeInTheDocument();
+    }
   });
 
   it("contrae la barra lateral y lo guarda", async () => {
@@ -101,6 +102,15 @@ describe("App", () => {
     await userEvent.clear(input);
     await userEvent.type(input, "5{Enter}");
     expect(configSet).toHaveBeenLastCalledWith(expect.objectContaining({ activity: expect.objectContaining({ maxRecords: 50 }) }));
+  });
+
+  it("el historial entre sesiones se puede desactivar desde Configuración", async () => {
+    await boot();
+    await userEvent.click(screen.getByRole("button", { name: "Configuración" }));
+    const sw = screen.getByRole("switch", { name: "Guardar el historial entre sesiones" });
+    expect(sw).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(sw);
+    expect(configSet).toHaveBeenLastCalledWith(expect.objectContaining({ activity: expect.objectContaining({ keepHistory: false, maxRecords: 500 }) }));
   });
 
   it("abre el panel automáticamente cuando llega una operación fallida", async () => {

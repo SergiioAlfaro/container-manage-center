@@ -54,12 +54,20 @@ import type { ProjectModel } from "@/shared/ipc/bindings/ProjectModel";
 import type { ProjectRef } from "@/shared/ipc/bindings/ProjectRef";
 import type { RegisterResult } from "@/shared/ipc/bindings/RegisterResult";
 import type { UnsavedFile } from "@/shared/ipc/bindings/UnsavedFile";
+import type { DockerEvent } from "@/shared/ipc/bindings/DockerEvent";
+import type { EventFilter } from "@/shared/ipc/bindings/EventFilter";
+import type { EventPage } from "@/shared/ipc/bindings/EventPage";
+import type { EventQuery } from "@/shared/ipc/bindings/EventQuery";
+import type { EventQueryResult } from "@/shared/ipc/bindings/EventQueryResult";
+import type { HistoryEntry } from "@/shared/ipc/bindings/HistoryEntry";
+import type { HistoryFilter } from "@/shared/ipc/bindings/HistoryFilter";
+import type { HistoryPage } from "@/shared/ipc/bindings/HistoryPage";
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
 const DEFAULT_CONFIG: AppConfig = {
   version: 1,
   ui: { theme: "system", language: "es", sidebarCollapsed: false },
-  activity: { panelOpen: false, openOnError: true, maxRecords: 500 },
+  activity: { panelOpen: false, openOnError: true, maxRecords: 500, keepHistory: true },
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
 };
@@ -572,6 +580,51 @@ export function composeCommand(p: ProjectRef, a: ComposeAction): string {
   return ["/usr/bin/docker", "compose", "--ansi", "never", "-p", p.name, ...p.files.flatMap((f) => ["-f", f]), ...profiles, a.action, ...extra, ...svcs].join(" ");
 }
 
+// ------------------------------------------------------------------ Fase 8
+
+export function dockerEvent(over: Partial<DockerEvent> = {}): DockerEvent {
+  return { timeNano: 1_794_067_503_964_175_002, kind: "container", action: "start", actorId: "c0ffee0123456789", name: "web", attributes: { image: "nginx:1.27", name: "web" }, scope: "local", ...over };
+}
+
+export const journalEvents: DockerEvent[] = [
+  dockerEvent({ timeNano: 1_794_000_000_000_000_000, kind: "volume", action: "create", actorId: "datos", name: null, attributes: { driver: "local" } }),
+  dockerEvent({ timeNano: 1_794_000_001_000_000_000, action: "create" }),
+  dockerEvent({ timeNano: 1_794_000_002_000_000_000, action: "start" }),
+  dockerEvent({ timeNano: 1_794_000_003_000_000_000, action: "die", attributes: { image: "nginx:1.27", name: "web", exitCode: "0" } }),
+];
+
+export const SESSION_START = "2026-11-07T10:00:00Z";
+
+export function historyEntry(over: Partial<HistoryEntry> = {}): HistoryEntry {
+  return {
+    id: "00000000-0000-0000-0000-000000000001",
+    category: "container",
+    kind: "container.start",
+    target: "web",
+    transport: { via: "api", method: "POST", path: "/containers/web/start", endpoint: "/var/run/docker.sock" },
+    status: "succeeded",
+    startedAt: "2026-11-07T11:00:00Z",
+    finishedAt: "2026-11-07T11:00:00.120Z",
+    durationMs: 120,
+    summary: "Contenedor iniciado",
+    error: null,
+    httpStatus: null,
+    exitCode: null,
+    ...over,
+  };
+}
+
+export const historyEntries: HistoryEntry[] = [
+  historyEntry({ id: "00000000-0000-0000-0000-000000000003", kind: "compose.up", category: "compose", target: "tienda", startedAt: "2026-11-07T12:00:00Z", status: "failed", error: "El proceso terminó con código 1", exitCode: 1, summary: null, transport: { via: "cli", program: "/usr/bin/docker", args: ["compose", "-p", "tienda", "up", "--detach"] } }),
+  historyEntry({ id: "00000000-0000-0000-0000-000000000002" }),
+  historyEntry({ id: "00000000-0000-0000-0000-000000000001", kind: "image.pull", category: "image", target: "nginx:1.27", startedAt: "2026-11-06T09:00:00Z", summary: "Imagen descargada" }),
+];
+
+function eventPage(all: DockerEvent[], f: Partial<EventFilter>, persistent: boolean): EventPage {
+  const m = all.filter((e) => (!f.types?.length || f.types.includes(e.kind)) && (!f.text || [e.action, e.actorId, e.name ?? ""].some((x) => x.includes(f.text!))));
+  return { events: [...m].reverse(), total: m.length, stored: all.length, persistent };
+}
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -691,6 +744,20 @@ export const api = {
   composeFileSave: vi.fn(async (path: string, content: string, _v: string): Promise<ComposeFile> => ({ path, content, version: "v2", writable: true })),
   composeFileCreate: vi.fn(async (dir: string, content: string): Promise<ComposeFile> => ({ path: `${dir}/compose.yaml`, content, version: "v1", writable: true })),
   composeFindFile: vi.fn(async (_d: string): Promise<string | null> => null),
+  eventsRecent: vi.fn(async (f: Partial<EventFilter> = {}): Promise<EventPage> => eventPage([], f, false)),
+  eventsJournal: vi.fn(async (f: Partial<EventFilter> = {}): Promise<EventPage> => eventPage(journalEvents, f, true)),
+  eventsQuery: vi.fn(async (q: EventQuery): Promise<EventQueryResult> => ({
+    events: journalEvents.filter((e) => !q.types.length || q.types.includes(e.kind)),
+    truncated: false,
+    command: `docker events --since ${q.since} --until ${q.until}${q.types.map((t) => ` --filter type=${t}`).join("")}`,
+  })),
+  eventsJournalClear: vi.fn(async () => null),
+  historyList: vi.fn(async (f: Partial<HistoryFilter> = {}): Promise<HistoryPage> => {
+    const m = historyEntries.filter((h) => (!f.statuses?.length || f.statuses.includes(h.status)) && (!f.categories?.length || f.categories.includes(h.category)));
+    return { entries: m, total: m.length, stored: historyEntries.length, persistent: true, sessionStart: SESSION_START, location: "/home/u/.local/state/docker-control-center" };
+  }),
+  historyClear: vi.fn(async () => null),
+  onDockerEvent: vi.fn(async (_h: (e: DockerEvent) => void) => () => {}),
   pickComposeFiles: vi.fn(async (_t: string, _f: string): Promise<string[]> => ["/home/u/tienda/compose.yaml"]),
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),
 };

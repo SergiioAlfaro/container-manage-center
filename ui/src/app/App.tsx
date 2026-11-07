@@ -13,6 +13,8 @@ import { VolumesView } from "@/features/volumes/VolumesView";
 import { BindsView } from "@/features/binds/BindsView";
 import { PendingSection } from "@/features/pending/PendingSection";
 import { ComposeView } from "@/features/compose/ComposeView";
+import { EventsView } from "@/features/events/EventsView";
+import { useLiveRefresh } from "@/features/events/liveRefresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { SettingsView } from "@/features/settings/SettingsView";
 import { api } from "@/shared/ipc/client";
@@ -90,6 +92,8 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <BindsView />;
     case "compose":
       return <ComposeView />;
+    case "events":
+      return <EventsView />;
     case "settings":
       return <SettingsView />;
     default:
@@ -121,6 +125,7 @@ export function App() {
   const running = useActivity((s) => s.records.filter((r) => r.status === "running").length);
   const failedRecent = useActivity((s) => s.records.some((r) => r.status === "failed"));
   useActivityBridge();
+  useLiveRefresh();
   useEngineBridge();
   useShortcuts();
 

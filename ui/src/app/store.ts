@@ -9,7 +9,7 @@ import type { SectionId } from "./sections";
 export const DEFAULT_CONFIG: AppConfig = {
   version: 1,
   ui: { theme: "system", language: "es", sidebarCollapsed: false },
-  activity: { panelOpen: false, openOnError: true, maxRecords: 500 },
+  activity: { panelOpen: false, openOnError: true, maxRecords: 500, keepHistory: true },
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
 };

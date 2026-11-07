@@ -12,4 +12,9 @@ openOnError: boolean,
 /**
  * Número máximo de operaciones conservadas en el historial.
  */
-maxRecords: number, };
+maxRecords: number, 
+/**
+ * Guardar en disco el historial de operaciones y el diario de eventos
+ * para consultarlos en sesiones posteriores (Fase 8, D-058).
+ */
+keepHistory: boolean, };

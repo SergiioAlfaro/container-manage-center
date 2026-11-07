@@ -58,6 +58,13 @@ import type { PullEvent } from "./bindings/PullEvent";
 import type { RemoveResult } from "./bindings/RemoveResult";
 import type { SearchResult } from "./bindings/SearchResult";
 import type { ComposeAction } from "./bindings/ComposeAction";
+import type { DockerEvent } from "./bindings/DockerEvent";
+import type { EventFilter } from "./bindings/EventFilter";
+import type { EventPage } from "./bindings/EventPage";
+import type { EventQuery } from "./bindings/EventQuery";
+import type { EventQueryResult } from "./bindings/EventQueryResult";
+import type { HistoryFilter } from "./bindings/HistoryFilter";
+import type { HistoryPage } from "./bindings/HistoryPage";
 import type { ComposeConfig } from "./bindings/ComposeConfig";
 import type { ComposeEvent } from "./bindings/ComposeEvent";
 import type { ComposeFile } from "./bindings/ComposeFile";
@@ -187,6 +194,14 @@ export const api = {
   composeFileCreate: (dir: string, content: string) => call<ComposeFile>("compose_file_create", { dir, content }),
   composeFindFile: (dir: string) => call<string | null>("compose_find_file", { dir }),
 
+  // Fase 8: eventos de Docker e historial de operaciones.
+  eventsRecent: (filter: Partial<EventFilter> = {}) => call<EventPage>("events_recent", { filter }),
+  eventsJournal: (filter: Partial<EventFilter> = {}) => call<EventPage>("events_journal", { filter }),
+  eventsQuery: (query: EventQuery) => call<EventQueryResult>("events_query", { query }),
+  eventsJournalClear: () => call<null>("events_journal_clear"),
+  historyList: (filter: Partial<HistoryFilter> = {}) => call<HistoryPage>("history_list", { filter }),
+  historyClear: () => call<null>("history_clear"),
+
   /** Selector de archivo del sistema (Dockerfile). */
   pickFile: async (title: string, defaultPath?: string): Promise<string | null> => {
     if (!isTauri()) return null;
@@ -212,6 +227,12 @@ export const api = {
   onEngineState: async (handler: (s: ConnectionState) => void): Promise<UnlistenFn> => {
     if (!isTauri()) return () => {};
     return listen<ConnectionState>(ENGINE_STATE, (e) => handler(e.payload));
+  },
+
+  /** Cada evento de Docker recibido por la suscripción de la aplicación. */
+  onDockerEvent: async (handler: (e: DockerEvent) => void): Promise<UnlistenFn> => {
+    if (!isTauri()) return () => {};
+    return listen<DockerEvent>("docker://event", (e) => handler(e.payload));
   },
 
   onActivity: async (handler: (e: ActivityEvent) => void, onResync: () => void): Promise<UnlistenFn> => {

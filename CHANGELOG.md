@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.8.0 — 2026-11-07 (Fase 8: actividad, eventos y monitorización)
+- Apartado **Eventos y registros** con cuatro pestañas:
+  - **En directo**: los eventos de Docker según ocurren (también los causados desde la terminal u otras herramientas), con filtros por tipo, búsqueda, pausa y detalle de cada evento; abrir el recurso afectado.
+  - **Guardados**: los eventos recibidos con la aplicación abierta, también de sesiones anteriores (últimos 20 000), con filtros de fecha, acción, tipo y texto.
+  - **Consultar a Docker**: `docker events --since … --until …` con filtros validados antes de llamar a Docker y el comando equivalente; incluye lo ocurrido con la aplicación cerrada, dentro de los 256 eventos que Docker conserva (D-057).
+  - **Historial de operaciones**: las operaciones de la aplicación, también de sesiones anteriores (últimas 10 000), con filtros por fecha, categoría, estado y texto (D-058).
+- **Actualización en tiempo real** de toda la aplicación: un cambio en Docker (desde la aplicación o desde fuera) recarga al instante las listas y el panel afectados, sin pulsar Actualizar.
+- Historial y diario guardados en `~/.local/state/docker-control-center/` (carpeta 0700, archivos 0600), **sin secretos**: no se guardan cuerpos de peticiones, comandos equivalentes ni salidas, y se ocultan los valores de `buildargs`. Opción **Guardar historial** en Configuración.
+- La suscripción a los eventos aparece en el panel de actividad al abrirse y, si se interrumpe, como operación fallida; se reintenta sola mientras haya conexión.
+- `verify-phase-8.sh` con pruebas reales de eventos y comprobaciones manuales M1–M15.
+
 ## 0.7.1 — 2026-11-07 (corrección de la Fase 7)
 - Corregido: con Docker 26, justo después de detener (o iniciar) un proyecto Compose, su estado podía aparecer como "Parcial" porque Docker actualiza el listado de contenedores un instante después de responder. Tras desplegar, iniciar, detener o reiniciar, la aplicación confirma ahora el estado de cada contenedor con inspect (D-056), como ya hacía con las acciones de contenedores (D-031).
 - Nuevas pruebas: carrera determinista con un Docker simulado, cálculo del estado en cada caso y comparación con `docker compose ps -a` e inspect tras cada operación individual y global, con perfiles y sin archivo.

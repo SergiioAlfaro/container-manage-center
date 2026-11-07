@@ -69,13 +69,7 @@
     },
     "events": {
       "title": "Events and logs",
-      "description": "Docker Engine events in real time.",
-      "planned": [
-        "Real-time event stream",
-        "Filters by date, type and resource",
-        "Persistent operation history"
-      ],
-      "phase": 8
+      "description": "Real-time Docker events and operation history."
     },
     "settings": {
       "title": "Settings",
@@ -177,7 +171,9 @@
     "saved": "Saved",
     "shortcuts": "Keyboard shortcuts",
     "shortcutSidebar": "Collapse or expand the sidebar",
-    "shortcutActivity": "Open or close the activity panel"
+    "shortcutActivity": "Open or close the activity panel",
+    "keepHistory": "Keep the history between sessions",
+    "keepHistoryHint": "Saves operations (without bodies, commands or output, which may contain secrets) and Docker events to disk, to browse them in Events and logs."
   },
   "common": {
     "dismiss": "Dismiss notice",
@@ -252,6 +248,10 @@
     },
     "registry": {
       "credentials": "Get registry credentials"
+    },
+    "events": {
+      "watch": "Subscription to Docker events",
+      "query": "Ask Docker for events"
     }
   },
   "conn": {
@@ -1777,5 +1777,75 @@
     "create": "Create project",
     "needFolder": "Choose the project folder first.",
     "editorLabel": "Contents of compose.yaml"
+  },
+  "events": {
+    "tabsLabel": "View",
+    "tabs": {
+      "live": "Live",
+      "journal": "Saved",
+      "docker": "Ask Docker",
+      "history": "Operation history"
+    },
+    "type": {
+      "container": "Container",
+      "image": "Image",
+      "volume": "Volume",
+      "network": "Network",
+      "daemon": "Docker",
+      "plugin": "Plugin",
+      "builder": "Builder",
+      "service": "Service",
+      "node": "Node",
+      "secret": "Secret",
+      "config": "Config"
+    },
+    "allTypes": "All",
+    "filterType": "Type",
+    "search": "Search by name, ID, action or image",
+    "actions": "Actions",
+    "resource": "Resource",
+    "resourcePh": "name or ID",
+    "resourceNeedsType": "choose a resource type",
+    "pause": "Pause",
+    "resume": "Resume",
+    "resumeN_one": "Resume ({{count}} new)",
+    "resumeN_other": "Resume ({{count}} new)",
+    "clearView": "Clear view",
+    "clearViewHint": "Only clears the list on screen; saved events are kept.",
+    "liveOn": "Live: changes in Docker appear instantly and refresh the whole application",
+    "livePaused": "Paused: events are still received and the application keeps refreshing",
+    "liveOff": "Not connected to Docker: no events are received",
+    "count_one": "{{count}} event",
+    "count_other": "{{count}} events",
+    "liveEmpty": "Nothing has happened in Docker in this session yet. Create, start or stop something (also from the terminal) and it will show up here.",
+    "noMatches": "No event matches the filters.",
+    "details": "Event details",
+    "since": "From",
+    "until": "To",
+    "refresh": "Refresh",
+    "journalIntro": "Events the application received while it was open and connected, including previous sessions (the latest 20,000 are kept). If “To” is empty, up to now.",
+    "journalOff": "Saving is disabled in Settings › Activity: new events are not saved.",
+    "journalCount": "Showing {{shown}} of {{total}} matching the filters ({{stored}} saved).",
+    "journalClear": "Delete saved events",
+    "journalClearTitle": "Delete saved events",
+    "journalClearBody": "The {{count}} saved events will be deleted from disk. Docker and the operation history are not affected.",
+    "dockerIntro": "Asks Docker for the events it keeps (docker events --since … --until …): it includes what happened while the application was closed, but Docker only keeps the latest 256 events in memory and loses them when it restarts. The filter is applied by Docker.",
+    "query": "Ask",
+    "truncated": "There are more than 5000 events: the most recent are shown.",
+    "dockerEmpty": "Docker keeps no events in that interval with those filters."
+  },
+  "history": {
+    "intro": "Operations the application ran on Docker, including previous sessions (the latest 10,000 are kept). What was done, when and with what result are saved; request bodies, equivalent commands and output are not saved because they may contain passwords or other secrets.",
+    "off": "The history is disabled in Settings › Activity: new operations are not saved.",
+    "search": "Search by operation, resource or error",
+    "previous": "Previous session",
+    "count": "Showing {{shown}} of {{total}} matching the filters ({{stored}} saved).",
+    "empty": "No operations saved yet.",
+    "noMatches": "No operation matches the filters.",
+    "notKept": "Details",
+    "notKeptBody": "The request body, equivalent command and output are only in the activity panel during the session in which it ran.",
+    "clear": "Delete history",
+    "clearTitle": "Delete the operation history",
+    "clearBody": "The {{count}} saved operations will be deleted from disk. This session's activity panel does not change."
   }
 }

@@ -69,13 +69,7 @@
     },
     "events": {
       "title": "Eventos y registros",
-      "description": "Eventos de Docker Engine en tiempo real.",
-      "planned": [
-        "Flujo de eventos en tiempo real",
-        "Filtros por fecha, tipo y recurso",
-        "Historial persistente de operaciones"
-      ],
-      "phase": 8
+      "description": "Eventos de Docker en tiempo real e historial de operaciones."
     },
     "settings": {
       "title": "Configuración",
@@ -177,7 +171,9 @@
     "saved": "Guardado",
     "shortcuts": "Atajos de teclado",
     "shortcutSidebar": "Contraer o expandir la barra lateral",
-    "shortcutActivity": "Abrir o cerrar el panel de actividad"
+    "shortcutActivity": "Abrir o cerrar el panel de actividad",
+    "keepHistory": "Guardar el historial entre sesiones",
+    "keepHistoryHint": "Guarda en disco las operaciones (sin cuerpos, comandos ni salidas, que pueden contener secretos) y los eventos de Docker, para consultarlos en Eventos y registros."
   },
   "common": {
     "dismiss": "Cerrar aviso",
@@ -252,6 +248,10 @@
     },
     "registry": {
       "credentials": "Obtener credenciales del registro"
+    },
+    "events": {
+      "watch": "Suscripción a los eventos de Docker",
+      "query": "Consultar eventos de Docker"
     }
   },
   "conn": {
@@ -1777,5 +1777,75 @@
     "create": "Crear proyecto",
     "needFolder": "Elige primero la carpeta del proyecto.",
     "editorLabel": "Contenido de compose.yaml"
+  },
+  "events": {
+    "tabsLabel": "Vista",
+    "tabs": {
+      "live": "En directo",
+      "journal": "Guardados",
+      "docker": "Consultar a Docker",
+      "history": "Historial de operaciones"
+    },
+    "type": {
+      "container": "Contenedor",
+      "image": "Imagen",
+      "volume": "Volumen",
+      "network": "Red",
+      "daemon": "Docker",
+      "plugin": "Plugin",
+      "builder": "Construcción",
+      "service": "Servicio",
+      "node": "Nodo",
+      "secret": "Secreto",
+      "config": "Config"
+    },
+    "allTypes": "Todos",
+    "filterType": "Tipo",
+    "search": "Buscar por nombre, ID, acción o imagen",
+    "actions": "Acciones",
+    "resource": "Recurso",
+    "resourcePh": "nombre o ID",
+    "resourceNeedsType": "elige un tipo de recurso",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "resumeN_one": "Reanudar ({{count}} nuevo)",
+    "resumeN_other": "Reanudar ({{count}} nuevos)",
+    "clearView": "Vaciar vista",
+    "clearViewHint": "Solo vacía la lista en pantalla; los eventos guardados se conservan.",
+    "liveOn": "En directo: los cambios en Docker aparecen al instante y actualizan toda la aplicación",
+    "livePaused": "En pausa: los eventos se siguen recibiendo y la aplicación se sigue actualizando",
+    "liveOff": "Sin conexión con Docker: no se reciben eventos",
+    "count_one": "{{count}} evento",
+    "count_other": "{{count}} eventos",
+    "liveEmpty": "Todavía no ha ocurrido nada en Docker en esta sesión. Crea, inicia o detén algo (también desde la terminal) y aparecerá aquí.",
+    "noMatches": "Ningún evento coincide con los filtros.",
+    "details": "Detalles del evento",
+    "since": "Desde",
+    "until": "Hasta",
+    "refresh": "Actualizar",
+    "journalIntro": "Eventos que la aplicación ha recibido mientras estaba abierta y conectada, también en sesiones anteriores (se conservan los 20 000 más recientes). Si «Hasta» está vacío, hasta ahora.",
+    "journalOff": "El guardado está desactivado en Configuración › Actividad: los eventos nuevos no se guardan.",
+    "journalCount": "Se muestran {{shown}} de {{total}} que cumplen los filtros ({{stored}} guardados).",
+    "journalClear": "Borrar eventos guardados",
+    "journalClearTitle": "Borrar los eventos guardados",
+    "journalClearBody": "Se borrarán del disco los {{count}} eventos guardados. No afecta a Docker ni al historial de operaciones.",
+    "dockerIntro": "Pide a Docker los eventos que conserva (docker events --since … --until …): incluye lo ocurrido con la aplicación cerrada, pero Docker solo guarda en memoria los últimos 256 eventos y los pierde al reiniciarse. El filtro se aplica en Docker.",
+    "query": "Consultar",
+    "truncated": "Hay más de 5000 eventos: se muestran los más recientes.",
+    "dockerEmpty": "Docker no conserva eventos en ese intervalo con esos filtros."
+  },
+  "history": {
+    "intro": "Operaciones que la aplicación ha ejecutado sobre Docker, también en sesiones anteriores (se conservan las 10 000 más recientes). Se guarda qué se hizo, cuándo y con qué resultado; los cuerpos de las peticiones, los comandos equivalentes y las salidas no se guardan porque pueden contener contraseñas u otros secretos.",
+    "off": "El historial está desactivado en Configuración › Actividad: las operaciones nuevas no se guardan.",
+    "search": "Buscar por operación, recurso o error",
+    "previous": "Sesión anterior",
+    "count": "Se muestran {{shown}} de {{total}} que cumplen los filtros ({{stored}} guardadas).",
+    "empty": "Todavía no hay operaciones guardadas.",
+    "noMatches": "Ninguna operación coincide con los filtros.",
+    "notKept": "Detalles",
+    "notKeptBody": "El cuerpo de la petición, el comando equivalente y la salida solo están en el panel de actividad durante la sesión en que se ejecutó.",
+    "clear": "Borrar historial",
+    "clearTitle": "Borrar el historial de operaciones",
+    "clearBody": "Se borrarán del disco las {{count}} operaciones guardadas. El panel de actividad de esta sesión no cambia."
   }
 }

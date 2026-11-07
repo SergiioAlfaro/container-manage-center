@@ -6,7 +6,7 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.7.1_amd64.deb
+sudo apt install ./docker-control-center_0.8.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`).
@@ -14,7 +14,9 @@ La aplicación aparece en el menú como **Docker Control Center**. Se ejecuta co
 tu usuario normal: **no la ejecutes con sudo** (se niega a arrancar como root).
 
 Desinstalar: `sudo apt remove docker-control-center` (tu configuración en
-`~/.config/docker-control-center/` se conserva).
+`~/.config/docker-control-center/` y el historial en
+`~/.local/state/docker-control-center/` se conservan; bórralos a mano si no los
+quieres). El historial se puede borrar también desde la aplicación.
 
 Si al abrir la ventana aparece «La interfaz no pudo arrancar» con un mensaje
 técnico, copia ese mensaje al informar del problema.

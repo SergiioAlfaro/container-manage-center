@@ -56,6 +56,9 @@ pub struct ActivityConfig {
     pub open_on_error: bool,
     /// Número máximo de operaciones conservadas en el historial.
     pub max_records: u32,
+    /// Guardar en disco el historial de operaciones y el diario de eventos
+    /// para consultarlos en sesiones posteriores (Fase 8, D-058).
+    pub keep_history: bool,
 }
 
 impl Default for ActivityConfig {
@@ -64,6 +67,7 @@ impl Default for ActivityConfig {
             panel_open: false,
             open_on_error: true,
             max_records: 500,
+            keep_history: true,
         }
     }
 }

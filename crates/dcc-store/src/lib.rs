@@ -9,6 +9,7 @@
 //! - Nunca se guardan credenciales aquí (ver DECISIONS.md, D-011).
 
 mod config;
+pub mod journal;
 
 use std::fs;
 use std::io::Write;

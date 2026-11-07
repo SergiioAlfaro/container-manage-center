@@ -341,6 +341,40 @@ Si los archivos de un proyecto ya no existen, se puede detener, iniciar,
 reiniciar, ver sus registros y eliminar (Docker Compose usa las etiquetas de los
 contenedores); para desplegarlo hacen falta los archivos.
 
+## Eventos y registros
+
+Docker anuncia cada cambio (un contenedor que se crea, arranca o se detiene,
+una imagen descargada, una red conectada…) como un **evento**, venga de esta
+aplicación, de la terminal o de cualquier otra herramienta. La aplicación los
+recibe mientras está conectada y **actualiza al instante** las listas y el
+panel afectados: no hace falta pulsar Actualizar.
+
+- **En directo**: los eventos de esta sesión, los más recientes arriba. Filtra
+  por tipo (contenedor, imagen, volumen, red…) o busca por nombre, ID, acción o
+  imagen. **Pausar** congela la lista (los eventos se siguen recibiendo y se
+  muestran al reanudar). Despliega un evento para ver todos sus datos y abre el
+  recurso con su enlace.
+- **Guardados**: los eventos recibidos mientras la aplicación estaba abierta,
+  también de sesiones anteriores (se conservan los 20 000 más recientes), con
+  filtros de fecha, acciones (`start, die`), tipo y texto.
+- **Consultar a Docker**: pide a Docker los eventos de un periodo
+  (`docker events --since … --until …`), con filtros de tipo, acciones y
+  recurso. Incluye lo que pasó con la aplicación cerrada, pero **Docker solo
+  conserva los últimos 256 eventos** y los pierde al reiniciarse. Se muestra el
+  comando equivalente.
+- **Historial de operaciones**: lo que la aplicación ha hecho en Docker, también
+  en sesiones anteriores (las 10 000 más recientes), con filtros de fecha,
+  categoría, estado y texto. Las de sesiones anteriores llevan la marca
+  "Sesión anterior".
+
+El historial guarda **qué** se hizo, **cuándo** y **con qué resultado**, pero
+nunca el cuerpo de las peticiones, el comando equivalente ni las salidas, porque
+pueden contener contraseñas (variables de entorno, argumentos de construcción).
+Esos detalles solo están en el panel de actividad mientras la aplicación está
+abierta. Los archivos están en `~/.local/state/docker-control-center/`, solo
+legibles por tu usuario. Puedes borrar lo guardado desde cada pestaña o dejar de
+guardar con la opción **Guardar historial** de Configuración.
+
 ## Panel de actividad
 
 Cada operación que la aplicación ejecuta sobre Docker aparece aquí: hora,
@@ -356,12 +390,14 @@ procesos CLI.
 
 Para no llenar el panel, las comprobaciones automáticas de la conexión (cada
 10 s) no se registran una a una; sí se registra la comprobación que detecta una
-pérdida de conexión.
+pérdida de conexión. La suscripción a los eventos de Docker aparece una vez,
+cuando Docker la acepta, y otra como fallida si se interrumpe (se reintenta sola
+mientras haya conexión).
 
 ## Configuración
 
 - **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma (Español, English).
-- **Panel de actividad**: abrirlo automáticamente ante errores y número de operaciones conservadas (50–10.000).
+- **Panel de actividad**: abrirlo automáticamente ante errores, número de operaciones conservadas (50–10.000) y **Guardar historial** (operaciones y eventos de Docker entre sesiones, sin secretos).
 - **Conexión con Docker**:
   - **Automático**: busca `DOCKER_HOST`, el contexto activo, tu socket rootless y el del sistema.
   - **Socket personalizado**: una ruta absoluta concreta.

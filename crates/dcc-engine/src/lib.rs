@@ -18,6 +18,7 @@ pub mod containers;
 pub mod details;
 pub mod endpoint;
 mod error;
+pub mod events;
 pub mod images;
 pub mod manager;
 mod model;

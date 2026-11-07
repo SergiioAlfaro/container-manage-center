@@ -324,7 +324,32 @@ fn live_app_connects_and_serves_real_data() {
     // La actividad contiene exactamente las operaciones ejecutadas, todas correctas.
     let records: Vec<OperationRecord> =
         serde_json::from_value(invoke(&h, "activity_list", json!({})).unwrap()).unwrap();
-    let kinds: Vec<_> = records.iter().rev().map(|r| r.kind.as_str()).collect();
+    let all_kinds: Vec<_> = records.iter().rev().map(|r| r.kind.as_str()).collect();
+    // Fase 8 (D-057): al conectar, la aplicación abre una suscripción a los
+    // eventos de Docker, que se registra una sola vez, correcta, después de la
+    // conexión (ping, versión, info). Llega en paralelo a las consultas de la
+    // prueba, así que su posición exacta entre ellas no es fija.
+    let watch_at: Vec<_> = all_kinds
+        .iter()
+        .enumerate()
+        .filter(|(_, k)| **k == "events.watch")
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(
+        watch_at.len(),
+        1,
+        "una sola suscripción a eventos: {all_kinds:?}"
+    );
+    assert!(
+        watch_at[0] >= 3,
+        "la suscripción se abre tras conectar: {all_kinds:?}"
+    );
+    let kinds: Vec<_> = all_kinds
+        .iter()
+        .copied()
+        .filter(|k| *k != "events.watch")
+        .collect();
+    // El resto son exactamente las operaciones que ha pedido la prueba.
     assert_eq!(
         kinds,
         [
@@ -1517,4 +1542,278 @@ fn live_compose_via_ipc() {
         invoke(&h, "compose_unregister", json!({ "name": name })).unwrap(),
         true
     );
+}
+
+// ------------------------------------------------------------------ Fase 8
+
+/// Simula una operación terminada (las operaciones reales se prueban en el motor).
+fn record_op(h: &Harness, kind: &str, ok: bool) {
+    let st = h.app.state::<AppState>();
+    let op = st.activity.begin(dcc_activity::OperationSpec {
+        category: dcc_activity::Category::Container,
+        kind: kind.into(),
+        target: Some("web".into()),
+        transport: dcc_activity::Transport::Api {
+            method: "POST".into(),
+            path: "/build?t=web&buildargs=%7B%22NPM_TOKEN%22%3A%22token-secreto%22%7D".into(),
+            endpoint: "/var/run/docker.sock".into(),
+        },
+        request_body: Some(r#"{"Env":["CLAVE=valor-secreto"]}"#.into()),
+        equivalent_command: Some("docker run -e CLAVE=valor-secreto web".into()),
+    });
+    if ok {
+        op.succeed(dcc_activity::Outcome {
+            summary: Some("hecho".into()),
+            stdout: Some("salida valor-secreto".into()),
+            ..Default::default()
+        });
+    } else {
+        op.fail(dcc_activity::Failure {
+            error: "falló".into(),
+            http_status: Some(500),
+            ..Default::default()
+        });
+    }
+}
+
+fn restart(h: Harness) -> Harness {
+    let Harness {
+        app, window, _dir, ..
+    } = h;
+    drop(window);
+    drop(app);
+    let docker = DockerConfig {
+        mode: DockerMode::Custom,
+        custom_socket: _dir.path().join("no-docker.sock").display().to_string(),
+    };
+    harness_with(_dir, docker)
+}
+
+fn wait_history(h: &Harness, n: u64) -> serde_json::Value {
+    let mut last = json!(null);
+    for _ in 0..100 {
+        last = invoke(h, "history_list", json!({ "filter": {} })).unwrap();
+        if last["stored"].as_u64() == Some(n) {
+            return last;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    panic!("el historial no llegó a {n}: {last}");
+}
+
+#[test]
+fn history_survives_a_restart_without_secrets() {
+    let h = harness();
+    record_op(&h, "image.build", true);
+    record_op(&h, "container.start", false);
+    let page = wait_history(&h, 2);
+    assert_eq!(page["persistent"], true);
+    assert_eq!(
+        page["entries"][0]["kind"], "container.start",
+        "los más recientes primero"
+    );
+    assert_eq!(page["entries"][0]["status"], "failed");
+    assert_eq!(page["entries"][0]["httpStatus"], 500);
+    let dir = page["location"].as_str().unwrap().to_owned();
+    let file = std::path::Path::new(&dir).join(crate::journal::HISTORY_FILE);
+    let raw = std::fs::read_to_string(&file).unwrap();
+    assert_eq!(raw.lines().count(), 2);
+    assert!(
+        !raw.contains("valor-secreto") && !raw.contains("token-secreto"),
+        "{raw}"
+    );
+    assert!(
+        raw.contains("NPM_TOKEN"),
+        "se conservan los nombres de los argumentos"
+    );
+    use std::os::unix::fs::PermissionsExt;
+    assert_eq!(
+        std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    let first_session = page["sessionStart"].as_str().unwrap().to_owned();
+
+    // Otra sesión: sigue ahí, con la sesión anterior identificable.
+    std::thread::sleep(Duration::from_millis(20));
+    let h = restart(h);
+    let page = invoke(&h, "history_list", json!({ "filter": {} })).unwrap();
+    assert_eq!(page["stored"], 2);
+    assert!(page["sessionStart"].as_str().unwrap() > first_session.as_str());
+    assert!(
+        page["entries"][0]["startedAt"].as_str().unwrap() < page["sessionStart"].as_str().unwrap()
+    );
+    // El panel de actividad de la nueva sesión empieza vacío (no se mezcla).
+    assert!(invoke(&h, "activity_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|r| r["kind"] != "image.build"));
+
+    // Filtros.
+    let f = |filter: serde_json::Value| {
+        invoke(&h, "history_list", json!({ "filter": filter })).unwrap()["total"]
+            .as_u64()
+            .unwrap()
+    };
+    assert_eq!(f(json!({ "statuses": ["failed"] })), 1);
+    assert_eq!(f(json!({ "text": "BUILD" })), 1);
+    assert_eq!(f(json!({ "categories": ["network"] })), 0);
+    assert_eq!(
+        f(json!({ "since": chrono::Utc::now().timestamp() + 10 })),
+        0
+    );
+    assert_eq!(
+        f(json!({ "until": chrono::Utc::now().timestamp() + 10, "since": 0 })),
+        2
+    );
+
+    invoke(&h, "history_clear", json!({})).unwrap();
+    assert_eq!(
+        invoke(&h, "history_list", json!({ "filter": {} })).unwrap()["stored"],
+        0
+    );
+    assert_eq!(std::fs::read_to_string(&file).unwrap(), "");
+}
+
+#[test]
+fn history_is_not_kept_when_disabled() {
+    let h = harness();
+    let mut cfg = h.app.state::<AppState>().config();
+    cfg.activity.keep_history = false;
+    invoke(&h, "config_set", json!({ "config": cfg })).unwrap();
+    record_op(&h, "container.stop", true);
+    std::thread::sleep(Duration::from_millis(200));
+    let page = invoke(&h, "history_list", json!({ "filter": {} })).unwrap();
+    assert_eq!(page["stored"], 0);
+    assert_eq!(page["persistent"], false);
+    // El panel de actividad de la sesión sí la tiene.
+    assert!(invoke(&h, "activity_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|r| r["kind"] == "container.stop"));
+}
+
+#[test]
+fn phase8_commands_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    let now = chrono::Utc::now().timestamp();
+    let e = invoke(
+        &h,
+        "events_query",
+        json!({ "query": { "since": now - 60, "until": now } }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.notConnected", "{e}");
+    let e = invoke(
+        &h,
+        "events_query",
+        json!({ "query": { "since": now, "until": now - 60 } }),
+    )
+    .unwrap_err();
+    assert!(
+        e["code"] == "engine.invalidInput" || e["code"] == "engine.notConnected",
+        "{e}"
+    );
+    let p = invoke(&h, "events_recent", json!({ "filter": {} })).unwrap();
+    assert_eq!(p["total"], 0);
+    let p = invoke(&h, "events_journal", json!({ "filter": {} })).unwrap();
+    assert_eq!(
+        (p["total"].as_u64(), p["persistent"].as_bool()),
+        (Some(0), Some(true))
+    );
+    invoke(&h, "events_journal_clear", json!({})).unwrap();
+}
+
+/// Contra Docker real: la aplicación se suscribe sola al conectar; los eventos
+/// llegan a la ventana, se guardan y siguen ahí tras reiniciar la aplicación.
+#[test]
+fn live_events_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker.clone());
+    let got: Arc<Mutex<Vec<serde_json::Value>>> = Default::default();
+    let g2 = got.clone();
+    h.app.listen_any(crate::journal::DOCKER_EVENT, move |e| {
+        g2.lock()
+            .unwrap()
+            .push(serde_json::from_str(e.payload()).unwrap());
+    });
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    wait_for("suscripción a eventos", || {
+        invoke(&h, "activity_list", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["kind"] == "events.watch" && r["status"] == "succeeded")
+    });
+    let vol = format!("dcc-test-ipc8-{}", std::process::id());
+    let created = invoke(
+        &h,
+        "volume_create",
+        json!({ "spec": { "name": vol, "driver": "local", "driverOpts": [], "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+    );
+    assert!(created.is_ok(), "{created:?}");
+    invoke(
+        &h,
+        "volume_remove",
+        json!({ "name": vol, "confirmed": true }),
+    )
+    .unwrap();
+    wait_for("eventos en la ventana", || {
+        got.lock().unwrap().iter().any(|e| {
+            e["kind"] == "volume" && e["action"] == "destroy" && e["actorId"] == vol.as_str()
+        })
+    });
+    let recent = invoke(
+        &h,
+        "events_recent",
+        json!({ "filter": { "types": ["volume"], "text": vol } }),
+    )
+    .unwrap();
+    assert_eq!(
+        recent["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["action"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["destroy", "create"]
+    );
+    let now = chrono::Utc::now().timestamp();
+    let q = invoke(&h, "events_query", json!({ "query": { "since": now - 120, "until": now, "types": ["volume"], "resource": vol } })).unwrap();
+    assert_eq!(q["events"].as_array().unwrap().len(), 2, "{q}");
+
+    // Tras reiniciar, el diario conserva los eventos de la sesión anterior.
+    let Harness {
+        app, window, _dir, ..
+    } = h;
+    drop(window);
+    drop(app);
+    let h = harness_with(_dir, docker);
+    let j = invoke(&h, "events_journal", json!({ "filter": { "text": vol } })).unwrap();
+    assert_eq!(j["total"], 2, "{j}");
+    let since_now = invoke(
+        &h,
+        "events_journal",
+        json!({ "filter": { "text": vol, "since": now + 5 } }),
+    )
+    .unwrap();
+    assert_eq!(since_now["total"], 0);
 }

@@ -6,11 +6,11 @@
 
 | | |
 |---|---|
-| **Fase actual** | 7 · Docker Compose |
-| **Versión** | 0.7.1 |
-| **Estado de la fase** | Corrección 0.7.1 verificada en el entorno de desarrollo; **pendiente de validación externa** |
-| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6 |
-| **Fases pendientes** | 7–10 |
+| **Fase actual** | 8 · Actividad, eventos y monitorización |
+| **Versión** | 0.8.0 |
+| **Estado de la fase** | Implementada; pendiente de validación del propietario |
+| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7 |
+| **Fases pendientes** | 8–10 |
 
 | Fase | Estado |
 |---|---|
@@ -20,8 +20,8 @@
 | 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | **Validada** (2026-11-06, Debian 13, versión 0.4.1) |
 | 5. Redes | **Validada** (2026-11-06, Debian 13, versión 0.5.0) |
 | 6. Volúmenes y bind mounts | **Validada** (2026-11-07, Debian 13, versión 0.6.0) |
-| 7. Docker Compose | Corrección 0.7.1 pendiente de validación externa |
-| 8. Actividad, eventos y monitorización | No iniciada |
+| 7. Docker Compose | **Validada** (2026-11-07, Debian 13, versión 0.7.1) |
+| 8. Actividad, eventos y monitorización | Implementada (0.8.0); pendiente de validación |
 | 9. Configuración y optimización | No iniciada |
 | 10. Pruebas finales y distribución | No iniciada |
 
@@ -561,10 +561,64 @@ Ninguno abierto.
 
 ---
 
+## Fase 8 · Actividad, eventos y monitorización
+
+### Objetivos
+Ver los eventos de Docker en tiempo real, actualizar la aplicación al instante cuando algo cambia (también desde fuera), consultar los eventos que Docker conserva y mantener un historial de operaciones entre sesiones sin guardar secretos.
+
+### Funcionalidades implementadas
+- **Suscripción a los eventos de Docker** mientras hay conexión (D-057): una sola, que se registra en el panel de actividad al abrirse y, si se interrumpe, como operación fallida; se reintenta sola.
+- **Actualización en tiempo real**: cada evento recarga, pidiéndolos a Docker, los datos afectados (contenedores, imágenes, volúmenes, redes, Compose, directorios vinculados, panel), agrupando las recargas 250 ms.
+- Apartado **Eventos y registros**:
+  - **En directo**: filtros por tipo, búsqueda, pausa con contador de nuevos, detalle y enlace al recurso.
+  - **Guardados**: eventos recibidos con la aplicación abierta, también de sesiones anteriores, con filtros de fecha, acciones, tipo y texto.
+  - **Consultar a Docker**: `docker events --since … --until …` con filtros validados antes de llamar a Docker y el comando equivalente.
+  - **Historial de operaciones**: filtros por fecha, categoría, estado y texto; marca "Sesión anterior"; detalle con la petición ejecutada.
+- **Persistencia sin secretos** (D-058): `historial.jsonl` y `eventos.jsonl` en `~/.local/state/docker-control-center/` (0700/0600), sin cuerpos, comandos equivalentes ni salidas, con `buildargs` ocultos; opción **Guardar historial**; borrar lo guardado con confirmación.
+
+### Pruebas realizadas en el entorno de desarrollo
+`scripts/verify-phase-8.sh` con tres daemons reales:
+
+| | Docker 26.1.3 (clásico, API 1.45) | Docker 29.9.2 (containerd, API 1.56) | Docker 24.0.7 (clásico, API 1.43) |
+|---|---|---|---|
+| Rust deterministas (unitarias, protocolo, IPC) | 399 | 399 | 399 |
+| Vitest | 207 | 207 | 207 |
+| Deterministas: carreras D-031 y D-056, interrupción de eventos | 1 + 1 + 3 | 1 + 1 + 3 | 1 + 1 + 3 |
+| Contra Docker real (fases 1–8 + IPC) | 11 + 7 + 9 + 4 + 4 + 6 + 2 + 8 | 11 + 7 + 9 + 4 + 4 + 6 + 2 + 8 | 11 + 7 + 9 + 4 + 4 + 6 + 2 + 8 |
+| Compose 2.26.1 (`DCC_TEST_COMPOSE`) | 6 de 6 | 6 de 6 | 6 de 6 |
+| Resultado | 36 correctas, 2 omitidas, 1 aviso (segunda ejecución, ver abajo) | 37 correctas (con `--deb`), 2 omitidas, 1 aviso | 36 correctas, 2 omitidas, 1 aviso |
+
+- En los tres: veredicto "parte automática superada", 0 fallos, código de salida 0 y ningún recurso de prueba sobrante.
+- **Omitidas justificadamente:** las dos de permiso denegado (root ignora los permisos de archivo), como en fases anteriores. **Aviso:** ejecución como root en desarrollo.
+- **Prueba en la aplicación real** (Docker 29):
+  - En directo: aparecen los eventos de antes de abrir el apartado y los nuevos (create, start, connect, kill, stop, die, disconnect, volume create), con milisegundos y atributos.
+  - Contenedores y Dashboard cambian solos tras `docker start`/`docker stop` en la terminal, sin pulsar Actualizar.
+  - Consultar a Docker con acciones `start, die`: devuelve también eventos de antes de abrir la aplicación, con el comando equivalente.
+  - Tras cerrar y abrir la aplicación, Guardados e Historial conservan lo anterior (marca "Sesión anterior").
+  - Carpeta de estado 0700 y archivos 0600; el valor de una variable de entorno secreta no aparece en ninguno de los dos archivos.
+- **Paquete 0.8.0:** instalado con `apt`, en inglés y con tema oscuro, con eventos en directo e historial; después se desinstaló.
+
+### Problemas detectados y resueltos durante la fase
+- **Primera ejecución de la verificación con Docker 26: 2 fallos.**
+  1. `live_app_connects_and_serves_real_data` (IPC contra Docker real) comprueba la lista **exacta** de operaciones registradas y apareció una más: `events.watch`. Es una consecuencia real de esta fase (la aplicación abre la suscripción al conectar, D-057), no un fallo del producto. Esta prueba solo se ejecuta contra Docker real, así que no salió en las ejecuciones deterministas previas. La prueba sigue exigiendo la lista exacta de las demás operaciones, en orden, y además exige **exactamente una** suscripción, correcta y posterior a la conexión. No se ha relajado: su posición entre las consultas de la prueba no es fija porque llega en paralelo.
+  2. `container_lifecycle_against_real_docker_matches_wire` (Fases 1–3): Docker devolvió `500 cannot pause container …: OCI runtime pause failed: unable to freeze`. Es un error del runtime (runc) al congelar el cgroup v1 de este entorno, no de la aplicación: la Fase 8 no toca la pausa. Comprobado después con el mismo Docker 26: 30 de 30 pausas con el CLI de Docker, `live_docker` 5 de 5 seguidas y la verificación completa repetida sin fallos y sin ese error en el registro del daemon. No se ha cambiado nada para ello.
+- Visto en la aplicación real: el texto de búsqueda de los eventos se cortaba ("…o image"); el campo es ahora más ancho.
+- **Infraestructura:** el disco del entorno se llenó con compilaciones incrementales (el enlazador falló con "Bus error"); se borró la carpeta de compilación y las verificaciones se ejecutan sin compilación incremental.
+
+### Limitaciones y observaciones
+- Si la aplicación estaba cerrada, sus eventos no están en Guardados; "Consultar a Docker" los recupera solo dentro de los últimos 256 que Docker conserva y no tras reiniciar Docker.
+- Los campos de fecha usan el selector nativo del sistema, que sigue el idioma del sistema, no el de la aplicación (aquí, sin idioma configurado, aparecen en formato inglés).
+- Docker 26.1.5 exactamente no se ha podido probar aquí (sí 26.1.3), ni con un usuario no root, ni el reinicio de Docker con systemd (M6).
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-7.sh --deb` en Debian 13 con la versión 0.7.1 y envía `verify-phase-7-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.7.1 y realiza M1–M15.
-2. Corregir lo que surja y marcar la Fase 7 como validada.
-3. Fase 8: actividad, eventos y monitorización.
+1. El propietario ejecuta `bash scripts/verify-phase-8.sh --deb` en Debian 13 con la versión 0.8.0 y envía `verify-phase-8-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.8.0 y realiza M1–M15.
+2. Corregir lo que surja y marcar la Fase 8 como validada.
+3. Fase 9: configuración y optimización.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

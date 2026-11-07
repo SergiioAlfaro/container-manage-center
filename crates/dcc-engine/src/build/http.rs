@@ -71,8 +71,9 @@ pub async fn post_json(
     Ok(r.next_json().await?.unwrap_or(serde_json::Value::Null))
 }
 
-/// `GET` que devuelve el JSON de la respuesta, o el error de Docker.
-pub async fn get_json(socket: &str, path: &str) -> Result<serde_json::Value, EngineError> {
+/// `GET` que devuelve la respuesta en cuanto llegan sus cabeceras (el cuerpo
+/// se lee después, p. ej. el flujo continuo de `GET /events`, Fase 8).
+pub async fn get_stream(socket: &str, path: &str) -> Result<Response, EngineError> {
     let stream = UnixStream::connect(socket).await.map_err(io_err)?;
     let (rd, mut wr) = stream.into_split();
     let head =
@@ -83,7 +84,12 @@ pub async fn get_json(socket: &str, path: &str) -> Result<serde_json::Value, Eng
         std::future::pending::<()>().await;
         Ok(())
     });
-    let mut r = read_response(rd, writer).await?;
+    read_response(rd, writer).await
+}
+
+/// `GET` que devuelve el JSON de la respuesta, o el error de Docker.
+pub async fn get_json(socket: &str, path: &str) -> Result<serde_json::Value, EngineError> {
+    let mut r = get_stream(socket, path).await?;
     if !(200..300).contains(&r.status) {
         let message = r.error_message().await;
         return Err(EngineError::Docker {

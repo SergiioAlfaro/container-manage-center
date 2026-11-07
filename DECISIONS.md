@@ -672,3 +672,64 @@ cada operación individual y global compara el estado de la aplicación con
 `docker compose ps -a --format json` e inspect de cada contenedor (con Docker 26
 falla sin la corrección y pasa con ella).
 
+
+### D-057 · Eventos de Docker en tiempo real (Fase 8)
+* **Una sola suscripción** a `GET /events` mientras la aplicación está conectada
+  (`spawn_events_watcher`). Se abre al conectar, se cancela al desconectar y,
+  si Docker la corta, se reintenta a los 3 s (y se avisa de la pérdida de
+  conexión si procede). Se usa la petición HTTP propia (`build::http::get_stream`)
+  porque bollard no entrega nada hasta el primer evento y así se sabe cuándo
+  Docker la ha aceptado.
+* **Registro en el panel de actividad**: la suscripción se registra como una
+  operación terminada correctamente en cuanto Docker la acepta ("Suscripción a
+  los eventos de Docker abierta", con el estado HTTP), y una operación fallida
+  aparte si se interrumpe. No se deja una operación "en curso" permanente, que
+  ocultaría las operaciones reales y nunca terminaría. Cada evento **no** es una
+  operación (no lo inicia la aplicación); se ve en "Eventos y registros".
+* **Actualización de la interfaz**: cada evento se envía a la ventana
+  (`docker://event`) y se traduce en las consultas que hay que repetir
+  (`invalidationsFor`): contenedor → contenedores, panel, Compose, directorios
+  vinculados, redes y volúmenes; imagen → imágenes; volumen → volúmenes y
+  tamaños; red → redes y contenedores; daemon → panel. Las acciones `exec_*`
+  (las genera la propia terminal y las comprobaciones de salud) no recargan
+  nada. Las recargas se agrupan 250 ms (un `compose up` produce decenas de
+  eventos). La recarga se hace pidiendo los datos a Docker de nuevo: el evento
+  nunca se usa como fuente del estado.
+* **Consultar a Docker** (`events_query`): `GET /events?since&until&filters`,
+  con `until` obligatorio para que Docker cierre. Docker solo conserva en memoria
+  los **últimos 256 eventos** y los pierde al reiniciarse (comprobado con 29.9.2):
+  la interfaz lo explica. Con `until` entero Docker excluye los eventos del
+  segundo en curso, así que si `until` ≥ ahora se envía con nanosegundos
+  (`1794068958.714492246`). Filtros validados (tipos conocidos, acciones y
+  recurso sin espacios ni `-` inicial, `since` ≤ `until`, como mucho 5000
+  resultados) **antes** de llamar a Docker. Se muestra el `docker events`
+  equivalente.
+* `timeNano` supera la precisión entera de JavaScript; la interfaz suma 1 µs
+  antes de truncar a milisegundos.
+
+### D-058 · Historial de operaciones y diario de eventos persistentes
+* Dos archivos JSONL en la carpeta de estado: `historial.jsonl` (operaciones
+  terminadas, máximo 10 000) y `eventos.jsonl` (eventos recibidos con la
+  aplicación abierta, máximo 20 000). Carpeta: `DCC_STATE_DIR`, si no
+  `$XDG_STATE_HOME/docker-control-center` (por defecto
+  `~/.local/state/docker-control-center`) y, si se usa otra configuración
+  (`DCC_CONFIG`), la carpeta `estado` junto a ella.
+* Permisos 0700 (carpeta) y 0600 (archivos), también si existían con otros. Se
+  rechazan enlaces simbólicos y carpetas en lugar del archivo. Las líneas dañadas
+  se descartan y se avisa al iniciar; el archivo se compacta al abrir y al
+  superar el máximo en un 25 %.
+* **Sin secretos**: del historial se guarda tipo, recurso, categoría, estado,
+  fechas, duración, resumen, error, código HTTP o de salida, y el método y la
+  ruta o el programa y los argumentos. **No** se guardan el cuerpo de la
+  petición (variables de entorno, comandos de `exec`), el comando equivalente
+  (`-e CLAVE=valor`, `--build-arg`) ni las salidas. En la ruta se ocultan los
+  valores de `buildargs` (se conservan los nombres). Los eventos de Docker no
+  contienen variables de entorno. Comprobado buscando el valor de una variable
+  secreta en los archivos tras crear un contenedor con ella (prueba IPC y prueba
+  manual).
+* Opción **Guardar historial** (`activity.keep_history`, activada por defecto):
+  si se desactiva no se escribe nada nuevo (lo guardado se puede borrar desde la
+  vista). El panel de actividad de la sesión no cambia.
+* Lo guardado es un **registro**, no el estado actual: el estado siempre se pide
+  a Docker. Si la aplicación estaba cerrada no hay eventos de ese periodo en el
+  diario (para eso está "Consultar a Docker", limitado a los 256 últimos).
