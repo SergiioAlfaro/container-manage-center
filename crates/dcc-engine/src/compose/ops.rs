@@ -271,7 +271,41 @@ impl Engine {
         let req = self.compose_request(cli, action.kind(), &project.name, args, ACTION_TIMEOUT)?;
         let mut opts = StreamOptions::new(cancel);
         opts.summary = Some(summary_for(action, &project.name));
-        run_streaming(self.activity(), req, opts, on_lines).await
+        let run = run_streaming(self.activity(), req, opts, on_lines).await?;
+        // También si falló o se interrumpió: Compose puede haber cambiado algo.
+        if action.changes_state() {
+            let _ = self.compose_settle(&project.name).await;
+        }
+        Ok(run)
+    }
+
+    /// Confirma con inspect el estado de cada contenedor del proyecto (D-031, D-056).
+    ///
+    /// Docker responde a la parada (o al arranque) de un contenedor *antes* de
+    /// actualizar la réplica de la que lee `GET /containers/json`; justo después
+    /// de `docker compose stop` el listado puede decir "running" (observado con
+    /// Docker 26). Inspect toma el bloqueo del contenedor y espera a que termine
+    /// esa escritura: al responder, el listado ya es coherente. Cada consulta se
+    /// registra. Un contenedor que ya no existe (huérfano eliminado) se omite.
+    pub async fn compose_settle(
+        &self,
+        project: &str,
+    ) -> Result<Vec<crate::containers::ContainerState>, EngineError> {
+        let list = self.list_containers().await?;
+        let mut out = Vec::new();
+        for c in list.iter().filter(|c| {
+            c.labels
+                .get(super::project::LABEL_PROJECT)
+                .map(String::as_str)
+                == Some(project)
+        }) {
+            match self.container_state(&c.id, Some(&c.name)).await {
+                Ok(s) => out.push(s),
+                Err(e) if e.http_status() == Some(404) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(out)
     }
 
     /// Comprobaciones previas de una acción, sin ejecutar nada (también las usa

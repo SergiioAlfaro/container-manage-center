@@ -714,3 +714,179 @@ async fn cancelling_a_slow_up_stops_compose_and_is_recorded() {
             == 0
     );
 }
+
+/// Estado real según Docker: `docker compose ps -a --format json` (servicio →
+/// estado) e inspect de cada uno de esos contenedores.
+fn docker_truth(ctx: &Ctx, project: &str) -> Vec<(String, String, String)> {
+    let out = std::process::Command::new(&ctx.cli.program)
+        .args(&ctx.cli.prefix)
+        .args(["-p", project, "ps", "-a", "--format", "json"])
+        .env("DOCKER_HOST", ctx.engine.endpoint().host_uri())
+        .current_dir("/")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+    // Compose 2.21+ escribe un objeto por línea; versiones anteriores, un array.
+    let items: Vec<serde_json::Value> = if text.starts_with('[') {
+        serde_json::from_str(&text).unwrap()
+    } else {
+        text.lines()
+            .filter(|l| !l.trim().is_empty())
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect()
+    };
+    let mut v: Vec<(String, String, String)> = items
+        .iter()
+        .map(|i| {
+            let name = i["Name"].as_str().unwrap().to_owned();
+            let inspect = std::process::Command::new("docker")
+                .args(["inspect", "--format", "{{.State.Status}}", &name])
+                .env("DOCKER_HOST", ctx.engine.endpoint().host_uri())
+                .output()
+                .unwrap();
+            (
+                i["Service"].as_str().unwrap().to_owned(),
+                i["State"].as_str().unwrap().to_owned(),
+                String::from_utf8_lossy(&inspect.stdout).trim().to_owned(),
+            )
+        })
+        .collect();
+    v.sort();
+    v
+}
+
+/// El estado de la aplicación justo después de la acción coincide con Docker:
+/// mismo número de contenedores, mismos en marcha, y el estado global correcto.
+async fn assert_state(ctx: &Ctx, p: &ProjectRef, expected: ProjectState, running: u32, total: u32) {
+    let st = project_state(ctx, p).await;
+    let truth = docker_truth(ctx, &p.name);
+    for (svc, ps, inspect) in &truth {
+        assert_eq!(
+            ps, inspect,
+            "compose ps e inspect discrepan para {svc}: {truth:?}"
+        );
+    }
+    let real_running = truth.iter().filter(|t| t.2 == "running").count() as u32;
+    match st {
+        None => {
+            assert_eq!(expected, ProjectState::NotDeployed);
+            assert!(
+                truth.is_empty(),
+                "la aplicación no ve contenedores y Docker sí: {truth:?}"
+            );
+        }
+        Some(s) => {
+            assert_eq!(
+                (s.state, s.running, s.total),
+                (expected, running, total),
+                "estado de la aplicación; Docker dice {truth:?}; contenedores vistos {:?}",
+                s.containers
+                    .iter()
+                    .map(|c| (&c.service, &c.state))
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                (real_running, truth.len() as u32),
+                (running, total),
+                "Docker: {truth:?}"
+            );
+            let mut seen: Vec<_> = s
+                .containers
+                .iter()
+                .map(|c| (c.service.clone(), c.state.clone()))
+                .collect();
+            seen.sort();
+            let real: Vec<_> = truth.iter().map(|t| (t.0.clone(), t.2.clone())).collect();
+            assert_eq!(seen, real, "cada contenedor con su estado real");
+        }
+    }
+}
+
+/// Regresión de D-056 (fallo en Debian 13, Docker 26.1.5): tras cada operación
+/// individual o global el estado coincide con Docker, sin "Parcial" falsos.
+/// Cubre: sin desplegar, todos en marcha, parada de un servicio (parcial),
+/// parada de todos, arranque, servicio de perfil, servicio del archivo aún sin
+/// crear (no altera el estado) y proyecto sin archivo.
+#[tokio::test(flavor = "multi_thread")]
+async fn project_state_matches_docker_after_every_operation() {
+    let Some(ctx) = ctx().await else { return };
+    let proj = Project::new(&ctx, "estados", &compose_yaml(0));
+    dockerfile(proj.dir.path(), 0);
+    let p = proj.reference();
+    let up = |services: Vec<&str>, profiles: Vec<&str>| ComposeAction::Up {
+        services: services.into_iter().map(String::from).collect(),
+        build: false,
+        pull: PullPolicy::Missing,
+        force_recreate: false,
+        remove_orphans: false,
+        profiles: profiles.into_iter().map(String::from).collect(),
+    };
+    let stop = |s: Vec<&str>| ComposeAction::Stop {
+        services: s.into_iter().map(String::from).collect(),
+    };
+    let start = |s: Vec<&str>| ComposeAction::Start {
+        services: s.into_iter().map(String::from).collect(),
+    };
+
+    assert_state(&ctx, &p, ProjectState::NotDeployed, 0, 0).await;
+    // web y db en marcha; extra (perfil) aún sin crear: no altera el estado.
+    run(&ctx, &p, up(vec![], vec![]), false).await;
+    assert_state(&ctx, &p, ProjectState::Running, 2, 2).await;
+    for _ in 0..3 {
+        // Parada individual: parcial, nunca "detenido" con un servicio activo.
+        run(&ctx, &p, stop(vec!["web"]), false).await;
+        assert_state(&ctx, &p, ProjectState::Partial, 1, 2).await;
+        // Parada de todos: detenido, nunca "parcial" sin servicios activos.
+        run(&ctx, &p, stop(vec![]), false).await;
+        assert_state(&ctx, &p, ProjectState::Stopped, 0, 2).await;
+        run(&ctx, &p, start(vec!["db"]), false).await;
+        assert_state(&ctx, &p, ProjectState::Partial, 1, 2).await;
+        run(&ctx, &p, start(vec![]), false).await;
+        assert_state(&ctx, &p, ProjectState::Running, 2, 2).await;
+    }
+    // Servicio de perfil desplegado: cuenta como los demás; parar y reiniciar
+    // el proyecto lo incluyen (D-054).
+    run(&ctx, &p, up(vec!["extra"], vec!["debug"]), false).await;
+    assert_state(&ctx, &p, ProjectState::Running, 3, 3).await;
+    run(&ctx, &p, stop(vec![]), false).await;
+    assert_state(&ctx, &p, ProjectState::Stopped, 0, 3).await;
+    run(&ctx, &p, ComposeAction::Restart { services: vec![] }, false).await;
+    assert_state(&ctx, &p, ProjectState::Running, 3, 3).await;
+    // Sin archivo: las operaciones van por etiquetas y el estado sigue siendo exacto.
+    std::fs::rename(proj.file(), proj.dir.path().join("fuera.yaml")).unwrap();
+    run(&ctx, &p, stop(vec!["extra"]), false).await;
+    assert_state(&ctx, &p, ProjectState::Partial, 2, 3).await;
+    run(&ctx, &p, stop(vec![]), false).await;
+    assert_state(&ctx, &p, ProjectState::Stopped, 0, 3).await;
+    assert_eq!(
+        project_state(&ctx, &p).await.unwrap().missing_files,
+        [proj.file().display().to_string()]
+    );
+    run(&ctx, &p, start(vec![]), false).await;
+    assert_state(&ctx, &p, ProjectState::Running, 3, 3).await;
+    run(
+        &ctx,
+        &p,
+        ComposeAction::Down {
+            volumes: true,
+            images: DownImages::Local,
+            remove_orphans: false,
+        },
+        true,
+    )
+    .await;
+    assert_state(&ctx, &p, ProjectState::NotDeployed, 0, 0).await;
+    // Cada acción que cambia contenedores confirmó su estado con inspect.
+    let checks = ctx
+        .log
+        .snapshot()
+        .into_iter()
+        .filter(|r| r.kind == "container.state")
+        .count();
+    assert!(checks >= 30, "confirmaciones con inspect: {checks}");
+}

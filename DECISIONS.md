@@ -635,3 +635,40 @@ archivo Compose (`engine.alreadyExists`). Leer y escribir archivos no es una
 operación de Docker y no se registra en el panel de actividad. Tamaño máximo
 1 MiB, UTF-8.
 
+### D-056 · Estado de los proyectos Compose confirmado con inspect (corrección 0.7.1)
+**Problema observado** en Debian 13 (Docker 26.1.5, Compose 2.26.1):
+`full_lifecycle_with_build_profiles_and_confirmation` y
+`lifecycle_without_files_and_refusal_of_actions_that_need_them` esperaban
+`Stopped` tras detener el proyecto y obtuvieron `Partial`.
+
+**Causa:** la misma carrera de Docker que D-031. `docker compose stop` termina
+cuando Docker ha respondido a cada `POST /containers/{id}/stop`, pero Docker
+escribe el estado en la réplica de la que lee `GET /containers/json` *después*
+de responder. La aplicación calculaba el estado del proyecto con ese listado
+justo después de la acción y, en esa ventana, un contenedor seguía `running`. El
+cálculo del estado era correcto: los datos estaban desfasados. Afectaba también a
+la interfaz (tras detener podía verse "Parcial").
+
+**Reproducido** aquí con Docker 26.1.3 (Ubuntu, misma rama 26.1): las dos pruebas
+fallaron en 2 de 3 ejecuciones. Con un segundo proyecto como carga, en 2 de 30
+ciclos `GET /containers/json` daba un contenedor `running` justo después de
+`docker compose stop`, mientras inspect y `docker compose ps -a` daban los dos
+`exited`. No se reprodujo con Docker 24.0.7 ni 29.9.2.
+
+**Solución:** tras desplegar, iniciar, detener o reiniciar (también si la
+acción falla o se interrumpe), `compose_run` confirma con inspect cada contenedor
+del proyecto (`compose_settle`, que reutiliza `container_state` de D-031 sin
+cambiarlo; cada consulta es una operación registrada "Comprobar estado del
+contenedor"; un contenedor que ya no existe se omite). Inspect espera al bloqueo
+del contenedor, así que al responder el listado ya es coherente; el evento de fin
+llega a la interfaz después, y su recarga ve el estado real. `down` no la
+necesita (elimina los contenedores) y descargar o construir no tocan
+contenedores.
+
+**Pruebas:** `tests/stale_compose.rs` (servidor que responde como Docker 26 en
+la ventana: falla sin la confirmación), pruebas unitarias del cálculo del estado
+para cada caso, y `project_state_matches_docker_after_every_operation`, que tras
+cada operación individual y global compara el estado de la aplicación con
+`docker compose ps -a --format json` e inspect de cada contenedor (con Docker 26
+falla sin la corrección y pasa con ella).
+

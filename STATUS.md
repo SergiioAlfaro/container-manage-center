@@ -7,8 +7,8 @@
 | | |
 |---|---|
 | **Fase actual** | 7 · Docker Compose |
-| **Versión** | 0.7.0 |
-| **Estado de la fase** | En desarrollo |
+| **Versión** | 0.7.1 |
+| **Estado de la fase** | Corrección 0.7.1 verificada en el entorno de desarrollo; **pendiente de validación externa** |
 | **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6 |
 | **Fases pendientes** | 7–10 |
 
@@ -20,7 +20,7 @@
 | 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | **Validada** (2026-11-06, Debian 13, versión 0.4.1) |
 | 5. Redes | **Validada** (2026-11-06, Debian 13, versión 0.5.0) |
 | 6. Volúmenes y bind mounts | **Validada** (2026-11-07, Debian 13, versión 0.6.0) |
-| 7. Docker Compose | En desarrollo |
+| 7. Docker Compose | Corrección 0.7.1 pendiente de validación externa |
 | 8. Actividad, eventos y monitorización | No iniciada |
 | 9. Configuración y optimización | No iniciada |
 | 10. Pruebas finales y distribución | No iniciada |
@@ -504,8 +504,65 @@ Ninguno abierto.
 
 ---
 
+## Fase 7 · Corrección 0.7.1
+
+### Informe del propietario (0.7.0)
+- **Entorno:** Debian 13, Docker 26.1.5, Compose 2.26.1, usuario del grupo docker.
+- **Correcto:** todo excepto dos pruebas reales de Compose.
+- **Fallos:** `full_lifecycle_with_build_profiles_and_confirmation` (línea 299) y `lifecycle_without_files_and_refusal_of_actions_that_need_them` (línea 443). Las dos esperaban `Stopped` tras detener el proyecto y obtuvieron `Partial`.
+
+### Análisis (D-056)
+- **Operaciones de cada prueba:**
+  - La primera despliega, detiene el proyecto y comprueba el estado.
+  - La segunda despliega `web`, mueve el archivo, detiene sin archivo y comprueba el estado.
+  - En las dos, la comprobación lee los proyectos con `GET /containers/json` inmediatamente después de que termine `docker compose stop`.
+- **Cálculo del estado (`state_of`):** es correcto. Distingue sin desplegar, en marcha, parcial y detenido. No cuenta los contenedores de `run` ni los servicios aún sin crear. Los servicios de perfiles cuentan como los demás, y sin archivo el estado se calcula igual con las etiquetas. Se ha comprobado caso a caso con pruebas nuevas.
+- **Causa:** el listado de contenedores estaba desfasado. Es la carrera de Docker de D-031: Docker responde a la parada antes de actualizar la réplica del listado.
+- **Reproducción con Docker 26.1.3:**
+  - Las dos pruebas fallaron en 2 de 3 ejecuciones, en las mismas líneas.
+  - Comparación directa, con un segundo proyecto como carga: en 2 de 30 ciclos, justo después de `docker compose stop`, el listado daba un contenedor `running`. En esos mismos ciclos, inspect y `docker compose ps -a --format json` daban los dos `exited`.
+  - Con Docker 24.0.7 y 29.9.2 no se reproduce.
+- **Conclusión:**
+  - Era un error de producción: la interfaz también podía mostrar "Parcial" tras detener.
+  - No era un error de la lógica del estado ni de la prueba.
+  - Las aserciones no se han tocado.
+
+### Corrección
+- Tras desplegar, iniciar, detener o reiniciar, también si la acción falla o se interrumpe, se confirma el estado de cada contenedor del proyecto con inspect (`compose_settle`). Es la misma solución que D-031, y reutiliza `container_state` sin modificarlo.
+- Cada confirmación queda en el panel de actividad.
+- No se ha cambiado ningún módulo de las Fases 1–6.
+
+### Pruebas de regresión
+- **`tests/stale_compose.rs`, determinista:** un servidor que responde como Docker 26 en la ventana de la carrera. Sin la confirmación el proyecto sale "Parcial"; con ella, "Detenido". Tampoco se consultan otros proyectos.
+- **Unitarias del estado:** todos detenidos (también creados sin arrancar), todos en marcha, mezcla, en pausa, contenedores de `run`, servicios de perfiles, archivos ausentes y servicios aún sin crear.
+- **`project_state_matches_docker_after_every_operation`, contra Docker real:**
+  - Recorre el ciclo sin desplegar → en marcha → parada individual (parcial) → parada de todos (detenido) → arranque de un servicio → arranque de todos, repetido 3 veces.
+  - Después prueba un servicio de perfil, parada y reinicio con perfiles, y el proyecto sin archivo (parada individual, parada total y arranque).
+  - Tras cada paso compara el estado de la aplicación con `docker compose ps -a --format json` y con inspect de cada contenedor.
+- **Demostrado con Docker 26:** sin la corrección, esta prueba y la original fallan en las dos ejecuciones; con ella pasan en todas, 8 de 8 seguidas.
+
+### Verificación completa
+`scripts/verify-phase-7.sh` con tres daemons reales. En los tres: "parte automática superada", 0 fallos, código de salida 0 y ningún recurso de prueba sobrante:
+
+| | Docker 26.1.3 (clásico, API 1.45) | Docker 29.9.2 (containerd, API 1.56) | Docker 24.0.7 (clásico, API 1.43) |
+|---|---|---|---|
+| Rust deterministas | 373 | 373 | 373 |
+| Vitest | 197 | 197 | 197 |
+| Carreras deterministas (D-031, D-056) | 1 + 1 | 1 + 1 | 1 + 1 |
+| Pruebas contra Docker real (fases 1–7 + IPC) | 11 + 7 + 9 + 4 + 4 + 6 + 7 | 11 + 7 + 9 + 4 + 4 + 6 + 7 | 11 + 7 + 9 + 4 + 4 + 6 + 7 |
+| Compose 2.26.1 (`DCC_TEST_COMPOSE`) | 6 de 6 | 6 de 6 | 6 de 6 |
+| Resultado | 34 correctas, 2 omitidas, 1 aviso | 35 correctas (con `--deb`), 2 omitidas, 1 aviso | 34 correctas, 2 omitidas, 1 aviso |
+
+- **Omitidas justificadamente:** las dos pruebas de permiso denegado, porque root ignora los permisos de archivo (como en fases anteriores).
+- **Aviso:** ejecución como root en desarrollo.
+- **No se han podido ejecutar aquí:** Docker 26.1.5 exactamente (se ha usado 26.1.3, de la misma rama), el selector de archivos del sistema (M1, M14) y las pruebas con usuario no root (las cubre tu verificación en Debian 13).
+- **Paquete 0.7.1:** instalado con `apt`. Desde la interfaz se desplegó y se detuvo un proyecto real: muestra "Detenido · 0/2", igual que `docker compose ps -a`. Después se desinstaló.
+- **Fallo de infraestructura durante la verificación:** en una ejecución intermedia, el arranque de la aplicación falló porque la pantalla virtual del entorno de desarrollo (Xvfb) se había detenido entre turnos (GTK no pudo iniciarse). No era un fallo del producto: cada ejecución arranca ahora su propio Xvfb y la comprobación de arranque pasa en los tres daemons.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-7.sh` en Debian 13 y envía `verify-phase-7-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.7.0 y realiza M1–M15.
+1. El propietario ejecuta `bash scripts/verify-phase-7.sh --deb` en Debian 13 con la versión 0.7.1 y envía `verify-phase-7-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.7.1 y realiza M1–M15.
 2. Corregir lo que surja y marcar la Fase 7 como validada.
 3. Fase 8: actividad, eventos y monitorización.
 

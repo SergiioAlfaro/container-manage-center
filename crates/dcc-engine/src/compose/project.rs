@@ -712,6 +712,16 @@ impl ComposeAction {
         )
     }
 
+    /// Crea, arranca o para contenedores: tras ella se confirma el estado real
+    /// de cada contenedor con inspect (D-056). `down` los elimina y descargar o
+    /// construir no tocan contenedores.
+    pub fn changes_state(&self) -> bool {
+        matches!(
+            self,
+            Self::Up { .. } | Self::Start { .. } | Self::Stop { .. } | Self::Restart { .. }
+        )
+    }
+
     /// Elimina recursos: exige confirmación explícita.
     pub fn destructive(&self) -> bool {
         matches!(self, Self::Down { .. })
@@ -1202,6 +1212,77 @@ mod tests {
         let n = &ps[2];
         assert_eq!(n.state, ProjectState::NotDeployed);
         assert_eq!(n.missing_files, ["/home/ana/nuevo/compose.yaml"]);
+    }
+
+    fn pc(service: &str, state: &str, oneoff: bool) -> ProjectContainer {
+        ProjectContainer {
+            id: format!("id-{service}-{state}"),
+            name: format!("p-{service}-1"),
+            service: service.into(),
+            number: Some(1),
+            state: state.into(),
+            status: String::new(),
+            image: String::new(),
+            oneoff,
+        }
+    }
+
+    #[test]
+    fn project_state_distinguishes_every_case() {
+        use ProjectState::*;
+        // Sin contenedores: sin desplegar (proyecto añadido o eliminado).
+        assert_eq!(state_of(&[]), (NotDeployed, 0, 0));
+        // Todos en marcha.
+        assert_eq!(
+            state_of(&[pc("web", "running", false), pc("db", "running", false)]),
+            (Running, 2, 2)
+        );
+        // Todos detenidos (también creados sin arrancar, `up --no-start`).
+        assert_eq!(
+            state_of(&[pc("web", "exited", false), pc("db", "created", false)]),
+            (Stopped, 0, 2)
+        );
+        // Parcial: nunca "detenido" mientras quede alguno en marcha.
+        assert_eq!(
+            state_of(&[pc("web", "exited", false), pc("db", "running", false)]),
+            (Partial, 1, 2)
+        );
+        // En pausa o reiniciándose no cuentan como en marcha.
+        assert_eq!(
+            state_of(&[pc("web", "paused", false), pc("db", "running", false)]),
+            (Partial, 1, 2)
+        );
+        assert_eq!(state_of(&[pc("web", "restarting", false)]), (Stopped, 0, 1));
+        // Los contenedores de `docker compose run` no cuentan.
+        assert_eq!(
+            state_of(&[pc("web", "exited", false), pc("web", "running", true)]),
+            (Stopped, 0, 1)
+        );
+        assert_eq!(state_of(&[pc("web", "running", true)]), (NotDeployed, 0, 0));
+    }
+
+    #[test]
+    fn profiles_missing_files_and_uncreated_services_in_discovery() {
+        let mut list = vec![
+            container("t-web-1", "t", "web", "running", false),
+            container("t-db-1", "t", "db", "exited", false),
+            // Servicio de un perfil, ya desplegado: cuenta como cualquier otro.
+            container("t-extra-1", "t", "extra", "running", false),
+        ];
+        // Archivos que ya no existen: el estado se calcula igual, con las etiquetas.
+        for c in &mut list {
+            c.labels
+                .insert(LABEL_CONFIG_FILES.into(), "/no/existe/compose.yaml".into());
+        }
+        let p = &projects_from(&list, &[])[0];
+        assert_eq!((p.state, p.running, p.total), (ProjectState::Partial, 2, 3));
+        assert_eq!(p.missing_files, ["/no/existe/compose.yaml"]);
+        assert_eq!(p.services, ["db", "extra", "web"]);
+        // Un servicio del archivo que aún no tiene contenedor no altera el estado:
+        // el proyecto está "en marcha" si lo están todos los contenedores que existen.
+        let only_running: Vec<_> = list.into_iter().filter(|c| c.state == "running").collect();
+        let p = &projects_from(&only_running, &[])[0];
+        assert_eq!((p.state, p.running, p.total), (ProjectState::Running, 2, 2));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 # Arquitectura de Docker Control Center
 
-Versión 0.7.0 (Fase 7).
+Versión 0.7.1 (Fase 7 con correcciones).
 
 ## Visión general
 
@@ -155,6 +155,8 @@ Todas las operaciones ejecutan el CLI oficial (`docker compose …` o `docker-co
 | Registros | `… logs --follow --no-color --tail N [--timestamps] [-- servicios]` (las líneas no se guardan en el registro) |
 | Archivos | lectura, guardado atómico con huella SHA-256 y creación con `O_EXCL` en `compose/file.rs` (no son operaciones de Docker) |
 
+Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect cada contenedor del proyecto (`compose_settle`, operaciones "Comprobar estado del contenedor"): con Docker 26 el listado puede ir un instante por detrás de la respuesta de Docker (D-056, como D-031).
+
 `project.rs` contiene la identidad (`ProjectRef`), las reglas de nombres (proyecto, servicio y perfil: nunca empiezan por `-` y los servicios van tras `--`), el descubrimiento (`projects_from`), la lectura del modelo (`parse_model`, solo nombres de variables) y los argumentos de cada acción (`action_args`), todo con pruebas unitarias. `ops.rs` ejecuta: `compose_config`, `compose_resolve`, `compose_check` (validación, confirmación, archivos y cerrojo antes de ejecutar nada), `compose_run` (cerrojo `compose:NOMBRE`) y `compose_logs`.
 
 ### Especificación de contenedor (`spec.rs`, D-034)
@@ -233,7 +235,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por 
 | Rust unitarias | `cargo test` | 22 actividad · 232 motor · 18 configuración |
 | Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 56 (siete contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose) |
 | Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose` | 11 + 7 + 9 + 4 + 4 + 5 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
-| Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
+| Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
 | Interfaz | Vitest + Testing Library | 197 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |

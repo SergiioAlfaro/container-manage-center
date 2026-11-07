@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.7.1 — 2026-11-07 (corrección de la Fase 7)
+- Corregido: con Docker 26, justo después de detener (o iniciar) un proyecto Compose, su estado podía aparecer como "Parcial" porque Docker actualiza el listado de contenedores un instante después de responder. Tras desplegar, iniciar, detener o reiniciar, la aplicación confirma ahora el estado de cada contenedor con inspect (D-056), como ya hacía con las acciones de contenedores (D-031).
+- Nuevas pruebas: carrera determinista con un Docker simulado, cálculo del estado en cada caso y comparación con `docker compose ps -a` e inspect tras cada operación individual y global, con perfiles y sin archivo.
+- `verify-phase-7.sh` ejecuta la prueba determinista de la carrera como paso propio.
+
 ## 0.7.0 — 2026-11-07 (Fase 7: Docker Compose)
 - Apartado **Docker Compose**: proyectos desplegados (detectados por las etiquetas de sus contenedores) y proyectos añadidos a la lista, con estado, carpeta y servicios; filtros y búsqueda (D-053).
 - Abrir un proyecto existente (uno o varios archivos) y crear uno nuevo en una carpeta; el nombre lo decide Compose o el usuario.
