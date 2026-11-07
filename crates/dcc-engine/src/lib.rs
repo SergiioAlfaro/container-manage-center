@@ -33,6 +33,11 @@ pub mod sys;
 pub mod volumes;
 
 pub use client::{ApiOp, Engine};
+pub use compose::file::ComposeFile;
+pub use compose::ops::ComposeConfig;
+pub use compose::project::{
+    ComposeAction, ComposeCli, ComposeProject, DownImages, ProjectModel, ProjectRef, PullPolicy,
+};
 pub use compose::{ComposeKind, ComposeStatus};
 pub use containers::{
     ContainerAction, ContainerState, ContainerSummary, CreatedContainer, MountPoint, PortMapping,

@@ -45,6 +45,15 @@ import type { VolumeSize } from "@/shared/ipc/bindings/VolumeSize";
 import type { VolumeSpec } from "@/shared/ipc/bindings/VolumeSpec";
 import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import { emptySpec } from "@/features/containers/specModel";
+import type { ComposeAction } from "@/shared/ipc/bindings/ComposeAction";
+import type { ComposeConfig } from "@/shared/ipc/bindings/ComposeConfig";
+import type { ComposeEvent } from "@/shared/ipc/bindings/ComposeEvent";
+import type { ComposeFile } from "@/shared/ipc/bindings/ComposeFile";
+import type { ComposeProject } from "@/shared/ipc/bindings/ComposeProject";
+import type { ProjectModel } from "@/shared/ipc/bindings/ProjectModel";
+import type { ProjectRef } from "@/shared/ipc/bindings/ProjectRef";
+import type { RegisterResult } from "@/shared/ipc/bindings/RegisterResult";
+import type { UnsavedFile } from "@/shared/ipc/bindings/UnsavedFile";
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
 const DEFAULT_CONFIG: AppConfig = {
@@ -52,6 +61,7 @@ const DEFAULT_CONFIG: AppConfig = {
   ui: { theme: "system", language: "es", sidebarCollapsed: false },
   activity: { panelOpen: false, openOnError: true, maxRecords: 500 },
   docker: { mode: "auto", customSocket: "" },
+  compose: { projects: [] },
 };
 
 export const connected: ConnectionState = {
@@ -485,6 +495,83 @@ export const binds: BindSummary[] = [
   },
 ];
 
+// ------------------------------------------------------------------ Fase 7
+
+export function project(over: Partial<ComposeProject> = {}): ComposeProject {
+  return {
+    name: "tienda",
+    files: ["/home/u/tienda/compose.yaml"],
+    workingDir: "/home/u/tienda",
+    envFiles: [],
+    registered: true,
+    missingFiles: [],
+    containers: [
+      { id: "c0ffee01", name: "tienda-db-1", service: "db", number: 1, state: "running", status: "Up 2 hours", image: "tienda-db", oneoff: false },
+      { id: "c0ffee02", name: "tienda-web-1", service: "web", number: 1, state: "running", status: "Up 2 hours", image: "nginx:1.27", oneoff: false },
+    ],
+    services: ["db", "web"],
+    state: "running",
+    running: 2,
+    total: 2,
+    createdBy: "2.40.0",
+    ...over,
+  };
+}
+
+export const composeProjects: ComposeProject[] = [
+  project(),
+  project({
+    name: "blog",
+    files: ["/srv/blog/compose.yaml"],
+    workingDir: "/srv/blog",
+    registered: false,
+    missingFiles: ["/srv/blog/compose.yaml"],
+    containers: [{ id: "b10g0001", name: "blog-app-1", service: "app", number: 1, state: "exited", status: "Exited (0) 1 day ago", image: "ghost:5", oneoff: false }],
+    services: ["app"],
+    state: "stopped",
+    running: 0,
+    total: 1,
+  }),
+  project({ name: "nuevo", files: ["/home/u/nuevo/compose.yaml"], workingDir: null, containers: [], services: [], state: "notDeployed", running: 0, total: 0, createdBy: null }),
+];
+
+export const tiendaModel: ProjectModel = {
+  name: "tienda",
+  services: [
+    { name: "db", image: null, build: "/home/u/tienda/db", ports: [], mounts: [{ kind: "volume", source: "datos", target: "/var/lib/db", readOnly: false }], dependsOn: [], profiles: [], envKeys: ["DB_PASSWORD"], replicas: null, containerName: null },
+    { name: "extra", image: "busybox", build: null, ports: [], mounts: [], dependsOn: [], profiles: ["debug"], envKeys: [], replicas: null, containerName: null },
+    { name: "web", image: "nginx:1.27", build: null, ports: [{ published: "8080", target: "80", protocol: "tcp", hostIp: null }], mounts: [], dependsOn: ["db"], profiles: [], envKeys: ["MODE"], replicas: null, containerName: null },
+  ],
+  networks: [{ key: "default", name: "tienda_default", external: false }],
+  volumes: [
+    { key: "datos", name: "tienda_datos", external: false },
+    { key: "compartido", name: "compartido", external: true },
+  ],
+  profiles: ["debug"],
+};
+
+export const TIENDA_YAML = "services:\n  web:\n    image: nginx:1.27\n";
+
+/** Comando mostrado (la versión real la calcula Rust). */
+export function composeCommand(p: ProjectRef, a: ComposeAction): string {
+  const extra: string[] = [];
+  if (a.action === "up") {
+    extra.push("--detach");
+    if (a.build) extra.push("--build");
+    if (a.pull !== "missing") extra.push("--pull", a.pull);
+    if (a.forceRecreate) extra.push("--force-recreate");
+    if (a.removeOrphans) extra.push("--remove-orphans");
+  }
+  if (a.action === "down") {
+    if (a.volumes) extra.push("--volumes");
+    if (a.images !== "none") extra.push("--rmi", a.images);
+    if (a.removeOrphans) extra.push("--remove-orphans");
+  }
+  const svcs = "services" in a && a.services.length ? ["--", ...a.services] : [];
+  const profiles = a.action === "up" ? a.profiles.flatMap((x) => ["--profile", x]) : ["down", "stop", "start", "restart"].includes(a.action) ? ["--profile", "'*'"] : [];
+  return ["/usr/bin/docker", "compose", "--ansi", "never", "-p", p.name, ...p.files.flatMap((f) => ["-f", f]), ...profiles, a.action, ...extra, ...svcs].join(" ");
+}
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -580,6 +667,31 @@ export const api = {
   volumeRemove: vi.fn(async (_name: string) => {}),
   volumesPrune: vi.fn(async (all: boolean): Promise<VolumePruneResult> => ({ deleted: all ? [ANON, "huerfano"] : [ANON], spaceReclaimed: 4096 })),
   bindsList: vi.fn(async (): Promise<BindSummary[]> => binds),
+  composeProjects: vi.fn(async (): Promise<ComposeProject[]> => composeProjects),
+  composeConfig: vi.fn(async (p: ProjectRef, unsaved: UnsavedFile | null = null): Promise<ComposeConfig> => {
+    if (unsaved?.content.includes("ports: 12")) {
+      return { model: null, resolved: null, error: "validating -: services.web.ports must be a array", warnings: [], command: `docker compose -p ${p.name} -f - config` };
+    }
+    return { model: p.name === "tienda" ? tiendaModel : { ...tiendaModel, name: p.name, services: [], volumes: [], profiles: [] }, resolved: '{"name": "tienda", "services": {"db": {"environment": {"DB_PASSWORD": "s3creto"}}}}', error: null, warnings: [], command: `/usr/bin/docker compose -p ${p.name} --profile '*' config --format json` };
+  }),
+  composePreview: vi.fn(async (p: ProjectRef, a: ComposeAction) => ({ command: composeCommand(p, a) })),
+  composeRunOpen: vi.fn(async (_p: ProjectRef, _a: ComposeAction, _c: boolean, h: (e: ComposeEvent) => void) =>
+    streams.add(h, { event: "end", closed: { end: { end: "stopped" }, error: null, stderrTail: "" } }),
+  ),
+  composeLogsOpen: vi.fn(async (_p: ProjectRef, _s: string[], _t: number, _ts: boolean, h: (e: ComposeEvent) => void) =>
+    streams.add(h, { event: "end", closed: { end: { end: "stopped" }, error: null, stderrTail: "" } }),
+  ),
+  composeRegister: vi.fn(async (files: string[], name: string | null): Promise<RegisterResult> => ({
+    project: { name: name ?? "proyecto", files, workingDir: null, envFiles: [] },
+    error: null,
+    command: "docker compose config --format json",
+  })),
+  composeUnregister: vi.fn(async (_n: string) => true),
+  composeFileRead: vi.fn(async (path: string): Promise<ComposeFile> => ({ path, content: TIENDA_YAML, version: "v1", writable: true })),
+  composeFileSave: vi.fn(async (path: string, content: string, _v: string): Promise<ComposeFile> => ({ path, content, version: "v2", writable: true })),
+  composeFileCreate: vi.fn(async (dir: string, content: string): Promise<ComposeFile> => ({ path: `${dir}/compose.yaml`, content, version: "v1", writable: true })),
+  composeFindFile: vi.fn(async (_d: string): Promise<string | null> => null),
+  pickComposeFiles: vi.fn(async (_t: string, _f: string): Promise<string[]> => ["/home/u/tienda/compose.yaml"]),
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),
 };
 

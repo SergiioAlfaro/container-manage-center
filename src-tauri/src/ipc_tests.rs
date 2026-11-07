@@ -1233,3 +1233,288 @@ fn live_volumes_via_ipc() {
     let e = invoke(&h, "volume_details", json!({ "name": name })).unwrap_err();
     assert_eq!(e["httpStatus"], 404, "{e}");
 }
+
+// ------------------------------------------------------------------ Fase 7
+
+#[test]
+fn compose_files_via_ipc_create_read_save_and_conflict() {
+    let h = harness();
+    let d = tempfile::tempdir().unwrap();
+    let dir = d.path().display().to_string();
+    assert!(invoke(&h, "compose_find_file", json!({ "dir": dir }))
+        .unwrap()
+        .is_null());
+    let c = invoke(
+        &h,
+        "compose_file_create",
+        json!({ "dir": dir, "content": "services: {}\n" }),
+    )
+    .unwrap();
+    let path = c["path"].as_str().unwrap().to_owned();
+    assert!(path.ends_with("/compose.yaml"));
+    assert_eq!(
+        invoke(&h, "compose_find_file", json!({ "dir": dir })).unwrap(),
+        path.as_str()
+    );
+    let e = invoke(
+        &h,
+        "compose_file_create",
+        json!({ "dir": dir, "content": "x" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.alreadyExists", "{e}");
+    let r = invoke(&h, "compose_file_read", json!({ "path": path })).unwrap();
+    assert_eq!(r["content"], "services: {}\n");
+    let v1 = r["version"].as_str().unwrap().to_owned();
+    let s = invoke(
+        &h,
+        "compose_file_save",
+        json!({ "path": path, "content": "services:\n  a:\n    image: x\n", "version": v1 }),
+    )
+    .unwrap();
+    assert_ne!(s["version"], v1.as_str());
+    // Guardar con la versión antigua: conflicto, el archivo no cambia.
+    let e = invoke(
+        &h,
+        "compose_file_save",
+        json!({ "path": path, "content": "pisado\n", "version": v1 }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.fileChanged", "{e}");
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        "services:\n  a:\n    image: x\n"
+    );
+    let e = invoke(&h, "compose_file_read", json!({ "path": "relativo.yaml" })).unwrap_err();
+    assert_eq!(e["code"], "engine.invalidInput");
+}
+
+#[test]
+fn phase7_commands_fail_cleanly_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    let p = json!({ "name": "tienda", "files": ["/srv/tienda/compose.yaml"] });
+    for (cmd, body) in [
+        ("compose_projects", json!({})),
+        ("compose_config", json!({ "project": p })),
+        (
+            "compose_run_open",
+            json!({ "project": p, "action": { "action": "stop" }, "confirmed": false, "onEvent": "__CHANNEL__:70" }),
+        ),
+        (
+            "compose_logs_open",
+            json!({ "project": p, "services": [], "tail": 10, "timestamps": false, "onEvent": "__CHANNEL__:71" }),
+        ),
+        (
+            "compose_register",
+            json!({ "files": ["/srv/tienda/compose.yaml"] }),
+        ),
+    ] {
+        let e = invoke(&h, cmd, body).unwrap_err();
+        assert_eq!(e["code"], "engine.notConnected", "{cmd}: {e}");
+    }
+    // Lo que no necesita Docker funciona igual.
+    assert_eq!(
+        invoke(&h, "compose_unregister", json!({ "name": "nada" })).unwrap(),
+        false
+    );
+}
+
+#[test]
+fn registered_projects_survive_a_stale_config_set() {
+    let h = harness();
+    let stale = h.app.state::<AppState>().config();
+    h.app
+        .state::<AppState>()
+        .update_compose(|ps| {
+            ps.push(dcc_store::SavedProject {
+                name: "tienda".into(),
+                files: vec!["/srv/tienda/compose.yaml".into()],
+            });
+            Ok(())
+        })
+        .unwrap();
+    let mut cfg = stale;
+    cfg.ui.theme = Theme::Dark;
+    let v = invoke(&h, "config_set", json!({ "config": cfg })).unwrap();
+    assert_eq!(v["compose"]["projects"][0]["name"], "tienda");
+    assert_eq!(h.store.load().unwrap().config.compose.projects.len(), 1);
+    assert_eq!(
+        invoke(&h, "compose_unregister", json!({ "name": "tienda" })).unwrap(),
+        true
+    );
+    assert!(h.store.load().unwrap().config.compose.projects.is_empty());
+}
+
+/// Contra Docker real con el Compose del equipo: añadir un proyecto (nombre
+/// decidido por Compose), validar, desplegar y eliminar por los comandos de la
+/// ventana. Eliminar sin confirmar se rechaza antes de ejecutar nada.
+#[test]
+fn live_compose_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let status = invoke(&h, "compose_status", json!({})).unwrap();
+    if status["status"] != "available" {
+        eprintln!(
+            "omitida: Docker Compose no está instalado en este equipo ({})",
+            status["status"]
+        );
+        return;
+    }
+    let images = invoke(&h, "images_list", json!({})).unwrap();
+    let tags: Vec<String> = images
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|i| i["repoTags"].as_array().cloned().unwrap_or_default())
+        .filter_map(|t| t.as_str().map(str::to_owned))
+        .filter(|t| !t.ends_with(":<none>"))
+        .collect();
+    let image = tags
+        .iter()
+        .find(|t| t.as_str() == "dcc-test/sleeper:2")
+        .or(tags.first())
+        .cloned()
+        .expect("hace falta al menos una imagen local con etiqueta (las pruebas del motor crean dcc-test/sleeper:2)");
+
+    let proj_dir = tempfile::Builder::new()
+        .prefix("dcc-test-ipc7-")
+        .tempdir()
+        .unwrap();
+    let name = format!("dcc-test-ipc7-{}", std::process::id());
+    let created = invoke(
+        &h,
+        "compose_file_create",
+        json!({
+            "dir": proj_dir.path().display().to_string(),
+            "content": format!("name: {name}\nservices:\n  app:\n    image: {image}\n    labels: {{dcc.test: \"true\"}}\nnetworks:\n  default:\n    labels: {{dcc.test: \"true\"}}\n"),
+        }),
+    )
+    .unwrap();
+    let file = created["path"].as_str().unwrap().to_owned();
+    struct Guard<'a>(&'a Harness, serde_json::Value);
+    impl Drop for Guard<'_> {
+        fn drop(&mut self) {
+            let _ = invoke(
+                self.0,
+                "compose_run_open",
+                json!({ "project": self.1, "action": { "action": "down" }, "confirmed": true, "onEvent": "__CHANNEL__:79" }),
+            );
+            std::thread::sleep(Duration::from_secs(5));
+        }
+    }
+
+    // Archivos no válidos: no se añade nada y se devuelve el mensaje de Compose.
+    let bad = proj_dir.path().join("mal.yaml");
+    std::fs::write(&bad, "services:\n  a:\n    ports: 12\n").unwrap();
+    let r = invoke(
+        &h,
+        "compose_register",
+        json!({ "files": [bad.display().to_string()] }),
+    )
+    .unwrap();
+    assert!(r["project"].is_null());
+    assert!(r["error"].as_str().unwrap().contains("ports"), "{r}");
+
+    let r = invoke(&h, "compose_register", json!({ "files": [file] })).unwrap();
+    assert_eq!(
+        r["project"]["name"],
+        name.as_str(),
+        "el nombre lo decide Compose (name:)"
+    );
+    let project = r["project"].clone();
+    let _g = Guard(&h, project.clone());
+    let e = invoke(&h, "compose_register", json!({ "files": [file] })).unwrap_err();
+    assert_eq!(e["code"], "compose.duplicate");
+    let listed = invoke(&h, "compose_projects", json!({})).unwrap();
+    let mine = listed
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["name"] == name.as_str())
+        .unwrap()
+        .clone();
+    assert_eq!(mine["registered"], true);
+    assert_eq!(mine["state"], "notDeployed");
+
+    let cfg = invoke(&h, "compose_config", json!({ "project": project })).unwrap();
+    assert_eq!(cfg["model"]["services"][0]["name"], "app");
+    let cfg = invoke(&h, "compose_config", json!({ "project": project, "unsaved": { "index": 0, "content": "services:\n  a:\n    ports: 12\n" } })).unwrap();
+    assert!(cfg["error"].as_str().unwrap().contains("ports"));
+    let prev = invoke(
+        &h,
+        "compose_preview",
+        json!({ "project": project, "action": { "action": "up", "build": true } }),
+    )
+    .unwrap();
+    let cmd = prev["command"].as_str().unwrap();
+    assert!(
+        cmd.contains(&format!("-p {name}")) && cmd.contains("up --detach --build"),
+        "{cmd}"
+    );
+
+    let sid = invoke(&h, "compose_run_open", json!({ "project": project, "action": { "action": "up" }, "confirmed": false, "onEvent": "__CHANNEL__:72" })).unwrap();
+    assert!(sid.as_u64().is_some());
+    wait_long("despliegue", 120, || {
+        invoke(&h, "compose_projects", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|p| p["name"] == name.as_str() && p["total"] == 1)
+    });
+    wait_long("fin de la operación", 60, || {
+        invoke(&h, "activity_list", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| {
+                r["kind"] == "compose.up"
+                    && r["target"] == name.as_str()
+                    && r["status"] == "succeeded"
+            })
+    });
+
+    // Eliminar sin confirmar: error inmediato, nada ejecutado.
+    let downs = || {
+        invoke(&h, "activity_list", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|r| r["kind"] == "compose.down")
+            .count()
+    };
+    let before = downs();
+    let e = invoke(&h, "compose_run_open", json!({ "project": project, "action": { "action": "down" }, "confirmed": false, "onEvent": "__CHANNEL__:73" })).unwrap_err();
+    assert_eq!(e["code"], "engine.notConfirmed");
+    assert_eq!(downs(), before);
+    invoke(&h, "compose_run_open", json!({ "project": project, "action": { "action": "down", "volumes": true }, "confirmed": true, "onEvent": "__CHANNEL__:74" })).unwrap();
+    wait_long("eliminación", 120, || {
+        invoke(&h, "compose_projects", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|p| p["name"] == name.as_str() && p["state"] == "notDeployed")
+    });
+    assert_eq!(
+        invoke(&h, "compose_unregister", json!({ "name": name })).unwrap(),
+        true
+    );
+}

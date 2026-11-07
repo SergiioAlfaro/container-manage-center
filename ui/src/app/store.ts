@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   ui: { theme: "system", language: "es", sidebarCollapsed: false },
   activity: { panelOpen: false, openOnError: true, maxRecords: 500 },
   docker: { mode: "auto", customSocket: "" },
+  compose: { projects: [] },
 };
 
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
@@ -38,6 +39,8 @@ function merge(base: AppConfig, patch: DeepPartial<AppConfig>): AppConfig {
     ui: { ...base.ui, ...patch.ui },
     activity: { ...base.activity, ...patch.activity },
     docker: { ...base.docker, ...patch.docker },
+    // La lista de proyectos Compose solo la cambia el backend (compose_register/unregister).
+    compose: base.compose,
   };
 }
 

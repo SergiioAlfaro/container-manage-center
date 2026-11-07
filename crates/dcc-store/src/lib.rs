@@ -15,7 +15,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub use config::{
-    ActivityConfig, AppConfig, DockerConfig, DockerMode, Language, Theme, UiConfig, CONFIG_VERSION,
+    ActivityConfig, AppConfig, ComposeSettings, DockerConfig, DockerMode, Language, SavedProject,
+    Theme, UiConfig, CONFIG_VERSION,
 };
 
 pub const APP_DIR: &str = "docker-control-center";
@@ -231,5 +232,40 @@ mod tests {
         assert_eq!(v["ui"]["theme"], "system");
         assert_eq!(v["ui"]["language"], "es");
         assert_eq!(v["activity"]["openOnError"], true);
+    }
+
+    #[test]
+    fn compose_projects_roundtrip_and_invalid_entries_are_dropped() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConfigStore::at(dir.path().join("config.toml"));
+        let mut c = AppConfig::default();
+        let p = |name: &str, files: &[&str]| SavedProject {
+            name: name.into(),
+            files: files.iter().map(|s| s.to_string()).collect(),
+        };
+        c.compose.projects = vec![
+            p("tienda", &["/srv/tienda/compose.yaml"]),
+            p("tienda", &["/otra/compose.yaml"]),
+            p("Mal", &["/x/compose.yaml"]),
+            p("rel", &["compose.yaml"]),
+            p("vacio", &[]),
+            p("ok-2", &["/a/compose.yaml", "/a/override.yaml"]),
+        ];
+        store.save(&c.normalized()).unwrap();
+        let loaded = store.load().unwrap().config;
+        assert_eq!(
+            loaded.compose.projects,
+            [
+                p("tienda", &["/srv/tienda/compose.yaml"]),
+                p("ok-2", &["/a/compose.yaml", "/a/override.yaml"])
+            ]
+        );
+        // Un archivo de la versión 0.6 (sin sección compose) sigue siendo válido.
+        std::fs::write(
+            dir.path().join("config.toml"),
+            "version = 1\n[ui]\ntheme = \"dark\"\n",
+        )
+        .unwrap();
+        assert!(store.load().unwrap().config.compose.projects.is_empty());
     }
 }

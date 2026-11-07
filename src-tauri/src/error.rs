@@ -49,6 +49,9 @@ impl From<EngineError> for CommandError {
             EngineError::InvalidInput { .. } => "engine.invalidInput",
             EngineError::Busy { .. } => "engine.busy",
             EngineError::NotConfirmed => "engine.notConfirmed",
+            EngineError::FileChanged { .. } => "engine.fileChanged",
+            EngineError::AlreadyExists { .. } => "engine.alreadyExists",
+            EngineError::ComposeUnavailable => "engine.composeUnavailable",
             EngineError::InvalidSpec { .. } => "engine.invalidSpec",
             EngineError::Other { .. } => "engine.other",
         };

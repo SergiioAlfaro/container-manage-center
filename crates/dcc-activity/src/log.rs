@@ -252,6 +252,21 @@ impl OperationHandle {
     }
 }
 
+impl OperationHandle {
+    /// Cancelación explícita (p. ej. el usuario detuvo un proceso): igual que
+    /// descartar el handle, pero conservando la salida capturada hasta ese momento.
+    pub fn cancel(mut self, failure: Failure) {
+        self.done = true;
+        self.log.finish(self.id, |r, limit| {
+            r.status = OpStatus::Cancelled;
+            r.error = Some(failure.error);
+            r.stdout = failure.stdout.map(|s| capture(s, limit));
+            r.stderr = failure.stderr.map(|s| capture(s, limit));
+            r.exit_code = failure.exit_code;
+        });
+    }
+}
+
 impl Drop for OperationHandle {
     fn drop(&mut self) {
         if !self.done {

@@ -59,15 +59,34 @@ impl AppState {
     /// Normaliza, guarda en disco y aplica la nueva configuración.
     /// Si la escritura falla, la configuración en memoria no cambia.
     /// Devuelve también si cambió la conexión con Docker.
+    ///
+    /// La lista de proyectos Compose no se cambia aquí: la interfaz envía la
+    /// configuración completa y una copia antigua borraría proyectos añadidos
+    /// mientras tanto. Solo la cambia [`AppState::update_compose`].
     pub fn replace_config(&self, new: AppConfig) -> CmdResult<(AppConfig, bool)> {
-        let new = new.normalized();
+        let mut cur = self.config.lock();
+        let mut new = new.normalized();
+        new.compose = cur.compose.clone();
         self.store.save(&new)?;
         self.activity
             .set_capacity(new.activity.max_records as usize);
-        let mut cur = self.config.lock();
         let docker_changed = connection_mode(&cur.docker) != connection_mode(&new.docker);
         *cur = new.clone();
         Ok((new, docker_changed))
+    }
+
+    /// Cambia la lista de proyectos Compose registrados y la guarda.
+    pub fn update_compose<T>(
+        &self,
+        f: impl FnOnce(&mut Vec<dcc_store::SavedProject>) -> CmdResult<T>,
+    ) -> CmdResult<(T, AppConfig)> {
+        let mut cur = self.config.lock();
+        let mut next = cur.clone();
+        let out = f(&mut next.compose.projects)?;
+        let next = next.normalized();
+        self.store.save(&next)?;
+        *cur = next.clone();
+        Ok((out, next))
     }
 }
 
@@ -114,5 +133,32 @@ mod tests {
         c.ui.sidebar_collapsed = true;
         assert!(state.replace_config(c).is_err());
         assert_eq!(state.config(), before);
+    }
+
+    #[test]
+    fn settings_screen_cannot_overwrite_compose_projects() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConfigStore::at(dir.path().join("config.toml"));
+        let state = AppState::new(store.clone());
+        let stale = state.config();
+        state
+            .update_compose(|ps| {
+                ps.push(dcc_store::SavedProject {
+                    name: "tienda".into(),
+                    files: vec!["/srv/tienda/compose.yaml".into()],
+                });
+                Ok(())
+            })
+            .unwrap();
+        let mut c = stale;
+        c.ui.language = dcc_store::Language::En;
+        let (saved, _) = state.replace_config(c).unwrap();
+        assert_eq!(
+            saved.compose.projects.len(),
+            1,
+            "la copia antigua no borra el proyecto"
+        );
+        assert_eq!(saved.ui.language, dcc_store::Language::En);
+        assert_eq!(store.load().unwrap().config, saved);
     }
 }

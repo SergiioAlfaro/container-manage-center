@@ -1,0 +1,18 @@
+# Proyecto de ejemplo para las comprobaciones manuales de la Fase 7.
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports: ["18087:80"]
+    volumes: [datos:/usr/share/nginx/html]
+    depends_on: [cache]
+  cache:
+    image: alpine:3.20
+    command: ["sh", "-c", "while true; do echo latido; sleep 2; done"]
+    environment:
+      CLAVE: ${CLAVE}
+  depurar:
+    image: alpine:3.20
+    command: ["sleep", "3600"]
+    profiles: [debug]
+volumes:
+  datos:

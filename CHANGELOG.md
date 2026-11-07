@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.7.0 — 2026-11-07 (Fase 7: Docker Compose)
+- Apartado **Docker Compose**: proyectos desplegados (detectados por las etiquetas de sus contenedores) y proyectos añadidos a la lista, con estado, carpeta y servicios; filtros y búsqueda (D-053).
+- Abrir un proyecto existente (uno o varios archivos) y crear uno nuevo en una carpeta; el nombre lo decide Compose o el usuario.
+- Detalle con los servicios del archivo junto a sus contenedores reales (imagen o construcción, puertos, perfiles, huérfanos) y acciones por servicio.
+- Desplegar (servicios, perfiles, construir, política de descarga, recrear, huérfanos), iniciar, detener, reiniciar, descargar imágenes, construir y eliminar (con volúmenes e imágenes opcionales y confirmación), siempre con el comando exacto y la salida en vivo, que se puede interrumpir.
+- Registros en vivo por servicio, editor del archivo con validación de Compose antes de guardar y protección frente a cambios externos (D-055), y configuración resuelta oculta hasta pedirla porque puede contener secretos (que no se guardan en el panel de actividad).
+- Parar, iniciar, reiniciar y eliminar actúan sobre todos los contenedores del proyecto, también los de perfiles no activos, que Compose omitía en silencio (D-054).
+- Proyectos cuyos archivos ya no existen: se pueden parar, iniciar, ver registros y eliminar.
+- `verify-phase-7.sh` con pruebas reales de Compose (probadas con Compose 2.26.1 y 5.6.1) y comprobaciones manuales M1–M15.
+
 ## 0.6.0 — 2026-11-06 (Fase 6: volúmenes y directorios vinculados)
 - Apartado **Volúmenes**: lista con contenedores que montan cada volumen, distintivo de anónimos, tamaños bajo demanda, filtros y búsqueda.
 - Asistente de creación (local, tmpfs, NFS, carpeta u otro driver) con validación, comando y cuerpo exactos; aviso de nombre ya existente, que Docker ignoraría en silencio (D-051).

@@ -373,3 +373,5 @@ Cuando termines:
   docker rm -f dcc-man-app dcc-man-web dcc-man-sock
   docker volume rm dcc-manual-datos dcc-manual-tmp; rm -rf ~/dcc-manual-web
 EOF
+
+[ "$FAIL" -eq 0 ]

@@ -22,4 +22,5 @@ export const keys = {
   volumeSizes: ["volumeSizes"] as const,
   binds: ["binds"] as const,
   compose: ["compose"] as const,
+  composeProjects: ["composeProjects"] as const,
 };

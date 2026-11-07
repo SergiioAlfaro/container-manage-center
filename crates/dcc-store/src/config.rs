@@ -99,6 +99,55 @@ impl DockerConfig {
     pub const MAX_PATH_LEN: usize = 4096;
 }
 
+/// Proyecto Compose añadido por el usuario a la lista (Fase 7).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct SavedProject {
+    /// Nombre del proyecto (regla de Compose).
+    pub name: String,
+    /// Archivos Compose (rutas absolutas), en orden.
+    pub files: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct ComposeSettings {
+    pub projects: Vec<SavedProject>,
+}
+
+impl ComposeSettings {
+    pub const MAX_PROJECTS: usize = 200;
+    pub const MAX_FILES: usize = 16;
+
+    pub fn valid_name(name: &str) -> bool {
+        let mut c = name.chars();
+        matches!(c.next(), Some(f) if f.is_ascii_lowercase() || f.is_ascii_digit())
+            && name.len() <= 255
+            && c.all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-' || ch == '_')
+    }
+
+    fn valid_path(p: &str) -> bool {
+        p.starts_with('/') && !p.contains('\0') && p.len() <= DockerConfig::MAX_PATH_LEN
+    }
+
+    /// Descarta entradas no válidas o repetidas (gana la primera) y limita el tamaño.
+    pub fn normalized(self) -> Self {
+        let mut out: Vec<SavedProject> = Vec::new();
+        for p in self.projects {
+            let ok = Self::valid_name(&p.name)
+                && !p.files.is_empty()
+                && p.files.len() <= Self::MAX_FILES
+                && p.files.iter().all(|f| Self::valid_path(f));
+            if ok && !out.iter().any(|o| o.name == p.name) && out.len() < Self::MAX_PROJECTS {
+                out.push(p);
+            }
+        }
+        Self { projects: out }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
@@ -107,6 +156,7 @@ pub struct AppConfig {
     pub ui: UiConfig,
     pub activity: ActivityConfig,
     pub docker: DockerConfig,
+    pub compose: ComposeSettings,
 }
 
 impl Default for AppConfig {
@@ -116,6 +166,7 @@ impl Default for AppConfig {
             ui: UiConfig::default(),
             activity: ActivityConfig::default(),
             docker: DockerConfig::default(),
+            compose: ComposeSettings::default(),
         }
     }
 }
@@ -135,6 +186,7 @@ impl AppConfig {
             } else {
                 trimmed.to_owned()
             };
+        self.compose = self.compose.normalized();
         self
     }
 }

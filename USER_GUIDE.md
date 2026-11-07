@@ -289,6 +289,58 @@ una carpeta…** abre el selector de carpetas del sistema y después el asistent
 de contenedores con esa carpeta montada en `/mnt/<nombre>`; **Nuevo contenedor
 con ella** hace lo mismo con una carpeta de la lista.
 
+## Docker Compose
+
+Necesita Docker Compose v2 o posterior (ver INSTALL.md); si no está instalado,
+el apartado explica cómo instalarlo. Todas las operaciones ejecutan el Docker
+Compose oficial y aparecen en el panel de actividad con el comando exacto.
+
+La lista muestra los proyectos que tienen contenedores en Docker (también los
+desplegados desde la terminal, que se detectan solos) y los que añades a la
+lista, con su estado (en marcha, parcial, detenido o sin desplegar), carpeta y
+servicios.
+
+- **Abrir proyecto…**: elige su `compose.yaml` (si usa varios archivos, añádelos
+  en el orden en que se combinan). El nombre lo decide Docker Compose (el `name:`
+  del archivo o el nombre de la carpeta) salvo que escribas otro.
+- **Nuevo proyecto**: elige una carpeta sin archivo Compose, escribe el contenido
+  (se parte de una plantilla) y **Crear proyecto**: se valida con Docker Compose,
+  se crea `compose.yaml` y se añade a la lista. Si escribes un nombre, se añade
+  al archivo para que la terminal use el mismo.
+- **Servicios**: cada servicio del archivo con su imagen (o si se construye),
+  estado, contenedores, puertos y perfiles, más los contenedores de servicios
+  que ya no están en el archivo. Cada fila permite desplegar, iniciar, detener,
+  reiniciar o ver los registros de ese servicio.
+- **Desplegar** (`docker compose up --detach`): todos los servicios o los
+  elegidos, perfiles, construir antes, descargar imágenes (si faltan, siempre o
+  nunca), volver a crear los contenedores y eliminar huérfanos. El diálogo
+  muestra el comando exacto.
+- **Iniciar, Detener, Reiniciar** actúan sobre todos los contenedores del
+  proyecto, también los de servicios con perfil. **Descargar imágenes** y
+  **Construir** preparan las imágenes sin desplegar.
+- **Eliminar** (`docker compose down`) detiene y elimina los contenedores y las
+  redes del proyecto; opcionalmente también sus volúmenes con nombre (sus datos
+  se pierden) y sus imágenes. Hay que confirmarlo.
+- **Salida**: la salida de la operación en curso o de la última, en directo.
+  **Interrumpir** detiene Docker Compose; lo que ya hubiera hecho se mantiene.
+  Solo puede haber una operación a la vez en cada proyecto.
+- **Registros**: los de todos los servicios o los elegidos, en directo, con las
+  últimas 100, 500 o 2000 líneas y marcas de tiempo opcionales.
+- **Archivo**: edita los archivos del proyecto. **Validar** comprueba el
+  contenido con Docker Compose sin guardarlo; **Guardar** valida antes y, si
+  Compose lo rechaza, solo guarda si insistes. Si otro programa ha cambiado el
+  archivo mientras lo editabas, no se sobrescribe.
+- **Configuración**: la configuración final tal como la entiende Docker Compose.
+  Puede contener valores secretos de las variables (por ejemplo del `.env`), por
+  eso está oculta hasta que la pides y no se guarda en el panel de actividad.
+- **Quitar de la lista** solo la quita de la lista (no toca Docker ni los
+  archivos); **Añadir a la lista** conserva un proyecto desplegado desde la
+  terminal aunque se eliminen sus contenedores.
+
+Si los archivos de un proyecto ya no existen, se puede detener, iniciar,
+reiniciar, ver sus registros y eliminar (Docker Compose usa las etiquetas de los
+contenedores); para desplegarlo hacen falta los archivos.
+
 ## Panel de actividad
 
 Cada operación que la aplicación ejecuta sobre Docker aparece aquí: hora,

@@ -42,6 +42,8 @@ struct Inner {
     env: EnvFn,
     timing: Timing,
     locks: crate::resources::ResourceLocks,
+    /// Última detección correcta de Compose (se renueva con `compose_status`).
+    compose: parking_lot::Mutex<Option<crate::compose::project::ComposeCli>>,
 }
 
 /// Intervalos del monitor. Configurables para las pruebas.
@@ -100,6 +102,7 @@ impl EngineManager {
                 env,
                 timing,
                 locks: Default::default(),
+                compose: Default::default(),
             }),
         }
     }
@@ -277,13 +280,27 @@ impl EngineManager {
         if let Ok(e) = self.engine().await {
             env.push(("DOCKER_HOST".to_owned(), e.endpoint().host_uri()));
         }
-        crate::compose::detect(
+        let status = crate::compose::detect(
             &self.inner.activity,
             sys::find_executable("docker").map(|p| p.display().to_string()),
             sys::find_executable("docker-compose").map(|p| p.display().to_string()),
             &env,
         )
-        .await
+        .await;
+        *self.inner.compose.lock() = crate::compose::project::ComposeCli::from_status(&status);
+        status
+    }
+
+    /// Cómo invocar Compose. Usa la última detección correcta o detecta ahora.
+    pub async fn compose_cli(&self) -> Result<crate::compose::project::ComposeCli, EngineError> {
+        if let Some(c) = self.inner.compose.lock().clone() {
+            if std::path::Path::new(&c.program).is_file() {
+                return Ok(c);
+            }
+        }
+        let status = self.compose_status().await;
+        crate::compose::project::ComposeCli::from_status(&status)
+            .ok_or(EngineError::ComposeUnavailable)
     }
 }
 

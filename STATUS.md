@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-06
+Última actualización: 2026-11-07
 
 ## Resumen
 
 | | |
 |---|---|
-| **Fase actual** | 6 · Volúmenes y directorios vinculados |
-| **Versión** | 0.6.0 |
-| **Estado de la fase** | Implementada y verificada en el entorno de desarrollo; **pendiente de validación externa** |
-| **Fases completadas (validadas)** | 1, 2, 3, 4, 5 |
-| **Fases pendientes** | 6–10 |
+| **Fase actual** | 7 · Docker Compose |
+| **Versión** | 0.7.0 |
+| **Estado de la fase** | En desarrollo |
+| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6 |
+| **Fases pendientes** | 7–10 |
 
 | Fase | Estado |
 |---|---|
@@ -19,8 +19,8 @@
 | 3. Contenedores (creación, logs, inspección, terminal) | **Validada** (2026-11-06, versión 0.3.0) |
 | 4. Imágenes (descarga, búsqueda, construcción, etiquetado, inspección, capas, eliminación) | **Validada** (2026-11-06, Debian 13, versión 0.4.1) |
 | 5. Redes | **Validada** (2026-11-06, Debian 13, versión 0.5.0) |
-| 6. Volúmenes y bind mounts | Pendiente de validación externa (0.6.0) |
-| 7. Docker Compose | No iniciada |
+| 6. Volúmenes y bind mounts | **Validada** (2026-11-07, Debian 13, versión 0.6.0) |
+| 7. Docker Compose | En desarrollo |
 | 8. Actividad, eventos y monitorización | No iniciada |
 | 9. Configuración y optimización | No iniciada |
 | 10. Pruebas finales y distribución | No iniciada |
@@ -442,10 +442,72 @@ Ninguno abierto.
 
 ---
 
+## Fase 7 · Docker Compose
+
+### Objetivos
+Importar y crear proyectos Docker Compose, editar el YAML con validación antes de ejecutarlo, desplegar, iniciar, detener, reconstruir y eliminar proyectos, y ver los registros por servicio, siempre con el Docker Compose oficial (sin shell) y mostrando la operación real.
+
+### Alcance decidido (D-053)
+La especificación de esta fase solo enumeraba "importar y crear proyectos", "editor YAML con validación antes de ejecutar" y "iniciar, detener, reconstruir y registros por servicio". El alcance concreto se ha definido a partir de eso y de lo que ya existía (detección de Compose, D-032; procesos sin shell, D-005) y está documentado en D-053.
+
+### Funcionalidades implementadas
+- **Lista de proyectos**: los desplegados (detectados por las etiquetas de sus contenedores, también los lanzados desde la terminal) y los añadidos a la lista (guardados en la configuración), con estado, carpeta, servicios y la última operación; filtros y búsqueda. Si Compose no está disponible, el apartado explica cómo instalarlo.
+- **Abrir proyecto** (uno o varios archivos, nombre decidido por Compose o por el usuario) y **Nuevo proyecto** (crea `compose.yaml` en una carpeta sin archivo Compose, validado antes).
+- **Detalle**: servicios del archivo junto a sus contenedores reales (imagen o construcción, estado, puertos, perfiles, servicios que ya no están en el archivo) con acciones por servicio.
+- **Acciones**: desplegar (servicios, perfiles, construir, política de descarga, recrear, huérfanos), iniciar, detener, reiniciar, descargar imágenes, construir y eliminar (volúmenes e imágenes opcionales, confirmación obligatoria también en el backend). Comando exacto antes de ejecutar, salida en vivo que sigue al cambiar de apartado, interrupción, una operación a la vez por proyecto.
+- **Registros** en vivo de todos los servicios o de los elegidos.
+- **Archivo**: editor con validación de Compose sin guardar; guardar valida antes y no sobrescribe un archivo cambiado fuera de la aplicación (D-055).
+- **Configuración resuelta**, oculta hasta pedirla porque incluye los valores de las variables, que nunca se guardan en el panel de actividad.
+- Proyectos cuyos archivos ya no existen: detener, iniciar, reiniciar, registros y eliminar siguen funcionando con las etiquetas.
+
+### Pruebas realizadas en el entorno de desarrollo
+`scripts/verify-phase-7.sh` completo con dos daemons reales; los dos dan "parte automática superada", 0 fallos y ningún recurso de prueba sobrante:
+
+| | Docker 29.9.2 (containerd, API 1.56) | Docker 24.0.7 (almacenamiento clásico, API 1.43) |
+|---|---|---|
+| Rust deterministas | 369 correctas | 369 correctas |
+| Vitest | 197 | 197 |
+| Pruebas contra Docker real (imágenes, descarga, construcción, redes, volúmenes, Compose, IPC) | 11 + 7 + 9 + 4 + 4 + 5 + 7 | 11 + 7 + 9 + 4 + 4 + 5 + 7 |
+| Resultado | 34 correctas (con `--deb`), 2 omitidas, 1 aviso | 33 correctas (sin `--deb`), 2 omitidas, 1 aviso |
+
+- Las 2 omitidas son las mismas de fases anteriores: las pruebas de permiso denegado, porque root ignora los permisos de archivo. El aviso es por ejecutar como root en desarrollo.
+- `live_compose` se ejecutó con el plugin Compose 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario Compose 2.26.1 (el de Debian 13). Pasa con las dos versiones en los dos daemons: 5 de 5 en cada combinación.
+- Prueba en la aplicación real (Docker 29, Compose 5.6.1):
+  - Lista: aparecen el proyecto desplegado desde la terminal y el añadido a la lista.
+  - Servicios: modelo con perfil y servicio que se construye.
+  - Desplegar: comando exacto y salida en vivo hasta "Despliegue completado".
+  - Registros en vivo.
+  - Editor:
+    - el error de Compose se muestra y el archivo no cambia en el disco;
+    - un cambio externo se detecta, no se sobrescribe y se puede recargar.
+  - Eliminar con volúmenes e imágenes construidas: no queda nada en Docker.
+- Paquete 0.7.0 instalado con `apt`, ejecutado en inglés con tema oscuro, con un despliegue real; después se desinstaló sin dejar archivos.
+
+### Problemas detectados y resueltos durante la fase
+- **Compose omite en silencio los servicios de perfiles no activos** en `down`, `stop`, `start` y `restart` cuando se le pasan los archivos, y termina con código 0: un `down` dejaba un contenedor de perfil en marcha y la red "en uso". Lo detectó la prueba real del ciclo completo; reproducido con Compose 2.26.1 (la versión de Debian 13) y 5.6.1. Esas acciones pasan ahora `--profile "*"` (D-054).
+- Visto en la aplicación real: mensajes de estado con concordancia incorrecta ("Eliminación completado"), la columna Carpeta mostraba el archivo en lugar de la carpeta, el contexto de construcción se mostraba con la ruta absoluta y "Deshacer cambios" dejaba visibles avisos de validación que ya no correspondían. Corregidos.
+- Dos botones "Detener" en la misma pantalla (el proyecto y la operación en curso): el de la operación se llama ahora "Interrumpir".
+- La prueba de la aplicación que usaba Docker Compose como ejemplo de apartado pendiente pasa a usar Eventos y registros (Fase 8).
+- **Fallo de una prueba propia**: el paso "lento" de la prueba de cancelación usaba `sleep`, que la imagen de prueba no tiene, así que la construcción fallaba al instante (código 127). Según la versión de Compose y del daemon, la cancelación llegaba antes o después: con 5.6.1 en Docker 24 falló. La aplicación registró bien el código de salida. Ahora el paso lento es el propio `/sleeper` de la imagen, que solo termina si se cancela, con un límite de 90 s para que la prueba nunca se quede colgada. Es estable con las dos versiones en los dos daemons.
+- **Scripts de verificación**:
+  - En `verify-phase-7.sh`, el nombre del bloque de Compose generaba un archivo de registro de más de 255 bytes, que no se podía crear, y las pruebas no llegaban a ejecutarse (sí se marcaba como FALLO). Ahora los registros tienen un nombre corto numerado.
+  - Al revisarlo apareció un error mío de la Fase 5: al generar `verify-phase-5.sh` y `verify-phase-6.sh` se perdió la última línea, `[ "$FAIL" -eq 0 ]`. Esos scripts terminaban con código 0 aunque hubiera fallos; el veredicto escrito sí era correcto. Se ha restaurado en los dos (contrato de D-033), y se ha comprobado que el script devuelve 1 con un fallo real (Docker 24, antes de corregir la prueba) y 0 sin fallos.
+
+### Limitaciones y observaciones
+- El selector de archivos y carpetas del sistema no se puede manejar en Xvfb: abrir un proyecto y crear uno nuevo se han probado con la interfaz simulada y por IPC; en la aplicación real se comprueban en M1 y M14.
+- Una validación rechazada por Compose queda en el panel de actividad como operación fallida (el proceso terminó con error), y con "Abrir el panel al fallar" activado el panel se abre.
+- No se ofrecen `docker compose run`, `exec`, `scale` ni la edición de archivos `.env` (fuera del alcance de esta fase).
+- Docker 26.1.5 (Debian 13) no se ha podido probar aquí; sí Compose 2.26.1, la versión que trae Debian 13.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-6.sh` en Debian 13 y envía `verify-phase-6-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.6.0 y realiza M1–M15.
-2. Corregir lo que surja y marcar la Fase 6 como validada.
-3. Fase 7: Docker Compose.
+1. El propietario ejecuta `bash scripts/verify-phase-7.sh` en Debian 13 y envía `verify-phase-7-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.7.0 y realiza M1–M15.
+2. Corregir lo que surja y marcar la Fase 7 como validada.
+3. Fase 8: actividad, eventos y monitorización.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

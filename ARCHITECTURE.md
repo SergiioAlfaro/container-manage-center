@@ -1,6 +1,6 @@
 # Arquitectura de Docker Control Center
 
-Versión 0.2.1 (Fase 2 con correcciones).
+Versión 0.7.0 (Fase 7).
 
 ## Visión general
 
@@ -21,8 +21,8 @@ Versión 0.2.1 (Fase 2 con correcciones).
 │         client     Engine: bollard + registro (ping, version, info)                   │
 │         containers listado y ciclo de vida      images  listado y uso                 │
 │         resources  validación de IDs, rutas exactas, bloqueo por recurso              │
-│         compose    detección de Compose v2+ (plugin o binario)                        │
-│         cli        procesos sin shell (docker compose)                                │
+│         compose    detección (D-032), proyectos, acciones, archivos (Fase 7)          │
+│         cli        procesos sin shell, salida en vivo y cancelación por grupo         │
 └──────────────┬───────────────────────────────────────────────┬───────────────────────┘
       socket Unix de Docker (API)                      docker compose (proceso CLI)
 ```
@@ -140,6 +140,23 @@ Las operaciones usan siempre el ID de la red (Docker acepta nombres con espacios
 
 `ContainerSummary` incluye ahora `mountPoints` (los `Mounts` de la lista de contenedores). `VolumeSpec` es la fuente única de la validación (regla de nombres del driver local, driver, opciones y etiquetas), del cuerpo y del comando. `binds.rs` agrupa los montajes `bind` por ruta del equipo, comprueba si existen (tipo, propietario, permisos, lectura) y marca los riesgos (socket de Docker, raíz, directorios del sistema). Docker no permite añadir montajes a un contenedor existente: vincular una carpeta abre el asistente de contenedores con el montaje (D-052).
 
+### Docker Compose (Fase 7, `compose/`, D-053, D-054, D-055)
+Todas las operaciones ejecutan el CLI oficial (`docker compose …` o `docker-compose …`, según la detección de D-032, guardada en `EngineManager::compose_cli`) con `cli::run_streaming`: sin shell, argumentos separados, `DOCKER_HOST` del Docker conectado, directorio de trabajo vacío y propio, proceso en su propio grupo (cancelar = SIGTERM al grupo y SIGKILL a los 8 s), salida línea a línea en lotes y **un** registro de actividad por ejecución.
+
+| Operación | Ejecución real |
+|---|---|
+| Proyectos | `GET /containers/json?all=true` (etiquetas `com.docker.compose.*`) + proyectos guardados en la configuración |
+| Modelo y validación | `compose --ansi never -p P -f … --project-directory D --profile "*" config --format json` (con `-f -` y el contenido por la entrada estándar para validar sin guardar). La salida no se guarda en el registro: contiene los valores de las variables |
+| Nombre al añadir | `compose --ansi never -f … --project-directory D config --format json` (sin `-p`) |
+| Desplegar | `… [--profile X] up --detach [--build] [--pull always\|never] [--force-recreate] [--remove-orphans] [-- servicios]` |
+| Eliminar | `… --profile "*" down [--volumes] [--rmi local\|all] [--remove-orphans]` (exige `confirmed`) |
+| Iniciar / detener / reiniciar | `… --profile "*" start\|stop\|restart [-- servicios]` (sin `-f` si los archivos ya no existen) |
+| Descargar / construir | `… pull [-- servicios]` · `… build [--no-cache] [--pull] [-- servicios]` |
+| Registros | `… logs --follow --no-color --tail N [--timestamps] [-- servicios]` (las líneas no se guardan en el registro) |
+| Archivos | lectura, guardado atómico con huella SHA-256 y creación con `O_EXCL` en `compose/file.rs` (no son operaciones de Docker) |
+
+`project.rs` contiene la identidad (`ProjectRef`), las reglas de nombres (proyecto, servicio y perfil: nunca empiezan por `-` y los servicios van tras `--`), el descubrimiento (`projects_from`), la lectura del modelo (`parse_model`, solo nombres de variables) y los argumentos de cada acción (`action_args`), todo con pruebas unitarias. `ops.rs` ejecuta: `compose_config`, `compose_resolve`, `compose_check` (validación, confirmación, archivos y cerrojo antes de ejecutar nada), `compose_run` (cerrojo `compose:NOMBRE`) y `compose_logs`.
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 
@@ -182,10 +199,17 @@ Las operaciones usan siempre el ID de la red (Docker acepta nombres con espacios
 | `volume_preview(spec)` · `volume_create(spec)` | Vista previa sin hablar con Docker; creación (error `engine.invalidSpec` con `volumeName.exists` si ya existe) |
 | `volume_remove(name, confirmed)` · `volumes_prune(all, confirmed)` | Eliminar y limpiar (exigen `confirmed`) |
 | `binds_list` | Directorios vinculados agrupados por ruta, con su estado en el equipo y sus riesgos |
+| `compose_projects` | Proyectos desplegados (etiquetas) y guardados, con contenedores y estado |
+| `compose_config(project, unsaved)` | Modelo, configuración resuelta, error o avisos de Compose; `unsaved = {index, content}` valida sin guardar |
+| `compose_preview(project, action)` | Comando exacto de una acción (valida la entrada, no ejecuta nada) |
+| `compose_run_open(project, action, confirmed, onEvent)` | Acción con salida en vivo: `ComposeEvent` (`lines` \| `end` con `RunClosed`); los errores de validación, confirmación, archivos u operación en curso se devuelven antes de abrir nada |
+| `compose_logs_open(project, services, tail, timestamps, onEvent)` | Registros en vivo |
+| `compose_register(files, name)` · `compose_unregister(name)` | Añadir (nombre decidido por Compose salvo que se indique; `compose.duplicate`) y quitar de la lista |
+| `compose_file_read(path)` · `compose_file_save(path, content, version)` · `compose_file_create(dir, content)` · `compose_find_file(dir)` | Archivos (`engine.fileChanged`, `engine.alreadyExists`) |
 
-Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.other`, `config.io`.
+Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.fileChanged`, `engine.alreadyExists`, `engine.composeUnavailable`, `compose.duplicate`, `engine.other`, `config.io`.
 
-Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`).
+Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
 
 ## Interfaz
 - `features/engine/store.ts`: estado de conexión; `App` lo alimenta con `engine_state` y el evento `engine://state`. Al pasar a conectado se invalidan todas las consultas; al perder la conexión se descartan.
@@ -199,17 +223,18 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`. Canales por 
 - `features/networks/`: `store.ts` (lista, detalle, creación), `model.ts` (filtros, estimación de la limpieza, motivos por los que Docker rechazaría una conexión, comandos equivalentes; funciones puras), `dialogs.tsx` (eliminar, limpiar, conectar, desconectar: consultan a Docker al abrirse y no permiten confirmar con datos desactualizados, D-049), `CreateNetwork.tsx` (asistente con vista previa del backend), `NetworkDetail.tsx`.
 - `features/volumes/`: lista con tamaños bajo demanda, detalle, asistente de creación (tipos habituales del driver local: tmpfs, NFS, carpeta), diálogos de eliminación y limpieza que consultan a Docker al abrirse; `model.ts` con la estimación de la limpieza según la versión de la API.
 - `features/binds/BindsView.tsx`: carpetas vinculadas con su estado, riesgos y contenedores; "Vincular una carpeta…" usa el selector de carpetas del sistema y abre el asistente de contenedores.
+- `features/compose/`: `store.ts` (lista, detalle con pestaña y filtro de registros, proyecto nuevo), `model.ts` (servicios del archivo unidos a sus contenedores, filtros, acciones; funciones puras), `runs.ts` (última operación de cada proyecto en un almacén global, para que siga al cambiar de apartado; al terminar recarga proyectos, contenedores, volúmenes, redes e imágenes), `RunPanel.tsx` (salida en vivo, interrumpir), `dialogs.tsx` (desplegar, eliminar con confirmación, abrir proyecto; el comando exacto lo calcula el backend), `FileEditor.tsx` (validar sin guardar, guardar con protección frente a cambios externos), `LogsTab.tsx`, `NewProject.tsx`. Si Compose no está disponible se explica cómo instalarlo.
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 22 actividad · 196 motor · 15 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 46 (seis contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes` | 11 + 7 + 9 + 4 + 4 (redes y volúmenes: probados con Docker 29 y 24; 2 requieren usuario no root; Compose se omite si no está instalado; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
+| Rust unitarias | `cargo test` | 22 actividad · 232 motor · 18 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 56 (siete contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose) |
+| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose` | 11 + 7 + 9 + 4 + 4 + 5 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list` | 1 |
-| Interfaz | Vitest + Testing Library | 179 |
+| Interfaz | Vitest + Testing Library | 197 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Manual | `scripts/verify-phase-6.sh` | M1–M15 |
+| Manual | `scripts/verify-phase-7.sh` | M1–M15 |

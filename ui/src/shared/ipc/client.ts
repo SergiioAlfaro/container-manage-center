@@ -57,6 +57,15 @@ import type { PullAuth } from "./bindings/PullAuth";
 import type { PullEvent } from "./bindings/PullEvent";
 import type { RemoveResult } from "./bindings/RemoveResult";
 import type { SearchResult } from "./bindings/SearchResult";
+import type { ComposeAction } from "./bindings/ComposeAction";
+import type { ComposeConfig } from "./bindings/ComposeConfig";
+import type { ComposeEvent } from "./bindings/ComposeEvent";
+import type { ComposeFile } from "./bindings/ComposeFile";
+import type { ComposePreview } from "./bindings/ComposePreview";
+import type { ComposeProject } from "./bindings/ComposeProject";
+import type { ProjectRef } from "./bindings/ProjectRef";
+import type { RegisterResult } from "./bindings/RegisterResult";
+import type { UnsavedFile } from "./bindings/UnsavedFile";
 
 export const ACTIVITY_EVENT = "activity://event";
 export const ACTIVITY_RESYNC = "activity://resync";
@@ -161,11 +170,36 @@ export const api = {
   volumesPrune: (all: boolean) => call<VolumePruneResult>("volumes_prune", { all, confirmed: true }),
   bindsList: () => call<BindSummary[]>("binds_list"),
 
+  // Fase 7: Docker Compose (CLI oficial sin shell).
+  composeProjects: () => call<ComposeProject[]>("compose_projects"),
+  /** `docker compose config`; con `unsaved` valida el contenido del editor sin guardarlo. */
+  composeConfig: (project: ProjectRef, unsaved: UnsavedFile | null = null) => call<ComposeConfig>("compose_config", { project, unsaved }),
+  composePreview: (project: ProjectRef, action: ComposeAction) => call<ComposePreview>("compose_preview", { project, action }),
+  /** Acción con la salida en vivo; se detiene con `streamClose`. */
+  composeRunOpen: (project: ProjectRef, action: ComposeAction, confirmed: boolean, onEvent: (e: ComposeEvent) => void) =>
+    call<number>("compose_run_open", { project, action, confirmed, onEvent: channel(onEvent) }),
+  composeLogsOpen: (project: ProjectRef, services: string[], tail: number, timestamps: boolean, onEvent: (e: ComposeEvent) => void) =>
+    call<number>("compose_logs_open", { project, services, tail, timestamps, onEvent: channel(onEvent) }),
+  composeRegister: (files: string[], name: string | null) => call<RegisterResult>("compose_register", { files, name }),
+  composeUnregister: (name: string) => call<boolean>("compose_unregister", { name }),
+  composeFileRead: (path: string) => call<ComposeFile>("compose_file_read", { path }),
+  composeFileSave: (path: string, content: string, version: string) => call<ComposeFile>("compose_file_save", { path, content, version }),
+  composeFileCreate: (dir: string, content: string) => call<ComposeFile>("compose_file_create", { dir, content }),
+  composeFindFile: (dir: string) => call<string | null>("compose_find_file", { dir }),
+
   /** Selector de archivo del sistema (Dockerfile). */
   pickFile: async (title: string, defaultPath?: string): Promise<string | null> => {
     if (!isTauri()) return null;
     const r = await openDialog({ directory: false, multiple: false, title, defaultPath });
     return typeof r === "string" ? r : null;
+  },
+
+  /** Selector de uno o varios archivos YAML (proyectos Compose). */
+  pickComposeFiles: async (title: string, filterName: string): Promise<string[]> => {
+    if (!isTauri()) return [];
+    const r = await openDialog({ directory: false, multiple: true, title, filters: [{ name: filterName, extensions: ["yaml", "yml"] }] });
+    if (Array.isArray(r)) return r;
+    return typeof r === "string" ? [r] : [];
   },
 
   /** Selector de carpeta del sistema (para los bind mounts). */

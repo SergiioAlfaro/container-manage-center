@@ -18,6 +18,10 @@ use ts_rs::TS;
 
 use crate::cli::{self, CliOutput, CliRequest};
 
+pub mod file;
+pub mod ops;
+pub mod project;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -133,6 +137,7 @@ fn request(program: &str, args: &[&str], env: &[(String, String)]) -> CliRequest
         program: program.to_owned(),
         args: args.iter().map(|s| s.to_string()).collect(),
         env: env.to_vec(),
+        cwd: None,
         timeout: Duration::from_secs(15),
     }
 }

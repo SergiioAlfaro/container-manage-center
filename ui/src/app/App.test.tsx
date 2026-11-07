@@ -46,10 +46,10 @@ describe("App", () => {
 
   it("navega entre apartados; los pendientes no tienen botones de acción falsos", async () => {
     await boot();
-    await userEvent.click(screen.getByRole("button", { name: "Docker Compose" }));
-    expect(screen.getByRole("heading", { level: 1, name: "Docker Compose" })).toBeInTheDocument();
-    expect(screen.getByText("Disponible a partir de la fase 7")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Docker Compose" })).toHaveAttribute("aria-current", "page");
+    await userEvent.click(screen.getByRole("button", { name: "Eventos y registros" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Eventos y registros" })).toBeInTheDocument();
+    expect(screen.getByText("Disponible a partir de la fase 8")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Eventos y registros" })).toHaveAttribute("aria-current", "page");
     // El área central de un apartado pendiente no contiene botones.
     const main = screen.getByRole("main");
     const content = main.querySelector(".overflow-y-auto")!;

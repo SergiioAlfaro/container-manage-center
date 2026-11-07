@@ -568,3 +568,70 @@ el asistente de contenedores, más /usr, /bin, /sbin, /lib y /var/lib/docker).
 Como Docker no permite añadir montajes a un contenedor existente, "vincular una
 carpeta" abre el asistente de contenedores con el montaje (selector de carpetas
 del sistema).
+
+### D-053 · Docker Compose: alcance y diseño (Fase 7)
+Compose se ejecuta **siempre con el CLI oficial** (plugin `docker compose` o
+binario `docker-compose` v2, detectados según D-032), con argumentos separados
+y sin shell (`cli::run_streaming`). Cada ejecución es una operación del panel de
+actividad con el programa y los argumentos exactos.
+
+* **Proyectos**: los que tienen contenedores se descubren por las etiquetas
+  `com.docker.compose.*` de la lista real de contenedores (proyecto, servicio,
+  archivos, carpeta, número, `oneoff`), sin ejecutar Compose. Los que añade el
+  usuario se guardan en la configuración (`[[compose.projects]]`, nombre y
+  archivos) y se combinan con los desplegados por nombre. `config_set` no puede
+  cambiar esa lista (la interfaz envía la configuración completa y una copia
+  antigua la borraría): solo `compose_register` y `compose_unregister`.
+* **Identidad**: las acciones usan siempre `-p NOMBRE` y, si existen, los
+  archivos (`-f`) y `--project-directory`. El nombre de un proyecto añadido lo
+  decide Compose (`config --format json` sin `-p`: el `name:` del archivo o la
+  carpeta) salvo que el usuario indique otro. Si los archivos ya no existen,
+  parar, iniciar, reiniciar, eliminar y ver registros siguen funcionando solo con
+  las etiquetas (comprobado con Compose 2.26.1 y 5.6.1); desplegar, descargar y
+  construir se rechazan sin ejecutar nada.
+* **Modelo de servicios**: `config --format json` con `--profile "*"`, para ver
+  también los servicios de perfiles. De las variables de entorno solo se
+  conservan los nombres. La configuración resuelta (con los valores) se envía a
+  la interfaz, que la oculta hasta que se pide, y **no se guarda en el registro
+  de actividad** (la salida estándar de `config` no se registra).
+* **Acciones**: `up --detach` (servicios, perfiles, construir, política de
+  descarga, recrear, huérfanos), `down` (volúmenes, imágenes, huérfanos; exige
+  confirmación explícita en el backend), `start`, `stop`, `restart`, `pull` y
+  `build`, con la salida en vivo. Una sola acción a la vez por proyecto
+  (cerrojo `compose:NOMBRE`). Los nombres de servicio y perfil no pueden empezar
+  por `-` y van tras `--`, de modo que nunca se interpretan como opciones.
+* **Cancelación**: el proceso se lanza en su propio grupo; detener envía
+  SIGTERM al grupo (también al plugin, hijo de `docker`) y SIGKILL a los 8 s. La
+  operación queda como cancelada con la salida capturada. Lo que Compose ya
+  hubiera hecho se mantiene (se explica en la interfaz).
+* **Registros**: `logs --follow --no-color --tail N [--timestamps] [-- servicios]`,
+  una operación que se cierra al dejar de mirar; las líneas no se guardan en el
+  registro.
+* Compose se ejecuta desde una carpeta vacía propia (`$XDG_RUNTIME_DIR` o la
+  temporal, `dcc-compose-UID`, 0700) para no cargar nunca por accidente un
+  `compose.yaml` de la carpeta actual de la aplicación, y con `DOCKER_HOST` del
+  Docker al que está conectada la aplicación.
+
+### D-054 · Compose omite en silencio los servicios de perfiles no activos
+Comprobado con Compose 2.26.1 (Debian 13) y 5.6.1: con `-f`, `down`, `stop`,
+`start` y `restart` solo actúan sobre los servicios de los perfiles activos y
+terminan con código 0. Tras desplegar un servicio con `--profile debug`, un
+`down` dejaba ese contenedor en marcha y la red "en uso". La aplicación pasa
+`--profile "*"` en esas cuatro acciones para que actúen sobre todos los
+contenedores del proyecto (comprobado con y sin archivos, en las dos versiones).
+Desplegar, descargar y construir siguen los perfiles que elige el usuario. Lo
+detectó la prueba real `full_lifecycle_with_build_profiles_and_confirmation`.
+
+### D-055 · Edición de archivos Compose
+El editor valida el contenido **sin guardarlo**: `config` con `-f -` en la
+posición de ese archivo y el contenido por la entrada estándar (los demás
+archivos y la carpeta del proyecto se mantienen, así que las rutas relativas y
+el `.env` se resuelven igual). Guardar valida primero y, si Compose lo rechaza,
+solo guarda si el usuario insiste. El guardado es atómico (temporal en la misma
+carpeta, `fsync`, mismos permisos, `rename`) y se niega si el archivo ha
+cambiado desde que se leyó (huella SHA-256): `engine.fileChanged`. Crear un
+proyecto escribe `compose.yaml` con `O_EXCL` solo si la carpeta no tiene ya un
+archivo Compose (`engine.alreadyExists`). Leer y escribir archivos no es una
+operación de Docker y no se registra en el panel de actividad. Tamaño máximo
+1 MiB, UTF-8.
+

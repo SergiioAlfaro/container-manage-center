@@ -90,6 +90,17 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::volumes::volume_remove,
             commands::volumes::volumes_prune,
             commands::volumes::binds_list,
+            commands::compose::compose_projects,
+            commands::compose::compose_config,
+            commands::compose::compose_preview,
+            commands::compose::compose_run_open,
+            commands::compose::compose_logs_open,
+            commands::compose::compose_register,
+            commands::compose::compose_unregister,
+            commands::compose::compose_file_read,
+            commands::compose::compose_file_save,
+            commands::compose::compose_file_create,
+            commands::compose::compose_find_file,
         ])
 }
 

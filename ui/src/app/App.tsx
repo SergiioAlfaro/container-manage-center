@@ -12,6 +12,7 @@ import { NetworksView } from "@/features/networks/NetworksView";
 import { VolumesView } from "@/features/volumes/VolumesView";
 import { BindsView } from "@/features/binds/BindsView";
 import { PendingSection } from "@/features/pending/PendingSection";
+import { ComposeView } from "@/features/compose/ComposeView";
 import { useQueryClient } from "@tanstack/react-query";
 import { SettingsView } from "@/features/settings/SettingsView";
 import { api } from "@/shared/ipc/client";
@@ -87,6 +88,8 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <VolumesView />;
     case "binds":
       return <BindsView />;
+    case "compose":
+      return <ComposeView />;
     case "settings":
       return <SettingsView />;
     default:

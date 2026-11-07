@@ -381,3 +381,5 @@ cat <<'EOF' | tee -a "$REPORT"
 
 Cuando termines: docker rm -f dcc-man-web dcc-man-db; docker network rm dcc-manual-net
 EOF
+
+[ "$FAIL" -eq 0 ]

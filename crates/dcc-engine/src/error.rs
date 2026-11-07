@@ -39,6 +39,15 @@ pub enum EngineError {
     /// Falta la confirmación explícita de una operación destructiva.
     #[error("la operación requiere confirmación explícita")]
     NotConfirmed,
+    /// El archivo cambió en el disco desde que se leyó (no se sobrescribe).
+    #[error("{path} ha cambiado desde que se abrió")]
+    FileChanged { path: String },
+    /// Ya existe un archivo que no se debe sobrescribir.
+    #[error("ya existe {path}")]
+    AlreadyExists { path: String },
+    /// Docker Compose v2+ no está disponible.
+    #[error("Docker Compose no está disponible")]
+    ComposeUnavailable,
     #[error("{message}")]
     Other { message: String },
 }
