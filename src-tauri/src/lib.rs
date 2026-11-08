@@ -6,6 +6,7 @@ mod events;
 mod journal;
 mod state;
 mod streams;
+mod updates;
 
 use dcc_store::ConfigStore;
 use tauri::{Builder, Manager, Runtime};
@@ -37,10 +38,15 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             journal::spawn_history_bridge(app.handle().clone(), activity);
             journal::spawn_events_watcher(app.handle().clone(), engine.clone());
             events::spawn_engine(app.handle().clone(), engine);
+            commands::app::spawn_startup_check(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
+            commands::app::updates_check,
+            commands::app::updates_last,
+            commands::app::open_release_page,
+            commands::app::system_info,
             commands::config::config_get,
             commands::config::config_set,
             commands::activity::activity_list,

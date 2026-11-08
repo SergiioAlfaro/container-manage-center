@@ -4,7 +4,7 @@ import { ArrowLeft, Link2, RefreshCw, Trash2, Unlink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { shortId } from "@/shared/format";
+import { formatDate, shortId } from "@/shared/format";
 import { api } from "@/shared/ipc/client";
 import type { NetworkDetails } from "@/shared/ipc/bindings/NetworkDetails";
 import type { NetworkMember } from "@/shared/ipc/bindings/NetworkMember";
@@ -71,7 +71,7 @@ function Summary({ d }: { d: NetworkDetails }) {
             [t("netDetail.f.id"), mono(s.id)],
             [t("netDetail.f.driver"), mono(s.driver)],
             [t("netDetail.f.scope"), mono(s.scope)],
-            [t("netDetail.f.created"), created && !Number.isNaN(created.getTime()) ? created.toLocaleString(i18n.language === "es" ? "es-ES" : "en-US") : none],
+            [t("netDetail.f.created"), created && !Number.isNaN(created.getTime()) ? formatDate(created, i18n.language) : none],
             [t("netDetail.f.internal"), yes(s.internal)],
             [t("netDetail.f.attachable"), yes(s.attachable)],
             [t("netDetail.f.ipv4"), yes(s.enableIpv4)],

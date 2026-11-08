@@ -6,7 +6,7 @@ import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
 import { isSecretKey } from "@/features/containers/specModel";
 import { joinArgs } from "@/features/containers/shellwords";
-import { formatBytes, shortId } from "@/shared/format";
+import { formatBytes, formatDate, shortId } from "@/shared/format";
 import { api } from "@/shared/ipc/client";
 import type { ImageDetails } from "@/shared/ipc/bindings/ImageDetails";
 import type { ImageLayer } from "@/shared/ipc/bindings/ImageLayer";
@@ -74,7 +74,7 @@ function Summary({ d }: { d: ImageDetails }) {
             [t("imageDetail.f.id"), mono(d.id)],
             [t("imageDetail.f.tags"), d.repoTags.length ? <div className="space-y-0.5">{d.repoTags.map((x) => <div key={x}>{mono(x)}</div>)}</div> : <span className="text-ink-3">{t("images.dangling")}</span>],
             [t("imageDetail.f.digests"), d.repoDigests.length ? <div className="space-y-0.5">{d.repoDigests.map((x) => <div key={x}>{mono(x)}</div>)}</div> : <span className="text-ink-3">{t("imageDetail.localOnly")}</span>],
-            [t("imageDetail.f.created"), created && !Number.isNaN(created.getTime()) ? created.toLocaleString(i18n.language === "es" ? "es-ES" : "en-US") : none],
+            [t("imageDetail.f.created"), created && !Number.isNaN(created.getTime()) ? formatDate(created, i18n.language) : none],
             [t("imageDetail.f.size"), formatBytes(d.size, i18n.language)],
             [t("imageDetail.f.platform"), mono(`${d.os}/${d.architecture}${d.variant ? `/${d.variant}` : ""}`)],
             [t("imageDetail.f.layers"), mono(String(d.layers))],
@@ -168,7 +168,7 @@ function Layers({ reference }: { reference: string }) {
                   {l.tags.length > 0 && <span className="block font-mono text-[11.5px] text-beacon-strong">{l.tags.join(", ")}</span>}
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{l.size > 0 ? formatBytes(l.size, i18n.language) : "0 B"}</td>
-                <td className="px-3 py-2 text-[12px] whitespace-nowrap">{l.created > 0 ? new Date(l.created * 1000).toLocaleString(i18n.language === "es" ? "es-ES" : "en-US") : "—"}</td>
+                <td className="px-3 py-2 text-[12px] whitespace-nowrap">{l.created > 0 ? formatDate(new Date(l.created * 1000), i18n.language) : "—"}</td>
               </tr>
             ))}
           </tbody>

@@ -1,58 +1,20 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useApp } from "@/app/store";
+import { RotateCcw } from "lucide-react";
+import { DEFAULT_CONFIG, useApp } from "@/app/store";
 import type { Language } from "@/shared/ipc/bindings/Language";
 import type { Theme } from "@/shared/ipc/bindings/Theme";
 import { LANGUAGES } from "@/shared/i18n";
-import { Segmented, Switch } from "@/shared/ui/controls";
+import { Button, Segmented, Switch } from "@/shared/ui/controls";
+import { Dialog } from "@/shared/ui/feedback";
+import { numberFormat } from "@/shared/format";
 import { DockerSettings } from "./DockerSettings";
+import { SystemSettings } from "./SystemSettings";
+import { UpdatesSettings } from "./UpdatesSettings";
+import { Group, Row } from "./layout";
 
 export const MIN_RECORDS = 50;
 export const MAX_RECORDS = 10_000;
-
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="mt-8 first:mt-0">
-      <h2 className="mb-2 text-[13px] font-semibold text-ink-2">{title}</h2>
-      <div className="divide-y divide-line rounded-xl border border-line bg-surface">{children}</div>
-    </section>
-  );
-}
-
-function Row({
-  label,
-  hint,
-  children,
-  htmlFor,
-  stacked = false,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-  htmlFor?: string;
-  /** Valor debajo de la etiqueta, para textos largos como rutas. */
-  stacked?: boolean;
-}) {
-  if (stacked) {
-    return (
-      <div className="px-5 py-3.5">
-        <div className="text-[13.5px] text-ink">{label}</div>
-        <div className="mt-1 min-w-0 break-all">{children}</div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center justify-between gap-6 px-5 py-3.5">
-      <div className="min-w-0">
-        <label htmlFor={htmlFor} className="text-[13.5px] text-ink">
-          {label}
-        </label>
-        {hint && <p className="mt-0.5 text-[12px] text-ink-3">{hint}</p>}
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
 
 function MaxRecordsInput({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
   const [draft, setDraft] = useState(String(value));
@@ -83,8 +45,9 @@ function MaxRecordsInput({ value, onCommit }: { value: number; onCommit: (n: num
 
 export function SettingsView() {
   const { t, i18n } = useTranslation();
-  const { config, info, updateConfig } = useApp();
-  const nf = new Intl.NumberFormat(i18n.language === "es" ? "es-ES" : "en-US");
+  const { config, updateConfig } = useApp();
+  const [resetting, setResetting] = useState(false);
+  const nf = numberFormat(i18n.language);
 
   return (
     <div className="mx-auto max-w-[760px] px-8 py-8">
@@ -133,6 +96,11 @@ export function SettingsView() {
 
       <DockerSettings />
 
+
+      <UpdatesSettings />
+
+      <SystemSettings />
+
       <Group title={t("settings.shortcuts")}>
         <Row label={t("settings.shortcutSidebar")}>
           <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[12px] text-ink-2">Ctrl+B</kbd>
@@ -142,14 +110,35 @@ export function SettingsView() {
         </Row>
       </Group>
 
-      <Group title={t("settings.about")}>
-        <Row label={t("settings.version")}>
-          <span className="selectable tabular-nums text-[13px] text-ink-2">{info?.version ?? t("common.unknown")}</span>
-        </Row>
-        <Row label={t("settings.configPath")} stacked>
-          <code className="selectable font-mono text-[12px] text-ink-2">{info?.configPath ?? t("common.unknown")}</code>
+      <Group title={t("settings.reset")}>
+        <Row label={t("settings.resetLabel")} hint={t("settings.resetHint")}>
+          <Button onClick={() => setResetting(true)}>
+            <RotateCcw size={14} /> {t("settings.resetButton")}
+          </Button>
         </Row>
       </Group>
+      {resetting && (
+        <Dialog
+          title={t("settings.resetConfirmTitle")}
+          onClose={() => setResetting(false)}
+          footer={
+            <>
+              <Button onClick={() => setResetting(false)}>{t("common.cancel")}</Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setResetting(false);
+                  void updateConfig({ ui: DEFAULT_CONFIG.ui, activity: DEFAULT_CONFIG.activity, updates: DEFAULT_CONFIG.updates });
+                }}
+              >
+                {t("settings.resetButton")}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-ink-2">{t("settings.resetConfirmBody")}</p>
+        </Dialog>
+      )}
     </div>
   );
 }

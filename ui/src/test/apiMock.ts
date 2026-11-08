@@ -62,6 +62,38 @@ import type { EventQueryResult } from "@/shared/ipc/bindings/EventQueryResult";
 import type { HistoryEntry } from "@/shared/ipc/bindings/HistoryEntry";
 import type { HistoryFilter } from "@/shared/ipc/bindings/HistoryFilter";
 import type { HistoryPage } from "@/shared/ipc/bindings/HistoryPage";
+import type { SystemInfo } from "@/shared/ipc/bindings/SystemInfo";
+import type { UpdateCheck } from "@/shared/ipc/bindings/UpdateCheck";
+import type { UpdateOutcome } from "@/shared/ipc/bindings/UpdateOutcome";
+
+export function updateCheck(over: Partial<UpdateCheck> = {}): UpdateCheck {
+  return {
+    current: "0.9.0",
+    latest: "0.9.3",
+    newer: true,
+    url: "https://github.com/mi-org/dcc/releases/tag/v0.9.3",
+    notes: "Correcciones de errores",
+    published: "2026-12-01T10:00:00Z",
+    checkedUrl: "https://api.github.com/repos/mi-org/dcc/releases/latest",
+    checkedAt: "2026-12-02T09:00:00Z",
+    ...over,
+  };
+}
+
+export const SYSTEM_INFO: SystemInfo = {
+  appVersion: "0.9.0",
+  packageVersion: "0.9.0",
+  executable: "/usr/bin/docker-control-center",
+  os: "Debian GNU/Linux 13 (trixie)",
+  kernel: "6.12.48+deb13-amd64",
+  arch: "x86_64",
+  glibc: "2.41",
+  webkitGtk: "2.50.1",
+  desktop: "GNOME",
+  sessionType: "wayland",
+  configPath: "/home/u/.config/docker-control-center/config.toml",
+  stateDir: "/home/u/.local/state/docker-control-center",
+};
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
 const DEFAULT_CONFIG: AppConfig = {
@@ -70,6 +102,7 @@ const DEFAULT_CONFIG: AppConfig = {
   activity: { panelOpen: false, openOnError: true, maxRecords: 500, keepHistory: true },
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
+  updates: { checkOnStart: false, source: "" },
 };
 
 export const connected: ConnectionState = {
@@ -757,6 +790,11 @@ export const api = {
     return { entries: m, total: m.length, stored: historyEntries.length, persistent: true, sessionStart: SESSION_START, location: "/home/u/.local/state/docker-control-center" };
   }),
   historyClear: vi.fn(async () => null),
+  updatesCheck: vi.fn(async (_source?: string): Promise<UpdateCheck> => updateCheck()),
+  updatesLast: vi.fn(async (): Promise<UpdateOutcome | null> => null),
+  openReleasePage: vi.fn(async (_url: string) => null),
+  systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
+  onUpdateResult: vi.fn(async (_h: (o: UpdateOutcome) => void) => () => {}),
   onDockerEvent: vi.fn(async (_h: (e: DockerEvent) => void) => () => {}),
   pickComposeFiles: vi.fn(async (_t: string, _f: string): Promise<string[]> => ["/home/u/tienda/compose.yaml"]),
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),

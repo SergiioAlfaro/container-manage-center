@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
 import { Badge } from "@/features/networks/badges";
-import { formatBytes, shortId } from "@/shared/format";
+import { formatBytes, formatDate, shortId } from "@/shared/format";
 import { api } from "@/shared/ipc/client";
 import type { VolumeDetails } from "@/shared/ipc/bindings/VolumeDetails";
 import { Button, CopyButton, cx } from "@/shared/ui/controls";
@@ -74,7 +74,7 @@ function Summary({ d }: { d: VolumeDetails }) {
             [t("volDetail.f.driver"), mono(s.driver)],
             [t("volDetail.f.scope"), mono(s.scope)],
             [t("volDetail.f.mountpoint"), s.mountpoint ? mono(s.mountpoint) : none],
-            [t("volDetail.f.created"), created && !Number.isNaN(created.getTime()) ? created.toLocaleString(i18n.language === "es" ? "es-ES" : "en-US") : none],
+            [t("volDetail.f.created"), created && !Number.isNaN(created.getTime()) ? formatDate(created, i18n.language) : none],
             [
               t("volDetail.f.size"),
               <span key="size" className="inline-flex flex-wrap items-center gap-2">

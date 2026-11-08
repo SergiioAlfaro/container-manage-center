@@ -160,6 +160,27 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 
 `project.rs` contiene la identidad (`ProjectRef`), las reglas de nombres (proyecto, servicio y perfil: nunca empiezan por `-` y los servicios van tras `--`), el descubrimiento (`projects_from`), la lectura del modelo (`parse_model`, solo nombres de variables) y los argumentos de cada acción (`action_args`), todo con pruebas unitarias. `ops.rs` ejecuta: `compose_config`, `compose_resolve`, `compose_check` (validación, confirmación, archivos y cerrojo antes de ejecutar nada), `compose_run` (cerrojo `compose:NOMBRE`) y `compose_logs`.
 
+### Actualizaciones y sistema (Fase 9, `src-tauri/src/updates.rs`, D-060)
+
+- `UpdateSource::parse`: `propietario/repositorio` de GitHub (a `api.github.com/…/releases/latest`), `https://…` o `http://` hacia la propia máquina. Todo lo demás se rechaza sin conectarse.
+- `fetch`: `reqwest` 0.12 con `rustls` (motor `ring`), certificados del sistema y `HTTPS_PROXY`. Sin proxy para la propia máquina. Las redirecciones solo a `https`, 15 s de espera y respuestas de 1 MiB como máximo.
+- `parse_release`: lee el formato de GitHub (`tag_name`, `html_url`, `body`) o el propio (`version`, `url`, `notes`). Rechaza borradores y versiones preliminares, y solo admite enlaces `https`.
+- `compare`: compara versiones con semver.
+- `commands/app.rs`:
+  - `spawn_startup_check`: si está activada, comprueba 5 s después de arrancar y envía `updates://result`.
+  - `system_info`: lee `/etc/os-release`, `/proc/sys/kernel/osrelease`, `gnu_get_libc_version`, `tauri::webview_version` y la base de datos de dpkg (solo lectura).
+  - `open_release_page`: abre el enlace con `xdg-open`, sin shell y solo para `https`.
+
+### Paquete (D-059)
+
+- `tauri build --bundles deb` genera el paquete.
+- `scripts/deb-set-depends.sh` sustituye `Depends` por lo que calcula `dpkg-shlibdeps` sobre el binario.
+- `scripts/build-deb-compat.sh` compila en un contenedor de Ubuntu 22.04 (`packaging/build/Dockerfile.ubuntu2204`):
+  - En el equipo: `npm run build` y `cargo fetch` a `target/compat/cargo-home`.
+  - En el contenedor: `cargo-1.91 build --offline --locked`, sin red y con el usuario que lo ejecuta.
+  - En el equipo: `tauri bundle` con ese binario.
+  - En el contenedor: `deb-set-depends.sh` contra las bibliotecas de Ubuntu 22.04.
+
 ### Eventos (Fase 8, `events.rs`, D-057) e historial (D-058)
 
 | Operación | Llamada real |
@@ -221,6 +242,9 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 | `compose_logs_open(project, services, tail, timestamps, onEvent)` | Registros en vivo |
 | `compose_register(files, name)` · `compose_unregister(name)` | Añadir (nombre decidido por Compose salvo que se indique; `compose.duplicate`) y quitar de la lista |
 | `compose_file_read(path)` · `compose_file_save(path, content, version)` · `compose_file_create(dir, content)` · `compose_find_file(dir)` | Archivos (`engine.fileChanged`, `engine.alreadyExists`) |
+| `system_info()` | `SystemInfo`: versión, paquete instalado, ejecutable, sistema, núcleo, arquitectura, glibc, WebKitGTK, escritorio, rutas |
+| `updates_check(source?)` · `updates_last()` | Consulta la fuente (la escrita o la guardada) → `UpdateCheck`; última comprobación de la sesión (`UpdateOutcome`). Errores `updates.noSource`, `updates.invalidSource`, `updates.insecureSource`, `updates.network`, `updates.response` |
+| `open_release_page(url)` | `xdg-open` con un enlace `https://` (`app.open`) |
 | `events_recent(filter)` | Eventos de esta sesión en memoria (`EventPage`, los más recientes primero) |
 | `events_journal(filter)` · `events_journal_clear()` | Eventos guardados (también de sesiones anteriores) y borrarlos (`history.io`) |
 | `events_query(query)` | Consulta a Docker (`EventQueryResult` con eventos, `truncated` y comando equivalente; `engine.invalidInput` sin llamar a Docker) |
@@ -228,7 +252,7 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.fileChanged`, `engine.alreadyExists`, `engine.composeUnavailable`, `compose.duplicate`, `history.io`, `engine.other`, `config.io`.
 
-Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://event` (cada evento de Docker). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
+Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
 
 ## Interfaz
 - `features/engine/store.ts`: estado de conexión; `App` lo alimenta con `engine_state` y el evento `engine://state`. Al pasar a conectado se invalidan todas las consultas; al perder la conexión se descartan.
@@ -243,19 +267,24 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 - `features/volumes/`: lista con tamaños bajo demanda, detalle, asistente de creación (tipos habituales del driver local: tmpfs, NFS, carpeta), diálogos de eliminación y limpieza que consultan a Docker al abrirse; `model.ts` con la estimación de la limpieza según la versión de la API.
 - `features/binds/BindsView.tsx`: carpetas vinculadas con su estado, riesgos y contenedores; "Vincular una carpeta…" usa el selector de carpetas del sistema y abre el asistente de contenedores.
 - `features/compose/`: `store.ts` (lista, detalle con pestaña y filtro de registros, proyecto nuevo), `model.ts` (servicios del archivo unidos a sus contenedores, filtros, acciones; funciones puras), `runs.ts` (última operación de cada proyecto en un almacén global, para que siga al cambiar de apartado; al terminar recarga proyectos, contenedores, volúmenes, redes e imágenes), `RunPanel.tsx` (salida en vivo, interrumpir), `dialogs.tsx` (desplegar, eliminar con confirmación, abrir proyecto; el comando exacto lo calcula el backend), `FileEditor.tsx` (validar sin guardar, guardar con protección frente a cambios externos), `LogsTab.tsx`, `NewProject.tsx`. Si Compose no está disponible se explica cómo instalarlo.
-- `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
+- `app/App.tsx` (Fase 9): los apartados se cargan con `React.lazy` y se precargan 2 s después del arranque (`usePreloadSections`). Una vez cargados se pintan directamente (`View`), sin la suspensión de `lazy`. La terminal (xterm) también se carga al abrirla.
+- `shared/format.ts`: formateadores de `Intl` en caché (`numberFormat`, `dateTimeFormat`) y `formatTimestamp`, que da el único formato de marca de tiempo: 24 h, con fecha y milisegundos opcionales.
+- `shared/ipc/client.ts`: `localizeError` traduce los errores de texto fijo (`LOCALIZED_ERRORS`) al idioma de la interfaz.
+- `features/settings/`: `UpdatesSettings.tsx`, `SystemSettings.tsx` (con `systemReport`), restablecer en `SettingsView.tsx` y `layout.tsx` (`Group`, `Row`).
+- `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms y como mucho una vez por segundo durante las ráfagas, `refreshDelay`), `EventRow.tsx` (filas memorizadas con claves estables, `eventKeys`), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 25 actividad · 239 motor · 23 configuración |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 64 (ocho contra Docker real: inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose; eventos) |
+| Rust unitarias | `cargo test` | 25 actividad · 239 motor · 25 configuración |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 75: incluye las de actualizaciones (servidor local, límites, redirecciones; HTTPS real solo con `DCC_NET_TESTS=1`) y la de la Fase 9 por IPC; ocho contra Docker real (inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose; eventos) |
 | Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
 | Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p dcc-engine --test events_interrupted` | 3 |
-| Interfaz | Vitest + Testing Library | 207 |
+| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 221 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Manual | `scripts/verify-phase-8.sh` | M1–M15 |
+| Paquete | `scripts/verify-phase-9.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
+| Manual | `scripts/verify-phase-9.sh` | M1–M15 |

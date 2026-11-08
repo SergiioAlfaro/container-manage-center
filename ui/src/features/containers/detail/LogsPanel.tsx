@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RotateCw, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { localeOf } from "@/shared/format";
+import { formatTimestamp, numberFormat } from "@/shared/format";
 import { api } from "@/shared/ipc/client";
 import type { LogEvent } from "@/shared/ipc/bindings/LogEvent";
 import type { LogLine } from "@/shared/ipc/bindings/LogLine";
@@ -23,7 +23,7 @@ export function appendCapped(prev: LogLine[], next: LogLine[], max = MAX_LINES):
 export function formatTs(ts: string, lang: string): string {
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return ts;
-  return d.toLocaleString(localeOf(lang), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", fractionalSecondDigits: 3 } as Intl.DateTimeFormatOptions);
+  return formatTimestamp(d, lang, { date: true, ms: true });
 }
 
 export function LogsPanel({ id, name }: { id: string; name: string }) {
@@ -118,7 +118,7 @@ export function LogsPanel({ id, name }: { id: string; name: string }) {
       </div>
 
       <StreamStatusLine status={stream.status} closed={stream.closed} openError={stream.openError} live={t("logs.live")} extra={t("logs.count", { count: lines.length })} />
-      {dropped && <Banner tone="info">{t("logs.dropped", { max: MAX_LINES.toLocaleString(localeOf(i18n.language)) })}</Banner>}
+      {dropped && <Banner tone="info">{t("logs.dropped", { max: numberFormat(i18n.language).format(MAX_LINES) })}</Banner>}
 
       <div
         ref={box}

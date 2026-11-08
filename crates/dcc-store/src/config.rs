@@ -152,6 +152,24 @@ impl ComposeSettings {
     }
 }
 
+/// Comprobación de versiones nuevas de la aplicación (Fase 9, D-060). La
+/// aplicación solo consulta y avisa: nunca descarga ni instala nada.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct UpdatesConfig {
+    /// Comprobar al iniciar la aplicación (desactivado por defecto: la
+    /// aplicación no se conecta a Internet si no se pide).
+    pub check_on_start: bool,
+    /// Dónde se publican las versiones: `propietario/repositorio` de GitHub o
+    /// la dirección HTTPS de un archivo JSON. Vacío: sin fuente.
+    pub source: String,
+}
+
+impl UpdatesConfig {
+    pub const MAX_SOURCE_LEN: usize = 2048;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
@@ -161,6 +179,7 @@ pub struct AppConfig {
     pub activity: ActivityConfig,
     pub docker: DockerConfig,
     pub compose: ComposeSettings,
+    pub updates: UpdatesConfig,
 }
 
 impl Default for AppConfig {
@@ -171,6 +190,7 @@ impl Default for AppConfig {
             activity: ActivityConfig::default(),
             docker: DockerConfig::default(),
             compose: ComposeSettings::default(),
+            updates: UpdatesConfig::default(),
         }
     }
 }
@@ -191,6 +211,18 @@ impl AppConfig {
                 trimmed.to_owned()
             };
         self.compose = self.compose.normalized();
+        let source = self.updates.source.trim();
+        self.updates.source = if source.len() > UpdatesConfig::MAX_SOURCE_LEN
+            || source.chars().any(char::is_control)
+        {
+            String::new()
+        } else {
+            source.to_owned()
+        };
+        // Sin fuente no hay nada que comprobar al iniciar.
+        if self.updates.source.is_empty() {
+            self.updates.check_on_start = false;
+        }
         self
     }
 }

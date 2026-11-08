@@ -31,6 +31,8 @@ export default defineConfig({
   test: {
     root: ".",
     environment: "jsdom",
+    // Zona horaria fija: las pruebas de fechas no dependen del equipo.
+    env: { TZ: "Europe/Madrid" },
     globals: true,
     setupFiles: ["./ui/src/test/setup.ts"],
     include: ["ui/src/**/*.test.{ts,tsx}"],

@@ -1,3 +1,4 @@
+import { formatTimestamp } from "@/shared/format";
 import type { QueryKey } from "@tanstack/react-query";
 import type { DockerEvent } from "@/shared/ipc/bindings/DockerEvent";
 import { keys } from "@/shared/query";
@@ -50,11 +51,7 @@ export function eventDate(e: Pick<DockerEvent, "timeNano">): Date {
 
 /** Hora con milisegundos (los eventos llegan muy seguidos). */
 export function formatEventTime(e: Pick<DockerEvent, "timeNano">, lang: string, withDate = false): string {
-  const d = eventDate(e);
-  const t = d.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-  const ms = String(d.getMilliseconds()).padStart(3, "0");
-  if (!withDate) return `${t}.${ms}`;
-  return `${d.toLocaleDateString(lang, { day: "2-digit", month: "2-digit", year: "numeric" })} ${t}.${ms}`;
+  return formatTimestamp(eventDate(e), lang, { date: withDate, ms: true });
 }
 
 /** Valor de un `<input type="datetime-local">` para unos segundos (hora local). */

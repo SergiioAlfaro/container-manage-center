@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
@@ -49,11 +49,15 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: "Eventos y registros" }));
     expect(screen.getByRole("heading", { level: 1, name: "Eventos y registros" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Eventos y registros" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("radio", { name: "En directo" })).toBeInTheDocument();
+    // Los apartados se cargan al abrirlos (Fase 9).
+    expect(await screen.findByRole("radio", { name: "En directo" })).toBeInTheDocument();
     // Ningún apartado del menú muestra el aviso de "disponible a partir de la fase N".
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });
     for (const item of within(nav).getAllByRole("button").filter((b) => b.textContent && !/Contraer|Expandir/.test(b.textContent))) {
       await userEvent.click(item);
+      // Se comprueba con el apartado ya cargado, no mientras se carga.
+      await waitFor(() => expect(screen.queryByText("Cargando…")).not.toBeInTheDocument());
+      expect(screen.getByRole("main").textContent?.length).toBeGreaterThan(40);
       expect(screen.queryByText(/Disponible a partir de la fase/)).not.toBeInTheDocument();
     }
   });
@@ -78,7 +82,7 @@ describe("App", () => {
   it("cambia a tema oscuro e idioma inglés desde Configuración", async () => {
     await boot();
     await userEvent.click(screen.getByRole("button", { name: "Configuración" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Oscuro" }));
+    await userEvent.click(await screen.findByRole("radio", { name: "Oscuro" }));
     expect(document.documentElement.dataset.theme).toBe("dark");
     await userEvent.click(screen.getByRole("radio", { name: "English" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
@@ -89,7 +93,7 @@ describe("App", () => {
     configSet.mockRejectedValueOnce({ code: "config.io", message: "disco lleno" });
     await boot();
     await userEvent.click(screen.getByRole("button", { name: "Configuración" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Oscuro" }));
+    await userEvent.click(await screen.findByRole("radio", { name: "Oscuro" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar la configuración: disco lleno");
     expect(screen.getByRole("radio", { name: "Sistema" })).toHaveAttribute("aria-checked", "true");
     expect(document.documentElement.dataset.theme).toBe("light");
@@ -123,5 +127,25 @@ describe("App", () => {
     const { apiRecord } = await import("@/test/fixtures");
     await act(async () => handler!({ type: "upsert", record: apiRecord({ status: "failed", error: "boom" }) }));
     expect(screen.getByRole("complementary", { name: "Actividad" })).toBeInTheDocument();
+  });
+
+  it("si la comprobación al iniciar encuentra una versión nueva, lo avisa y lleva a Configuración", async () => {
+    let handler: ((o: import("@/shared/ipc/bindings/UpdateOutcome").UpdateOutcome) => void) | undefined;
+    api.onUpdateResult.mockImplementationOnce(async (h) => {
+      handler = h;
+      return () => {};
+    });
+    await boot();
+    await waitFor(() => expect(handler).toBeDefined());
+    const { updateCheck } = await import("@/test/apiMock");
+    // Sin versión nueva no hay aviso.
+    act(() => handler!({ check: updateCheck({ newer: false, latest: "0.9.0" }), error: null, automatic: true, at: "2026-12-02T09:00:00Z" }));
+    expect(screen.queryByTestId("update-banner")).not.toBeInTheDocument();
+    act(() => handler!({ check: updateCheck(), error: null, automatic: true, at: "2026-12-02T09:00:00Z" }));
+    expect(screen.getByTestId("update-banner")).toHaveTextContent("Hay una versión nueva de Docker Control Center: 0.9.3.");
+    await userEvent.click(screen.getByRole("button", { name: "Ver en Configuración" }));
+    expect(useApp.getState().section).toBe("settings");
+    await userEvent.click(within(screen.getByTestId("update-banner")).getByRole("button", { name: "Cerrar aviso" }));
+    expect(screen.queryByTestId("update-banner")).not.toBeInTheDocument();
   });
 });

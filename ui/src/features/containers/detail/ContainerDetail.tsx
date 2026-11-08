@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,9 @@ import { useContainersNav, type DetailTab } from "../store";
 import { LogsPanel } from "./LogsPanel";
 import { StatsPanel } from "./StatsPanel";
 import { SummaryPanel } from "./SummaryPanel";
-import { TerminalPanel } from "./TerminalPanel";
+
+// xterm.js (unos 280 KB) solo se carga al abrir la pestaña Terminal (Fase 9).
+const TerminalPanel = lazy(() => import("./TerminalPanel").then((m) => ({ default: m.TerminalPanel })));
 
 const TABS: DetailTab[] = ["summary", "logs", "terminal", "stats", "inspect"];
 
@@ -181,7 +183,9 @@ export function ContainerDetail({ id, name, tab }: { id: string; name: string; t
           )}
           {(tab === "terminal" || visited.has("terminal")) && (
             <div className={cx("flex flex-col", tab !== "terminal" && "hidden")}>
-              <TerminalPanel id={d.id} name={d.name} running={running} />
+              <Suspense fallback={<Spinner />}>
+                <TerminalPanel id={d.id} name={d.name} running={running} />
+              </Suspense>
             </div>
           )}
           {(tab === "stats" || visited.has("stats")) && (

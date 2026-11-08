@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { RotateCw, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatBytes, localeOf } from "@/shared/format";
+import { formatBytes, numberFormat } from "@/shared/format";
 import { api } from "@/shared/ipc/client";
 import type { StatsEvent } from "@/shared/ipc/bindings/StatsEvent";
 import type { StatsSample } from "@/shared/ipc/bindings/StatsSample";
@@ -53,7 +53,7 @@ export function StatsPanel({ id, name, running }: { id: string; name: string; ru
     `${id}|${session}`,
   );
   const last = samples[samples.length - 1];
-  const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(v)} %`);
+  const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${numberFormat(lang, { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(v)} %`);
 
   return (
     <div className="space-y-4">

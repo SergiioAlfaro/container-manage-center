@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 
 pub use config::{
     ActivityConfig, AppConfig, ComposeSettings, DockerConfig, DockerMode, Language, SavedProject,
-    Theme, UiConfig, CONFIG_VERSION,
+    Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
 };
 
 pub const APP_DIR: &str = "docker-control-center";
@@ -162,6 +162,47 @@ mod tests {
         s.save(&c).unwrap();
         assert_eq!(s.load().unwrap().config, c);
         assert!(!s.path().with_extension("toml.tmp").exists());
+    }
+
+    #[test]
+    fn updates_section_roundtrip_and_normalization() {
+        let (_d, s) = store();
+        // Un archivo de una versión anterior (sin [updates]) sigue siendo válido.
+        fs::create_dir_all(s.path().parent().unwrap()).unwrap();
+        fs::write(s.path(), "version = 1\n[ui]\ntheme = \"dark\"\n").unwrap();
+        let l = s.load().unwrap();
+        assert_eq!(l.config.updates, UpdatesConfig::default());
+        assert!(!l.config.updates.check_on_start, "desactivado por defecto");
+
+        let c = AppConfig {
+            updates: UpdatesConfig {
+                check_on_start: true,
+                source: "  mi-org/dcc \n".into(),
+            },
+            ..AppConfig::default()
+        }
+        .normalized();
+        assert_eq!(c.updates.source, "mi-org/dcc");
+        assert!(c.updates.check_on_start);
+        s.save(&c).unwrap();
+        assert_eq!(s.load().unwrap().config.updates, c.updates);
+
+        // Sin fuente no se comprueba al iniciar; texto con controles o enorme: se descarta.
+        for bad in [
+            "",
+            "a\u{7}b",
+            &"x".repeat(UpdatesConfig::MAX_SOURCE_LEN + 1),
+        ] {
+            let c = AppConfig {
+                updates: UpdatesConfig {
+                    check_on_start: true,
+                    source: bad.to_owned(),
+                },
+                ..AppConfig::default()
+            }
+            .normalized();
+            assert_eq!(c.updates, UpdatesConfig::default(), "{bad:?}");
+        }
     }
 
     #[cfg(unix)]

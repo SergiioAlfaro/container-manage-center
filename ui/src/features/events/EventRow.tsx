@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
@@ -46,7 +46,8 @@ export function openResource(e: DockerEvent): boolean {
 const LINKABLE = ["container", "image", "network", "volume"];
 const GONE = ["destroy", "delete", "remove", "untag", "prune"];
 
-export function EventRow({ e, withDate }: { e: DockerEvent; withDate?: boolean }) {
+/** Memorizada: con cada evento nuevo solo se pinta su fila (Fase 9). */
+export const EventRow = memo(function EventRow({ e, withDate }: { e: DockerEvent; withDate?: boolean }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const res = eventResource(e);
@@ -98,14 +99,31 @@ export function EventRow({ e, withDate }: { e: DockerEvent; withDate?: boolean }
       )}
     </li>
   );
+});
+
+/**
+ * Clave estable de cada evento. No puede depender de la posición: los nuevos se
+ * añaden arriba y, con la posición en la clave, React volvía a crear todas las
+ * filas con cada evento (y se cerraba el detalle desplegado). Dos eventos
+ * idénticos en el mismo nanosegundo se distinguen por orden de aparición.
+ */
+export function eventKeys(events: DockerEvent[]): string[] {
+  const seen = new Map<string, number>();
+  return events.map((e) => {
+    const base = `${e.timeNano}|${e.kind}|${e.action}|${e.actorId}`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return n === 0 ? base : `${base}|${n}`;
+  });
 }
 
 export function EventList({ events, withDate, empty }: { events: DockerEvent[]; withDate?: boolean; empty: string }) {
+  const keys = useMemo(() => eventKeys(events), [events]);
   if (events.length === 0) return <p className="rounded-xl border border-line bg-surface px-4 py-10 text-center text-[13px] text-ink-2">{empty}</p>;
   return (
     <ul data-testid="event-list" className="overflow-hidden rounded-xl border border-line bg-surface">
       {events.map((e, i) => (
-        <EventRow key={`${e.timeNano}-${e.action}-${e.actorId}-${i}`} e={e} withDate={withDate} />
+        <EventRow key={keys[i]} e={e} withDate={withDate} />
       ))}
     </ul>
   );

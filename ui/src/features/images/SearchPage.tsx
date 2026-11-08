@@ -7,6 +7,7 @@ import { Button } from "@/shared/ui/controls";
 import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { PullDialog } from "./pull/PullDialog";
 import { PullsPanel } from "./pull/PullsPanel";
+import { numberFormat } from "@/shared/format";
 import { useImagesNav } from "./store";
 
 const LIMITS = [10, 25, 50, 100];
@@ -20,7 +21,7 @@ export function SearchPage() {
   const [limit, setLimit] = useState(25);
   const [pulling, setPulling] = useState<string | null>(null);
   const search = useMutation({ mutationFn: () => api.imagesSearch(term.trim(), limit, official) });
-  const nf = new Intl.NumberFormat(i18n.language === "es" ? "es-ES" : "en-US");
+  const nf = numberFormat(i18n.language);
 
   return (
     <div className="flex min-h-full flex-col">

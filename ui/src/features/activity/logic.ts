@@ -1,3 +1,4 @@
+import { formatTimestamp } from "@/shared/format";
 import type { Category } from "@/shared/ipc/bindings/Category";
 import type { OpStatus } from "@/shared/ipc/bindings/OpStatus";
 import type { OperationRecord } from "@/shared/ipc/bindings/OperationRecord";
@@ -75,11 +76,10 @@ export function formatDuration(ms: number | null): string {
   return `${m} min ${s} s`;
 }
 
-export function formatTime(iso: string, locale: string): string {
-  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+export function formatTime(iso: string, lang: string): string {
+  return formatTimestamp(new Date(iso), lang);
 }
 
-export function formatDateTime(iso: string, locale: string): string {
-  const d = new Date(iso);
-  return `${d.toLocaleDateString(locale)} ${d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}.${String(d.getMilliseconds()).padStart(3, "0")}`;
+export function formatDateTime(iso: string, lang: string): string {
+  return formatTimestamp(new Date(iso), lang, { date: true, ms: true });
 }

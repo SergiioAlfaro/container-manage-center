@@ -6,7 +6,7 @@ import { useApp } from "@/app/store";
 import { DiagnosisPanel } from "@/features/engine/DiagnosisPanel";
 import { SourceLabel } from "@/features/engine/SourceLabel";
 import { useEngine } from "@/features/engine/store";
-import { formatBytes, localeOf } from "@/shared/format";
+import { formatBytes, numberFormat } from "@/shared/format";
 import { api } from "@/shared/ipc/client";
 import type { SystemOverview } from "@/shared/ipc/bindings/SystemOverview";
 import { keys } from "@/shared/query";
@@ -49,7 +49,7 @@ function Connected({ data, refetch, fetching }: { data: SystemOverview; refetch:
   const { t, i18n } = useTranslation();
   const navigate = useApp((s) => s.navigate);
   const { info, version, endpoint } = data;
-  const nf = new Intl.NumberFormat(localeOf(i18n.language));
+  const nf = numberFormat(i18n.language);
   const running = Number(info.containersRunning ?? 0);
   const paused = Number(info.containersPaused ?? 0);
   const stopped = Number(info.containersStopped ?? 0);

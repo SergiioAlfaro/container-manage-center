@@ -1,0 +1,16 @@
+# Fase 9 (D-059): entorno para compilar el paquete .deb compatible con
+# Debian 12+ y Ubuntu 22.04+. Se compila sobre la glibc más antigua soportada
+# (Ubuntu 22.04: 2.35; Debian 12 tiene 2.36) y con los nombres de paquete de
+# esas versiones, de modo que el mismo .deb se instala en todas.
+# Lo usa scripts/build-deb-compat.sh; no hace falta construirla a mano.
+ARG BASE=ubuntu:22.04
+FROM ${BASE}
+ARG DEBIAN_FRONTEND=noninteractive
+# Rust 1.91 de los repositorios de Ubuntu (jammy-updates); el proyecto
+# necesita 1.80 o posterior.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      rustc-1.91 cargo-1.91 build-essential pkg-config ca-certificates file dpkg-dev binutils \
+      libwebkit2gtk-4.1-dev librsvg2-dev libxdo-dev libssl-dev libdbus-1-dev \
+ && rm -rf /var/lib/apt/lists/*
+ENV RUSTC=rustc-1.91 CARGO_INCREMENTAL=0

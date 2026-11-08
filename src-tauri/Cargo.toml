@@ -33,6 +33,11 @@ ts-rs.workspace = true
 dcc-activity.workspace = true
 dcc-store.workspace = true
 dcc-engine.workspace = true
+# Comprobación de versiones nuevas (Fase 9, D-060): HTTPS con rustls + ring y
+# los certificados del sistema; respeta HTTPS_PROXY.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
+semver = "1"
+libc = "0.2"
 
 [dev-dependencies]
 tempfile.workspace = true

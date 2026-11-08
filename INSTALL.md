@@ -9,7 +9,10 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 sudo apt install ./docker-control-center_0.8.0_amd64.deb
 ```
 
-`apt` instala las dependencias de ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`).
+`apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
+El paquete declara las versiones mínimas que necesita su binario
+(`dpkg-deb -f paquete.deb Depends`). Si tu sistema es demasiado antiguo para ese
+paquete, apt lo rechaza al instalar en vez de instalar algo que no arranca.
 La aplicación aparece en el menú como **Docker Control Center**. Se ejecuta con
 tu usuario normal: **no la ejecutes con sudo** (se niega a arrancar como root).
 
@@ -32,7 +35,22 @@ técnico, copia ese mensaje al informar del problema.
    npm ci
    npx tauri build --debug --no-bundle && ./target/debug/docker-control-center
    npx tauri build --bundles deb   # paquete: target/release/bundle/deb/
+   bash scripts/deb-set-depends.sh target/release/bundle/deb/*.deb   # dependencias reales
    ```
+   Un paquete compilado así solo sirve para sistemas con una glibc igual o más
+   nueva que la del equipo donde se compiló.
+
+## Opción C: paquete para distribuir (Debian 12+ y Ubuntu 22.04+)
+
+```bash
+bash scripts/build-deb-compat.sh   # resultado: target/compat/docker-control-center_<versión>_amd64.deb
+```
+
+Compila dentro de un contenedor de Docker con Ubuntu 22.04 (la glibc más
+antigua soportada) y con tu usuario, sin red durante la compilación y sin sudo.
+El paquete resultante se instala y funciona en Debian 12, Debian 13, Ubuntu 22.04
+y Ubuntu 24.04. Necesita Docker, Node.js y Rust en el equipo. La primera vez
+descarga la imagen `ubuntu:22.04` y unos 700 MB de paquetes de compilación.
 
 ## Acceso a Docker
 
@@ -123,6 +141,8 @@ vigila la conexión activa cada 10 s.
 | Variable | Uso |
 |---|---|
 | `DCC_CONFIG` | Ruta alternativa del archivo de configuración |
+| `DCC_STATE_DIR` | Carpeta alternativa del historial y del diario de eventos |
+| `HTTPS_PROXY`, `NO_PROXY` | Proxy para la comprobación de actualizaciones (si se activa) |
 | `DCC_LOG` | Nivel de registro del backend (`error`, `warn`, `info`, `debug`, `trace`) |
 | `DOCKER_HOST`, `DOCKER_CONTEXT` | Se respetan en la detección automática |
 | `DOCKER_CONFIG` | Carpeta de la configuración de Docker: contexto y credenciales de registro (`config.json`) |
@@ -131,7 +151,9 @@ vigila la conexión activa cada 10 s.
 
 La aplicación no necesita Internet: las fuentes y recursos van empaquetados, la
 política de seguridad de la ventana bloquea cualquier conexión externa y Docker
-se usa a través del socket local. Solo las operaciones que **Docker Engine** hace
+se usa a través del socket local. La única conexión propia de la aplicación es la
+comprobación de versiones nuevas (Configuración → Actualizaciones), que está
+desactivada mientras no indiques una fuente y la uses. Solo las operaciones que **Docker Engine** hace
 contra registros remotos necesitan que Docker tenga red: descargar imágenes,
 buscar en Docker Hub y construir con imágenes base que no estén en el equipo.
 

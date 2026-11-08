@@ -403,7 +403,26 @@ mientras haya conexión).
   - **Socket personalizado**: una ruta absoluta concreta.
   - **Probar conexión** comprueba la configuración sin guardarla. **Guardar y conectar** la aplica. **Volver a conectar** repite la detección.
   - Conexión actual (socket, origen, versión, API, rootless) y **Docker Compose** (botón Comprobar, que ejecuta `docker compose version`). Si no está instalado lo indica y muestra cómo instalarlo; no es necesario para usar el resto de la aplicación.
-- **Atajos** y **Acerca de** (versión y ruta del archivo de configuración).
+- **Actualizaciones**: versión instalada (y si es el paquete .deb) y dónde se
+  publican las versiones (un repositorio de GitHub, `propietario/repositorio`,
+  o la dirección `https://` de un archivo JSON). **Comprobar ahora** consulta esa
+  fuente y dice si hay una versión nueva, con sus novedades y un enlace a su
+  página. **Comprobar al iniciar** lo hace cada vez que abres la aplicación y, si
+  hay una versión nueva, la avisa arriba. La aplicación **nunca descarga ni
+  instala nada**: para actualizar, instala el paquete nuevo con
+  `sudo apt install ./docker-control-center_X.Y.Z_amd64.deb` (se conservan tu
+  configuración y tu historial). Sin fuente no se conecta a Internet.
+- **Sistema**: versiones de la aplicación, del paquete, de WebKitGTK y de glibc,
+  el sistema operativo y el escritorio, y los datos de Docker y Compose.
+  **Copiar** genera un informe en texto para comunicar un problema (sin
+  proyectos, variables ni credenciales).
+- **Restablecer las preferencias**: tema, idioma, panel de actividad, historial y
+  actualizaciones vuelven a sus valores iniciales, tras confirmarlo. No cambia la
+  conexión con Docker ni los proyectos Compose.
+- **Atajos** de teclado.
+
+Las fechas y horas de los registros (panel de actividad, eventos, historial y
+logs) usan siempre el mismo formato de 24 horas.
 
 Todo se guarda al momento en `~/.config/docker-control-center/config.toml`.
 

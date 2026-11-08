@@ -7,6 +7,10 @@ import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import i18n from "@/shared/i18n";
+import type { SystemInfo } from "./bindings/SystemInfo";
+import type { UpdateCheck } from "./bindings/UpdateCheck";
+import type { UpdateOutcome } from "./bindings/UpdateOutcome";
 import type { ActivityEvent } from "./bindings/ActivityEvent";
 import type { AppConfig } from "./bindings/AppConfig";
 import type { AppInfo } from "./bindings/AppInfo";
@@ -79,16 +83,38 @@ export const ACTIVITY_RESYNC = "activity://resync";
 export const ENGINE_STATE = "engine://state";
 
 /** Normaliza cualquier error de `invoke` a `CommandError`. */
+/**
+ * Errores cuyo texto es siempre el mismo (lo genera la aplicación, no Docker):
+ * se muestran en el idioma de la interfaz (Fase 9). Los demás conservan el
+ * mensaje original, que lleva el detalle técnico (el de Docker, una ruta…).
+ */
+export const LOCALIZED_ERRORS = [
+  "engine.notConnected",
+  "engine.timeout",
+  "engine.notConfirmed",
+  "engine.composeUnavailable",
+  "ipc.unavailable",
+  "updates.noSource",
+  "updates.invalidSource",
+  "updates.insecureSource",
+] as const;
+
+export function localizeError(e: CommandError): CommandError {
+  if (!(LOCALIZED_ERRORS as readonly string[]).includes(e.code)) return e;
+  const key = `errorCodes.${e.code.replace(".", "_")}`;
+  return i18n.exists(key) ? { ...e, message: i18n.t(key) } : e;
+}
+
 export function toCommandError(e: unknown): CommandError {
   if (e && typeof e === "object" && "code" in e && "message" in e) {
-    return e as CommandError;
+    return localizeError(e as CommandError);
   }
   return { code: "unknown", message: e instanceof Error ? e.message : String(e), httpStatus: null, issues: null };
 }
 
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
-    throw { code: "ipc.unavailable", message: "La interfaz se está ejecutando fuera de la aplicación de escritorio.", httpStatus: null, issues: null } satisfies CommandError;
+    throw localizeError({ code: "ipc.unavailable", message: "La interfaz se está ejecutando fuera de la aplicación de escritorio.", httpStatus: null, issues: null });
   }
   try {
     return await invoke<T>(cmd, args);
@@ -105,6 +131,11 @@ function channel<T>(handler: (e: T) => void): Channel<T> {
 
 export const api = {
   appInfo: () => call<AppInfo>("app_info"),
+  /** Fase 9: versiones nuevas (solo consulta) e información del sistema. */
+  updatesCheck: (source?: string) => call<UpdateCheck>("updates_check", { source: source ?? null }),
+  updatesLast: () => call<UpdateOutcome | null>("updates_last"),
+  openReleasePage: (url: string) => call<null>("open_release_page", { url }),
+  systemInfo: () => call<SystemInfo>("system_info"),
   configGet: () => call<AppConfig>("config_get"),
   configSet: (config: AppConfig) => call<AppConfig>("config_set", { config }),
   activityList: () => call<OperationRecord[]>("activity_list"),
@@ -227,6 +258,12 @@ export const api = {
   onEngineState: async (handler: (s: ConnectionState) => void): Promise<UnlistenFn> => {
     if (!isTauri()) return () => {};
     return listen<ConnectionState>(ENGINE_STATE, (e) => handler(e.payload));
+  },
+
+  /** Resultado de la comprobación de versiones nuevas al iniciar. */
+  onUpdateResult: async (handler: (o: UpdateOutcome) => void): Promise<UnlistenFn> => {
+    if (!isTauri()) return () => {};
+    return listen<UpdateOutcome>("updates://result", (e) => handler(e.payload));
   },
 
   /** Cada evento de Docker recibido por la suscripción de la aplicación. */

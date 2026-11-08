@@ -164,16 +164,19 @@
     "openOnErrorHint": "Muestra el error sin que tengas que buscarlo.",
     "maxRecords": "Operaciones conservadas",
     "maxRecordsHint": "Entre {{min}} y {{max}}. Las más antiguas se descartan.",
-    "about": "Acerca de",
-    "version": "Versión",
-    "configPath": "Archivo de configuración",
     "saveError": "No se pudo guardar la configuración: {{message}}",
     "saved": "Guardado",
     "shortcuts": "Atajos de teclado",
     "shortcutSidebar": "Contraer o expandir la barra lateral",
     "shortcutActivity": "Abrir o cerrar el panel de actividad",
     "keepHistory": "Guardar el historial entre sesiones",
-    "keepHistoryHint": "Guarda en disco las operaciones (sin cuerpos, comandos ni salidas, que pueden contener secretos) y los eventos de Docker, para consultarlos en Eventos y registros."
+    "keepHistoryHint": "Guarda en disco las operaciones (sin cuerpos, comandos ni salidas, que pueden contener secretos) y los eventos de Docker, para consultarlos en Eventos y registros.",
+    "reset": "Restablecer",
+    "resetLabel": "Restablecer las preferencias",
+    "resetHint": "Vuelve a los valores iniciales de apariencia, panel de actividad y actualizaciones. No cambia la conexión con Docker ni la lista de proyectos Compose.",
+    "resetButton": "Restablecer",
+    "resetConfirmTitle": "¿Restablecer las preferencias?",
+    "resetConfirmBody": "Tema, idioma, panel de actividad, historial y actualizaciones vuelven a sus valores iniciales. La conexión con Docker, los proyectos Compose y el historial ya guardado no cambian."
   },
   "common": {
     "dismiss": "Cerrar aviso",
@@ -181,7 +184,8 @@
     "loading": "Cargando…",
     "retry": "Reintentar",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "cancel": "Cancelar"
   },
   "ops": {
     "system": {
@@ -1847,5 +1851,74 @@
     "clear": "Borrar historial",
     "clearTitle": "Borrar el historial de operaciones",
     "clearBody": "Se borrarán del disco las {{count}} operaciones guardadas. El panel de actividad de esta sesión no cambia."
+  },
+  "updates": {
+    "title": "Actualizaciones",
+    "installed": "Versión instalada",
+    "installedPackage": "Paquete .deb instalado ({{version}})",
+    "installedLocal": "Sin instalar como paquete (compilación local)",
+    "source": "Dónde se publican las versiones",
+    "sourceHint": "Repositorio de GitHub («propietario/repositorio») o dirección https:// de un archivo JSON con «version». La aplicación solo consulta y avisa: nunca descarga ni instala nada.",
+    "sourcePlaceholder": "propietario/repositorio o https://…/latest.json",
+    "checkNow": "Comprobar ahora",
+    "checking": "Comprobando…",
+    "onStart": "Comprobar al iniciar la aplicación",
+    "onStartHint": "Una consulta a la fuente indicada cada vez que se abre la aplicación. Sin conexión no pasa nada: se anota aquí.",
+    "onStartNoSource": "Indica primero dónde se publican las versiones.",
+    "newer": "Hay una versión nueva: {{latest}} (tienes la {{current}}).",
+    "published": "publicada el {{date}}",
+    "upToDate": "Tienes la versión más reciente ({{current}}; la publicada es la {{latest}}).",
+    "openPage": "Abrir la página de la versión",
+    "notes": "Novedades",
+    "checkedAt": "Consultado {{url}} el {{time}}.",
+    "lastFailed": "La última comprobación falló: {{message}}",
+    "howTo": "Para actualizar, descarga el paquete nuevo e instálalo con «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb». Tu configuración y tu historial se conservan.",
+    "banner": "Hay una versión nueva de Docker Control Center: {{latest}}.",
+    "bannerOpen": "Ver en Configuración"
+  },
+  "system": {
+    "title": "Sistema",
+    "hint": "Versiones y datos del equipo. «Copiar» genera un informe en texto para comunicar un problema (sin proyectos, variables ni credenciales).",
+    "app": "Aplicación",
+    "host": "Equipo",
+    "docker": "Docker",
+    "appVersion": "Versión",
+    "package": "Paquete .deb",
+    "notInstalled": "no instalado (compilación local)",
+    "executable": "Ejecutable",
+    "webkit": "WebKitGTK",
+    "configPath": "Configuración",
+    "stateDir": "Historial y eventos",
+    "os": "Sistema operativo",
+    "kernel": "Núcleo",
+    "arch": "Arquitectura",
+    "glibc": "glibc",
+    "desktop": "Escritorio",
+    "engine": "Docker Engine",
+    "dockerOs": "Sistema de Docker",
+    "storage": "Almacenamiento",
+    "cgroup": "cgroups",
+    "rootDir": "Carpeta de datos",
+    "resources": "Recursos",
+    "rootless": "Rootless",
+    "notConnected": "sin conexión",
+    "compose": {
+      "label": "Docker Compose",
+      "notInstalled": "no instalado",
+      "pluginUnusable": "instalado pero no funciona",
+      "legacy": "versión 1 (no compatible)",
+      "unrecognized": "no reconocido",
+      "error": "no se pudo comprobar"
+    }
+  },
+  "errorCodes": {
+    "engine_notConnected": "No hay conexión con Docker Engine.",
+    "engine_timeout": "Docker no respondió a tiempo.",
+    "engine_notConfirmed": "La operación necesita una confirmación explícita.",
+    "engine_composeUnavailable": "Docker Compose no está disponible.",
+    "ipc_unavailable": "La interfaz se está ejecutando fuera de la aplicación de escritorio.",
+    "updates_noSource": "No hay ninguna fuente de actualizaciones configurada.",
+    "updates_invalidSource": "Fuente no válida: indica «propietario/repositorio» de GitHub o una dirección https://",
+    "updates_insecureSource": "Solo se admiten direcciones https:// (o http:// hacia esta misma máquina)."
   }
 }

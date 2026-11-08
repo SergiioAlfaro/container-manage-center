@@ -486,14 +486,17 @@ fn live_create_inspect_duplicate_via_ipc() {
     let h = harness_with(dir, docker);
     wait_for("conexión", || engine_state(&h)["state"] == "connected");
     let images = invoke(&h, "images_list", json!({})).unwrap();
+    // Una imagen local con etiqueta y con comando o entrypoint: Docker no crea
+    // contenedores de una imagen sin ninguno de los dos (las importadas con
+    // `docker import`, por ejemplo), y aquí no se indica comando.
     let Some(image) = images.as_array().unwrap().iter().find_map(|i| {
-        i["repoTags"]
-            .as_array()
-            .and_then(|t| t.first())
-            .and_then(|t| t.as_str())
-            .map(str::to_owned)
+        let tag = i["repoTags"].as_array()?.first()?.as_str()?.to_owned();
+        let d = invoke(&h, "image_details", json!({ "reference": i["id"] })).ok()?;
+        let runnable = d["command"].as_array().is_some_and(|c| !c.is_empty())
+            || d["entrypoint"].as_array().is_some_and(|c| !c.is_empty());
+        runnable.then_some(tag)
     }) else {
-        eprintln!("omitida: no hay imágenes locales");
+        eprintln!("omitida: no hay imágenes locales con comando");
         return;
     };
     let name = format!("dcc-test-ipc-{}", std::process::id());
@@ -1728,6 +1731,88 @@ fn phase8_commands_without_connection() {
         (Some(0), Some(true))
     );
     invoke(&h, "events_journal_clear", json!({})).unwrap();
+}
+
+/// Fase 9: información del sistema, comprobación de versiones nuevas (con un
+/// servidor local real) y validación de la fuente y de los enlaces.
+#[test]
+fn phase9_system_info_and_updates() {
+    let h = harness();
+    let info = invoke(&h, "system_info", json!({})).unwrap();
+    assert_eq!(info["appVersion"], env!("CARGO_PKG_VERSION"));
+    assert_eq!(info["arch"], std::env::consts::ARCH);
+    assert!(
+        info["glibc"].as_str().is_some_and(|v| v.starts_with("2.")),
+        "{info}"
+    );
+    assert!(info["configPath"]
+        .as_str()
+        .unwrap()
+        .ends_with("config.toml"));
+    assert!(info["stateDir"].as_str().is_some(), "{info}");
+
+    // Sin fuente, fuente insegura o mal escrita: no sale ninguna petición.
+    let e = invoke(&h, "updates_check", json!({ "source": null })).unwrap_err();
+    assert_eq!(e["code"], "updates.noSource", "{e}");
+    let e = invoke(
+        &h,
+        "updates_check",
+        json!({ "source": "http://ejemplo.es/v.json" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "updates.insecureSource", "{e}");
+    let e = invoke(&h, "updates_check", json!({ "source": "no es una fuente" })).unwrap_err();
+    assert_eq!(e["code"], "updates.invalidSource", "{e}");
+    let e = invoke(
+        &h,
+        "open_release_page",
+        json!({ "url": "file:///etc/passwd" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "app.open", "{e}");
+
+    // Servidor local que publica una versión más nueva.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        use std::io::{Read, Write};
+        let (mut c, _) = listener.accept().unwrap();
+        let mut buf = [0u8; 2048];
+        let n = c.read(&mut buf).unwrap();
+        let req = String::from_utf8_lossy(&buf[..n]).to_string();
+        let body = r#"{"version":"99.0.0","url":"https://ejemplo.es/v99","notes":"Nueva"}"#;
+        write!(c, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+        req
+    });
+    let src = format!("http://{addr}/latest.json");
+    let r = invoke(&h, "updates_check", json!({ "source": src })).unwrap();
+    assert_eq!(
+        (r["latest"].as_str(), r["newer"].as_bool()),
+        (Some("99.0.0"), Some(true)),
+        "{r}"
+    );
+    assert_eq!(r["current"], env!("CARGO_PKG_VERSION"));
+    let req = server.join().unwrap();
+    assert!(req.starts_with("GET /latest.json HTTP/1.1"), "{req}");
+    assert!(
+        req.to_lowercase().contains(&format!(
+            "user-agent: docker-control-center/{}",
+            env!("CARGO_PKG_VERSION")
+        )),
+        "{req}"
+    );
+    let last = invoke(&h, "updates_last", json!({})).unwrap();
+    assert_eq!(last["check"]["latest"], "99.0.0");
+    assert_eq!(last["automatic"], false);
+
+    // La sección [updates] se guarda normalizada.
+    let mut cfg = invoke(&h, "config_get", json!({})).unwrap();
+    cfg["updates"] = json!({ "checkOnStart": true, "source": "  mi-org/dcc  " });
+    let saved = invoke(&h, "config_set", json!({ "config": cfg })).unwrap();
+    assert_eq!(
+        saved["updates"],
+        json!({ "checkOnStart": true, "source": "mi-org/dcc" })
+    );
 }
 
 /// Contra Docker real: la aplicación se suscribe sola al conectar; los eventos

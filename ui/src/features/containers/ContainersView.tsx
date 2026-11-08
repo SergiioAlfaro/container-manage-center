@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -34,8 +34,106 @@ interface Failure {
   message: string;
 }
 
-function ContainersTable() {
+/**
+ * Fila de la tabla. Se memoriza (Fase 9): al recargar la lista, TanStack Query
+ * conserva los objetos que no han cambiado, así que solo se vuelven a pintar las
+ * filas de los contenedores que han cambiado. `minute` hace que el tiempo
+ * relativo ("hace 3 minutos") se actualice como mucho una vez por minuto.
+ */
+const ContainerRow = memo(function ContainerRow({
+  c,
+  op,
+  onOpen,
+  onRun,
+  onRemove,
+}: {
+  c: ContainerSummary;
+  op: Op | undefined;
+  /** Solo provoca que la fila se vuelva a pintar al cambiar de minuto. */
+  minute: number;
+  onOpen: (id: string, name: string) => void;
+  onRun: (v: { c: ContainerSummary; op: Op }) => void;
+  onRemove: (c: ContainerSummary) => void;
+}) {
   const { t, i18n } = useTranslation();
+  const ports = uniquePorts(c.ports);
+  return (
+    <tr className={cx("align-top", op && "bg-surface-2/60")}>
+      <td className="px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span aria-hidden className={cx("h-2 w-2 shrink-0 rounded-full", STATE_DOT[c.state] ?? "bg-off")} />
+          <button
+            type="button"
+            onClick={() => onOpen(c.id, c.name)}
+            title={t("containers.openDetail", { name: c.name })}
+            className="truncate text-left font-medium hover:text-beacon-strong hover:underline"
+          >
+            <span>{c.name}</span>
+          </button>
+        </div>
+        <div className="mt-0.5 flex items-center gap-2 pl-4 text-[11.5px] text-ink-3">
+          <span className="selectable font-mono">{shortId(c.id)}</span>
+          {c.composeProject && <span className="truncate rounded bg-surface-sunk px-1.5">compose: {c.composeProject}</span>}
+        </div>
+      </td>
+      <td className="selectable truncate px-3 py-2.5 font-mono text-[12px]" title={c.image}>
+        {c.image}
+      </td>
+      <td className="px-3 py-2.5">
+        <div>{t(`containers.state.${c.state}`, { defaultValue: c.state })}</div>
+        <div className="truncate text-[11.5px] text-ink-3" title={c.status}>
+          {c.status}
+        </div>
+      </td>
+      <td className="selectable px-3 py-2.5 font-mono text-[11.5px] text-ink-2">
+        {ports.length === 0 ? <span className="text-ink-3">—</span> : ports.map((p) => <div key={p}>{p}</div>)}
+      </td>
+      <td className="truncate px-3 py-2.5 text-[12px] whitespace-nowrap text-ink-2" title={formatAbsolute(c.created, i18n.language)}>
+        {formatRelative(c.created, i18n.language)}
+      </td>
+      <td className="px-3 py-2">
+        <div className="flex justify-end gap-0.5">
+          {op ? (
+            <span className="flex h-7 items-center gap-1.5 px-2 text-[12px] text-ink-3">
+              <Spinner size={13} /> {t(`containers.action.${op}`)}
+            </span>
+          ) : (
+            <>
+              {allowedActions(c.state).map((a) => {
+                const Icon = ICONS[a];
+                const label = t("containers.actionOn", { action: t(`containers.action.${a}`), name: c.name });
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => onRun({ c, op: a })}
+                    aria-label={label}
+                    title={t(`containers.action.${a}`)}
+                    className="grid h-7 w-7 place-items-center rounded-md text-ink-2 hover:bg-surface-sunk hover:text-ink"
+                  >
+                    <Icon size={15} strokeWidth={1.75} />
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => onRemove(c)}
+                aria-label={t("containers.actionOn", { action: t("containers.action.remove"), name: c.name })}
+                title={t("containers.action.remove")}
+                className="grid h-7 w-7 place-items-center rounded-md text-ink-2 hover:bg-err/10 hover:text-err"
+              >
+                <Trash2 size={15} strokeWidth={1.75} />
+              </button>
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+});
+
+function ContainersTable() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: keys.containers, queryFn: api.containersList });
   const [filter, setFilter] = useState<Filter>("all");
@@ -72,6 +170,7 @@ function ContainersTable() {
 
   const all = q.data ?? [];
   const visible = useMemo(() => all.filter((c) => matchesContainer(c, filter, query)), [all, filter, query]);
+  const minute = Math.floor(Date.now() / 60_000);
 
   return (
     <div className="px-8 py-6">
@@ -140,83 +239,9 @@ function ContainersTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {visible.map((c) => {
-                const op = busy[c.id];
-                const ports = uniquePorts(c.ports);
-                return (
-                  <tr key={c.id} className={cx("align-top", op && "bg-surface-2/60")}>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span aria-hidden className={cx("h-2 w-2 shrink-0 rounded-full", STATE_DOT[c.state] ?? "bg-off")} />
-                        <button
-                          type="button"
-                          onClick={() => nav.showDetail(c.id, c.name)}
-                          title={t("containers.openDetail", { name: c.name })}
-                          className="truncate text-left font-medium hover:text-beacon-strong hover:underline"
-                        >
-                          <span>{c.name}</span>
-                        </button>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2 pl-4 text-[11.5px] text-ink-3">
-                        <span className="selectable font-mono">{shortId(c.id)}</span>
-                        {c.composeProject && <span className="truncate rounded bg-surface-sunk px-1.5">compose: {c.composeProject}</span>}
-                      </div>
-                    </td>
-                    <td className="selectable truncate px-3 py-2.5 font-mono text-[12px]" title={c.image}>
-                      {c.image}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div>{t(`containers.state.${c.state}`, { defaultValue: c.state })}</div>
-                      <div className="truncate text-[11.5px] text-ink-3" title={c.status}>
-                        {c.status}
-                      </div>
-                    </td>
-                    <td className="selectable px-3 py-2.5 font-mono text-[11.5px] text-ink-2">
-                      {ports.length === 0 ? <span className="text-ink-3">—</span> : ports.map((p) => <div key={p}>{p}</div>)}
-                    </td>
-                    <td className="truncate px-3 py-2.5 text-[12px] whitespace-nowrap text-ink-2" title={formatAbsolute(c.created, i18n.language)}>
-                      {formatRelative(c.created, i18n.language)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex justify-end gap-0.5">
-                        {op ? (
-                          <span className="flex h-7 items-center gap-1.5 px-2 text-[12px] text-ink-3">
-                            <Spinner size={13} /> {t(`containers.action.${op}`)}
-                          </span>
-                        ) : (
-                          <>
-                            {allowedActions(c.state).map((a) => {
-                              const Icon = ICONS[a];
-                              const label = t("containers.actionOn", { action: t(`containers.action.${a}`), name: c.name });
-                              return (
-                                <button
-                                  key={a}
-                                  type="button"
-                                  onClick={() => run.mutate({ c, op: a })}
-                                  aria-label={label}
-                                  title={t(`containers.action.${a}`)}
-                                  className="grid h-7 w-7 place-items-center rounded-md text-ink-2 hover:bg-surface-sunk hover:text-ink"
-                                >
-                                  <Icon size={15} strokeWidth={1.75} />
-                                </button>
-                              );
-                            })}
-                            <button
-                              type="button"
-                              onClick={() => setRemoving(c)}
-                              aria-label={t("containers.actionOn", { action: t("containers.action.remove"), name: c.name })}
-                              title={t("containers.action.remove")}
-                              className="grid h-7 w-7 place-items-center rounded-md text-ink-2 hover:bg-err/10 hover:text-err"
-                            >
-                              <Trash2 size={15} strokeWidth={1.75} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {visible.map((c) => (
+                <ContainerRow key={c.id} c={c} op={busy[c.id]} minute={minute} onOpen={nav.showDetail} onRun={run.mutate} onRemove={setRemoving} />
+              ))}
             </tbody>
           </table>
           {visible.length === 0 && <p className="px-4 py-10 text-center text-[13px] text-ink-2">{t("containers.noMatches")}</p>}

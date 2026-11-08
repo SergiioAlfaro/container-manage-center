@@ -13,7 +13,7 @@ import { useContainersNav } from "@/features/containers/store";
 import { useEngine } from "@/features/engine/store";
 import type { DockerEvent } from "@/shared/ipc/bindings/DockerEvent";
 import { EventsView } from "./EventsView";
-import { REFRESH_DELAY_MS, useLiveRefresh } from "./liveRefresh";
+import { REFRESH_DELAY_MS, REFRESH_MIN_INTERVAL_MS, refreshDelay, useLiveRefresh } from "./liveRefresh";
 import { useEvents } from "./store";
 
 let emit: (e: DockerEvent) => void = () => {};
@@ -64,6 +64,24 @@ describe("Eventos: en directo", () => {
     expect(useContainersNav.getState().page).toMatchObject({ kind: "detail", id: "c0ffee0123456789", name: "web" });
   });
 
+  it("un evento desplegado sigue desplegado al llegar otros (Fase 9)", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<Live />);
+    await waitFor(() => expect(api.onDockerEvent).toHaveBeenCalled());
+    act(() => emit(dockerEvent({ action: "die", timeNano: 1e18, attributes: { name: "web", exitCode: "137", image: "nginx:1.27" } })));
+    await user.click(screen.getByRole("button", { name: "Detalles del evento" }));
+    expect(screen.getByText("exitCode")).toBeInTheDocument();
+    act(() => {
+      emit(dockerEvent({ action: "destroy", timeNano: 1e18 + 5 }));
+      emit(dockerEvent({ action: "create", timeNano: 1e18 + 9 }));
+    });
+    expect(within(screen.getByTestId("event-list")).getAllByRole("listitem")).toHaveLength(3);
+    // El detalle abierto es el del evento `die`, que ahora está el tercero.
+    expect(screen.getByText("exitCode")).toBeInTheDocument();
+    const expanded = screen.getAllByRole("button", { name: "Detalles del evento" }).map((b) => b.getAttribute("aria-expanded"));
+    expect(expanded).toEqual(["false", "false", "true"]);
+  });
+
   it("en pausa guarda los nuevos y los muestra al reanudar; los detalles muestran los atributos", async () => {
     const user = userEvent.setup();
     renderWithQuery(<Live />);
@@ -106,6 +124,42 @@ describe("Eventos: en directo", () => {
     act(() => void vi.advanceTimersByTime(REFRESH_DELAY_MS + 10));
     expect(spy).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it("en una ráfaga larga recarga como mucho una vez por segundo y nunca pierde la última", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: false });
+    const qc = new QueryClient();
+    const spy = vi.spyOn(qc, "invalidateQueries");
+    render(
+      <QueryClientProvider client={qc}>
+        <Live />
+      </QueryClientProvider>,
+    );
+    await vi.waitFor(() => expect(api.onDockerEvent).toHaveBeenCalled());
+    const flushes = () => spy.mock.calls.filter((c) => JSON.stringify(c[0]!.queryKey) === '["containers"]').length;
+    // 100 eventos, uno cada 370 ms (lo que tarda un `docker start`): 37 s.
+    for (let i = 0; i < 100; i++) {
+      act(() => emit(dockerEvent({ action: "start", timeNano: 1e18 + i })));
+      act(() => void vi.advanceTimersByTime(370));
+    }
+    act(() => void vi.advanceTimersByTime(REFRESH_MIN_INTERVAL_MS));
+    // Antes: una recarga por evento (100). Ahora: ~1 por segundo.
+    expect(flushes()).toBeGreaterThanOrEqual(36);
+    expect(flushes()).toBeLessThanOrEqual(39);
+    // El último evento llega a la interfaz: tras él hay siempre una recarga.
+    spy.mockClear();
+    act(() => emit(dockerEvent({ action: "die", timeNano: 2e18 })));
+    act(() => void vi.advanceTimersByTime(REFRESH_DELAY_MS - 10));
+    expect(flushes()).toBe(0);
+    act(() => void vi.advanceTimersByTime(REFRESH_MIN_INTERVAL_MS));
+    expect(flushes()).toBe(1);
+    vi.useRealTimers();
+  });
+
+  it("la primera recarga tras un rato tranquilo llega a los 250 ms", () => {
+    expect(refreshDelay(10_000, -Infinity)).toBe(REFRESH_DELAY_MS);
+    expect(refreshDelay(10_000, 5_000)).toBe(REFRESH_DELAY_MS);
+    expect(refreshDelay(10_000, 9_900)).toBe(900);
   });
 });
 

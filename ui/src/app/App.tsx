@@ -1,26 +1,67 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState, type ComponentType } from "react";
 import { PanelRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ActivityPanel } from "@/features/activity/ActivityPanel";
 import { useActivity } from "@/features/activity/store";
-import { ContainersView } from "@/features/containers/ContainersView";
 import { DashboardView } from "@/features/dashboard/DashboardView";
 import { ConnectionBadge } from "@/features/engine/ConnectionBadge";
 import { useEngine } from "@/features/engine/store";
-import { ImagesView } from "@/features/images/ImagesView";
-import { NetworksView } from "@/features/networks/NetworksView";
-import { VolumesView } from "@/features/volumes/VolumesView";
-import { BindsView } from "@/features/binds/BindsView";
 import { PendingSection } from "@/features/pending/PendingSection";
-import { ComposeView } from "@/features/compose/ComposeView";
-import { EventsView } from "@/features/events/EventsView";
 import { useLiveRefresh } from "@/features/events/liveRefresh";
 import { useQueryClient } from "@tanstack/react-query";
-import { SettingsView } from "@/features/settings/SettingsView";
 import { api } from "@/shared/ipc/client";
 import { cx } from "@/shared/ui/controls";
+import { Spinner } from "@/shared/ui/feedback";
 import { Sidebar } from "./Sidebar";
 import { useApp } from "./store";
+
+// Fase 9: cada apartado (y su código) se carga la primera vez que se abre. El
+// panel, que es lo primero que se ve, va en el paquete inicial.
+const load = {
+  ContainersView: () => import("@/features/containers/ContainersView"),
+  ImagesView: () => import("@/features/images/ImagesView"),
+  NetworksView: () => import("@/features/networks/NetworksView"),
+  VolumesView: () => import("@/features/volumes/VolumesView"),
+  BindsView: () => import("@/features/binds/BindsView"),
+  ComposeView: () => import("@/features/compose/ComposeView"),
+  EventsView: () => import("@/features/events/EventsView"),
+  SettingsView: () => import("@/features/settings/SettingsView"),
+};
+type ViewName = keyof typeof load;
+/** Apartados ya cargados: se pintan directamente, sin pasar por `React.lazy`,
+ *  que suspende siempre la primera vez (y mostraría «Cargando…» un instante)
+ *  aunque el código ya esté descargado. */
+const ready: Partial<Record<ViewName, ComponentType>> = {};
+function remember(name: ViewName, m: unknown): ComponentType {
+  const C = (m as Record<string, ComponentType>)[name]!;
+  ready[name] = C;
+  return C;
+}
+const lazyViews = Object.fromEntries(
+  (Object.keys(load) as ViewName[]).map((n) => [n, lazy(() => load[n]().then((m) => ({ default: remember(n, m) })))]),
+) as unknown as Record<ViewName, ComponentType>;
+
+function View({ name }: { name: ViewName }) {
+  // Se decide una vez por visita: cambiar de componente a mitad la reiniciaría.
+  const C = useMemo(() => ready[name] ?? lazyViews[name], [name]);
+  return <C />;
+}
+
+/** Precarga el código de los apartados cuando la aplicación ya está en marcha,
+ *  para que la primera visita a cada uno sea inmediata. */
+export const PRELOAD_DELAY_MS = 2000;
+function usePreloadSections() {
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      for (const n of Object.keys(load) as ViewName[]) {
+        void load[n]()
+          .then((m) => remember(n, m))
+          .catch(() => undefined);
+      }
+    }, PRELOAD_DELAY_MS);
+    return () => window.clearTimeout(id);
+  }, []);
+}
 
 /** Conecta el registro de actividad con el backend y aplica la apertura automática ante errores. */
 function useActivityBridge() {
@@ -81,21 +122,21 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
     case "dashboard":
       return <DashboardView />;
     case "containers":
-      return <ContainersView />;
+      return <View name="ContainersView" />;
     case "images":
-      return <ImagesView />;
+      return <View name="ImagesView" />;
     case "networks":
-      return <NetworksView />;
+      return <View name="NetworksView" />;
     case "volumes":
-      return <VolumesView />;
+      return <View name="VolumesView" />;
     case "binds":
-      return <BindsView />;
+      return <View name="BindsView" />;
     case "compose":
-      return <ComposeView />;
+      return <View name="ComposeView" />;
     case "events":
-      return <EventsView />;
+      return <View name="EventsView" />;
     case "settings":
-      return <SettingsView />;
+      return <View name="SettingsView" />;
     default:
       return <PendingSection id={id} />;
   }
@@ -121,6 +162,7 @@ function useShortcuts() {
 
 export function App() {
   const { t } = useTranslation();
+  usePreloadSections();
   const { section, config, info, saveError, navigate, toggleSidebar, toggleActivity, setActivityOpen, dismissSaveError } = useApp();
   const running = useActivity((s) => s.records.filter((r) => r.status === "running").length);
   const failedRecent = useActivity((s) => s.records.some((r) => r.status === "failed"));
@@ -131,6 +173,21 @@ export function App() {
 
   const panelOpen = config.activity.panelOpen;
   const notice = saveError ?? info?.startupWarning ?? null;
+  const [update, setUpdate] = useState<string | null>(null);
+  // Comprobación de versiones al iniciar (si está activada): aviso discreto.
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void api
+      .onUpdateResult((o) => {
+        if (o.check?.newer) setUpdate(o.check.latest);
+      })
+      .then((un) => (disposed ? un() : (unlisten = un)));
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
 
   return (
     <div className="flex h-full">
@@ -174,8 +231,28 @@ export function App() {
           </div>
         )}
 
+        {update && (
+          <div role="status" data-testid="update-banner" className="flex items-center gap-3 border-b border-beacon/30 bg-beacon/10 px-6 py-2 text-[13px]">
+            <p className="flex-1 text-ink">{t("updates.banner", { latest: update })}</p>
+            <button type="button" onClick={() => navigate("settings")} className="font-medium text-beacon-strong hover:underline">
+              {t("updates.bannerOpen")}
+            </button>
+            <button type="button" onClick={() => setUpdate(null)} aria-label={t("common.dismiss")} className="text-ink-3 hover:text-ink">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <Section id={section} />
+          <Suspense
+            fallback={
+              <div role="status" className="flex items-center justify-center gap-2 py-20 text-[13px] text-ink-3">
+                <Spinner /> {t("common.loading")}
+              </div>
+            }
+          >
+            <Section id={section} />
+          </Suspense>
         </div>
       </main>
 

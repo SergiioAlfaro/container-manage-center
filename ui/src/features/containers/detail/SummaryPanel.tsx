@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatBytes, shortId, uniquePorts } from "@/shared/format";
+import { formatBytes, formatDate, shortId, uniquePorts } from "@/shared/format";
 import type { ContainerDetails } from "@/shared/ipc/bindings/ContainerDetails";
 import { cx } from "@/shared/ui/controls";
 import { joinArgs } from "../shellwords";
@@ -38,7 +38,7 @@ const none = <span className="text-ink-3">—</span>;
 export function formatDockerTime(s: string | null, lang: string): string | null {
   if (!s || s.startsWith("0001-")) return null;
   const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? s : d.toLocaleString(lang === "es" ? "es-ES" : "en-US");
+  return Number.isNaN(d.getTime()) ? s : formatDate(d, lang);
 }
 
 export function SummaryPanel({ d }: { d: ContainerDetails }) {

@@ -115,7 +115,7 @@ describe("Detalle del contenedor", () => {
     await openDetail("stats");
     expect(await screen.findByText(/no hay estadísticas que mostrar/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("tab", { name: "Terminal" }));
-    expect(screen.getByRole("button", { name: "Abrir terminal" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Abrir terminal" })).toBeDisabled();
     expect(api.statsOpen).not.toHaveBeenCalled();
   });
 

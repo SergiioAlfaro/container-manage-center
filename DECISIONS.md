@@ -733,3 +733,75 @@ falla sin la corrección y pasa con ella).
 * Lo guardado es un **registro**, no el estado actual: el estado siempre se pide
   a Docker. Si la aplicación estaba cerrada no hay eventos de ese periodo en el
   diario (para eso está "Consultar a Docker", limitado a los 256 últimos).
+
+### D-059 · Compatibilidad del paquete con Debian 12+ y Ubuntu 22.04+ (Fase 9)
+* **Problema comprobado**:
+  * El binario de la 0.8.0, compilado en Ubuntu 24.04, exige `GLIBC_2.39`, por las funciones `pidfd_spawnp` y `pidfd_getpid`, que la biblioteca estándar de Rust usa al lanzar procesos. Esas referencias son débiles, pero la dependencia de versión no (`Flags: none`), así que el cargador rechaza el binario.
+  * Ejecutado en un Ubuntu 22.04 real (con debootstrap): ``version `GLIBC_2.39' not found``.
+  * Encima, el paquete de Tauri declaraba solo `Depends: libwebkit2gtk-4.1-0, libgtk-3-0`, así que apt lo instalaba igualmente en Debian 12 o Ubuntu 22.04 y la aplicación no arrancaba.
+  * Lo mismo pasa con un paquete compilado en Debian 13 (glibc 2.41).
+* **Solución, primera parte: dependencias reales**:
+  * `scripts/deb-set-depends.sh` calcula las dependencias con `dpkg-shlibdeps` (la herramienta estándar de Debian) a partir del propio binario y las escribe en el paquete. Así apt se niega a instalarlo donde no puede funcionar.
+  * Ejemplo en Ubuntu 24.04: `libc6 (>= 2.39), libgtk-3-0t64 (>= 3.21.5), libwebkit2gtk-4.1-0 (>= 2.41.90)…`.
+  * `verify-phase-9.sh --deb` lo aplica y comprueba que el `libc6 (>= X)` declarado cubre la glibc más nueva que exige el binario (`objdump -T`).
+* **Solución, segunda parte: paquete para distribuir**:
+  * `scripts/build-deb-compat.sh` compila dentro de un contenedor de Docker con Ubuntu 22.04 (`packaging/build/Dockerfile.ubuntu2204`, con Rust 1.91 de `jammy-updates`).
+  * La compilación se hace sin red (`cargo fetch` previo en el equipo y `cargo build --offline --locked`) y con el usuario que lo ejecuta. Empaqueta con Tauri y calcula `Depends` contra las bibliotecas de Ubuntu 22.04, que además tienen los nombres anteriores a la transición `t64`.
+  * No necesita sudo ni cambia el sistema.
+  * El binario resultante exige `GLIBC_2.34` como mucho: vale para Ubuntu 22.04 (2.35) y Debian 12 (2.36).
+  * Verificado arrancándolo en el Ubuntu 22.04 real, conectado a Docker 29.
+* **Debian 12 no se ha podido probar en ejecución** (no hay acceso a sus repositorios desde el entorno de desarrollo). Su compatibilidad se apoya en dos hechos comprobados: la versión de glibc que exige el binario y que WebKitGTK 4.1 está en Debian 12.
+
+### D-060 · Comprobación de versiones nuevas (Configuración → Actualizaciones)
+* **Qué hace**:
+  * La aplicación **solo consulta y avisa**: nunca descarga ni instala nada. Actualizar es instalar el paquete nuevo con apt, que necesita los permisos del usuario.
+  * Por defecto **no se conecta a Internet**: hace falta indicar una fuente y pulsar «Comprobar ahora», o activar «Comprobar al iniciar». Esa comprobación al iniciar está desactivada por defecto y se hace 5 s después de arrancar.
+* **Fuentes admitidas**:
+  * `propietario/repositorio` de GitHub, que se consulta en `api.github.com/repos/…/releases/latest`.
+  * La dirección `https://` de un JSON con `version` y, opcionalmente, `url`, `notes` y `date`.
+  * `http://` solo hacia la propia máquina, y sin proxy.
+  * La fuente oficial queda **pendiente de decidir** junto con el nombre y el lugar de publicación (Fase 10).
+* **Límites y seguridad**:
+  * Solo HTTPS, con `reqwest` + `rustls` (motor `ring`, sin dependencias de sistema nuevas), los certificados del sistema y `HTTPS_PROXY`.
+  * Las redirecciones también deben ser HTTPS.
+  * 15 s de espera como máximo y respuestas de 1 MiB como máximo.
+  * Se ignoran las versiones preliminares y los borradores. Las versiones se comparan con semver.
+  * Solo se ofrece abrir enlaces `https://`, con `xdg-open` y sin shell.
+* **Qué no hace**: la consulta no es una operación sobre Docker, así que no aparece en el panel de actividad. El resultado se ve en Configuración y, si hay una versión nueva al iniciar, en un aviso discreto arriba.
+
+### D-061 · Rendimiento: medido antes y después
+* **Medición**:
+  * Release, Xvfb sin aceleración, Docker 29, con 200 contenedores (40 en marcha), 60 volúmenes y 30 redes.
+  * Un proxy de socket cuenta las peticiones a Docker.
+  * La CPU sale de `/proc/PID/stat` y la memoria es PSS (`smaps_rollup`).
+* **Hallazgos**:
+  * En reposo, la aplicación hacía 6 peticiones por minuto (`/_ping`) y cada apartado hacía 1 o 2 peticiones, sin patrones de una petición por recurso. Ahí no había nada que mejorar.
+  * El problema estaba en las **ráfagas**: arrancar 100 contenedores desde la terminal con la lista abierta costaba **23 s de CPU** en la interfaz, más de media CPU durante toda la ráfaga.
+  * El motivo es que se recargaba con cada evento y se volvía a pintar la tabla completa, y además cada fila creaba formateadores de `Intl` nuevos.
+* **Cambios**:
+  * Formateadores de `Intl` creados una vez y reutilizados.
+  * Filas memorizadas en Contenedores y Eventos. TanStack Query conserva los objetos que no cambian, así que solo se repintan las filas que cambian.
+  * Como mucho una recarga por segundo durante las ráfagas; la primera sigue llegando a los 250 ms.
+  * Cada apartado y xterm se cargan al abrirlos y se precargan 2 s después del arranque. El JavaScript inicial pasa de 1044 KB a 500 KB.
+* **Resultado** (versión final, mismas condiciones):
+  * En la misma ráfaga, la CPU de la interfaz baja de 23,0 s a **3,1 s**, la del proceso principal de 1,4 s a 0,7 s y las peticiones de 77 a 25.
+  * Las primeras visitas a los apartados tardan 400–510 ms hasta que la pantalla queda estable, frente a 430–530 ms en la 0.8.0. Docker Compose baja de 1374 a 399 ms.
+  * En reposo no cambia nada: 6 peticiones por minuto, y la primera petición a Docker sale a los 0,26 s del arranque.
+  * La memoria total (PSS) sube un 4 %, de 231 a 240 MB: 99 MB el proceso principal, 120 MB WebKit y 19 MB la red de WebKit.
+* **Corrección durante la medición**: con `React.lazy`, la precarga no bastaba. Un componente diferido suspende siempre la primera vez aunque su código ya esté descargado, y mostraba «Cargando…» un instante: la primera visita pasó a 650–800 ms. Ahora, una vez precargado, cada apartado se pinta con su componente directo.
+* **Fallo encontrado al revisar**:
+  * La lista de eventos en directo usaba la posición en la clave de cada fila. Con cada evento nuevo se volvían a crear las 2000 filas y se cerraba el detalle que el usuario tuviera desplegado.
+  * Corregido con claves estables y cubierto por una prueba que fallaba antes del cambio.
+
+### D-062 · Errores en el idioma de la interfaz y formato de fechas único
+* **Errores**:
+  * Los errores con texto fijo que genera la propia aplicación se muestran en el idioma de la interfaz: `engine.notConnected`, `engine.timeout`, `engine.notConfirmed`, `engine.composeUnavailable`, los de la fuente de actualizaciones y el de la interfaz ejecutada fuera de la aplicación de escritorio. La traducción se hace en un único punto (`toCommandError`).
+  * Los que llevan detalle técnico se muestran tal cual, porque ese detalle es lo útil: el mensaje de Docker, una ruta, un valor no válido.
+  * Una prueba exige texto en español y en inglés para cada código traducido.
+* **Fechas**:
+  * Las marcas de tiempo de registros (panel de actividad, eventos, historial, logs) usan siempre el formato de 24 horas, con fecha y milisegundos cuando hace falta. Antes, en inglés, el historial mostraba «06:08:33 PM.904».
+  * Las fechas de objetos de Docker usan el mismo formato de fecha.
+  * Los campos de fecha que se escriben siguen siendo el selector nativo del sistema.
+* **Configuración**:
+  * Sección **Sistema**: aplicación, paquete instalado (leído de la base de datos de dpkg, solo lectura), WebKitGTK, glibc, sistema operativo, escritorio, Docker y Compose. Incluye un informe para copiar sin proyectos, variables ni credenciales.
+  * **Restablecer preferencias**: apariencia, panel de actividad y actualizaciones, con confirmación. No toca la conexión con Docker ni los proyectos Compose.

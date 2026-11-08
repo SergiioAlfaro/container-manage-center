@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-07
+Última actualización: 2026-11-08
 
 ## Resumen
 
 | | |
 |---|---|
-| **Fase actual** | 8 · Actividad, eventos y monitorización |
-| **Versión** | 0.8.0 |
+| **Fase actual** | 9 · Configuración y optimización |
+| **Versión** | 0.9.0 |
 | **Estado de la fase** | Implementada; pendiente de validación del propietario |
-| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7 |
-| **Fases pendientes** | 8–10 |
+| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8 |
+| **Fases pendientes** | 9–10 |
 
 | Fase | Estado |
 |---|---|
@@ -21,8 +21,8 @@
 | 5. Redes | **Validada** (2026-11-06, Debian 13, versión 0.5.0) |
 | 6. Volúmenes y bind mounts | **Validada** (2026-11-07, Debian 13, versión 0.6.0) |
 | 7. Docker Compose | **Validada** (2026-11-07, Debian 13, versión 0.7.1) |
-| 8. Actividad, eventos y monitorización | Implementada (0.8.0); pendiente de validación |
-| 9. Configuración y optimización | No iniciada |
+| 8. Actividad, eventos y monitorización | **Validada** (2026-11-08, Debian 13, versión 0.8.0) |
+| 9. Configuración y optimización | Implementada (0.9.0); pendiente de validación |
 | 10. Pruebas finales y distribución | No iniciada |
 
 ---
@@ -563,6 +563,8 @@ Ninguno abierto.
 
 ## Fase 8 · Actividad, eventos y monitorización
 
+**Validada por el propietario el 2026-11-08** (Debian 13, versión 0.8.0: parte automática y M1–M15).
+
 ### Objetivos
 Ver los eventos de Docker en tiempo real, actualizar la aplicación al instante cuando algo cambia (también desde fuera), consultar los eventos que Docker conserva y mantener un historial de operaciones entre sesiones sin guardar secretos.
 
@@ -615,11 +617,93 @@ Ninguno abierto.
 
 ---
 
+## Fase 9 · Configuración y optimización
+
+### Objetivos
+Preferencias pendientes (actualizaciones, información del sistema, restablecer), rendimiento medido, gestión de errores, mejoras visuales y compatibilidad real con Debian 12+ y Ubuntu 22.04+.
+
+### Funcionalidades implementadas
+- **Compatibilidad del paquete** (D-059):
+  - `Depends` calculado con `dpkg-shlibdeps` (`scripts/deb-set-depends.sh`).
+  - Paquete para distribuir compilado en un contenedor de Ubuntu 22.04 (`scripts/build-deb-compat.sh`, sin sudo y con la compilación sin red).
+- **Actualizaciones** (D-060): comprobación en un repositorio de GitHub o en un JSON por HTTPS, a petición o al iniciar (desactivada por defecto), con un aviso arriba si hay una versión nueva. Nunca descarga ni instala nada.
+- **Sistema**: aplicación, paquete, WebKitGTK, glibc, sistema, escritorio, Docker y Compose, con un informe para copiar.
+- **Restablecer las preferencias**, con confirmación.
+- **Rendimiento** (D-061):
+  - Formateadores reutilizados.
+  - Filas memorizadas.
+  - Como mucho una recarga por segundo durante las ráfagas.
+  - Apartados y terminal cargados bajo demanda y precargados.
+- **Errores en el idioma de la interfaz** para los de texto fijo, y un único formato de fecha y hora de 24 horas (D-062).
+- La zona horaria de las pruebas de interfaz queda fijada: no dependen del equipo.
+
+### Pruebas realizadas en el entorno de desarrollo
+`scripts/verify-phase-9.sh` con tres daemons reales:
+
+| | Docker 26.1.3 | Docker 29.9.2 (`--deb --compat --net`) | Docker 24.0.7 |
+|---|---|---|---|
+| Rust deterministas (unitarias, protocolo, IPC) | 412 | 412 | 412 |
+| Vitest | 221 | 221 | 221 |
+| Actualizaciones (servidor local) e IPC de la Fase 9 | correctas | correctas | correctas |
+| HTTPS real (TLS, certificados del sistema) | — | correcta | — |
+| Contra Docker real (fases 1–8 + IPC) | correctas | correctas | correctas |
+| Paquete `.deb` con `Depends` real | — | correcto: `libc6 (>= 2.39)`, que es lo que exige el binario | — |
+| Paquete compatible (Ubuntu 22.04) | — | correcto: el binario exige glibc 2.34 | — |
+| Compose 2.26.1 | 6 de 6 | 6 de 6 | 6 de 6 |
+| Resultado | 38 correctas, 2 omitidas, 1 aviso | 46 correctas, 2 omitidas, 1 aviso | 38 correctas, 2 omitidas, 1 aviso |
+
+Las dos omitidas son las de permiso denegado, porque aquí se ejecuta como root; el aviso es por ejecutar como root en desarrollo. No quedó ningún recurso de prueba.
+
+**Compatibilidad, en un Ubuntu 22.04 real** (debootstrap, glibc 2.35, WebKitGTK 2.50.4):
+- El binario de la 0.8.0 no arranca: ``version `GLIBC_2.39' not found``.
+- El paquete compatible 0.9.0 se instala con `apt` (resuelve todas sus dependencias), arranca y se conecta a Docker 29.9.2. Lo muestra Configuración → Sistema: Ubuntu 22.04 LTS, glibc 2.35, paquete 0.9.0.
+- El paquete normal (compilado en Ubuntu 24.04) es rechazado por `apt` con `Depends: libc6 (>= 2.39) but 2.35 is to be installed`, en lugar de instalarse y no arrancar.
+
+**Rendimiento** (release, Xvfb, Docker 29; 200 contenedores con 40 en marcha, 60 volúmenes y 30 redes; peticiones contadas con un proxy del socket):
+
+| | 0.8.0 | 0.9.0 |
+|---|---|---|
+| Ráfaga de 100 `docker start` desde la terminal con Contenedores abierto: CPU de la interfaz (WebKit) | 23,0 s | 3,1 s |
+| Esa ráfaga: CPU del proceso principal | 1,4 s | 0,7 s |
+| Esa ráfaga: peticiones a Docker | 77 | 25 |
+| Primera visita a cada apartado hasta pantalla estable | 330–530 ms; Compose 1374 ms | 300–510 ms; Compose 399 ms |
+| Peticiones en reposo | 6/min (`/_ping`) | 6/min (`/_ping`) |
+| JavaScript inicial | 1044 KB | 500 KB |
+| Memoria total (PSS) en reposo | 231 MB | 240 MB |
+
+**En la aplicación real**:
+- Configuración → Actualizaciones contra un servidor local: la consulta llega al servidor, aparece la versión nueva con su enlace y se guarda la fuente.
+- Con «Comprobar al iniciar», a los ~5 s llega la petición al servidor y sale el aviso.
+- Configuración → Sistema muestra los datos reales.
+
+### Problemas detectados y resueltos durante la fase
+- **El paquete no servía para Debian 12 ni Ubuntu 22.04**: necesitaba glibc 2.39 y no lo declaraba. Ver la compatibilidad, arriba.
+- **Ráfagas de eventos**: se recargaba con cada evento y se repintaba la tabla entera, a más de media CPU. Corregido; hay una prueba que falla sin el cambio (100 recargas frente al máximo de 39).
+- **Eventos en directo**: el detalle desplegado se cerraba al llegar otro evento, porque las claves de las filas incluían su posición. Prueba que lo reproducía y corrección.
+- **Fechas**: en inglés, el historial mostraba «06:08:33 PM.904». Ahora el formato es único.
+- **Primera visita más lenta tras la carga diferida**: lo provocaba la suspensión de `React.lazy`. Visto al medir y corregido.
+- **Proxy y fuentes locales**: con un proxy configurado, una fuente `http://127.0.0.1` se enviaba al proxy. Ahora va directa; la prueba falla sin el cambio.
+- **Prueba IPC de crear y duplicar**: con una imagen importada sin comando, Docker rechazaba crear el contenedor («no command specified»). La prueba elige ahora una imagen con comando o entrypoint.
+- **Errores de mis scripts, corregidos**: una comprobación con `grep -q` en una tubería dio «Broken pipe»; una comparación byte a byte del binario empaquetado no era válida, porque Tauri lo modifica al empaquetar; y el paquete compatible sobrescribía el normal.
+
+### Limitaciones y observaciones
+- **Debian 12** no se ha podido arrancar aquí, porque no hay acceso a sus repositorios. La compatibilidad se apoya en lo comprobado: el binario exige glibc ≤ 2.34 (Debian 12 tiene 2.36) y Debian 12 incluye WebKitGTK 4.1. Ubuntu 22.04 sí se ha probado en ejecución.
+- **Actualizaciones**: aquí no hay acceso a GitHub. La comprobación se ha probado con servidores locales y con un HTTPS real (`registry.npmjs.org`, que en este entorno no pasa por el proxy). La fuente oficial queda pendiente de decidir.
+- **Memoria**: no ha bajado. Unos 120 MB son del proceso de WebKitGTK, que no depende de la aplicación.
+- **`build-deb-compat.sh` se ha probado aquí** con una imagen base local equivalente a `ubuntu:22.04` (debootstrap de jammy), porque no hay acceso a Docker Hub. En tu equipo usará `ubuntu:22.04`.
+- **Sin probar aquí**: Docker 26.1.5 exactamente (sí 26.1.3), un usuario que no sea root y un escritorio real (GNOME/Wayland).
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-8.sh --deb` en Debian 13 con la versión 0.8.0 y envía `verify-phase-8-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.8.0 y realiza M1–M15.
-2. Corregir lo que surja y marcar la Fase 8 como validada.
-3. Fase 9: configuración y optimización.
+1. El propietario ejecuta `bash scripts/verify-phase-9.sh --deb --net` en Debian 13 con la versión 0.9.0 (opcionalmente también `--compat`) y envía `verify-phase-9-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.9.0 y realiza M1–M15.
+2. Corregir lo que surja y marcar la Fase 9 como validada.
+3. Fase 10: pruebas finales y distribución (necesita decidir nombre, licencia y dónde se publica).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).
 - Nombre definitivo del producto antes de distribuirlo públicamente ("Docker" es marca registrada).
+- Dónde se publicarán las versiones (repositorio de GitHub o dirección HTTPS): es la fuente que vendría configurada para la comprobación de actualizaciones (D-060). Hasta entonces la fuente está vacía y la aplicación no se conecta a Internet.

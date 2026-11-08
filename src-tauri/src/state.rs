@@ -19,6 +19,8 @@ pub struct AppState {
     pub startup_warning: Option<String>,
     /// Historial de operaciones y diario de eventos (Fase 8).
     pub journals: crate::journal::Journals,
+    /// Última comprobación de versiones nuevas (Fase 9).
+    pub last_update: Mutex<Option<crate::commands::app::UpdateOutcome>>,
 }
 
 /// Traduce la configuración persistida al modo de conexión del motor.
@@ -58,6 +60,7 @@ impl AppState {
             config: Mutex::new(config),
             startup_warning,
             journals,
+            last_update: Mutex::new(None),
         }
     }
 

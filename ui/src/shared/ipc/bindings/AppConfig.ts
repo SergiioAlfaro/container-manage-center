@@ -3,5 +3,6 @@ import type { ActivityConfig } from "./ActivityConfig";
 import type { ComposeSettings } from "./ComposeSettings";
 import type { DockerConfig } from "./DockerConfig";
 import type { UiConfig } from "./UiConfig";
+import type { UpdatesConfig } from "./UpdatesConfig";
 
-export type AppConfig = { version: number, ui: UiConfig, activity: ActivityConfig, docker: DockerConfig, compose: ComposeSettings, };
+export type AppConfig = { version: number, ui: UiConfig, activity: ActivityConfig, docker: DockerConfig, compose: ComposeSettings, updates: UpdatesConfig, };

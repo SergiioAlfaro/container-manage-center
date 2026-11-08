@@ -1,5 +1,20 @@
 # Cambios
 
+## 0.9.0 — 2026-11-08 (Fase 9: configuración y optimización)
+- **Compatibilidad con Debian 12 y Ubuntu 22.04** (D-059):
+  - El paquete declara sus dependencias reales con `dpkg-shlibdeps`, incluida la versión mínima de `libc6`. Antes, un paquete compilado en un sistema más nuevo se instalaba en Debian 12 o Ubuntu 22.04 y no arrancaba («GLIBC_2.39 not found»).
+  - `scripts/build-deb-compat.sh` compila el paquete para distribuir en un contenedor de Docker con Ubuntu 22.04: exige glibc 2.34 como mucho y se ha comprobado que funciona en un Ubuntu 22.04 real.
+- **Configuración → Actualizaciones** (D-060): comprueba si hay una versión nueva en un repositorio de GitHub o en un JSON por HTTPS y avisa al iniciar si se activa. Nunca descarga ni instala nada, y por defecto no se conecta a Internet.
+- **Configuración → Sistema**: versiones de la aplicación, el paquete, WebKitGTK, glibc, el sistema, Docker y Compose, con un informe para copiar.
+- **Restablecer las preferencias** de apariencia, panel de actividad y actualizaciones, con confirmación.
+- **Rendimiento** (D-061):
+  - Durante una ráfaga de cambios hechos desde fuera (100 contenedores arrancados desde la terminal con 200 en la lista), la interfaz consume 7 veces menos CPU (de 23,0 s a 3,1 s) y hace un tercio de las peticiones.
+  - Solo se repintan las filas que cambian y se recarga como mucho una vez por segundo durante las ráfagas.
+  - El JavaScript inicial pasa de 1044 KB a 500 KB: los apartados y la terminal se cargan al abrirlos y se precargan tras el arranque.
+- **Corregido**: un evento desplegado en «En directo» se cerraba al llegar otro, porque se volvían a crear todas las filas con cada evento.
+- **Errores en el idioma de la interfaz** (los de texto fijo, como «Not connected to Docker Engine.») y **un único formato de fecha y hora** de 24 horas en el panel de actividad, los eventos, el historial y los logs (D-062).
+- `verify-phase-9.sh` con `--deb` (dependencias reales del paquete), `--compat` (paquete compatible) y `--net` (HTTPS real), y comprobaciones manuales M1–M15.
+
 ## 0.8.0 — 2026-11-07 (Fase 8: actividad, eventos y monitorización)
 - Apartado **Eventos y registros** con cuatro pestañas:
   - **En directo**: los eventos de Docker según ocurren (también los causados desde la terminal u otras herramientas), con filtros por tipo, búsqueda, pausa y detalle de cada evento; abrir el recurso afectado.

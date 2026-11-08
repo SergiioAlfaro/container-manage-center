@@ -1,7 +1,55 @@
 /** Formateadores de datos de Docker para la interfaz. */
 
+/** Idioma de la aplicación ("es", "en") o configuración regional ("es-ES") → configuración regional. */
 export function localeOf(lang: string) {
-  return lang === "es" ? "es-ES" : "en-US";
+  return lang.startsWith("es") ? "es-ES" : "en-US";
+}
+
+// Crear un formateador de `Intl` es caro (cientos de microsegundos en WebKit) y
+// las listas formatean varias fechas por fila: se crean una vez y se reutilizan.
+const formatters = new Map<string, unknown>();
+function cached<T>(key: string, make: () => T): T {
+  let f = formatters.get(key) as T | undefined;
+  if (f === undefined) {
+    f = make();
+    formatters.set(key, f);
+  }
+  return f;
+}
+
+export function numberFormat(lang: string, opts: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
+  const locale = localeOf(lang);
+  return cached(`n|${locale}|${JSON.stringify(opts)}`, () => new Intl.NumberFormat(locale, opts));
+}
+
+export function dateTimeFormat(lang: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const locale = localeOf(lang);
+  return cached(`d|${locale}|${JSON.stringify(opts)}`, () => new Intl.DateTimeFormat(locale, opts));
+}
+
+function relativeFormat(lang: string): Intl.RelativeTimeFormat {
+  const locale = localeOf(lang);
+  return cached(`r|${locale}`, () => new Intl.RelativeTimeFormat(locale, { numeric: "auto" }));
+}
+
+const DATE: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" };
+const TIME: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" };
+
+/**
+ * Marca de tiempo de registros (panel de actividad, eventos, historial, logs):
+ * siempre 24 horas, con fecha y milisegundos opcionales. Mismo formato en toda
+ * la aplicación: "07/11/2026 18:08:33.904" (es) / "11/07/2026 18:08:33.904" (en).
+ */
+export function formatTimestamp(d: Date, lang: string, { date = false, ms = false }: { date?: boolean; ms?: boolean } = {}): string {
+  if (Number.isNaN(d.getTime())) return "—";
+  let s = dateTimeFormat(lang, TIME).format(d);
+  if (ms) s += `.${String(d.getMilliseconds()).padStart(3, "0")}`;
+  return date ? `${dateTimeFormat(lang, DATE).format(d)} ${s}` : s;
+}
+
+/** Fecha y hora de un objeto de Docker (creación de una imagen, una red…). */
+export function formatDate(d: Date, lang: string): string {
+  return formatTimestamp(d, lang, { date: true });
 }
 
 /** Tamaño en unidades binarias, como `docker images` (que usa base 1000) no: aquí base 1024, explícita. */
@@ -14,8 +62,7 @@ export function formatBytes(bytes: number | null | undefined, lang: string): str
     v /= 1024;
     i++;
   }
-  const nf = new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: v < 10 && i > 0 ? 1 : 0 });
-  return `${nf.format(v)} ${units[i]}`;
+  return `${numberFormat(lang, { maximumFractionDigits: v < 10 && i > 0 ? 1 : 0 }).format(v)} ${units[i]}`;
 }
 
 /**
@@ -30,7 +77,7 @@ export function hasDate(unixSeconds: number): boolean {
 export function formatRelative(unixSeconds: number, lang: string, now = Date.now()): string {
   if (!hasDate(unixSeconds)) return "—";
   const diff = unixSeconds * 1000 - now;
-  const rtf = new Intl.RelativeTimeFormat(localeOf(lang), { numeric: "auto" });
+  const rtf = relativeFormat(lang);
   const abs = Math.abs(diff);
   const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
     ["year", 365 * 86_400_000],
@@ -47,7 +94,7 @@ export function formatRelative(unixSeconds: number, lang: string, now = Date.now
 
 export function formatAbsolute(unixSeconds: number, lang: string): string {
   if (!hasDate(unixSeconds)) return "—";
-  return new Date(unixSeconds * 1000).toLocaleString(localeOf(lang));
+  return formatDate(new Date(unixSeconds * 1000), lang);
 }
 
 /** 12 primeros caracteres del ID, sin el prefijo `sha256:`. */
