@@ -7,6 +7,7 @@ import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import i18n from "@/shared/i18n";
 import type { SystemInfo } from "./bindings/SystemInfo";
 import type { UpdateCheck } from "./bindings/UpdateCheck";
@@ -77,6 +78,9 @@ import type { ComposeProject } from "./bindings/ComposeProject";
 import type { ProjectRef } from "./bindings/ProjectRef";
 import type { RegisterResult } from "./bindings/RegisterResult";
 import type { UnsavedFile } from "./bindings/UnsavedFile";
+import type { ComponentsReport } from "./bindings/ComponentsReport";
+import type { RemovalPlan } from "./bindings/RemovalPlan";
+import type { RemovalResult } from "./bindings/RemovalResult";
 
 export const ACTIVITY_EVENT = "activity://event";
 export const ACTIVITY_RESYNC = "activity://resync";
@@ -88,6 +92,9 @@ export const ENGINE_STATE = "engine://state";
  * se muestran en el idioma de la interfaz (Fase 9). Los demás conservan el
  * mensaje original, que lleva el detalle técnico (el de Docker, una ruta…).
  */
+/** Perfil de GitHub del autor (Ayuda y documentación). */
+export const GITHUB_PROFILE = "https://github.com/SergiioAlfaro";
+
 export const LOCALIZED_ERRORS = [
   "engine.notConnected",
   "engine.timeout",
@@ -97,6 +104,10 @@ export const LOCALIZED_ERRORS = [
   "updates.noSource",
   "updates.invalidSource",
   "updates.insecureSource",
+  "packages.cancelled",
+  "packages.denied",
+  "packages.busy",
+  "packages.notInstalled",
 ] as const;
 
 export function localizeError(e: CommandError): CommandError {
@@ -136,6 +147,21 @@ export const api = {
   updatesLast: () => call<UpdateOutcome | null>("updates_last"),
   openReleasePage: (url: string) => call<null>("open_release_page", { url }),
   systemInfo: () => call<SystemInfo>("system_info"),
+  /** Abre el perfil de GitHub del autor en el navegador del sistema (plugin
+   *  opener de Tauri; la capacidad solo permite esta dirección). */
+  openGithubProfile: async () => {
+    if (!isTauri()) throw localizeError({ code: "ipc.unavailable", message: "La interfaz se está ejecutando fuera de la aplicación de escritorio.", httpStatus: null, issues: null });
+    try {
+      await openUrl(GITHUB_PROFILE);
+    } catch (e) {
+      throw toCommandError(e);
+    }
+  },
+  /** Desinstalación y componentes (0.9.1): consulta y simula, sin cambiar nada. */
+  componentsInspect: () => call<ComponentsReport>("components_inspect"),
+  componentsPlan: (packages: string[]) => call<RemovalPlan>("components_plan", { packages }),
+  /** Desinstala con APT (pide permisos con pkexec). Solo tras la confirmación del usuario. */
+  componentsRemove: (packages: string[]) => call<RemovalResult>("components_remove", { packages, confirmed: true }),
   configGet: () => call<AppConfig>("config_get"),
   configSet: (config: AppConfig) => call<AppConfig>("config_set", { config }),
   activityList: () => call<OperationRecord[]>("activity_list"),

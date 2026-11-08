@@ -11,7 +11,7 @@ interface Props {
   onToggle: () => void;
 }
 
-const GROUP_ORDER: Array<SectionDef["group"]> = ["top", "resources", "orchestration", "monitoring"];
+const GROUP_ORDER: Array<SectionDef["group"]> = ["top", "resources", "orchestration", "tools", "monitoring"];
 
 export function Sidebar({ active, collapsed, onNavigate, onToggle }: Props) {
   const { t } = useTranslation();
@@ -28,7 +28,7 @@ export function Sidebar({ active, collapsed, onNavigate, onToggle }: Props) {
           aria-current={isActive ? "page" : undefined}
           title={collapsed ? label : undefined}
           className={cx(
-            "group relative flex h-9 w-full items-center gap-3 rounded-md text-[13.5px] transition-colors",
+            "group relative flex h-9 w-full items-center gap-3 rounded-md text-[13.5px] transition-colors duration-150 active:bg-hull-3",
             collapsed ? "justify-center px-0" : "px-3",
             isActive ? "bg-hull-3 text-white" : "text-hull-ink hover:bg-hull-2 hover:text-white",
           )}

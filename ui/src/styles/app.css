@@ -158,6 +158,29 @@ pre {
   background: transparent;
 }
 
+/* 0.9.1: estados de interacción coherentes en toda la aplicación. Baja
+ * especificidad (:where) para que las clases de cada componente prevalezcan. */
+:where(tbody tr) {
+  transition: background-color 150ms ease;
+}
+:where(tbody tr):hover {
+  background-color: var(--surface-2);
+}
+:where(summary) {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 150ms ease;
+}
+:where(summary):hover {
+  color: var(--ink);
+}
+:where(a, button, [role="tab"], [role="radio"], [role="switch"], [role="separator"], input, select, textarea) {
+  transition-duration: 150ms;
+}
+:where(button, [role="tab"], [role="radio"]):disabled {
+  cursor: not-allowed;
+}
+
 /* Panel de actividad: entra desde la derecha cuando el usuario lo abre. */
 @keyframes panel-in {
   from {

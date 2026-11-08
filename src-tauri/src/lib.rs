@@ -6,6 +6,7 @@ mod events;
 mod journal;
 mod state;
 mod streams;
+mod uninstall;
 mod updates;
 
 use dcc_store::ConfigStore;
@@ -23,14 +24,38 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
     builder
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(state)
         .on_window_event(|window, event| {
-            // Al cerrar la ventana se cierran los flujos abiertos (logs, terminales…),
-            // que quedan registrados como cerrados por el usuario.
-            if let tauri::WindowEvent::Destroyed = event {
-                if let Some(state) = window.try_state::<state::AppState>() {
-                    state.streams.close_all();
+            let Some(state) = window.try_state::<state::AppState>() else {
+                return;
+            };
+            match event {
+                // Al cerrar la ventana se cierran los flujos abiertos (logs,
+                // terminales…) y se espera a que terminen, para que las shells
+                // salgan y no quede ningún proceso dentro de los contenedores
+                // (0.9.1, D-063). Quedan registrados como cerrados por el usuario.
+                tauri::WindowEvent::CloseRequested { api, .. }
+                    if state.streams.running() > 0
+                        && !state
+                            .closing
+                            .swap(true, std::sync::atomic::Ordering::SeqCst) =>
+                {
+                    api.prevent_close();
+                    let streams = state.streams.clone();
+                    let w = window.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let left = streams
+                            .close_all_and_wait(std::time::Duration::from_secs(8))
+                            .await;
+                        if left > 0 {
+                            tracing::warn!(left, "flujos sin terminar al cerrar la ventana");
+                        }
+                        let _ = w.close();
+                    });
                 }
+                tauri::WindowEvent::Destroyed => state.streams.close_all(),
+                _ => {}
             }
         })
         .setup(move |app| {
@@ -47,6 +72,9 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::app::updates_last,
             commands::app::open_release_page,
             commands::app::system_info,
+            commands::components::components_inspect,
+            commands::components::components_plan,
+            commands::components::components_remove,
             commands::config::config_get,
             commands::config::config_set,
             commands::activity::activity_list,

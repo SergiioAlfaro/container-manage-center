@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, LoaderCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/shared/ipc/client";
 
@@ -7,23 +7,34 @@ export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "ghost" | "quiet" | "primary" | "danger"; size?: "sm" | "md" };
+type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "ghost" | "quiet" | "primary" | "danger"; size?: "sm" | "md"; loading?: boolean };
 
-export function Button({ variant = "quiet", size = "md", className, ...rest }: BtnProps) {
+/**
+ * Botón con estados visibles (0.9.1): reposo, encima, pulsado, foco con
+ * teclado (anillo global de `:focus-visible`), desactivado y ocupado. Un botón
+ * desactivado sigue mostrando su descripción emergente (`title`), que suele
+ * explicar por qué no se puede usar.
+ */
+export function Button({ variant = "quiet", size = "md", loading = false, className, disabled, children, ...rest }: BtnProps) {
   return (
     <button
       type="button"
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cx(
-        "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-[color,background-color,border-color,filter,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-50",
         size === "sm" ? "h-7 px-2 text-[12px]" : "h-8 px-3 text-[13px]",
-        variant === "primary" && "bg-beacon text-beacon-ink hover:bg-beacon-strong",
-        variant === "danger" && "bg-err text-white hover:brightness-110",
-        variant === "quiet" && "border border-line bg-surface text-ink-2 hover:text-ink hover:border-line-strong",
-        variant === "ghost" && "text-ink-2 hover:text-ink hover:bg-surface-sunk",
+        variant === "primary" && "bg-beacon text-beacon-ink enabled:hover:bg-beacon-strong enabled:active:brightness-95",
+        variant === "danger" && "bg-err text-white enabled:hover:brightness-110 enabled:active:brightness-95",
+        variant === "quiet" && "border border-line bg-surface text-ink-2 enabled:hover:border-line-strong enabled:hover:text-ink enabled:active:bg-surface-sunk",
+        variant === "ghost" && "text-ink-2 enabled:hover:bg-surface-sunk enabled:hover:text-ink enabled:active:bg-line",
         className,
       )}
       {...rest}
-    />
+    >
+      {loading && <LoaderCircle size={size === "sm" ? 12 : 14} className="animate-spin" aria-hidden />}
+      {children}
+    </button>
   );
 }
 
@@ -51,7 +62,7 @@ export function Segmented<T extends string>({
             aria-checked={active}
             onClick={() => onChange(o.value)}
             className={cx(
-              "h-7 rounded-md px-3 text-[13px] transition-colors",
+              "h-7 rounded-md px-3 text-[13px] transition-colors duration-150",
               active ? "bg-surface text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-ink-2 hover:text-ink",
             )}
           >
@@ -73,13 +84,13 @@ export function Switch({ checked, onChange, label, disabled = false }: { checked
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cx(
-        "relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-beacon" : "bg-line-strong",
+        "relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-beacon enabled:hover:bg-beacon-strong" : "bg-line-strong enabled:hover:bg-ink-3",
       )}
     >
       <span
         className={cx(
-          "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
+          "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-150",
           checked && "translate-x-4",
         )}
       />

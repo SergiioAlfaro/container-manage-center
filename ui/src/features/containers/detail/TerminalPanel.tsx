@@ -20,7 +20,8 @@ export function decodeBase64(data: string): Uint8Array {
   return out;
 }
 
-const THEME = {
+/** Colores de la terminal (también los usa el apartado «Terminales»). */
+export const TERMINAL_THEME = {
   background: "#0b1219",
   foreground: "#d5dee7",
   cursor: "#25b0b3",
@@ -45,7 +46,7 @@ export function TerminalPanel({ id, name, running }: { id: string; name: string;
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const tm = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: THEME, scrollback: 5000, convertEol: false });
+    const tm = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: TERMINAL_THEME, scrollback: 5000, convertEol: false });
     const fa = new FitAddon();
     tm.loadAddon(fa);
     tm.open(el);

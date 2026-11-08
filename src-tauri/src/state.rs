@@ -21,6 +21,8 @@ pub struct AppState {
     pub journals: crate::journal::Journals,
     /// Última comprobación de versiones nuevas (Fase 9).
     pub last_update: Mutex<Option<crate::commands::app::UpdateOutcome>>,
+    /// La ventana se está cerrando (esperando a que terminen los flujos).
+    pub closing: std::sync::atomic::AtomicBool,
 }
 
 /// Traduce la configuración persistida al modo de conexión del motor.
@@ -61,6 +63,7 @@ impl AppState {
             startup_warning,
             journals,
             last_update: Mutex::new(None),
+            closing: Default::default(),
         }
     }
 

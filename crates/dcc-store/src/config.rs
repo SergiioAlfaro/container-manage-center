@@ -25,6 +25,10 @@ pub enum Language {
     #[default]
     Es,
     En,
+    /// Francés (0.9.1).
+    Fr,
+    /// Italiano (0.9.1).
+    It,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

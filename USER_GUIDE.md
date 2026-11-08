@@ -1,5 +1,7 @@
 # Guía de usuario
 
+> Versión 0.9.1. (La nota original de la Fase 2 se conserva abajo por historia.)
+>
 > Versión 0.2.1 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
 > contenedores (consultar, iniciar, detener, reiniciar, pausar, reanudar y
 > eliminar), las imágenes (consultar) y la configuración. El resto de apartados
@@ -112,7 +114,8 @@ Arriba, las acciones válidas para su estado, **Duplicar** y **Eliminar**.
   final, copiar lo visible y dejar de seguir. Se conservan las últimas 10 000 líneas.
 - **Terminal**: pulsa **Abrir terminal** para iniciar una shell (`bash` si existe,
   si no `sh`, o la que elijas) con `docker exec -it`. **Cerrar sesión** termina la
-  shell; la línea de estado indica cómo terminó.
+  shell y los procesos que dejó dentro del contenedor; la línea de estado indica
+  cómo terminó. Para varias terminales a la vez, usa el apartado **Terminales**.
 - **Estadísticas**: CPU, memoria, red, disco y procesos cada segundo, calculados
   como `docker stats`.
 - **Inspección JSON**: la respuesta completa de `docker inspect`, con botón Copiar.
@@ -341,6 +344,29 @@ Si los archivos de un proyecto ya no existen, se puede detener, iniciar,
 reiniciar, ver sus registros y eliminar (Docker Compose usa las etiquetas de los
 contenedores); para desplegarlo hacen falta los archivos.
 
+## Terminales
+
+Varias terminales reales (`docker exec -it`) a la vez, en el mismo contenedor o
+en otros.
+
+- **Nueva terminal**: elige un contenedor en ejecución, la shell (Automática,
+  bash o sh) y, opcionalmente, un nombre para la sesión.
+- Cada panel muestra el contenedor, el nombre de la sesión y su estado
+  (Conectando, Conectada, Finalizada o Error), con botones para renombrar
+  (también con doble clic en el nombre), maximizar y cerrar.
+- Distribución: una terminal ocupa todo; dos, en columnas; tres, una a la
+  izquierda y dos a la derecha; cuatro, en 2×2; con más, filas de dos con
+  desplazamiento. Los separadores se arrastran o, con el foco, se mueven con las
+  flechas (Inicio/Fin a los extremos, doble clic para repartir a partes iguales).
+- Las sesiones siguen abiertas al cambiar de apartado. Hasta 12 a la vez.
+  **Cerrar todas** pide confirmación.
+- Cerrar una sesión termina su shell y los procesos que dejó dentro del
+  contenedor. Si el contenedor se detiene o se elimina, el panel lo indica; una
+  sesión terminada se puede volver a abrir si el contenedor sigue existiendo.
+- Al cerrar la aplicación se terminan todas las sesiones.
+- El panel de actividad registra la apertura, el cierre y los errores, nunca lo
+  que se escribe ni la salida.
+
 ## Eventos y registros
 
 Docker anuncia cada cambio (un contenedor que se crea, arranca o se detiene,
@@ -396,7 +422,7 @@ mientras haya conexión).
 
 ## Configuración
 
-- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma (Español, English).
+- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma (Español, English, Français, Italiano).
 - **Panel de actividad**: abrirlo automáticamente ante errores, número de operaciones conservadas (50–10.000) y **Guardar historial** (operaciones y eventos de Docker entre sesiones, sin secretos).
 - **Conexión con Docker**:
   - **Automático**: busca `DOCKER_HOST`, el contexto activo, tu socket rootless y el del sistema.
@@ -416,6 +442,18 @@ mientras haya conexión).
   el sistema operativo y el escritorio, y los datos de Docker y Compose.
   **Copiar** genera un informe en texto para comunicar un problema (sin
   proyectos, variables ni credenciales).
+- **Desinstalación y componentes**: **Analizar componentes** consulta dpkg y APT
+  (sin privilegios ni cambios) y muestra el paquete de la aplicación, las
+  dependencias que se pueden quitar (las que APT instaló automáticamente junto
+  con la aplicación y nadie más usa) y las que se conservan, con el motivo
+  (compartidas, instaladas de forma explícita, ya existentes, de origen incierto o
+  del sistema). Docker Engine, Docker CLI y Docker Compose se conservan siempre;
+  tus datos y todo lo de Docker, también. Elige **Solo Docker Control Center** o
+  también las dependencias, revisa la simulación de APT y la orden exacta y
+  confirma: el sistema pide la contraseña de administrador (pkexec) solo para
+  `apt-get remove`. Sin pkexec, se muestra la orden para ejecutarla a mano.
+- **Ayuda y documentación**: guía de todas las funciones con índice y búsqueda, y
+  el botón **Visitar mi perfil de GitHub**.
 - **Restablecer las preferencias**: tema, idioma, panel de actividad, historial y
   actualizaciones vuelven a sus valores iniciales, tras confirmarlo. No cambia la
   conexión con Docker ni los proyectos Compose.

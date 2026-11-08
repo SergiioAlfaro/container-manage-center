@@ -6,7 +6,7 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.8.0_amd64.deb
+sudo apt install ./docker-control-center_0.9.1_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -16,10 +16,13 @@ paquete, apt lo rechaza al instalar en vez de instalar algo que no arranca.
 La aplicación aparece en el menú como **Docker Control Center**. Se ejecuta con
 tu usuario normal: **no la ejecutes con sudo** (se niega a arrancar como root).
 
-Desinstalar: `sudo apt remove docker-control-center` (tu configuración en
-`~/.config/docker-control-center/` y el historial en
-`~/.local/state/docker-control-center/` se conservan; bórralos a mano si no los
-quieres). El historial se puede borrar también desde la aplicación.
+Desinstalar: desde **Configuración › Desinstalación y componentes** (muestra
+qué se puede quitar, la simulación de APT y la orden exacta; pide la contraseña
+de administrador solo para `apt-get remove`), o a mano con
+`sudo apt remove docker-control-center`. En ambos casos se conservan tu
+configuración (`~/.config/docker-control-center/`) y el historial
+(`~/.local/state/docker-control-center/`); bórralos a mano si no los quieres.
+Docker, sus datos y Docker Compose no se tocan.
 
 Si al abrir la ventana aparece «La interfaz no pudo arrancar» con un mensaje
 técnico, copia ese mensaje al informar del problema.

@@ -2,6 +2,7 @@
 
 pub mod activity;
 pub mod app;
+pub mod components;
 pub mod compose;
 pub mod config;
 pub mod containers;

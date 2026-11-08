@@ -1902,3 +1902,217 @@ fn live_events_via_ipc() {
     .unwrap();
     assert_eq!(since_now["total"], 0);
 }
+
+/// 0.9.1 · Varias terminales por IPC contra Docker real: independientes, cierre
+/// individual sin afectar a las demás y cierre de todas (como al cerrar la
+/// ventana) sin dejar procesos en el contenedor (D-063).
+#[test]
+fn live_multiple_terminals_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker_cfg = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker_cfg);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let images = invoke(&h, "images_list", json!({})).unwrap();
+    assert!(
+        images.as_array().unwrap().iter().any(|i| i["repoTags"]
+            .as_array()
+            .is_some_and(|t| t.iter().any(|t| t == "dcc-test/sleeper:2"))),
+        "hace falta dcc-test/sleeper:2 (la crean las pruebas del motor)"
+    );
+    let name = format!("dcc-test-ipc-term-{}", std::process::id());
+    let c = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": { "name": name, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }] }, "start": true }),
+    )
+    .unwrap();
+    let id = c["id"].as_str().unwrap().to_owned();
+    let socket = tauri::async_runtime::block_on(async {
+        let st = h.app.state::<AppState>();
+        st.engine
+            .engine()
+            .await
+            .unwrap()
+            .endpoint()
+            .socket_path
+            .clone()
+    });
+    let docker =
+        bollard::Docker::connect_with_unix(&socket, 60, bollard::API_DEFAULT_VERSION).unwrap();
+    // El contenedor se elimina al final, pase lo que pase.
+    struct Guard(bollard::Docker, String);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            let (d, id) = (self.0.clone(), self.1.clone());
+            std::thread::spawn(move || {
+                tauri::async_runtime::block_on(async {
+                    let _ = d
+                        .remove_container(
+                            &id,
+                            Some(bollard::query_parameters::RemoveContainerOptions {
+                                force: true,
+                                ..Default::default()
+                            }),
+                        )
+                        .await;
+                })
+            })
+            .join()
+            .ok();
+        }
+    }
+    let _guard = Guard(docker.clone(), id.clone());
+
+    // Ejecuta en el contenedor (sin TTY) y devuelve la salida.
+    let run = |script: &str| -> String {
+        let (d, id, script) = (docker.clone(), id.clone(), script.to_owned());
+        tauri::async_runtime::block_on(async move {
+            use futures_util::StreamExt;
+            let ex = d
+                .create_exec(
+                    &id,
+                    bollard::models::ExecConfig {
+                        attach_stdout: Some(true),
+                        cmd: Some(vec!["/bin/sh".into(), "-c".into(), script]),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+            let mut out = String::new();
+            if let bollard::exec::StartExecResults::Attached { mut output, .. } =
+                d.start_exec(&ex.id, None).await.unwrap()
+            {
+                while let Some(Ok(f)) = output.next().await {
+                    out.push_str(&f.to_string());
+                }
+            }
+            out
+        })
+    };
+    // Procesos vivos del contenedor (sin zombis) llamados así.
+    let alive = |comm: &str| -> usize {
+        run(r#"for d in /proc/[0-9]*; do st=; read -r st < "$d/stat" 2>/dev/null && echo "$st"; done"#)
+            .lines()
+            .filter(|l| l.contains(&format!("({comm})")) && !l.contains(") Z "))
+            .count()
+    };
+    let file = |p: &str| run(&format!("read -r x < {p} 2>/dev/null && echo \"$x\""));
+
+    // Se abre con el mismo comando que usa la ventana, con un canal real de
+    // Tauri que recoge la salida (en el entorno simulado, un canal
+    // "__CHANNEL__:n" no entrega nada y la sesión se cerraría al primer envío,
+    // como hace cuando la ventana deja de escuchar).
+    let outputs: Arc<Mutex<std::collections::HashMap<u32, String>>> = Default::default();
+    let open = |n: u32| -> u64 {
+        let o = outputs.clone();
+        let ch =
+            tauri::ipc::Channel::<crate::commands::containers::TerminalEvent>::new(move |body| {
+                if let tauri::ipc::InvokeResponseBody::Json(j) = body {
+                    let v: serde_json::Value = serde_json::from_str(&j).unwrap();
+                    if let Some(d) = v["data"].as_str() {
+                        use base64::Engine as _;
+                        let bytes = base64::engine::general_purpose::STANDARD.decode(d).unwrap();
+                        o.lock()
+                            .unwrap()
+                            .entry(n)
+                            .or_default()
+                            .push_str(&String::from_utf8_lossy(&bytes));
+                    }
+                }
+                Ok(())
+            });
+        tauri::async_runtime::block_on(crate::commands::containers::terminal_open(
+            h.app.state::<AppState>(),
+            id.clone(),
+            Some(name.clone()),
+            dcc_engine::streams::ShellChoice::Sh,
+            100,
+            30,
+            ch,
+        ))
+        .unwrap()
+    };
+    let input = |sid: u64, s: &str| {
+        invoke(&h, "terminal_input", json!({ "stream": sid, "data": s })).unwrap();
+    };
+    let s1 = open(1);
+    let s2 = open(2);
+    assert_ne!(s1, s2);
+    input(s1, "echo uno > /t1; /sleeper &\n");
+    input(s2, "echo dos > /t2\n");
+    wait_for("las dos sesiones escriben", || {
+        file("/t1").trim() == "uno" && file("/t2").trim() == "dos"
+    });
+    invoke(
+        &h,
+        "terminal_resize",
+        json!({ "stream": s1, "cols": 80, "rows": 20 }),
+    )
+    .unwrap();
+    wait_for("sleeper en segundo plano", || alive("sleeper") == 2);
+    // Cada canal recibe solo la salida de su sesión (el eco de lo tecleado).
+    {
+        let o = outputs.lock().unwrap();
+        assert!(
+            o[&1].contains("echo uno") && !o[&1].contains("echo dos"),
+            "{o:?}"
+        );
+        assert!(
+            o[&2].contains("echo dos") && !o[&2].contains("echo uno"),
+            "{o:?}"
+        );
+        assert!(
+            !o[&1].contains("\u{1b}]6973;"),
+            "la marca del PID no llega a la ventana"
+        );
+    }
+
+    // Cerrar la 1: su proceso en segundo plano desaparece; la 2 sigue.
+    assert!(invoke(&h, "stream_close", json!({ "stream": s1 }))
+        .unwrap()
+        .as_bool()
+        .unwrap());
+    wait_for("la sesión 1 termina y limpia", || alive("sleeper") == 1);
+    let e = invoke(&h, "terminal_input", json!({ "stream": s1, "data": "x" })).unwrap_err();
+    assert_eq!(e["code"], "stream.closed");
+    input(s2, "echo tres > /t3\n");
+    wait_for("la sesión 2 sigue", || file("/t3").trim() == "tres");
+
+    // Cerrar todas y esperar, como al cerrar la ventana.
+    let s3 = open(3);
+    input(s3, "/sleeper &\n");
+    wait_for("sleeper de la sesión 3", || alive("sleeper") == 2);
+    let left = tauri::async_runtime::block_on(async {
+        h.app
+            .state::<AppState>()
+            .streams
+            .close_all_and_wait(std::time::Duration::from_secs(15))
+            .await
+    });
+    assert_eq!(left, 0, "todas las sesiones terminaron");
+    assert_eq!(alive("sleeper"), 1, "solo el proceso principal");
+    assert_eq!(alive("sh"), 1, "solo la shell que lista");
+    let acts = invoke(&h, "activity_list", json!({})).unwrap();
+    let execs: Vec<_> = acts
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["kind"] == "container.exec")
+        .collect();
+    assert_eq!(execs.len(), 3, "tres sesiones registradas");
+    assert!(
+        execs.iter().all(|r| r["status"] == "succeeded"),
+        "{execs:?}"
+    );
+}

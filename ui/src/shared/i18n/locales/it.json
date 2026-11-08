@@ -1,0 +1,2084 @@
+{
+  "app": {
+    "name": "Docker Control Center",
+    "startupWarning": "Avviso all’avvio"
+  },
+  "nav": {
+    "label": "Navigazione principale",
+    "collapse": "Comprimi barra laterale",
+    "expand": "Espandi barra laterale",
+    "groups": {
+      "resources": "Risorse",
+      "orchestration": "Orchestrazione",
+      "tools": "Strumenti",
+      "monitoring": "Monitoraggio"
+    }
+  },
+  "sections": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Stato generale di Docker Engine e delle tue risorse."
+    },
+    "containers": {
+      "title": "Container",
+      "description": "Crea, avvia, arresta e ispeziona container."
+    },
+    "images": {
+      "title": "Immagini",
+      "description": "Scarica, compila, aggiungi tag ed elimina immagini."
+    },
+    "networks": {
+      "title": "Reti",
+      "description": "Gestisci le reti e collega i container tra loro.",
+      "planned": [
+        "Reti bridge, host, none, overlay e macvlan",
+        "Sottoreti, gateway e intervalli di indirizzi",
+        "Connettere e disconnettere container"
+      ],
+      "phase": 5
+    },
+    "volumes": {
+      "title": "Volumi",
+      "description": "Archiviazione gestita da Docker.",
+      "planned": [
+        "Elencare, creare e ispezionare volumi",
+        "Container che usano ciascun volume",
+        "Avviso prima di eliminare volumi in uso"
+      ],
+      "phase": 6
+    },
+    "binds": {
+      "title": "Directory collegate",
+      "description": "Cartelle del tuo sistema montate nei container.",
+      "planned": [
+        "Percorso di origine e di destinazione di ogni montaggio",
+        "Container che usano ciascuna cartella",
+        "Montaggi in sola lettura o in lettura e scrittura",
+        "Scelta delle cartelle con il selettore di file"
+      ],
+      "phase": 6
+    },
+    "compose": {
+      "title": "Docker Compose",
+      "description": "Progetti multi-container definiti in YAML.",
+      "planned": [
+        "Importazione e creazione di progetti",
+        "Editor YAML con convalida prima dell’esecuzione",
+        "Avvio, arresto, ricompilazione e log per servizio"
+      ],
+      "phase": 7
+    },
+    "terminals": {
+      "title": "Terminali",
+      "description": "Più terminali contemporaneamente in container in esecuzione."
+    },
+    "events": {
+      "title": "Eventi e registri",
+      "description": "Eventi di Docker in tempo reale e cronologia delle operazioni."
+    },
+    "settings": {
+      "title": "Impostazioni",
+      "description": "Preferenze dell’applicazione."
+    }
+  },
+  "pending": {
+    "phase": "Disponibile dalla fase {{phase}}",
+    "intro": "Questa sezione non è ancora collegata a Docker. Una volta implementata, ti permetterà di:"
+  },
+  "activity": {
+    "title": "Attività",
+    "subtitle": "Operazioni eseguite su Docker",
+    "open": "Apri il pannello attività",
+    "close": "Chiudi il pannello attività",
+    "shortcut": "Ctrl+Maiusc+A",
+    "running": "{{count}} in corso",
+    "failed_one": "{{count}} errore",
+    "failed_other": "{{count}} errori",
+    "search": "Cerca comandi, risorse od operazioni",
+    "filterCategory": "Area",
+    "filterStatus": "Stato",
+    "all": "Tutte",
+    "allStatus": "Tutti",
+    "clear": "Cancella cronologia",
+    "clearHint": "Cancella la cronologia visibile. Le operazioni in corso vengono mantenute.",
+    "emptyTitle": "Ancora nessuna operazione",
+    "emptyBody": "Ogni azione dell’applicazione su Docker comparirà qui con il comando equivalente, lo stato e il risultato.",
+    "noMatches": "Nessuna operazione corrisponde ai filtri.",
+    "resetFilters": "Cancella filtri",
+    "via": {
+      "api": "API",
+      "cli": "CLI"
+    },
+    "viaLong": {
+      "api": "API di Docker Engine",
+      "cli": "Processo CLI"
+    },
+    "executed": "Operazione eseguita",
+    "executedCommand": "Comando eseguito",
+    "equivalent": "Comando equivalente",
+    "equivalentNote": "Traduzione approssimativa. L’operazione è stata eseguita tramite l’API di Docker Engine, non eseguendo questo comando.",
+    "noEquivalent": "Questa operazione non ha un comando docker esattamente equivalente.",
+    "endpoint": "Socket",
+    "requestBody": "Corpo della richiesta",
+    "stdout": "Output standard",
+    "stderr": "Output di errore",
+    "error": "Errore",
+    "summary": "Risultato",
+    "httpStatus": "Codice HTTP",
+    "exitCode": "Codice di uscita",
+    "started": "Inizio",
+    "finished": "Fine",
+    "duration": "Durata",
+    "truncated": "Output troncato: vengono mostrati i primi {{shown}} byte su {{total}}.",
+    "copy": "Copia",
+    "copied": "Copiato",
+    "copyFailed": "Impossibile copiare",
+    "details": "Dettagli",
+    "status": {
+      "running": "In corso",
+      "succeeded": "Riuscita",
+      "failed": "Non riuscita",
+      "cancelled": "Interrotta"
+    },
+    "category": {
+      "system": "Sistema",
+      "container": "Container",
+      "image": "Immagini",
+      "network": "Reti",
+      "volume": "Volumi",
+      "bind": "Directory collegate",
+      "compose": "Compose"
+    },
+    "loadError": "Impossibile caricare la cronologia delle attività: {{message}}"
+  },
+  "settings": {
+    "appearance": "Aspetto",
+    "theme": "Tema",
+    "themeOptions": {
+      "system": "Sistema",
+      "light": "Chiaro",
+      "dark": "Scuro"
+    },
+    "language": "Lingua",
+    "languageNames": {
+      "es": "Español",
+      "en": "English",
+      "fr": "Français",
+      "it": "Italiano"
+    },
+    "activityPanel": "Pannello attività",
+    "openOnError": "Apri il pannello quando un’operazione non riesce",
+    "openOnErrorHint": "Mostra l’errore senza doverlo cercare.",
+    "maxRecords": "Operazioni conservate",
+    "maxRecordsHint": "Tra {{min}} e {{max}}. Le più vecchie vengono scartate.",
+    "saveError": "Impossibile salvare le impostazioni: {{message}}",
+    "saved": "Salvato",
+    "shortcuts": "Scorciatoie da tastiera",
+    "shortcutSidebar": "Comprimi o espandi la barra laterale",
+    "shortcutActivity": "Apri o chiudi il pannello attività",
+    "keepHistory": "Conserva la cronologia tra le sessioni",
+    "keepHistoryHint": "Salva su disco le operazioni (senza corpi, comandi né output, che possono contenere segreti) e gli eventi di Docker, per consultarli in Eventi e registri.",
+    "reset": "Ripristina",
+    "resetLabel": "Ripristina le preferenze",
+    "resetHint": "Ripristina l’aspetto, il pannello attività e gli aggiornamenti predefiniti. La connessione a Docker e l’elenco dei progetti Compose non vengono modificati.",
+    "resetButton": "Ripristina",
+    "resetConfirmTitle": "Ripristinare le preferenze?",
+    "resetConfirmBody": "Tema, lingua, pannello attività, cronologia e aggiornamenti tornano ai valori predefiniti. La connessione a Docker, i progetti Compose e la cronologia già salvata non vengono modificati.",
+    "maintenance": "Manutenzione e guida",
+    "open": "Apri",
+    "back": "Impostazioni"
+  },
+  "common": {
+    "dismiss": "Chiudi avviso",
+    "unknown": "Sconosciuto",
+    "loading": "Caricamento…",
+    "retry": "Riprova",
+    "yes": "Sì",
+    "no": "No",
+    "cancel": "Annulla"
+  },
+  "ops": {
+    "system": {
+      "ping": "Verifica connessione",
+      "version": "Ottieni versione",
+      "info": "Ottieni informazioni di sistema"
+    },
+    "container": {
+      "list": "Elenca container",
+      "start": "Avvia container",
+      "stop": "Arresta container",
+      "restart": "Riavvia container",
+      "pause": "Metti in pausa container",
+      "unpause": "Riprendi container",
+      "remove": "Elimina container",
+      "state": "Verifica stato del container",
+      "create": "Crea container",
+      "inspect": "Ispeziona container",
+      "logs": "Segui log",
+      "stats": "Segui statistiche",
+      "exec": "Sessione di terminale",
+      "exec_create": "Prepara terminale",
+      "exec_inspect": "Verifica fine del terminale",
+      "exec_cleanup": "Termina processi del terminale"
+    },
+    "image": {
+      "list": "Elenca immagini",
+      "inspect": "Ispeziona immagine",
+      "pull": "Scarica immagine",
+      "build": "Compila immagine",
+      "history": "Ottieni livelli",
+      "tag": "Aggiungi tag all’immagine",
+      "remove": "Elimina immagine",
+      "prune": "Pulisci immagini",
+      "search": "Cerca immagini"
+    },
+    "compose": {
+      "version": "Ottieni versione di Compose",
+      "config": "Leggi configurazione Compose",
+      "up": "Distribuisci progetto",
+      "down": "Elimina progetto",
+      "start": "Avvia progetto",
+      "stop": "Arresta progetto",
+      "restart": "Riavvia progetto",
+      "pull": "Scarica immagini del progetto",
+      "build": "Compila immagini del progetto",
+      "logs": "Log del progetto"
+    },
+    "network": {
+      "list": "Elenca reti",
+      "inspect": "Ispeziona rete",
+      "create": "Crea rete",
+      "remove": "Elimina rete",
+      "prune": "Pulisci reti",
+      "connect": "Connetti container alla rete",
+      "disconnect": "Disconnetti container dalla rete"
+    },
+    "volume": {
+      "list": "Elenca volumi",
+      "inspect": "Ispeziona volume",
+      "usage": "Misura volumi",
+      "create": "Crea volume",
+      "remove": "Elimina volume",
+      "prune": "Pulisci volumi"
+    },
+    "registry": {
+      "credentials": "Ottieni credenziali del registro"
+    },
+    "events": {
+      "watch": "Sottoscrizione agli eventi di Docker",
+      "query": "Richiedi eventi a Docker"
+    },
+    "packages": {
+      "query": "Consulta pacchetti installati",
+      "simulate": "Simula con APT",
+      "remove": "Disinstalla pacchetti"
+    }
+  },
+  "conn": {
+    "connecting": "Connessione a Docker…",
+    "connected": "Docker {{version}}",
+    "disconnected": "Nessuna connessione a Docker",
+    "rootless": "rootless",
+    "source": {
+      "custom": "Socket personalizzato",
+      "dockerHost": "Variabile DOCKER_HOST",
+      "context": "Contesto «{{name}}»",
+      "rootless": "Docker rootless dell’utente",
+      "system": "Socket di sistema"
+    },
+    "reconnect": "Riconnetti",
+    "reconnecting": "Connessione…",
+    "configure": "Configura connessione",
+    "openDashboard": "Vedi diagnosi",
+    "notConnectedTitle": "Questa sezione richiede una connessione a Docker",
+    "notConnectedBody": "Non c’è connessione a Docker Engine. La Dashboard spiega la causa e come risolverla.",
+    "autoRetry": "L’applicazione riprova automaticamente ogni pochi secondi.",
+    "badgeTitle": "Connesso a {{path}}"
+  },
+  "diag": {
+    "title": "Diagnosi della connessione",
+    "steps": "Come risolverlo",
+    "candidates": "Socket controllati",
+    "candidatesHint": "Nell’ordine in cui vengono cercati.",
+    "installation": "Installazione rilevata",
+    "cli": "CLI di Docker",
+    "daemon": "Demone (dockerd)",
+    "rootlessTools": "Strumenti rootless",
+    "notFound": "Non trovato",
+    "yes": "Sì",
+    "no": "No",
+    "user": "Utente",
+    "probe": {
+      "reachable": "Risponde",
+      "missing": "Non esiste",
+      "notASocket": "Non è un socket",
+      "permissionDenied": "Permesso negato",
+      "refused": "Nessuno in ascolto",
+      "errorLabel": "Errore"
+    },
+    "rootGroupWarning": "Appartenere al gruppo {{group}} equivale ad avere privilegi di amministratore su questo computer. L’alternativa più sicura è Docker rootless.",
+    "noAutoFix": "Docker Control Center non modifica permessi né gruppi del sistema: devi eseguire tu questi passaggi in un terminale.",
+    "problems": {
+      "noSocket": {
+        "title": "Docker Engine non trovato",
+        "body": "Non c’è alcun socket di Docker nelle posizioni consuete."
+      },
+      "notInstalled": {
+        "title": "Docker non sembra installato",
+        "body": "Non è stato trovato alcun socket, né la CLI né il demone di Docker."
+      },
+      "daemonNotRunning": {
+        "title": "Docker Engine è arrestato",
+        "body": "Il socket {{path}} esiste, ma nessun processo risponde."
+      },
+      "permissionDenied": {
+        "title": "Nessun permesso per usare il socket di Docker",
+        "body": "Il tuo utente ({{user}}) non può aprire {{path}}. Appartiene a {{owner}}:{{group}} con modalità {{mode}}."
+      },
+      "unsupportedHost": {
+        "title": "Connessione di Docker non supportata",
+        "body": "DOCKER_HOST o il contesto attivo puntano a {{host}}. Questa versione supporta solo socket Unix locali."
+      },
+      "invalidPath": {
+        "title": "Il percorso configurato non è valido",
+        "body": "«{{path}}»: {{reason}}."
+      },
+      "notASocket": {
+        "title": "Il percorso non è un socket",
+        "body": "{{path}} esiste, ma non è un socket Unix."
+      },
+      "notDocker": {
+        "title": "Il socket non risponde come Docker",
+        "body": "{{path}} accetta connessioni ma non risponde come l’API di Docker Engine: {{message}}"
+      },
+      "timeout": {
+        "title": "Docker non risponde in tempo",
+        "body": "{{path}} non ha risposto entro 5 secondi. Il demone potrebbe essere bloccato o sovraccarico."
+      },
+      "apiTooOld": {
+        "title": "Versione di Docker troppo vecchia",
+        "body": "Docker Engine offre l’API {{api}} ed è richiesta la {{min}} o successiva (Docker 20.10 o successivo)."
+      },
+      "other": {
+        "title": "Errore di connessione a Docker",
+        "body": "{{message}}"
+      }
+    },
+    "stepsText": {
+      "install": "Installa Docker Engine. Con i pacchetti di Debian o Ubuntu:",
+      "installOfficial": "Oppure segui la guida di installazione ufficiale per Debian/Ubuntu su docs.docker.com/engine/install.",
+      "startSystem": "Avvia il servizio Docker e abilitalo all’avvio:",
+      "startRootless": "Se usi Docker rootless, avvia il tuo servizio utente:",
+      "checkStatus": "Se non si avvia, controlla il suo stato e gli ultimi messaggi:",
+      "addGroup": "Aggiungi il tuo utente al gruppo {{group}}:",
+      "relogin": "Poi esci dalla sessione e accedi di nuovo perché il gruppo abbia effetto.",
+      "alreadyInGroup": "Appartieni già al gruppo {{group}}, ma la sessione attuale non lo ha ancora attivo. Esci e accedi di nuovo, oppure riavvia il computer.",
+      "ownerUnexpected": "Il socket non appartiene al gruppo docker. Controlla l’opzione SocketGroup dell’unità docker.socket.",
+      "rootlessAlternative": "Alternativa senza privilegi: Docker rootless (docs.docker.com/engine/security/rootless).",
+      "unsetHost": "Per usare il socket locale, rimuovi DOCKER_HOST dal tuo ambiente o torna al contesto predefinito:",
+      "customPath": "Oppure indica un socket Unix specifico in Impostazioni, sezione Connessione a Docker.",
+      "fixPath": "Correggi il percorso in Impostazioni, sezione Connessione a Docker. Deve essere assoluto, ad esempio /var/run/docker.sock.",
+      "checkPath": "Verifica che il percorso sia il socket di Docker e non quello di un altro servizio.",
+      "upgrade": "Aggiorna Docker Engine alla versione 20.10 o successiva.",
+      "restart": "Riavvia il servizio Docker:",
+      "retry": "Una volta risolto, premi «Riconnetti». L’applicazione riprova anche da sola."
+    }
+  },
+  "dashboard": {
+    "refresh": "Aggiorna",
+    "engine": "Docker Engine",
+    "containers": "Container",
+    "images": "Immagini",
+    "running": "In esecuzione",
+    "paused": "In pausa",
+    "stopped": "Arrestati",
+    "viewContainers": "Vedi container",
+    "viewImages": "Vedi immagini",
+    "host": "Host",
+    "hostName": "Nome",
+    "os": "Sistema operativo",
+    "kernel": "Kernel",
+    "arch": "Architettura",
+    "cpus": "CPU",
+    "memory": "Memoria",
+    "runtime": "Archiviazione ed esecuzione",
+    "storageDriver": "Archiviazione",
+    "rootDir": "Directory dei dati",
+    "cgroup": "cgroups",
+    "logging": "Log",
+    "api": "API",
+    "minApi": "API minima",
+    "go": "Go",
+    "commit": "Commit",
+    "warnings": "Avvisi del demone",
+    "swarm": "Swarm attivo",
+    "connection": "Connessione",
+    "socket": "Socket",
+    "source": "Origine",
+    "loadError": "Impossibile ottenere le informazioni di Docker: {{message}}",
+    "imagesHint": "immagini locali"
+  },
+  "containers": {
+    "refresh": "Aggiorna",
+    "search": "Cerca per nome, immagine o ID",
+    "filter": {
+      "all": "Tutti",
+      "running": "In esecuzione",
+      "stopped": "Arrestati"
+    },
+    "count_one": "{{count}} container",
+    "count_other": "{{count}} container",
+    "columns": {
+      "name": "Nome",
+      "image": "Immagine",
+      "status": "Stato",
+      "ports": "Porte",
+      "created": "Creazione",
+      "actions": "Azioni"
+    },
+    "state": {
+      "created": "Creato",
+      "running": "In esecuzione",
+      "paused": "In pausa",
+      "restarting": "In riavvio",
+      "exited": "Arrestato",
+      "removing": "In eliminazione",
+      "dead": "Morto"
+    },
+    "action": {
+      "start": "Avvia",
+      "stop": "Arresta",
+      "restart": "Riavvia",
+      "pause": "Metti in pausa",
+      "unpause": "Riprendi",
+      "remove": "Elimina"
+    },
+    "actionOn": "{{action}} {{name}}",
+    "failed": "{{action}} {{name}}: {{message}}",
+    "empty": "Nessun container",
+    "emptyBody": "Qui compariranno i container che esistono in Docker. Usa «Crea container» per crearne uno da un’immagine locale.",
+    "noMatches": "Nessun container corrisponde alla ricerca.",
+    "loadError": "Impossibile ottenere l’elenco dei container: {{message}}",
+    "removeTitle": "Elimina {{name}}",
+    "removeBody": "Il container e il suo livello scrivibile verranno eliminati. Non si può annullare.",
+    "removeRunning": "Il container è {{state}}. Per eliminarlo bisogna arrestarlo forzatamente.",
+    "removeForce": "Arrestalo forzatamente ed eliminalo",
+    "removeVolumes": "Elimina anche i suoi volumi anonimi",
+    "removeVolumesHint": "I volumi con nome e le cartelle collegate non vengono toccati.",
+    "cancel": "Annulla",
+    "confirmRemove": "Elimina container",
+    "dismiss": "Chiudi",
+    "create": "Crea container",
+    "openDetail": "Apri {{name}}"
+  },
+  "images": {
+    "refresh": "Aggiorna",
+    "search": "Cerca per tag o ID",
+    "filter": {
+      "all": "Tutte",
+      "used": "In uso",
+      "unused": "Inutilizzate",
+      "dangling": "Senza tag"
+    },
+    "count_one": "{{count}} immagine",
+    "count_other": "{{count}} immagini",
+    "columns": {
+      "tags": "Immagine",
+      "id": "ID",
+      "size": "Dimensione",
+      "created": "Creazione",
+      "usage": "Uso",
+      "actions": "Azioni"
+    },
+    "dangling": "Senza tag",
+    "usedBy_one": "{{count}} container",
+    "usedBy_other": "{{count}} container",
+    "unused": "Inutilizzata",
+    "empty": "Nessuna immagine locale",
+    "emptyBody": "Scarica un’immagine da un registro o compilane una da un Dockerfile.",
+    "noMatches": "Nessuna immagine corrisponde alla ricerca.",
+    "loadError": "Impossibile ottenere l’elenco delle immagini: {{message}}",
+    "pull": "Scarica immagine",
+    "searchHub": "Cerca su Docker Hub",
+    "build": "Compila immagine",
+    "prune": "Pulisci",
+    "buildRunning": "È in corso una compilazione.",
+    "buildShow": "Mostra avanzamento",
+    "open": "Apri {{name}}",
+    "createContainer": "Crea container con {{name}}",
+    "tagAction": "Aggiungi tag a {{name}}",
+    "removeAction": "Elimina {{name}}"
+  },
+  "settingsDocker": {
+    "title": "Connessione a Docker",
+    "mode": "Modalità di connessione",
+    "modeAuto": "Automatica",
+    "modeCustom": "Socket personalizzato",
+    "autoHint": "Cerca DOCKER_HOST, il contesto Docker attivo, il socket rootless del tuo utente e il socket di sistema, in quest’ordine.",
+    "customHint": "Percorso assoluto di un socket Unix, ad esempio /run/user/1000/docker.sock.",
+    "socketPath": "Percorso del socket",
+    "pathRequired": "Scrivi il percorso del socket.",
+    "test": "Prova connessione",
+    "testing": "Prova in corso…",
+    "save": "Salva e connetti",
+    "testOk": "La connessione funziona: Docker {{version}} su {{path}}",
+    "testFailed": "Impossibile connettersi: {{reason}}",
+    "current": "Connessione attuale",
+    "none": "Non connesso",
+    "rootless": "Modalità rootless",
+    "versions": "Versioni",
+    "engineVersion": "Docker Engine",
+    "apiVersion": "API",
+    "compose": "Docker Compose",
+    "composeCheck": "Verifica",
+    "composeChecking": "Verifica in corso…",
+    "composeNotChecked": "Non verificato",
+    "composeError": "Errore: {{message}}",
+    "composeHint": "Ottenuto eseguendo «docker compose version». Necessario per la sezione Docker Compose (fase 7); il resto dell’applicazione funziona anche senza.",
+    "security": "L’accesso al socket di Docker equivale a privilegi di amministratore. L’applicazione non modifica mai permessi né gruppi del sistema.",
+    "composePlugin": "{{version}} (plugin «docker compose»)",
+    "composeStandalone": "{{version}} (binario «docker-compose»)",
+    "composeNotInstalled": "Non installato",
+    "composeUnusable": "Il plugin si trova in {{path}} ma la CLI di Docker non lo usa",
+    "composeLegacy": "Solo Compose v1 {{version}}, non supportato",
+    "composeUnrecognized": "Risposta non riconosciuta: {{output}}",
+    "composeInstall": "Installa Docker Compose v2 (Debian 12 fornisce solo la v1, non supportata: usa il repository ufficiale di Docker):",
+    "composeInstallOn": {
+      "debian13": "Debian 13:",
+      "ubuntu": "Ubuntu 22.04 o successivo:",
+      "dockerRepo": "Con il repository ufficiale di Docker:"
+    }
+  },
+  "crash": {
+    "title": "L’interfaccia ha riscontrato un errore",
+    "body": "Docker non è stato toccato. Puoi ricaricare la finestra; se succede di nuovo, copia questo testo per segnalarlo.",
+    "reload": "Ricarica la finestra"
+  },
+  "restart": {
+    "no": "Non riavviare",
+    "always": "Sempre",
+    "unlessStopped": "Salvo arresto manuale",
+    "onFailure": "In caso di errore"
+  },
+  "detail": {
+    "back": "Container",
+    "duplicate": "Duplica",
+    "duplicateFailed": "Impossibile leggere la configurazione per duplicarla: {{message}}",
+    "loadError": "Impossibile ispezionare il container: {{message}}",
+    "notFound": "Il container {{name}} non esiste più in Docker.",
+    "tabs": {
+      "summary": "Riepilogo",
+      "logs": "Log",
+      "terminal": "Terminale",
+      "stats": "Statistiche",
+      "inspect": "Ispezione JSON"
+    },
+    "s": {
+      "general": "Generale",
+      "process": "Processo",
+      "ports": "Porte pubblicate",
+      "restartResources": "Riavvio e risorse",
+      "env": "Variabili d’ambiente",
+      "networks": "Reti",
+      "mounts": "Archiviazione",
+      "labels": "Etichette"
+    },
+    "f": {
+      "id": "ID",
+      "image": "Immagine",
+      "created": "Creazione",
+      "started": "Avviato",
+      "finished": "Terminato",
+      "exitCode": "Codice di uscita",
+      "oom": "Terminato per memoria insufficiente",
+      "error": "Errore",
+      "health": "Salute",
+      "pid": "PID",
+      "restartCount": "Riavvii",
+      "compose": "Progetto Compose",
+      "entrypoint": "Entrypoint",
+      "command": "Comando",
+      "workingDir": "Directory di lavoro",
+      "user": "Utente",
+      "hostname": "Nome host",
+      "tty": "TTY",
+      "stdin": "STDIN aperto",
+      "restart": "Criterio di riavvio",
+      "cpus": "CPU",
+      "memory": "Memoria",
+      "memoryReservation": "Riserva di memoria",
+      "flags": "Opzioni",
+      "network": "Rete",
+      "gateway": "Gateway"
+    },
+    "imageDefault": "predefinito dell’immagine",
+    "maxRetries_one": "max {{count}} tentativo",
+    "maxRetries_other": "max {{count}} tentativi",
+    "unlimited": "illimitato",
+    "noPorts": "Nessuna porta pubblicata su questo computer.",
+    "exposedOnly": "Esposte ma non pubblicate: {{ports}}",
+    "noEnv": "Nessuna variabile.",
+    "revealSecrets_one": "Mostra {{count}} valore nascosto",
+    "revealSecrets_other": "Mostra {{count}} valori nascosti",
+    "hideSecrets": "Nascondi i valori sensibili",
+    "hidden": "nascosto",
+    "reveal": "Mostra valore",
+    "hide": "Nascondi valore",
+    "networkMode": "Modalità di rete: {{mode}}",
+    "noNetworks": "Nessuna rete.",
+    "noMounts": "Nessun montaggio.",
+    "readOnly": "sola lettura",
+    "noLabels": "Nessuna etichetta.",
+    "inspectHint": "Output completo di docker inspect {{name}}, esattamente come lo restituisce Docker."
+  },
+  "logs": {
+    "tail": "Ultime",
+    "all": "Tutte",
+    "lastN_one": "{{count}} riga",
+    "lastN_other": "{{count}} righe",
+    "filter": "Filtra righe",
+    "timestamps": "Ora",
+    "follow": "Segui l’output",
+    "stop": "Smetti di seguire",
+    "reopen": "Riapri",
+    "live": "Ricezione dei log in diretta",
+    "count_one": "{{count}} riga",
+    "count_other": "{{count}} righe",
+    "dropped": "Vengono mostrate solo le ultime {{max}} righe; quelle più vecchie sono state scartate.",
+    "opening": "Apertura dei log…",
+    "empty": "Ancora nessun output.",
+    "noMatches": "Nessuna riga corrisponde al filtro."
+  },
+  "terminal": {
+    "shell": "Shell",
+    "auto": "Automatica",
+    "open": "Apri terminale",
+    "reopen": "Apri un’altra sessione",
+    "close": "Chiudi sessione",
+    "hint": "Esegue una shell con docker exec -it. Chiudendo la sessione la shell termina.",
+    "live": "Sessione aperta",
+    "notRunning": "Il container non è in esecuzione: avvialo per aprire un terminale."
+  },
+  "terminals": {
+    "new": "Nuovo terminale",
+    "newTitle": "Nuovo terminale",
+    "openSession": "Apri terminale",
+    "closeAll": "Chiudi tutte",
+    "closeAllTitle": "Chiudere tutti i terminali?",
+    "closeAllBody_one": "Verrà chiusa {{count}} sessione: la sua shell e i processi che ha lasciato nel container vengono terminati. Il container resta in esecuzione.",
+    "closeAllBody_other": "Verranno chiuse {{count}} sessioni: le loro shell e i processi che hanno lasciato nei container vengono terminati. I container restano in esecuzione.",
+    "count_one": "{{count}} sessione · {{live}} connessa",
+    "count_other": "{{count}} sessioni · {{live}} connesse",
+    "hint": "Ogni terminale è un docker exec -it indipendente. Restano aperti quando cambi sezione e si chiudono quando esci dall’applicazione.",
+    "emptyTitle": "Nessun terminale aperto",
+    "emptyHint": "Apri un terminale in qualsiasi container in esecuzione. Puoi averne più di uno contemporaneamente, nello stesso container o in altri.",
+    "full": "Hai raggiunto il massimo di {{max}} terminali aperti: chiudine uno per aprirne un altro.",
+    "containerField": "Container in esecuzione",
+    "noRunning": "Nessun container è in esecuzione: avviane uno per aprire un terminale.",
+    "sessionName": "Nome della sessione",
+    "nameHint": "Facoltativo. Se resta vuoto si usa il nome del container. Potrai cambiarlo in seguito.",
+    "nameProblem": {
+      "empty": "Il nome non può essere vuoto.",
+      "long": "Usa al massimo {{max}} caratteri.",
+      "control": "Il nome non può contenere caratteri di controllo."
+    },
+    "paneLabel": "Terminale {{name}} su {{container}}",
+    "container": "Container {{name}}",
+    "state": {
+      "opening": "Connessione…",
+      "open": "Connessa",
+      "ended": "Terminata",
+      "error": "Errore"
+    },
+    "after": {
+      "stopped": "Container arrestato",
+      "removed": "Container eliminato"
+    },
+    "rename": "Rinomina sessione",
+    "reopen": "Riapri la sessione",
+    "reopenGone": "Impossibile riaprire: il container è stato eliminato",
+    "maximize": "Ingrandisci",
+    "restore": "Ripristina la griglia",
+    "close": "Chiudi sessione",
+    "splitColumns": "Ridimensiona colonne",
+    "splitRows": "Ridimensiona righe"
+  },
+  "stats": {
+    "stop": "Interrompi ricezione",
+    "reopen": "Riapri",
+    "live": "Ricezione delle statistiche",
+    "samples_one": "{{count}} campione",
+    "samples_other": "{{count}} campioni",
+    "notRunning": "Il container non è in esecuzione: non ci sono statistiche da mostrare.",
+    "cpu": "CPU",
+    "cpuSub_one": "{{count}} CPU disponibile",
+    "cpuSub_other": "{{count}} CPU disponibili",
+    "cpuTrend": "Uso della CPU nel tempo",
+    "memory": "Memoria",
+    "memorySub": "di {{limit}} · {{pct}}",
+    "memoryTrend": "Uso della memoria nel tempo",
+    "pids": "Processi",
+    "net": "Rete (ricevuti / inviati)",
+    "block": "Disco",
+    "read": "letti",
+    "written": "scritti",
+    "formulaHint": "Valori calcolati come docker stats: la CPU è una percentuale di una CPU e la memoria esclude la cache delle pagine."
+  },
+  "stream": {
+    "opening": "Apertura…",
+    "openFailed": "Impossibile aprire: {{message}}",
+    "failed": "Il flusso è terminato con un errore: {{message}}",
+    "idle": "Chiuso."
+  },
+  "create": {
+    "title": "Crea container",
+    "titleDuplicate": "Duplica {{name}}",
+    "notesTitle": "Alcune impostazioni dell’originale non vengono riportate:",
+    "tabs": {
+      "general": "Generale",
+      "env": "Ambiente",
+      "network": "Rete",
+      "storage": "Archiviazione",
+      "resources": "Risorse",
+      "advanced": "Avanzate"
+    },
+    "f": {
+      "name": "Nome",
+      "image": "Immagine",
+      "command": "Comando",
+      "entrypoint": "Entrypoint",
+      "workingDir": "Directory di lavoro",
+      "network": "Rete",
+      "hostname": "Nome host",
+      "hostIp": "IP dell’host",
+      "hostPort": "Porta dell’host",
+      "containerPort": "Porta del container",
+      "protocol": "Protocollo",
+      "publishAll": "Pubblica tutte le porte esposte su porte libere",
+      "mountKind": "Tipo di montaggio",
+      "readOnly": "Sola lettura",
+      "volumeName": "Volume",
+      "hostPath": "Cartella dell’host",
+      "target": "Percorso nel container",
+      "cpus": "CPU",
+      "memory": "Limite di memoria",
+      "memoryReservation": "Riserva di memoria",
+      "unit": "Unità",
+      "restart": "Criterio",
+      "maxRetries": "Tentativi massimi",
+      "user": "Utente",
+      "tty": "Assegna un TTY",
+      "interactive": "Mantieni STDIN aperto",
+      "init": "Usa un processo init",
+      "readOnlyRootfs": "File system radice in sola lettura",
+      "autoRemove": "Elimina al termine",
+      "privileged": "Modalità privilegiata",
+      "capAdd": "Aggiungi capability",
+      "capDrop": "Rimuovi capability",
+      "key": "Chiave {{n}}",
+      "value": "Valore {{n}}"
+    },
+    "h": {
+      "name": "Facoltativo: se vuoto, Docker ne genera uno.",
+      "image": "Deve esistere su questo computer (il download arriva nella fase 4).",
+      "imageLocal": "Immagine locale: {{ref}}",
+      "imageReading": "Lettura della configurazione dell’immagine…",
+      "argv": "Diviso in argomenti con le virgolette come in una shell, ma non viene eseguita alcuna shell.",
+      "fromImage": "Vuoto = predefinito dell’immagine: {{value}}",
+      "entrypointMulti": "Docker accetta un solo eseguibile in --entrypoint: gli elementi restanti vengono inviati all’inizio del comando.",
+      "network": "Le reti si gestiscono nella fase 5.",
+      "publishAll": "Equivale a --publish-all.",
+      "volumeName": "Vuoto = volume anonimo. Docker lo crea se non esiste.",
+      "cpus": "Ad esempio 0.5 o 2.",
+      "maxRetries": "0 = nessun limite.",
+      "user": "Nome o UID[:GID]. Vuoto = predefinito dell’immagine."
+    },
+    "ph": {
+      "name": "server-web",
+      "hostname": "l’ID breve",
+      "allIps": "tutti",
+      "anyPort": "qualsiasi libera",
+      "anonymous": "anonimo",
+      "unlimited": "illimitato"
+    },
+    "g": {
+      "process": "Processo",
+      "processHint": "Ciò che viene eseguito all’avvio del container.",
+      "env": "Variabili d’ambiente",
+      "envHint": "I valori di chiavi come PASSWORD o TOKEN sono nascosti sullo schermo, ma vengono inviati a Docker così come sono e chiunque abbia accesso a Docker può leggerli.",
+      "labels": "Etichette",
+      "ports": "Porte",
+      "portsHint": "Pubblica porte del container su questo computer.",
+      "hosts": "Voci di /etc/hosts",
+      "hostsHint": "Nome host e IP (o host-gateway).",
+      "mounts": "Montaggi",
+      "mountsHint": "Volumi Docker o cartelle di questo computer (bind mount).",
+      "limits": "Limiti",
+      "limitsHint": "Vuoto = illimitato.",
+      "restart": "Riavvio",
+      "restartHint": "Che cosa fa Docker quando il processo principale termina.",
+      "options": "Opzioni",
+      "caps": "Capability del kernel",
+      "capsHint": "Separate da virgole, ad es. NET_ADMIN o ALL."
+    },
+    "add": {
+      "env": "Aggiungi variabile",
+      "label": "Aggiungi etichetta",
+      "port": "Aggiungi porta",
+      "host": "Aggiungi voce",
+      "mount": "Aggiungi montaggio"
+    },
+    "remove": {
+      "row": "Rimuovi riga {{n}}",
+      "port": "Rimuovi porta {{n}}",
+      "mount": "Rimuovi montaggio {{n}}"
+    },
+    "empty": {
+      "env": "Nessuna variabile aggiuntiva.",
+      "labels": "Nessuna etichetta.",
+      "ports": "Nessuna porta pubblicata.",
+      "hosts": "Nessuna voce.",
+      "mounts": "Nessun montaggio."
+    },
+    "mountKind": {
+      "volume": "Volume",
+      "bind": "Cartella dell’host"
+    },
+    "defaultNetwork": "Predefinita (bridge)",
+    "addExposed": "Pubblica le porte esposte ({{ports}})",
+    "imageEnv_one": "L’immagine definisce già {{count}} variabile",
+    "imageEnv_other": "L’immagine definisce già {{count}} variabili",
+    "imageVolumes": "L’immagine dichiara volumi in {{paths}}. Se non monti nulla lì, Docker crea volumi anonimi.",
+    "imageNotLocal": "L’immagine {{ref}} non è su questo computer. Docker non la scaricherà alla creazione del container; scaricala prima (fase 4) o scegline una locale.",
+    "imageDefaultsError": "Impossibile leggere la configurazione dell’immagine: {{message}}",
+    "listError": "Impossibile ottenere l’elenco: {{message}}",
+    "pickFolder": "Scegli cartella",
+    "argsParsed": "Argomenti risultanti",
+    "equivalent": "Equivalente",
+    "apiBody": "API",
+    "equivalentHint": "Comando equivalente della CLI di Docker. L’applicazione non lo esegue: invia la richiesta all’API e la registra nel pannello attività.",
+    "bodyHint": "Corpo di POST /containers/create che verrà inviato a Docker.",
+    "previewing": "Verifica…",
+    "review": "Revisione",
+    "noIssues": "Nessun problema.",
+    "blocked_one": "Correggi {{count}} errore per continuare.",
+    "blocked_other": "Correggi {{count}} errori per continuare.",
+    "create": "Crea",
+    "createStart": "Crea e avvia",
+    "failed": "Impossibile creare il container: {{message}}",
+    "startFailed": "Il container è stato creato ma non è stato possibile avviarlo: {{message}}",
+    "dockerWarning": "Avviso di Docker: {{message}}",
+    "secretsHidden_one": "{{count}} valore sensibile è mostrato come ******** qui e nel pannello attività; Docker lo riceve per intero.",
+    "secretsHidden_other": "{{count}} valori sensibili sono mostrati come ******** qui e nel pannello attività; Docker li riceve per intero."
+  },
+  "issues": {
+    "name": {
+      "invalid": "Nome non valido: usa lettere, cifre, «_», «.» o «-», iniziando con una lettera o una cifra.",
+      "required": "Il nome è obbligatorio.",
+      "reserved": "{{value}} è una rete predefinita di Docker."
+    },
+    "image": {
+      "required": "Indica un’immagine.",
+      "invalid": "Riferimento all’immagine non valido."
+    },
+    "argv": {
+      "nul": "Non può contenere il carattere NUL.",
+      "unclosedQuote": "C’è una virgoletta non chiusa.",
+      "trailingEscape": "Termina con una barra rovesciata senza nulla dopo."
+    },
+    "path": {
+      "notAbsolute": "Deve essere un percorso assoluto (che inizia con /)."
+    },
+    "user": {
+      "invalid": "L’utente non può contenere spazi."
+    },
+    "hostname": {
+      "invalid": "Nome host non valido (lettere, cifre, «-» e «.», massimo 63)."
+    },
+    "env": {
+      "keyRequired": "Manca il nome della variabile.",
+      "keyInvalid": "Nome di variabile non valido: {{key}}",
+      "duplicate": "{{key}} è ripetuta; vale l’ultimo valore."
+    },
+    "label": {
+      "keyInvalid": "Chiave di etichetta non valida.",
+      "duplicate": "Etichetta ripetuta: {{key}}"
+    },
+    "network": {
+      "invalid": "Nome di rete non valido."
+    },
+    "ports": {
+      "ignoredWithNetwork": "Con la rete «{{network}}» Docker ignora le porte pubblicate."
+    },
+    "port": {
+      "invalid": "Porta non valida (1–65535).",
+      "duplicate": "La porta dell’host {{port}} è ripetuta.",
+      "privileged": "La porta {{port}} è privilegiata: può non funzionare con Docker rootless."
+    },
+    "ip": {
+      "invalid": "IP non valido: {{ip}}"
+    },
+    "mount": {
+      "targetInvalid": "Il percorso nel container deve essere assoluto e diverso da /.",
+      "targetDuplicate": "C’è già un montaggio in {{target}}."
+    },
+    "volume": {
+      "invalid": "Nome di volume non valido."
+    },
+    "bind": {
+      "required": "Indica la cartella dell’host.",
+      "missing": "La cartella {{path}} non esiste su questo computer.",
+      "sensitive": "Montare {{path}} in scrittura dà al container il controllo del sistema. Impostala in sola lettura se non serve scrivere."
+    },
+    "cpus": {
+      "range": "Indica un numero di CPU tra 0.01 e 1024."
+    },
+    "memory": {
+      "min": "Docker richiede almeno 6 MiB.",
+      "invalid": "Indica una quantità numerica.",
+      "reservationAboveLimit": "La riserva non può superare il limite."
+    },
+    "autoRemove": {
+      "restart": "«Elimina al termine» non è compatibile con un criterio di riavvio."
+    },
+    "privileged": "La modalità privilegiata dà al container un accesso quasi totale al computer.",
+    "cap": {
+      "invalid": "Capability non valida: {{cap}}"
+    },
+    "host": {
+      "invalid": "Nome host non valido."
+    },
+    "ref": {
+      "empty": "Indica un’immagine.",
+      "tooLong": "Il riferimento è troppo lungo.",
+      "invalidRegistry": "Nome di registro non valido.",
+      "invalidRepository": "Nome non valido: solo lettere minuscole, cifre e i separatori . _ -",
+      "invalidTag": "Tag non valido: lettere, cifre, _ . - (massimo 128, senza iniziare con . o -).",
+      "invalidDigest": "Digest non valido (sha256:<64 caratteri esadecimali>)."
+    },
+    "context": {
+      "required": "Indica la cartella del contesto.",
+      "missing": "La cartella {{path}} non esiste.",
+      "notDir": "{{path}} non è una cartella.",
+      "huge": "Usare {{path}} come contesto invierebbe un numero enorme di file."
+    },
+    "dockerfile": {
+      "invalid": "Percorso non valido: deve essere relativo e all’interno del contesto.",
+      "missing": "{{path}} non esiste nella cartella del contesto."
+    },
+    "tags": {
+      "none": "Senza nome, l’immagine comparirà come <none>."
+    },
+    "tag": {
+      "invalid": "Tag non valido: {{tag}}",
+      "duplicate": "Tag ripetuto: {{tag}}"
+    },
+    "arg": {
+      "keyInvalid": "Nome non valido: {{key}}",
+      "duplicate": "Ripetuto: {{key}}",
+      "secret": "{{key}} sembra un segreto: gli argomenti restano nella cronologia dell’immagine."
+    },
+    "target": {
+      "invalid": "Nome di fase non valido."
+    },
+    "driver": {
+      "invalid": "Nome di driver non valido.",
+      "singleton": "Può esistere una sola rete con il driver {{value}} (quella predefinita).",
+      "swarm": "Le reti overlay richiedono Docker Swarm: senza di esso, Docker rifiuterà la creazione.",
+      "noParent": "Senza l’opzione \"parent\", la rete non ha uscita attraverso alcuna interfaccia fisica."
+    },
+    "subnet": {
+      "required": "Indica la sottorete per usare un gateway o un intervallo.",
+      "invalid": "Sottorete non valida: usa la notazione CIDR (ad es. 172.30.0.0/24).",
+      "hostBits": "{{value}} non è un indirizzo di rete; dovrebbe essere {{fixed}}.",
+      "family": "{{value}} non appartiene a questa famiglia di indirizzi."
+    },
+    "gateway": {
+      "invalid": "Indirizzo non valido.",
+      "outside": "{{value}} non è all’interno di {{subnet}}.",
+      "family": "{{value}} non appartiene a questa famiglia di indirizzi."
+    },
+    "ipRange": {
+      "invalid": "Intervallo non valido: usa la notazione CIDR.",
+      "outside": "{{value}} non è all’interno di {{subnet}}.",
+      "hostBits": "{{value}} non è un indirizzo di rete; dovrebbe essere {{fixed}}.",
+      "family": "{{value}} non appartiene a questa famiglia di indirizzi."
+    },
+    "ipv6": {
+      "disabled": "Attiva IPv6 per usare una sottorete IPv6."
+    },
+    "option": {
+      "keyInvalid": "Nome di opzione non valido: {{key}}",
+      "duplicate": "Opzione ripetuta: {{key}}"
+    },
+    "volumeName": {
+      "short": "Il nome deve avere almeno due caratteri.",
+      "invalid": "Nome non valido: usa lettere, cifre, \"_\", \".\" o \"-\", iniziando con una lettera o una cifra.",
+      "exists": "Esiste già un volume chiamato {{value}}. Docker restituirebbe quello esistente senza applicare queste modifiche."
+    },
+    "volumeOpt": {
+      "unknownLocal": "Il driver local usa solo type, device e o: \"{{key}}\" verrà inviato comunque.",
+      "deviceWithoutType": "\"device\" di solito richiede \"type\" (ad es. none con o=bind, nfs o tmpfs)."
+    }
+  },
+  "dupNotes": {
+    "composeLabels": "Le etichette di Compose sono state rimosse: il duplicato non apparterrà al progetto.",
+    "portsConflict": "Le stesse porte dell’host sono usate dall’originale; cambiale o arresta l’originale prima di avviare.",
+    "mountTypeUnsupported": "Ci sono montaggi di un tipo che la procedura guidata non supporta (tmpfs, npipe…).",
+    "namedVolumesShared": "I volumi con nome sono condivisi con l’originale, non copiati.",
+    "extraNetworks": "Viene connessa solo la prima rete; le altre non vengono riportate.",
+    "devices": "I dispositivi (--device) non vengono riportati.",
+    "dns": "Le impostazioni DNS non vengono riportate.",
+    "securityOpt": "Le opzioni di sicurezza (--security-opt) non vengono riportate.",
+    "tmpfs": "I montaggi tmpfs non vengono riportati.",
+    "volumesFrom": "--volumes-from non viene riportato.",
+    "ulimits": "Gli ulimit non vengono riportati.",
+    "cpuset": "Le CPU assegnate (--cpuset-cpus) non vengono riportate.",
+    "pidsLimit": "Il limite di processi non viene riportato.",
+    "logConfig": "La configurazione dei log non viene riportata.",
+    "healthcheck": "Il controllo di salute personalizzato non viene riportato.",
+    "stopSignal": "Il segnale di arresto personalizzato non viene riportato.",
+    "imageMissing": "L’immagine originale non è più su questo computer: non è stato possibile separare i suoi valori predefiniti."
+  },
+  "pull": {
+    "title": "Scarica immagine",
+    "start": "Scarica",
+    "reference": "Immagine",
+    "referenceHint": "Nome con tag facoltativo: nginx:1.27, utente/app, registro.esempio.com:5000/app:v2. Senza tag si usa latest.",
+    "resolved": "{{name}} verrà scaricata con il tag {{tag}}.",
+    "auth": "Credenziali",
+    "authDocker": "Quelle di Docker",
+    "authAnonymous": "Nessuna",
+    "authManual": "Nome utente e password",
+    "authHint": {
+      "dockerConfig": "Come docker pull: usa le credenziali salvate con docker login (o il suo credential helper), se ce ne sono per quel registro.",
+      "anonymous": "Download anonimo, senza credenziali.",
+      "manual": "Solo per questo download: non vengono salvate da nessuna parte e non compaiono nel pannello attività."
+    },
+    "username": "Nome utente",
+    "password": "Password o token",
+    "equivalent": "Equivale a",
+    "panel": "Download",
+    "clear": "Rimuovi completati",
+    "cancel": "Annulla",
+    "progress": "Avanzamento di {{ref}}",
+    "layers_one": "{{count}} livello",
+    "layers_other": "{{count}} livelli",
+    "status": {
+      "starting": "Avvio…",
+      "running": "Download in corso",
+      "done": "Scaricata",
+      "failed": "Errore",
+      "cancelled": "Annullato"
+    }
+  },
+  "search": {
+    "title": "Cerca su Docker Hub",
+    "term": "Termine di ricerca",
+    "placeholder": "nginx, postgres, python…",
+    "officialOnly": "Solo immagini ufficiali",
+    "limit": "Risultati",
+    "submit": "Cerca",
+    "hint": "Docker Engine esegue la ricerca su Docker Hub (docker search); Docker ha bisogno di accedere a Internet.",
+    "failed": "La ricerca non è riuscita: {{message}}",
+    "failedHint": "Se Docker non ha accesso a Internet o a Docker Hub, non è possibile cercare.",
+    "none": "Nessun risultato.",
+    "name": "Nome",
+    "description": "Descrizione",
+    "stars": "Stelle",
+    "official": "Ufficiale",
+    "pull": "Scarica",
+    "pullName": "Scarica {{name}}"
+  },
+  "imageDetail": {
+    "back": "Immagini",
+    "createContainer": "Crea container",
+    "pullAgain": "Scarica di nuovo",
+    "notFound": "L’immagine {{name}} non esiste più in Docker.",
+    "loadError": "Impossibile ispezionare l’immagine: {{message}}",
+    "tabs": {
+      "summary": "Riepilogo",
+      "layers": "Livelli",
+      "containers": "Container",
+      "inspect": "Ispezione JSON"
+    },
+    "s": {
+      "general": "Generale",
+      "config": "Configurazione di esecuzione",
+      "labels": "Metadati (LABEL)"
+    },
+    "f": {
+      "id": "ID",
+      "tags": "Tag",
+      "digests": "Digest",
+      "created": "Creazione",
+      "size": "Dimensione",
+      "platform": "Piattaforma",
+      "layers": "Livelli",
+      "author": "Autore",
+      "ports": "Porte esposte",
+      "volumes": "Volumi",
+      "stopSignal": "Segnale di arresto",
+      "healthcheck": "Controllo di salute"
+    },
+    "localOnly": "nessuno (immagine compilata o importata su questo computer)",
+    "layersSummary_one": "{{count}} voce della cronologia, {{data}} con dati, {{size}} in totale.",
+    "layersSummary_other": "{{count}} voci della cronologia, {{data}} con dati, {{size}} in totale.",
+    "layersError": "Impossibile ottenere la cronologia: {{message}}",
+    "instruction": "Istruzione",
+    "noContainers": "Nessun container usa questa immagine.",
+    "inspectHint": "Output completo di docker image inspect {{name}}, esattamente come lo restituisce Docker."
+  },
+  "imageOps": {
+    "tagTitle": "Aggiungi tag all’immagine",
+    "tag": "Aggiungi tag",
+    "tagSource": "Immagine di origine:",
+    "repository": "Repository",
+    "repositoryHint": "Ad esempio miaapp, utente/miaapp o registro.esempio.com:5000/miaapp.",
+    "tagName": "Tag",
+    "tagged": "Tag aggiunto: {{target}}.",
+    "failed": "Docker ha rifiutato l’operazione: {{message}}",
+    "removeTitle": "Elimina {{name}}",
+    "removeWhat": "Che cosa eliminare",
+    "onlyTag": "Solo il tag",
+    "wholeImage_one": "L’intera immagine",
+    "wholeImage_other": "L’intera immagine (i suoi {{count}} tag)",
+    "removeTag": "Rimuovi tag",
+    "removeImage": "Elimina immagine",
+    "removeTagBody": "Questo tag viene rimosso. Se è l’unico, Docker elimina anche l’immagine e i suoi livelli inutilizzati.",
+    "removeImageBody": "Vengono eliminati l’immagine e i livelli che nessun’altra immagine usa. Non si può annullare: bisognerebbe scaricarla o compilarla di nuovo.",
+    "inUse_one": "Usata da {{count}} container:",
+    "inUse_other": "Usata da {{count}} container:",
+    "runningRefuses": "Docker non elimina un’immagine usata da un container in esecuzione, nemmeno forzando: arrestalo ed eliminalo prima.",
+    "stoppedNeedForce": "Per eliminarla bisogna forzare; i container continueranno a esistere, ma senza la loro immagine non potrai ricrearli.",
+    "force": "Forza l’eliminazione",
+    "forceMulti": "Necessario per eliminare un’immagine con più tag (--force).",
+    "forceUsed": "Necessario perché la usano container arrestati (--force).",
+    "removed": "{{untagged}} tag rimossi e {{deleted}} livelli o immagini eliminati.",
+    "pruneTitle": "Pulisci immagini",
+    "prune": "Pulisci",
+    "pruneDangling": "Solo le immagini senza tag che nessun container usa",
+    "pruneAll": "Tutte le immagini che nessun container usa, anche quelle con tag",
+    "pruneEstimate_one": "In base all’elenco attuale, verrebbe eliminata {{count}} immagine ({{size}}).",
+    "pruneEstimate_other": "In base all’elenco attuale, verrebbero eliminate {{count}} immagini ({{size}}).",
+    "pruneNote": "Docker prende la decisione finale ed elimina anche la cache di compilazione correlata. Non si può annullare.",
+    "pruneSure": "Capisco che dovrò scaricare o compilare di nuovo quelle immagini",
+    "pruned": "Pulizia completata: {{count}} elementi eliminati, {{size}} recuperati.",
+    "pruneWhilePulling_one": "È in corso {{count}} download. Attendi che termini: con l’archivio di immagini di containerd, Docker fa fallire i download in corso durante la pulizia.",
+    "pruneWhilePulling_other": "Sono in corso {{count}} download. Attendi che terminino: con l’archivio di immagini di containerd, Docker fa fallire i download in corso durante la pulizia."
+  },
+  "build": {
+    "title": "Compila immagine",
+    "g": {
+      "context": "Contesto",
+      "contextHint": "Cartella il cui contenuto viene inviato a Docker (rispettando .dockerignore) e il Dockerfile al suo interno.",
+      "tags": "Nomi dell’immagine",
+      "tagsHint": "repository:tag dell’immagine risultante (docker build --tag). Senza nome, l’immagine compare come <none>.",
+      "args": "Argomenti di compilazione",
+      "argsHint": "Valori per le istruzioni ARG (--build-arg). Restano nella cronologia dell’immagine: non usarli per segreti.",
+      "labels": "Metadati (LABEL)",
+      "options": "Opzioni"
+    },
+    "f": {
+      "context": "Cartella del contesto",
+      "dockerfile": "Dockerfile",
+      "target": "Fase finale",
+      "builder": "Compilatore",
+      "noCache": "Non usare la cache",
+      "pull": "Cerca immagini di base più recenti"
+    },
+    "h": {
+      "dockerfile": "Percorso relativo alla cartella del contesto.",
+      "target": "Solo per Dockerfile multi-fase (--target).",
+      "buildKit": "Il compilatore attuale di Docker (quello usato da docker build).",
+      "classic": "Il compilatore precedente, deprecato; equivale a DOCKER_BUILDKIT=0 docker build."
+    },
+    "ph": {
+      "target": "l’ultima",
+      "context": "/home/utente/progetto"
+    },
+    "classic": "Classico",
+    "pickContext": "Scegli la cartella del contesto",
+    "pickDockerfile": "Scegli il Dockerfile",
+    "outsideContext": "Il Dockerfile deve trovarsi nella cartella del contesto.",
+    "addTag": "Aggiungi nome",
+    "removeTag": "Rimuovi nome {{n}}",
+    "tagN": "Nome {{n}}",
+    "noTags": "Nessun nome.",
+    "addArg": "Aggiungi argomento",
+    "noArgs": "Nessun argomento.",
+    "secretsHidden_one": "{{count}} valore sensibile è mostrato come ******** qui e nel pannello attività.",
+    "secretsHidden_other": "{{count}} valori sensibili sono mostrati come ******** qui e nel pannello attività.",
+    "context": "Contesto da inviare",
+    "contextPending": "Scegli una cartella con un Dockerfile.",
+    "contextSummary": "{{files}} file in {{dirs}} cartelle, {{size}} in totale.",
+    "excluded_one": ".dockerignore esclude {{count}} voce.",
+    "excluded_other": ".dockerignore esclude {{count}} voci.",
+    "noDockerignore": "Nessun .dockerignore: viene inviato tutto.",
+    "patterns_one": "{{count}} schema di .dockerignore",
+    "patterns_other": "{{count}} schemi di .dockerignore",
+    "badIgnore": "Righe di .dockerignore non valide: {{lines}}",
+    "special_one": "{{count}} file speciale (socket, dispositivo o FIFO) non viene inviato.",
+    "special_other": "{{count}} file speciali (socket, dispositivi o FIFO) non vengono inviati.",
+    "unreadable": "Impossibile leggere: {{files}}. La compilazione non riuscirebbe.",
+    "bigContext": "Il contesto è grande: valuta di escludere cartelle con .dockerignore.",
+    "largest": "File più grandi",
+    "start": "Compila",
+    "cancel": "Annulla",
+    "edit": "Torna al modulo",
+    "viewImage": "Vedi immagine",
+    "steps": "Passaggi",
+    "sending": "Invio del contesto…",
+    "waiting": "In attesa dell’output di Docker…",
+    "cached": "cache",
+    "dropped": "{{count}} righe vecchie sono state scartate.",
+    "failed": "La compilazione non è riuscita: {{message}}",
+    "status": {
+      "starting": "Invio del contesto a Docker…",
+      "running": "Compilazione…",
+      "done": "Immagine compilata",
+      "failed": "La compilazione non è riuscita",
+      "cancelled": "Compilazione annullata"
+    }
+  },
+  "networks": {
+    "create": "Crea rete",
+    "prune": "Pulisci",
+    "refresh": "Aggiorna",
+    "search": "Cerca per nome, ID, sottorete o container",
+    "filterLabel": "Filtro",
+    "filter": {
+      "all": "Tutte",
+      "inUse": "In uso",
+      "unused": "Inutilizzate",
+      "custom": "Create dall’utente"
+    },
+    "count_one": "{{count}} rete",
+    "count_other": "{{count}} reti",
+    "columns": {
+      "name": "Rete",
+      "id": "ID",
+      "driver": "Driver",
+      "subnet": "Sottorete",
+      "containers": "Container",
+      "actions": "Azioni"
+    },
+    "badge": {
+      "predefined": "Predefinita",
+      "internal": "Interna",
+      "attachable": "Collegabile",
+      "compose": "Compose: {{project}}"
+    },
+    "noContainers": "Nessun container",
+    "members_one": "{{count}} container ({{running}} in esecuzione)",
+    "members_other": "{{count}} container ({{running}} in esecuzione)",
+    "empty": "Non ci sono reti.",
+    "noMatches": "Nessuna rete corrisponde alla ricerca.",
+    "loadError": "Impossibile ottenere l’elenco delle reti: {{message}}",
+    "open": "Apri {{name}}",
+    "connectAction": "Connetti un container a {{name}}",
+    "removeAction": "Elimina {{name}}"
+  },
+  "netDetail": {
+    "back": "Reti",
+    "tabs": {
+      "summary": "Riepilogo",
+      "containers": "Container",
+      "inspect": "Ispezione JSON"
+    },
+    "s": {
+      "general": "Generale",
+      "ipam": "Indirizzi (IPAM)",
+      "options": "Opzioni del driver",
+      "labels": "Metadati (etichette)"
+    },
+    "f": {
+      "id": "ID",
+      "driver": "Driver",
+      "scope": "Ambito",
+      "created": "Creazione",
+      "internal": "Interna (senza accesso esterno)",
+      "attachable": "Collegabile manualmente",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "compose": "Progetto Compose",
+      "subnet": "Sottorete",
+      "gateway": "Gateway",
+      "ipRange": "Intervallo assegnabile",
+      "aux": "Indirizzi riservati"
+    },
+    "ipamDriver": "Driver IPAM: {{driver}}",
+    "noPools": "Docker non ha assegnato sottoreti a questa rete.",
+    "wholeSubnet": "Intera sottorete",
+    "noOptions": "Nessuna opzione.",
+    "membersHint": "Container che hanno questa rete configurata, in esecuzione o meno. Gli indirizzi esistono solo mentre il container è in esecuzione.",
+    "noMembers": "Nessun container usa questa rete.",
+    "c": {
+      "name": "Container",
+      "state": "Stato",
+      "ip": "Indirizzo IP",
+      "mac": "MAC"
+    },
+    "ipWhenRunning": "Assegnato all’avvio",
+    "inspectHint": "Risposta completa di Docker, come \"docker network inspect {{name}}\".",
+    "notFound": "La rete {{name}} non esiste più.",
+    "loadError": "Impossibile ispezionare la rete: {{message}}"
+  },
+  "netCreate": {
+    "title": "Crea rete",
+    "g": {
+      "general": "Generale",
+      "ipv4": "Indirizzi IPv4",
+      "ipv4Hint": "Facoltativo: senza sottorete, Docker ne sceglie una libera.",
+      "ipv6": "IPv6",
+      "options": "Opzioni del driver",
+      "optionsHint": "Inviate così come sono al driver (--opt).",
+      "labels": "Metadati (etichette)"
+    },
+    "f": {
+      "name": "Nome",
+      "driver": "Driver",
+      "driverName": "Nome del driver",
+      "internal": "Rete interna",
+      "attachable": "Collegabile manualmente",
+      "subnet": "Sottorete",
+      "gateway": "Gateway",
+      "ipRange": "Intervallo assegnabile",
+      "ipv6": "Attiva IPv6"
+    },
+    "h": {
+      "name": "Lettere, cifre, \"_\", \".\" o \"-\".",
+      "driver": {
+        "bridge": "Rete privata su questa macchina; i container si raggiungono per nome.",
+        "macvlan": "Ogni container riceve un proprio MAC sulla rete fisica. Indica l’interfaccia nell’opzione \"parent\".",
+        "ipvlan": "Condivide il MAC dell’interfaccia fisica. Indica l’interfaccia nell’opzione \"parent\".",
+        "overlay": "Rete tra più macchine: richiede Docker Swarm.",
+        "other": "Driver di un plugin installato in Docker."
+      },
+      "internal": "Senza accesso esterno (--internal).",
+      "attachable": "Per le reti overlay: consente ai container autonomi di connettersi (--attachable).",
+      "subnet": "In notazione CIDR, ad es. 172.30.0.0/24.",
+      "gateway": "Deve essere all’interno della sottorete.",
+      "ipRange": "Parte della sottorete che Docker assegna automaticamente.",
+      "ipv6": "Richiede il supporto IPv6 nel kernel e in Docker (--ipv6)."
+    },
+    "otherDriver": "Altro",
+    "addOption": "Aggiungi opzione",
+    "noOptions": "Nessuna opzione.",
+    "body": "Corpo della richiesta",
+    "ready": "Pronto per la creazione.",
+    "submit": "Crea rete"
+  },
+  "netOps": {
+    "failed": "Docker ha rifiutato l’operazione: {{message}}",
+    "removeTitle": "Elimina la rete {{name}}",
+    "remove": "Elimina rete",
+    "removeBody": "La rete viene eliminata. Non si può annullare.",
+    "predefined": "Docker crea le reti bridge, host e none e non permette di eliminarle.",
+    "runningBlocks_one": "È connesso {{count}} container in esecuzione: Docker non eliminerà la rete finché non lo disconnetti o lo arresti.",
+    "runningBlocks_other": "Sono connessi {{count}} container in esecuzione: Docker non eliminerà la rete finché non li disconnetti o li arresti.",
+    "stoppedBreak_one": "{{count}} container arrestato ha questa rete configurata. Docker la elimina comunque e quel container non si avvierà finché non lo disconnetti o non ricrei la rete:",
+    "stoppedBreak_other": "{{count}} container arrestati hanno questa rete configurata. Docker la elimina comunque e quei container non si avvieranno finché non li disconnetti o non ricrei la rete:",
+    "stoppedSure": "Capisco che quei container non si avvieranno",
+    "removed": "Rete {{name}} eliminata.",
+    "pruneTitle": "Pulisci reti",
+    "prune": "Pulisci reti",
+    "pruneBody": "Vengono eliminate le reti create dall’utente senza container in esecuzione. Le reti predefinite non vengono toccate.",
+    "pruneEstimate_one": "In base all’elenco attuale, verrà eliminata {{count}} rete:",
+    "pruneEstimate_other": "In base all’elenco attuale, verranno eliminate {{count}} reti:",
+    "pruneEstimate_zero": "In base all’elenco attuale, non ci sono reti da eliminare.",
+    "usedByStopped": "usata da container arrestati: {{names}}",
+    "pruneStoppedWarn_one": "{{count}} di queste reti è configurata in container arrestati: Docker la elimina comunque e quei container non si avvieranno.",
+    "pruneStoppedWarn_other": "{{count}} di queste reti sono configurate in container arrestati: Docker le elimina comunque e quei container non si avvieranno.",
+    "pruned_one": "{{count}} rete eliminata: {{names}}",
+    "pruned_other": "{{count}} reti eliminate: {{names}}",
+    "pruned_zero": "Non c’erano reti da eliminare.",
+    "connectTitle": "Connetti un container a {{name}}",
+    "connect": "Connetti",
+    "connectShort": "Connetti container",
+    "container": "Container",
+    "containerHint": "Si può connettere in esecuzione o arrestato.",
+    "noContainers": "Non ci sono container.",
+    "block": {
+      "already": "È già connesso a questa rete.",
+      "host": "I container in modalità host non possono unirsi ad altre reti, e gli altri non possono unirsi alla rete host.",
+      "none": "Un container senza rete (none) non può unirsi ad altre reti, e gli altri non possono unirsi alla rete none."
+    },
+    "blockShort": {
+      "already": "già connesso",
+      "host": "modalità host",
+      "none": "senza rete"
+    },
+    "aliases": "Alias su questa rete",
+    "aliasesHint": "Nomi aggiuntivi con cui gli altri container della rete possono raggiungerlo, separati da spazi.",
+    "noAliases": "La rete predefinita bridge non supporta gli alias.",
+    "ipv4": "IPv4 fisso",
+    "ipv6": "IPv6 fisso",
+    "auto": "Automatico",
+    "ipHint": "All’interno di {{subnets}}. Docker accetta un IP fisso solo se la sottorete è stata indicata alla creazione della rete.",
+    "ipAuto": "Docker accetta un IP fisso solo se la sottorete è stata indicata alla creazione della rete.",
+    "connected": "{{container}} connesso a {{network}}.",
+    "disconnectTitle": "Disconnetti {{container}} da {{network}}",
+    "disconnect": "Disconnetti",
+    "disconnectAction": "Disconnetti {{container}}",
+    "disconnectRunning": "Il container è in esecuzione: perde subito la connettività tramite questa rete.",
+    "disconnectStopped": "Il container non avrà più questa rete configurata.",
+    "force": "Forza",
+    "forceHint": "Solo se Docker non riesce a disconnetterlo normalmente (--force).",
+    "disconnected": "{{container}} disconnesso da {{network}}.",
+    "checking": "Verifica dello stato attuale con Docker…",
+    "gone": "La rete {{name}} non esiste più."
+  },
+  "volumes": {
+    "create": "Crea volume",
+    "prune": "Pulisci",
+    "refresh": "Aggiorna",
+    "sizes": "Calcola dimensioni",
+    "sizesAgain": "Ricalcola",
+    "sizesNote": "Dimensioni calcolate da Docker (\"docker system df -v\"); con volumi grandi può richiedere tempo.",
+    "sizesError": "Impossibile calcolare le dimensioni: {{message}}",
+    "sizeUnknown": "Non disponibile",
+    "search": "Cerca per nome, driver, container o etichetta",
+    "filterLabel": "Filtro",
+    "filter": {
+      "all": "Tutti",
+      "inUse": "In uso",
+      "unused": "Inutilizzati",
+      "anonymous": "Anonimi"
+    },
+    "count_one": "{{count}} volume",
+    "count_other": "{{count}} volumi",
+    "columns": {
+      "name": "Volume",
+      "driver": "Driver",
+      "size": "Dimensione",
+      "containers": "Container",
+      "actions": "Azioni"
+    },
+    "anonymous": "Anonimo",
+    "unused": "Inutilizzato",
+    "users_one": "{{count}} montaggio",
+    "users_other": "{{count}} montaggi",
+    "empty": "Non ci sono volumi",
+    "emptyBody": "Crea un volume per conservare dati che sopravvivono ai container.",
+    "noMatches": "Nessun volume corrisponde alla ricerca.",
+    "loadError": "Impossibile ottenere l’elenco dei volumi: {{message}}",
+    "createContainer": "Crea un container con {{name}}",
+    "removeAction": "Elimina {{name}}"
+  },
+  "volDetail": {
+    "back": "Volumi",
+    "tabs": {
+      "summary": "Riepilogo",
+      "containers": "Container",
+      "inspect": "Ispezione JSON"
+    },
+    "s": {
+      "general": "Generale",
+      "options": "Opzioni del driver",
+      "status": "Stato del driver"
+    },
+    "f": {
+      "name": "Nome",
+      "driver": "Driver",
+      "scope": "Ambito",
+      "mountpoint": "Directory su questa macchina",
+      "created": "Creazione",
+      "size": "Dimensione"
+    },
+    "sizeNotMeasured": "Non calcolata",
+    "measure": "Calcola",
+    "noOptions": "Nessuna opzione.",
+    "noContainers": "Nessun container monta questo volume.",
+    "c": {
+      "destination": "Percorso nel container",
+      "access": "Accesso"
+    },
+    "rw": "Lettura e scrittura",
+    "ro": "Sola lettura",
+    "createContainer": "Crea container con questo volume",
+    "inspectHint": "Risposta completa di Docker, come \"docker volume inspect {{name}}\".",
+    "notFound": "Il volume {{name}} non esiste più.",
+    "loadError": "Impossibile ispezionare il volume: {{message}}"
+  },
+  "volCreate": {
+    "title": "Crea volume",
+    "g": {
+      "general": "Generale",
+      "options": "Opzioni del driver",
+      "optionsHint": "Per il driver local corrispondono a quelle di \"mount\": type, device e o."
+    },
+    "f": {
+      "name": "Nome",
+      "kind": "Tipo"
+    },
+    "h": {
+      "name": "Facoltativo: senza nome Docker crea un volume anonimo. Lettere, cifre, \"_\", \".\" o \"-\" (almeno 2).",
+      "preset": {
+        "plain": "Directory gestita da Docker su questa macchina (la scelta abituale).",
+        "tmpfs": "In memoria: si perde quando si arresta l’ultimo container che lo usa.",
+        "nfs": "Condivisione NFS: regola l’indirizzo del server e il percorso.",
+        "bind": "Volume con nome che punta a una cartella esistente di questa macchina.",
+        "other": "Driver di un plugin installato in Docker."
+      }
+    },
+    "ph": {
+      "name": "vuoto = anonimo"
+    },
+    "preset": {
+      "plain": "Local",
+      "tmpfs": "tmpfs",
+      "nfs": "NFS",
+      "bind": "Cartella",
+      "other": "Altro driver"
+    },
+    "readyAnonymous": "Pronto per creare un volume anonimo.",
+    "submit": "Crea volume"
+  },
+  "volOps": {
+    "failed": "Docker ha rifiutato l’operazione: {{message}}",
+    "removeTitle": "Elimina il volume {{name}}",
+    "remove": "Elimina volume",
+    "removeBody": "Vengono eliminati il volume e tutti i suoi dati. Non si può annullare.",
+    "inUse_one": "Lo monta {{count}} container: Docker non elimina un volume in uso, nemmeno da un container arrestato. Elimina prima il container.",
+    "inUse_other": "Lo montano {{count}} container: Docker non elimina un volume in uso, nemmeno da container arrestati. Elimina prima i container.",
+    "sure": "Capisco che i suoi dati verranno eliminati",
+    "gone": "Il volume {{name}} non esiste più.",
+    "removed": "Volume {{name}} eliminato.",
+    "pruneTitle": "Pulisci volumi",
+    "prune": "Pulisci volumi",
+    "pruneAnonymous": "Solo i volumi anonimi non montati da alcun container",
+    "pruneAll": "Tutti i volumi non montati da alcun container (anche quelli con nome)",
+    "legacy": "Questa versione di Docker (API {{api}}) elimina tutti i volumi inutilizzati, anche quelli con nome: non distingue gli anonimi da quelli con nome.",
+    "pruneEstimate_one": "In base allo stato attuale, verrà eliminato {{count}} volume",
+    "pruneEstimate_other": "In base allo stato attuale, verranno eliminati {{count}} volumi",
+    "pruneEstimate_zero": "In base allo stato attuale, non ci sono volumi da eliminare",
+    "pruneBytes": "({{size}} secondo l’ultimo calcolo)",
+    "pruneNote": "Un volume inutilizzato può contenere dati importanti (ad esempio quelli di un database di cui hai eliminato il container).",
+    "pruneSure_one": "Capisco che i dati di {{count}} volume con nome verranno eliminati",
+    "pruneSure_other": "Capisco che i dati di {{count}} volumi con nome verranno eliminati",
+    "pruned_one": "{{count}} volume eliminato; {{size}} recuperati.",
+    "pruned_other": "{{count}} volumi eliminati; {{size}} recuperati.",
+    "pruned_zero": "Non c’erano volumi da eliminare."
+  },
+  "binds": {
+    "bindFolder": "Collega una cartella…",
+    "pickTitle": "Cartella che vedrà il container",
+    "intro": "Cartelle di questa macchina montate nei container. Docker non può aggiungere montaggi a un container esistente: per collegare una cartella si crea un nuovo container con la procedura guidata.",
+    "search": "Cerca per percorso o container",
+    "filter": {
+      "all": "Tutte",
+      "writable": "In scrittura",
+      "attention": "Da controllare ({{count}})"
+    },
+    "count_one": "{{count}} cartella",
+    "count_other": "{{count}} cartelle",
+    "kind": {
+      "directory": "Cartella",
+      "file": "File",
+      "socket": "Socket",
+      "other": "Altro",
+      "missing": "Mancante"
+    },
+    "writable": "In scrittura",
+    "readOnly": "Sola lettura",
+    "permissions": "Permessi e proprietario su questa macchina",
+    "notReadable": "Il tuo utente non può leggerla",
+    "newContainer": "Nuovo container con questa cartella",
+    "newContainerHint": "Apre la procedura guidata dei container con questa cartella già collegata",
+    "risk": {
+      "dockerSocket": "Socket di Docker: il container può controllare Docker e, in pratica, l’intera macchina (tranne con Docker rootless).",
+      "hostRoot": "La radice del file system di questa macchina.",
+      "system": "Una directory di sistema."
+    },
+    "riskWritable": "È montata in scrittura: il container può modificarla.",
+    "missing": "Non esiste su questa macchina. Se il container è stato creato con \"-v\", Docker la ricrea vuota (come root) all’avvio.",
+    "attentionBanner_one": "{{count}} collegamento richiede attenzione (socket di Docker, directory di sistema o cartella mancante).",
+    "attentionBanner_other": "{{count}} collegamenti richiedono attenzione (socket di Docker, directory di sistema o cartelle mancanti).",
+    "empty": "Nessun container ha cartelle collegate",
+    "emptyBody": "Collega una cartella perché un container possa lavorare con file di questa macchina.",
+    "noMatches": "Nessuna cartella corrisponde alla ricerca.",
+    "loadError": "Impossibile ottenere l’elenco dei container: {{message}}"
+  },
+  "composeList": {
+    "add": "Apri progetto…",
+    "new": "Nuovo progetto",
+    "refresh": "Aggiorna",
+    "intro": "Progetti con container in Docker (rilevati dalle loro etichette) e quelli che aggiungi all’elenco. Ogni operazione esegue il Docker Compose ufficiale e viene registrata nel pannello attività con il comando esatto.",
+    "filterLabel": "Filtra progetti",
+    "filter": {
+      "all": "Tutti",
+      "running": "In esecuzione",
+      "stopped": "Arrestati",
+      "notDeployed": "Non distribuiti"
+    },
+    "search": "Cerca per nome, cartella o servizio",
+    "count_one": "{{count}} progetto",
+    "count_other": "{{count}} progetti",
+    "loadError": "Impossibile ottenere l’elenco dei progetti: {{message}}",
+    "empty": "Nessun progetto Docker Compose",
+    "emptyBody": "Apri un progetto che hai già (il suo file compose.yaml) o creane uno nuovo. I progetti distribuiti dal terminale compaiono qui automaticamente.",
+    "c": {
+      "name": "Progetto",
+      "state": "Stato",
+      "location": "Cartella",
+      "services": "Servizi",
+      "actions": "Azioni"
+    },
+    "registered": "Nell’elenco",
+    "missing": "File mancanti",
+    "noLocation": "Nessun file noto",
+    "state": {
+      "running": "In esecuzione · {{running}}/{{total}}",
+      "partial": "Parziale · {{running}}/{{total}}",
+      "stopped": "Arrestato · 0/{{total}}",
+      "notDeployed": "Non distribuito"
+    },
+    "stop": "Arresta {{name}}",
+    "start": "Avvia {{name}}",
+    "open": "Apri {{name}}",
+    "unavailable": "Docker Compose non è disponibile"
+  },
+  "composeDetail": {
+    "back": "Progetti",
+    "refresh": "Aggiorna",
+    "tabs": {
+      "services": "Servizi",
+      "logs": "Log",
+      "file": "File",
+      "config": "Configurazione",
+      "output": "Output"
+    },
+    "c": {
+      "service": "Servizio",
+      "image": "Immagine",
+      "state": "Stato",
+      "containers": "Container",
+      "ports": "Porte",
+      "actions": "Azioni"
+    },
+    "state": {
+      "running": "In esecuzione ({{running}}/{{total}})",
+      "partial": "Parziale ({{running}}/{{total}})",
+      "stopped": "Arrestato",
+      "notCreated": "Non creato"
+    },
+    "profile": "profilo {{name}}",
+    "orphan": "Non presente nel file",
+    "built": "Compilata ({{context}})",
+    "builtFrom": "Compilata da {{context}}",
+    "noServices": "Il progetto non ha servizi.",
+    "loadingModel": "Lettura del file con Docker Compose…",
+    "upService": "Distribuisci {{name}}",
+    "startService": "Avvia {{name}}",
+    "stopService": "Arresta {{name}}",
+    "restartService": "Riavvia {{name}}",
+    "logsService": "Log di {{name}}",
+    "needsFiles": "Servono i file del progetto",
+    "needsValid": "Correggi prima il file: Compose lo rifiuta",
+    "register": "Aggiungi all’elenco",
+    "registerHint": "Mantieni il progetto nell’elenco anche se i suoi container vengono eliminati",
+    "unregister": "Rimuovi dall’elenco",
+    "unregisterHint": "Lo toglie solo dall’elenco: Docker e i file non vengono toccati",
+    "gone": "Il progetto «{{name}}» non ha più container e non è nell’elenco.",
+    "createdBy": "Container creati con Docker Compose {{version}}",
+    "missingFiles": "Questi file non si trovano: {{files}}. Puoi arrestare, avviare, vedere i log o eliminare il progetto; per distribuirlo servono i file.",
+    "noFiles": "Docker non indica i file di questo progetto. Puoi arrestarlo, avviarlo, vederne i log o eliminarlo.",
+    "invalidConfig": "Docker Compose rifiuta la configurazione del progetto:",
+    "noConfig": "Non c’è alcuna configurazione da mostrare (mancano i file).",
+    "configHint": "Configurazione finale così come la intende Docker Compose (file combinati, variabili sostituite, tutti i profili).",
+    "secretsWarn": "La configurazione risolta include i valori delle variabili (ad esempio password del file .env). Viene mostrata solo in questa finestra e non viene salvata nel pannello attività.",
+    "showResolved": "Mostra configurazione risolta"
+  },
+  "composeOps": {
+    "verb": {
+      "up": "Distribuzione",
+      "down": "Eliminazione",
+      "start": "Avvio",
+      "stop": "Arresto",
+      "restart": "Riavvio",
+      "pull": "Download delle immagini",
+      "build": "Compilazione"
+    },
+    "running": "{{verb}} in corso…",
+    "succeeded": {
+      "up": "Distribuzione completata",
+      "down": "Eliminazione completata",
+      "start": "Avvio completato",
+      "stop": "Arresto completato",
+      "restart": "Riavvio completato",
+      "pull": "Download delle immagini completato",
+      "build": "Compilazione completata"
+    },
+    "stopped": {
+      "up": "Distribuzione interrotta da te",
+      "down": "Eliminazione interrotta da te",
+      "start": "Avvio interrotto da te",
+      "stop": "Arresto interrotto da te",
+      "restart": "Riavvio interrotto da te",
+      "pull": "Download delle immagini interrotto da te",
+      "build": "Compilazione interrotta da te"
+    },
+    "failed": "{{verb}}: non riuscito (codice {{code}})",
+    "error": "{{verb}}: impossibile eseguire",
+    "stop": "Interrompi",
+    "dismiss": "Chiudi",
+    "none": "Su questo progetto non è stata ancora eseguita alcuna operazione.",
+    "waiting": "In attesa dell’output di Docker Compose…",
+    "noOutput": "Docker Compose non ha prodotto output.",
+    "dropped_one": "{{count}} riga vecchia è stata scartata per limitare l’uso di memoria.",
+    "dropped_other": "{{count}} righe vecchie sono state scartate per limitare l’uso di memoria.",
+    "stoppedNote": "Docker Compose è stato interrotto. Ciò che aveva già fatto (container creati, immagini scaricate…) viene mantenuto.",
+    "command": "Comando che verrà eseguito:",
+    "up": "Distribuisci",
+    "upTitle": "Distribuisci {{name}}",
+    "upBody": "Crea o aggiorna i container, le reti e i volumi del progetto e li lascia in esecuzione (docker compose up --detach).",
+    "services": "Servizi",
+    "allServices": "Senza selezione vengono distribuiti tutti i servizi (tranne quelli dei profili non attivi).",
+    "someServices": "Solo i servizi scelti e quelli di cui hanno bisogno (depends_on).",
+    "profiles": "Profili",
+    "profilesHint": "I servizi con un profilo vengono distribuiti solo se attivi il loro profilo o li scegli sopra.",
+    "pull": "Scarica immagini",
+    "pullPolicy": {
+      "missing": "Se mancano",
+      "always": "Sempre",
+      "never": "Mai"
+    },
+    "build": "Compila prima le immagini",
+    "buildHint": "Per i servizi con build: (altrimenti vengono compilati solo se l’immagine non esiste).",
+    "forceRecreate": "Ricrea i container anche se non sono cambiati",
+    "removeOrphans": "Elimina i container orfani",
+    "removeOrphansHint": "Dei servizi che non sono più nel file.",
+    "down": "Elimina",
+    "downTitle": "Elimina {{name}}",
+    "downBody_one": "{{count}} container del progetto e le sue reti verranno arrestati ed eliminati (docker compose down). Volumi e immagini vengono mantenuti, salvo indicazione contraria.",
+    "downBody_other": "I {{count}} container del progetto e le loro reti verranno arrestati ed eliminati (docker compose down). Volumi e immagini vengono mantenuti, salvo indicazione contraria.",
+    "downVolumes": "Elimina anche i volumi con nome del progetto",
+    "downVolumesUnknown": "Quelli dichiarati nel file (o etichettati con il progetto).",
+    "downVolumesWarn": "I dati salvati in quei volumi andranno persi definitivamente.",
+    "downImages": "Immagini",
+    "images": {
+      "none": "Mantieni",
+      "local": "Quelle compilate",
+      "all": "Tutte"
+    },
+    "imagesHint": {
+      "local": "Elimina le immagini senza un tag personalizzato (quelle che compila Compose).",
+      "all": "Elimina tutte le immagini usate dai servizi, anche quelle scaricate."
+    },
+    "downSure": "Capisco che i container e le reti del progetto verranno eliminati",
+    "start": "Avvia",
+    "stopAction": "Arresta",
+    "restart": "Riavvia",
+    "pullAction": "Scarica immagini",
+    "buildAction": "Compila"
+  },
+  "composeAdd": {
+    "title": "Apri progetto",
+    "body": "Scegli il file compose.yaml del progetto. Se usa più file (ad esempio un file di base e un override), aggiungili nell’ordine in cui vengono combinati.",
+    "pick": "Scegli file…",
+    "pickMore": "Aggiungi un altro file…",
+    "pickTitle": "File Docker Compose",
+    "filter": "File YAML",
+    "removeFile": "Rimuovi {{file}}",
+    "order": "Vengono combinati in quest’ordine: i file successivi sovrascrivono i precedenti.",
+    "name": "Nome del progetto (facoltativo)",
+    "namePh": "quello indicato dal file o dalla cartella",
+    "nameHint": "Se resta vuoto si usa il nome deciso da Docker Compose (il name: del file o il nome della cartella).",
+    "badName": "Solo lettere minuscole, cifre, - e _, iniziando con una lettera o una cifra.",
+    "submit": "Aggiungi",
+    "invalid": "Docker Compose rifiuta i file: {{message}}"
+  },
+  "composeFile": {
+    "files": "File del progetto",
+    "validate": "Convalida",
+    "save": "Salva",
+    "revert": "Annulla modifiche",
+    "hint": "Il salvataggio convalida prima il contenuto con Docker Compose (senza salvarlo). Il file non viene sovrascritto se un altro programma lo ha modificato nel frattempo.",
+    "unsaved": "Modifiche non salvate",
+    "saved": "Salvato",
+    "loadError": "Impossibile leggere il file: {{message}}",
+    "readOnly": "Non hai il permesso di modificare questo file: viene mostrato in sola lettura.",
+    "conflict": "Il file è cambiato sul disco da quando lo hai aperto. Non è stato salvato nulla, quindi quelle modifiche non vanno perse.",
+    "reload": "Ricarica il file (scarta le tue modifiche)",
+    "saveInvalid": "Docker Compose rifiuta questo contenuto. Puoi continuare a modificarlo o salvarlo comunque.",
+    "saveAnyway": "Salva comunque",
+    "invalid": "Docker Compose rifiuta il contenuto:",
+    "valid_one": "Configurazione valida: {{count}} servizio.",
+    "valid_other": "Configurazione valida: {{count}} servizi.",
+    "discard": "Hai modifiche non salvate in questo file.",
+    "discardYes": "Scarta e cambia file",
+    "discardNo": "Continua a modificare",
+    "editorLabel": "Contenuto di {{file}}"
+  },
+  "composeLogs": {
+    "services": "Servizi",
+    "all": "Tutti",
+    "tail": "Righe precedenti",
+    "tailN_one": "Ultima {{count}}",
+    "tailN_other": "Ultime {{count}}",
+    "timestamps": "Ora",
+    "pause": "Pausa",
+    "follow": "Segui",
+    "clear": "Pulisci",
+    "live": "In diretta",
+    "opening": "Apertura…",
+    "paused": "In pausa: i log non vengono ricevuti",
+    "ended": "I container sono terminati",
+    "closed": "Chiuso",
+    "empty": "Ancora nessun log."
+  },
+  "composeNew": {
+    "title": "Nuovo progetto",
+    "folder": "Cartella del progetto",
+    "pickFolder": "Scegli cartella…",
+    "changeFolder": "Cambia…",
+    "pickTitle": "Cartella per il nuovo progetto",
+    "nameHint": "Se scrivi un nome, viene aggiunto al file (name:) perché il terminale usi lo stesso. Altrimenti Docker Compose usa il nome della cartella.",
+    "exists": "Questa cartella ha già un file Docker Compose ({{file}}). Non viene sovrascritto.",
+    "addExisting": "Apri quel progetto",
+    "editorHint": "Nella cartella verrà creato compose.yaml. Viene convalidato con Docker Compose prima di essere creato.",
+    "create": "Crea progetto",
+    "needFolder": "Scegli prima la cartella del progetto.",
+    "editorLabel": "Contenuto di compose.yaml"
+  },
+  "events": {
+    "tabsLabel": "Vista",
+    "tabs": {
+      "live": "In diretta",
+      "journal": "Salvati",
+      "docker": "Chiedi a Docker",
+      "history": "Cronologia delle operazioni"
+    },
+    "type": {
+      "container": "Container",
+      "image": "Immagine",
+      "volume": "Volume",
+      "network": "Rete",
+      "daemon": "Docker",
+      "plugin": "Plugin",
+      "builder": "Compilatore",
+      "service": "Servizio",
+      "node": "Nodo",
+      "secret": "Segreto",
+      "config": "Config"
+    },
+    "allTypes": "Tutti",
+    "filterType": "Tipo",
+    "search": "Cerca per nome, ID, azione o immagine",
+    "actions": "Azioni",
+    "resource": "Risorsa",
+    "resourcePh": "nome o ID",
+    "resourceNeedsType": "scegli un tipo di risorsa",
+    "pause": "Pausa",
+    "resume": "Riprendi",
+    "resumeN_one": "Riprendi ({{count}} nuovo)",
+    "resumeN_other": "Riprendi ({{count}} nuovi)",
+    "clearView": "Svuota vista",
+    "clearViewHint": "Svuota solo l’elenco sullo schermo; gli eventi salvati vengono mantenuti.",
+    "liveOn": "In diretta: i cambiamenti in Docker compaiono all’istante e aggiornano tutta l’applicazione",
+    "livePaused": "In pausa: gli eventi continuano ad arrivare e l’applicazione continua ad aggiornarsi",
+    "liveOff": "Nessuna connessione a Docker: non arriva alcun evento",
+    "count_one": "{{count}} evento",
+    "count_other": "{{count}} eventi",
+    "liveEmpty": "In questa sessione non è ancora successo nulla in Docker. Crea, avvia o arresta qualcosa (anche dal terminale) e comparirà qui.",
+    "noMatches": "Nessun evento corrisponde ai filtri.",
+    "details": "Dettagli dell’evento",
+    "since": "Da",
+    "until": "A",
+    "refresh": "Aggiorna",
+    "journalIntro": "Eventi ricevuti dall’applicazione mentre era aperta e connessa, anche nelle sessioni precedenti (vengono conservati i 20.000 più recenti). Se «A» è vuoto, fino ad ora.",
+    "journalOff": "Il salvataggio è disattivato in Impostazioni › Attività: i nuovi eventi non vengono salvati.",
+    "journalCount": "Vengono mostrati {{shown}} di {{total}} che corrispondono ai filtri ({{stored}} salvati).",
+    "journalClear": "Elimina eventi salvati",
+    "journalClearTitle": "Elimina eventi salvati",
+    "journalClearBody": "I {{count}} eventi salvati verranno eliminati dal disco. Docker e la cronologia delle operazioni non vengono toccati.",
+    "dockerIntro": "Chiede a Docker gli eventi che conserva (docker events --since … --until …): include ciò che è accaduto mentre l’applicazione era chiusa, ma Docker conserva in memoria solo gli ultimi 256 eventi e li perde al riavvio. Il filtro viene applicato da Docker.",
+    "query": "Chiedi",
+    "truncated": "Ci sono più di 5000 eventi: vengono mostrati i più recenti.",
+    "dockerEmpty": "Docker non conserva eventi in quell’intervallo con quei filtri."
+  },
+  "history": {
+    "intro": "Operazioni eseguite dall’applicazione su Docker, anche nelle sessioni precedenti (vengono conservate le 10.000 più recenti). Si salvano che cosa è stato fatto, quando e con quale esito; i corpi delle richieste, i comandi equivalenti e l’output non vengono salvati perché possono contenere password o altri segreti.",
+    "off": "La cronologia è disattivata in Impostazioni › Attività: le nuove operazioni non vengono salvate.",
+    "search": "Cerca per operazione, risorsa o errore",
+    "previous": "Sessione precedente",
+    "count": "Vengono mostrate {{shown}} di {{total}} che corrispondono ai filtri ({{stored}} salvate).",
+    "empty": "Ancora nessuna operazione salvata.",
+    "noMatches": "Nessuna operazione corrisponde ai filtri.",
+    "notKept": "Dettagli",
+    "notKeptBody": "Il corpo della richiesta, il comando equivalente e l’output sono disponibili solo nel pannello attività durante la sessione in cui l’operazione è stata eseguita.",
+    "clear": "Elimina cronologia",
+    "clearTitle": "Elimina la cronologia delle operazioni",
+    "clearBody": "Le {{count}} operazioni salvate verranno eliminate dal disco. Il pannello attività di questa sessione non cambia."
+  },
+  "updates": {
+    "title": "Aggiornamenti",
+    "installed": "Versione installata",
+    "installedPackage": "Pacchetto .deb installato ({{version}})",
+    "installedLocal": "Non installata come pacchetto (compilazione locale)",
+    "source": "Dove vengono pubblicate le versioni",
+    "sourceHint": "Un repository GitHub (\"proprietario/repository\") o l’indirizzo https:// di un file JSON con \"version\". L’applicazione si limita a controllare e a informarti: non scarica né installa mai nulla.",
+    "sourcePlaceholder": "proprietario/repository o https://…/latest.json",
+    "checkNow": "Controlla ora",
+    "checking": "Controllo in corso…",
+    "onStart": "Controlla all’avvio dell’applicazione",
+    "onStartHint": "Una richiesta alla fonte ogni volta che si apre l’applicazione. Senza connessione non succede nulla: viene indicato qui.",
+    "onStartNoSource": "Indica prima dove vengono pubblicate le versioni.",
+    "newer": "È disponibile una nuova versione: {{latest}} (hai la {{current}}).",
+    "published": "pubblicata il {{date}}",
+    "upToDate": "Hai la versione più recente ({{current}}; quella pubblicata è la {{latest}}).",
+    "openPage": "Apri la pagina della versione",
+    "notes": "Novità",
+    "checkedAt": "Consultato {{url}} il {{time}}.",
+    "lastFailed": "L’ultimo controllo non è riuscito: {{message}}",
+    "howTo": "Per aggiornare, scarica il nuovo pacchetto e installalo con \"sudo apt install ./docker-control-center_X.Y.Z_amd64.deb\". La configurazione e la cronologia vengono conservate.",
+    "banner": "È disponibile una nuova versione di Docker Control Center: {{latest}}.",
+    "bannerOpen": "Vedi Impostazioni"
+  },
+  "system": {
+    "title": "Sistema",
+    "hint": "Versioni e dettagli di questo computer. «Copia» crea un rapporto di testo per segnalare un problema (senza progetti, variabili né credenziali).",
+    "app": "Applicazione",
+    "host": "Computer",
+    "docker": "Docker",
+    "appVersion": "Versione",
+    "package": "Pacchetto .deb",
+    "notInstalled": "non installato (compilazione locale)",
+    "executable": "Eseguibile",
+    "webkit": "WebKitGTK",
+    "configPath": "File di configurazione",
+    "stateDir": "Cronologia ed eventi",
+    "os": "Sistema operativo",
+    "kernel": "Kernel",
+    "arch": "Architettura",
+    "glibc": "glibc",
+    "desktop": "Desktop",
+    "engine": "Docker Engine",
+    "dockerOs": "Sistema di Docker",
+    "storage": "Archiviazione",
+    "cgroup": "cgroups",
+    "rootDir": "Directory dei dati",
+    "resources": "Risorse",
+    "rootless": "Rootless",
+    "notConnected": "non connesso",
+    "compose": {
+      "label": "Docker Compose",
+      "notInstalled": "non installato",
+      "pluginUnusable": "installato ma non funzionante",
+      "legacy": "versione 1 (non supportata)",
+      "unrecognized": "non riconosciuto",
+      "error": "impossibile da verificare"
+    }
+  },
+  "components": {
+    "title": "Disinstallazione e componenti",
+    "rowHint": "Che cosa ha installato l’applicazione, che cosa si può rimuovere e che cosa viene conservato. Nulla cambia senza la tua conferma.",
+    "intro": "Analizza i pacchetti installati con dpkg e APT per mostrare che cosa ha installato Docker Control Center e che cosa si può rimuovere in sicurezza. L’analisi si limita a consultare e simulare: non modifica nulla. Docker, i tuoi dati e la tua configurazione vengono sempre conservati.",
+    "analyze": "Analizza componenti",
+    "reanalyze": "Analizza di nuovo",
+    "analyzeHint": "Esegue dpkg-query, apt-mark, apt-cache e una simulazione di apt-get, senza privilegi. Viene registrato nel pannello attività.",
+    "unsupported": "Questo sistema non usa dpkg e APT: la disinstallazione selettiva è disponibile solo su Debian, Ubuntu e derivate.",
+    "notPackaged": "Docker Control Center non è installato come pacchetto .deb (ad esempio, viene eseguito compilato dal codice sorgente): non c’è nulla da disinstallare con APT.",
+    "history": {
+      "notFound": "La cronologia di APT non mostra come è stata installata l’applicazione (ad esempio con dpkg -i, oppure la cronologia è già stata ruotata). Per sicurezza non viene proposta la rimozione di alcuna dipendenza: vengono tutte conservate come di origine incerta.",
+      "unreadable": "Impossibile leggere la cronologia di APT (/var/log/apt/history.log). Per sicurezza non viene proposta la rimozione di alcuna dipendenza."
+    },
+    "ownTitle": "Pacchetto dell’applicazione",
+    "removeApp": "Disinstalla Docker Control Center",
+    "removableTitle": "Dipendenze rimovibili ({{count}})",
+    "noneRemovable": "Nessuna: tutte le dipendenze sono usate da altri programmi, erano già installate oppure non si può sapere con certezza chi le ha installate.",
+    "removePackage": "Rimuovi {{name}}",
+    "direct": "diretta",
+    "presetApp": "Solo Docker Control Center",
+    "presetAll": "Docker Control Center e le dipendenze rimovibili",
+    "summary_one": "{{count}} pacchetto · si liberano {{size}}",
+    "summary_other": "{{count}} pacchetti · si liberano {{size}}",
+    "nothingSelected": "Nessuna selezione",
+    "review": "Verifica e disinstalla…",
+    "keptTitle": "Conservate",
+    "group": {
+      "shared_one": "Condivisa con altri programmi ({{count}})",
+      "shared_other": "Condivise con altri programmi ({{count}})",
+      "manual_one": "Installata esplicitamente ({{count}})",
+      "manual_other": "Installate esplicitamente ({{count}})",
+      "preExisting_one": "Già installata prima ({{count}})",
+      "preExisting_other": "Già installate prima ({{count}})",
+      "uncertain_one": "Origine incerta ({{count}})",
+      "uncertain_other": "Origine incerta ({{count}})",
+      "protected_one": "Componente di sistema ({{count}})",
+      "protected_other": "Componenti di sistema ({{count}})"
+    },
+    "class": {
+      "own": "Il pacchetto dell’applicazione. Rimuoverlo non elimina né la tua configurazione né i tuoi dati.",
+      "removable": "APT le ha installate automaticamente insieme all’applicazione e nessun altro pacchetto ne ha bisogno.",
+      "shared": "Sono state installate con l’applicazione, ma altri pacchetti ne hanno bisogno: rimuoverle romperebbe quei pacchetti.",
+      "manual": "Sono contrassegnate come installate esplicitamente (da te o da un altro programma): non vengono rimosse.",
+      "preExisting": "Erano già installate prima dell’applicazione: non vengono rimosse.",
+      "uncertain": "Non si può sapere con certezza chi le ha installate: vengono conservate.",
+      "protected": "Pacchetti essenziali del sistema, della gestione dei pacchetti o di Docker: non vengono mai rimossi."
+    },
+    "usedBy_one": "La usa: {{list}}",
+    "usedBy_other": "La usano {{count}} pacchetti: {{list}}",
+    "externalTitle": "Strumenti esterni",
+    "externalHint": "L’applicazione li usa, ma non le appartengono: vengono sempre conservati, anche se disinstalli l’applicazione.",
+    "external": {
+      "engine": "Docker Engine",
+      "cli": "Docker CLI",
+      "compose": "Docker Compose"
+    },
+    "notFound": "non trovato",
+    "alwaysKept": "Conservato",
+    "dataTitle": "Dati che non vengono eliminati",
+    "dataHint": "La tua configurazione e i tuoi dati vengono conservati. Non viene toccato nulla nemmeno in Docker: immagini, container, reti, volumi e progetti Compose. Se vuoi eliminare queste cartelle, fallo a mano.",
+    "data": {
+      "config": "Configurazione",
+      "state": "Cronologia ed eventi",
+      "webData": "Dati della finestra",
+      "webCache": "Cache della finestra"
+    },
+    "absent": "non esiste",
+    "fullSimulation": "Simulazione di APT della disinstallazione completa",
+    "fullSimulationHint": "Ciò che APT rimuoverebbe se disinstallassi l’applicazione con --auto-remove. Può includere pacchetti che erano già superflui prima; qui vengono proposti solo quelli installati con l’applicazione.",
+    "confirmTitle": "Disinstallare?",
+    "confirmBody_one": "Verrà rimosso {{count}} pacchetto e si libereranno {{size}}:",
+    "confirmBody_other": "Verranno rimossi {{count}} pacchetti e si libereranno {{size}}:",
+    "extra": "APT rimuoverebbe anche: {{list}}. Non si può continuare; verifica la selezione.",
+    "command": "Comando che verrà eseguito",
+    "elevationHint": "Il sistema ti chiederà la password di amministratore (pkexec) solo per questo comando. Se annulli, non viene rimosso nulla.",
+    "noElevation": "pkexec non è installato: l’applicazione non può chiedere i permessi. Esegui tu questo comando in un terminale.",
+    "simulation": "Simulazione di APT (senza modifiche)",
+    "keptNote": "Vengono conservati Docker Engine, Docker CLI, Docker Compose, i tuoi dati e la tua configurazione. Non si usa purge.",
+    "selfNote": "Viene disinstallata l’applicazione stessa: chiudila al termine.",
+    "confirm": "Disinstalla",
+    "removing": "Disinstallazione con APT…",
+    "done_one": "È stato disinstallato {{count}} pacchetto.",
+    "done_other": "Sono stati disinstallati {{count}} pacchetti.",
+    "doneSelf": "Docker Control Center non è più installato: chiudi l’applicazione.",
+    "stillInstalled": "Ancora installati: {{list}}."
+  },
+  "help": {
+    "title": "Guida e documentazione",
+    "rowHint": "Guida a tutte le funzioni, senza uscire dall’applicazione.",
+    "toc": "Indice della guida",
+    "search": "Cerca nella guida",
+    "results_one": "{{count}} sezione contiene il testo cercato",
+    "results_other": "{{count}} sezioni contengono il testo cercato",
+    "noResults": "Nessuna sezione contiene quel testo.",
+    "github": "Visita il mio profilo GitHub"
+  },
+  "errorCodes": {
+    "engine_notConnected": "Nessuna connessione a Docker Engine.",
+    "engine_timeout": "Docker non ha risposto in tempo.",
+    "engine_notConfirmed": "L’operazione richiede una conferma esplicita.",
+    "engine_composeUnavailable": "Docker Compose non è disponibile.",
+    "ipc_unavailable": "L’interfaccia è in esecuzione fuori dall’applicazione desktop.",
+    "updates_noSource": "Non è configurata alcuna fonte di aggiornamenti.",
+    "updates_invalidSource": "Fonte non valida: indica un \"proprietario/repository\" di GitHub o un indirizzo https://.",
+    "updates_insecureSource": "Sono accettati solo indirizzi https:// (o http:// verso questo stesso computer).",
+    "packages_cancelled": "L’autenticazione è stata annullata: non è stato disinstallato nulla.",
+    "packages_denied": "I permessi di amministratore non sono stati concessi: non è stato disinstallato nulla.",
+    "packages_busy": "È già in corso una disinstallazione.",
+    "packages_notInstalled": "L’applicazione non è installata come pacchetto .deb: non c’è nulla da disinstallare con APT."
+  }
+}

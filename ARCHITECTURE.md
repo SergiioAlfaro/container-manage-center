@@ -245,12 +245,19 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 | `system_info()` | `SystemInfo`: versión, paquete instalado, ejecutable, sistema, núcleo, arquitectura, glibc, WebKitGTK, escritorio, rutas |
 | `updates_check(source?)` · `updates_last()` | Consulta la fuente (la escrita o la guardada) → `UpdateCheck`; última comprobación de la sesión (`UpdateOutcome`). Errores `updates.noSource`, `updates.invalidSource`, `updates.insecureSource`, `updates.network`, `updates.response` |
 | `open_release_page(url)` | `xdg-open` con un enlace `https://` (`app.open`) |
+| `components_inspect()` | 0.9.1 (D-065): `ComponentsReport` (paquete propio, dependencias clasificadas, herramientas externas, datos del usuario, historial de APT, simulación). Solo consulta y simula, sin privilegios |
+| `components_plan(packages)` | Comprueba la selección contra un análisis nuevo y simula la orden exacta → `RemovalPlan` (`extra` no vacío = no se ejecutará). Errores `packages.invalid`, `packages.notAllowed`, `packages.notInstalled` |
+| `components_remove(packages, confirmed)` | Exige `confirmed`; repite el plan y ejecuta `pkexec /usr/bin/apt-get remove -y --no-auto-remove …` → `RemovalResult`. Errores `packages.extra`, `packages.cancelled`, `packages.denied`, `packages.noElevation`, `packages.busy`, `packages.remove` |
 | `events_recent(filter)` | Eventos de esta sesión en memoria (`EventPage`, los más recientes primero) |
 | `events_journal(filter)` · `events_journal_clear()` | Eventos guardados (también de sesiones anteriores) y borrarlos (`history.io`) |
 | `events_query(query)` | Consulta a Docker (`EventQueryResult` con eventos, `truncated` y comando equivalente; `engine.invalidInput` sin llamar a Docker) |
 | `history_list(filter)` · `history_clear()` | Historial de operaciones guardado (`HistoryPage` con inicio de la sesión y carpeta) y borrarlo |
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.fileChanged`, `engine.alreadyExists`, `engine.composeUnavailable`, `compose.duplicate`, `history.io`, `engine.other`, `config.io`.
+
+El plugin `opener` de Tauri (0.9.1, D-066) solo puede abrir `https://github.com/SergiioAlfaro` (permiso limitado en `capabilities/default.json`).
+
+Al cerrar la ventana (0.9.1, D-063) se cierran los flujos abiertos y se espera a que terminen (como mucho 8 s): `StreamRegistry::close_all_and_wait`.
 
 Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
 
@@ -272,6 +279,9 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 - `shared/ipc/client.ts`: `localizeError` traduce los errores de texto fijo (`LOCALIZED_ERRORS`) al idioma de la interfaz.
 - `features/settings/`: `UpdatesSettings.tsx`, `SystemSettings.tsx` (con `systemReport`), restablecer en `SettingsView.tsx` y `layout.tsx` (`Group`, `Row`).
 - `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms y como mucho una vez por segundo durante las ráfagas, `refreshDelay`), `EventRow.tsx` (filas memorizadas con claves estables, `eventKeys`), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
+- `features/terminals/` (0.9.1, D-064): `sessions.ts` (gestor de sesiones fuera de React: una xterm y un flujo por sesión, generación por apertura, cierre sin huérfanos; estado visible en Zustand), `TerminalsView.tsx` (distribución según `layout.ts`, `Splitter.tsx` con ratón y teclado), `TerminalPane.tsx`, `NewTerminalDialog.tsx`.
+- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{es,en,fr,it}.md`, `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
+- `shared/i18n`: `es`, `en`, `fr`, `it` (D-067).
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
@@ -283,8 +293,10 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 | Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
 | Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p dcc-engine --test events_interrupted` | 3 |
-| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 221 |
+| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 275 |
+| Terminales múltiples contra Docker real (0.9.1) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_terminals` | 5 |
+| Desinstalación real (0.9.1) | `DCC_TEST_CHROOT=… DCC_TEST_DEB=… cargo test -p docker-control-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-phase-9.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
-| Manual | `scripts/verify-phase-9.sh` | M1–M15 |
+| Paquete | `scripts/verify-update-0.9.1.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
+| Manual | `scripts/verify-update-0.9.1.sh` | M1–M12 |

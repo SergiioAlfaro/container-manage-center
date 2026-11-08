@@ -43,6 +43,19 @@ pub struct StreamEnd {
     pub summary: String,
     #[ts(type = "number | null")]
     pub exit_code: Option<i64>,
+    /// Terminal: el contenedor ya no estaba en ejecución al terminar la sesión
+    /// (se detuvo o se eliminó). `None` en los demás casos.
+    #[serde(default)]
+    pub container: Option<ContainerAfter>,
+}
+
+/// Qué le pasó al contenedor cuando una sesión de terminal terminó sola.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ContainerAfter {
+    Stopped,
+    Removed,
 }
 
 /// Intervalo máximo entre envíos de líneas de log a la interfaz.
@@ -270,19 +283,122 @@ pub enum ShellChoice {
     Sh,
 }
 
+/// Secuencia que la shell escribe al empezar con su PID dentro del contenedor
+/// (`ESC ] 6973 ; PID BEL`). Es una secuencia OSC que las terminales ignoran;
+/// el motor la retira de la salida. Con ese PID, que es el de la sesión de la
+/// TTY, se pueden terminar todos los procesos de la sesión si la shell no sale
+/// al cerrar la terminal (D-063).
+pub const PID_MARK_START: &[u8] = b"\x1b]6973;";
+const PID_MARK_END: u8 = 0x07;
+/// Hasta dónde se busca la marca al principio de la salida.
+const PID_MARK_WINDOW: usize = 4096;
+
 impl ShellChoice {
     pub fn argv(self) -> Vec<String> {
-        match self {
-            Self::Auto => vec![
-                "/bin/sh".into(),
-                "-c".into(),
-                "if [ -x /bin/bash ]; then exec /bin/bash; else exec /bin/sh; fi".into(),
-            ],
-            Self::Bash => vec!["/bin/bash".into()],
-            Self::Sh => vec!["/bin/sh".into()],
-        }
+        // `exec` mantiene el PID: el anunciado es el de la shell interactiva.
+        let announce = r#"printf '\033]6973;%s\007' "$$"; "#;
+        let (interp, then) = match self {
+            Self::Auto => (
+                "/bin/sh",
+                "if [ -x /bin/bash ]; then exec /bin/bash; else exec /bin/sh; fi",
+            ),
+            Self::Bash => ("/bin/bash", "exec /bin/bash"),
+            Self::Sh => ("/bin/sh", "exec /bin/sh"),
+        };
+        vec![interp.into(), "-c".into(), format!("{announce}{then}")]
     }
 }
+
+/// Retira la marca de PID de la salida de la terminal. Suele llegar la primera,
+/// pero lo que se teclea antes de que la shell arranque aparece antes (eco de
+/// la TTY): se busca en los primeros `PID_MARK_WINDOW` bytes.
+#[derive(Debug, Default)]
+pub struct PidMark {
+    buf: Vec<u8>,
+    seen: usize,
+    done: bool,
+    pub pid: Option<u32>,
+}
+
+fn find(hay: &[u8], needle: &[u8]) -> Option<usize> {
+    hay.windows(needle.len()).position(|w| w == needle)
+}
+
+impl PidMark {
+    /// Devuelve lo que hay que mostrar (sin la marca). Retiene solo lo que
+    /// podría ser el principio de una marca partida entre dos trozos.
+    pub fn feed(&mut self, data: &[u8]) -> Vec<u8> {
+        if self.done {
+            return data.to_vec();
+        }
+        self.buf.extend_from_slice(data);
+        if let Some(pos) = find(&self.buf, PID_MARK_START) {
+            let body = pos + PID_MARK_START.len();
+            if let Some(rel) = self.buf[body..].iter().position(|&c| c == PID_MARK_END) {
+                let end = body + rel;
+                self.pid = std::str::from_utf8(&self.buf[body..end])
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .filter(|&p: &u32| p > 0);
+                self.done = true;
+                let mut out = self.buf[..pos].to_vec();
+                out.extend_from_slice(&self.buf[end + 1..]);
+                self.buf.clear();
+                return out;
+            }
+            if self.buf.len() - body > 12 {
+                // Empieza como la marca pero no lo es: no se toca nada.
+                self.done = true;
+                return std::mem::take(&mut self.buf);
+            }
+            let out = self.buf[..pos].to_vec();
+            self.seen += pos;
+            self.buf.drain(..pos);
+            return out;
+        }
+        // Sin marca todavía: se retiene el final si puede ser su principio.
+        let keep = (1..PID_MARK_START.len())
+            .rev()
+            .find(|&k| self.buf.len() >= k && self.buf.ends_with(&PID_MARK_START[..k]))
+            .unwrap_or(0);
+        let cut = self.buf.len() - keep;
+        let out: Vec<u8> = self.buf.drain(..cut).collect();
+        self.seen += out.len();
+        if self.seen > PID_MARK_WINDOW {
+            self.done = true;
+            let mut all = out;
+            all.append(&mut self.buf);
+            return all;
+        }
+        out
+    }
+
+    /// Lo retenido, si el flujo termina antes de completar la marca.
+    pub fn flush(&mut self) -> Vec<u8> {
+        self.done = true;
+        std::mem::take(&mut self.buf)
+    }
+}
+
+/// Termina, dentro del contenedor, todos los procesos de la sesión `$1` (la de
+/// la TTY de la terminal). Solo usa órdenes internas de `sh` (dash, bash,
+/// busybox): lee el campo «sesión» de /proc/PID/stat.
+/// Primero los demás procesos y al final la shell: si la shell (líder de la
+/// sesión) muriera antes, el núcleo enviaría SIGHUP al resto y el recuento
+/// dependería de quién llega antes.
+pub const KILL_SESSION_SCRIPT: &str = r#"s=$1; n=0
+for d in /proc/[0-9]*; do
+  p=${d#/proc/}; [ "$p" = "$s" ] && continue
+  st=; read -r st < "$d/stat" 2>/dev/null || continue
+  rest=${st##*) }; set -- $rest
+  if [ "$1" != Z ] && [ "$4" = "$s" ]; then kill -KILL "$p" 2>/dev/null && n=$((n+1)); fi
+done
+st=; if read -r st < "/proc/$s/stat" 2>/dev/null; then
+  rest=${st##*) }; set -- $rest
+  if [ "$1" != Z ] && [ "$4" = "$s" ]; then kill -KILL "$s" 2>/dev/null && n=$((n+1)); fi
+fi
+echo "$n"
+"#;
 
 impl Engine {
     /// Sigue los logs de un contenedor (`docker logs --follow --timestamps`).
@@ -386,6 +502,7 @@ impl Engine {
                     reason,
                     summary,
                     exit_code: None,
+                    container: None,
                 })
             }
             Err(e) => {
@@ -459,6 +576,7 @@ impl Engine {
                     reason,
                     summary,
                     exit_code: None,
+                    container: None,
                 })
             }
             Err(e) => {
@@ -495,6 +613,7 @@ impl Engine {
             });
         }
         let target = display.unwrap_or(id).to_owned();
+        let target_shown = target.clone();
         let cfg = ExecConfig {
             attach_stdin: Some(true),
             attach_stdout: Some(true),
@@ -591,6 +710,7 @@ impl Engine {
         // Redimensionados: efecto técnico de la ventana, no se registran uno a uno (D-036).
         let mut resizes = u32::from(resize(size.0, size.1).await);
         let (mut bytes_out, mut bytes_in) = (0u64, 0u64);
+        let mut mark = PidMark::default();
 
         let reason = loop {
             tokio::select! {
@@ -603,12 +723,19 @@ impl Engine {
                             LogOutput::StdIn { .. } => continue,
                         };
                         bytes_out += data.len() as u64;
-                        if !output(data) {
+                        let shown = mark.feed(&data);
+                        if !shown.is_empty() && !output(Bytes::from(shown)) {
                             break Ok(EndReason::Closed);
                         }
                     }
                     Some(Err(e)) => break Err(EngineError::from(e)),
-                    None => break Ok(EndReason::Finished),
+                    None => {
+                        let rest = mark.flush();
+                        if !rest.is_empty() {
+                            output(Bytes::from(rest));
+                        }
+                        break Ok(EndReason::Finished);
+                    }
                 },
                 msg = input.recv() => match msg {
                     Some(TerminalInput::Data(d)) => {
@@ -660,30 +787,72 @@ impl Engine {
         drop(out_stream);
 
         // Código de salida: una consulta real, registrada.
-        let exit_code = if ended {
+        let exit_query = |exec_id: String| {
             let d = self.docker().clone();
-            let ex = exec_id.clone();
             let op = ApiOp::get(
                 Category::Container,
                 "container.exec.inspect",
                 format!("/exec/{exec_id}/json"),
             );
-            match self
-                .call(op, async move { d.inspect_exec(&ex).await }, |i| {
+            async move {
+                self.call(op, async move { d.inspect_exec(&exec_id).await }, |i| {
                     i.exit_code.map(|c| format!("Código de salida: {c}"))
                 })
                 .await
-            {
-                Ok(i) if i.running == Some(true) => {
-                    ended = false;
-                    None
-                }
-                Ok(i) => i.exit_code,
-                Err(_) => None,
+                .ok()
+                .map(|i| (i.running == Some(true), i.exit_code))
             }
-        } else {
-            None
         };
+
+        // Con el contenedor en marcha, se terminan los procesos que queden de la
+        // sesión dentro del contenedor (D-063): la shell, si no salió (un programa
+        // que ignora Ctrl+C), y lo que dejó en segundo plano (`orden &`), que ni
+        // dash ni bash terminan al salir.
+        let shell_exited = ended;
+        let mut killed: Option<u32> = None;
+        let mut container = None;
+        let mut exit_code = None;
+        match &reason {
+            Ok(EndReason::Closed) => {
+                if let Some(pid) = mark.pid {
+                    killed = self
+                        .kill_terminal_session(id, &target_shown, pid)
+                        .await
+                        .ok();
+                }
+                if ended || killed.is_some() {
+                    match exit_query(exec_id.clone()).await {
+                        Some((true, _)) => ended = false,
+                        Some((false, c)) => {
+                            ended = true;
+                            exit_code = c;
+                        }
+                        None => {}
+                    }
+                }
+            }
+            Ok(EndReason::Finished) => {
+                if let Some((_, c)) = exit_query(exec_id.clone()).await {
+                    exit_code = c;
+                }
+                // Terminado por una señal (128 + n): lo normal es que se esté
+                // deteniendo el contenedor, y Docker tarda un instante en
+                // reflejarlo (D-031). Se confirma con inspect.
+                let settle = exit_code.is_some_and(|c| c >= 128);
+                container = self
+                    .container_after_session(id, &target_shown, settle)
+                    .await;
+                if container.is_none() {
+                    if let Some(pid) = mark.pid {
+                        killed = self
+                            .kill_terminal_session(id, &target_shown, pid)
+                            .await
+                            .ok();
+                    }
+                }
+            }
+            Err(_) => {}
+        }
         let traffic = format!(
             "{} recibidos, {} enviados, {resizes} redimensionados",
             human_bytes(bytes_out),
@@ -691,15 +860,33 @@ impl Engine {
         );
         match reason {
             Ok(reason) => {
+                let gone = match container {
+                    Some(ContainerAfter::Stopped) => "El contenedor se detuvo: ",
+                    Some(ContainerAfter::Removed) => "El contenedor se eliminó: ",
+                    None => "",
+                };
+                let leftovers = match killed {
+                    Some(n) if n > 0 && shell_exited => {
+                        format!("; se terminaron {n} procesos que seguían en segundo plano")
+                    }
+                    _ => String::new(),
+                };
                 let summary = match (reason, exit_code) {
+                    (EndReason::Closed, c) if !shell_exited && killed.is_some() && ended => format!(
+                        "Sesión cerrada por el usuario; la shell no salió con Ctrl+C y Ctrl+D y se terminaron sus {} procesos dentro del contenedor{}; {traffic}",
+                        killed.unwrap_or(0),
+                        c.map(|c| format!(" (código {c})")).unwrap_or_default()
+                    ),
                     (EndReason::Closed, _) if !ended => format!(
                         "Sesión cerrada por el usuario{}; el proceso sigue en ejecución dentro del contenedor (Docker no lo termina al desconectar); {traffic}",
                         if exit_sent { " (se envió Ctrl+C y Ctrl+D)" } else { "" }
                     ),
-                    (EndReason::Closed, Some(c)) => format!("Sesión cerrada por el usuario; la shell terminó con código {c}; {traffic}"),
-                    (EndReason::Closed, None) => format!("Sesión cerrada por el usuario; la shell terminó; {traffic}"),
-                    (EndReason::Finished, Some(c)) => format!("El proceso terminó con código {c}; {traffic}"),
-                    (EndReason::Finished, None) => format!("El proceso terminó; {traffic}"),
+                    (EndReason::Closed, Some(c)) => format!("Sesión cerrada por el usuario; la shell terminó con código {c}{leftovers}; {traffic}"),
+                    (EndReason::Closed, None) => format!("Sesión cerrada por el usuario; la shell terminó{leftovers}; {traffic}"),
+                    (EndReason::Finished, Some(c)) if gone.is_empty() => format!("El proceso terminó con código {c}{leftovers}; {traffic}"),
+                    (EndReason::Finished, None) if gone.is_empty() => format!("El proceso terminó{leftovers}; {traffic}"),
+                    (EndReason::Finished, Some(c)) => format!("{gone}el proceso terminó con código {c}; {traffic}"),
+                    (EndReason::Finished, None) => format!("{gone}el proceso terminó; {traffic}"),
                 };
                 handle.succeed(Outcome {
                     summary: Some(summary.clone()),
@@ -710,6 +897,7 @@ impl Engine {
                     reason,
                     summary,
                     exit_code,
+                    container,
                 })
             }
             Err(e) => {
@@ -720,6 +908,160 @@ impl Engine {
                 });
                 Err(e)
             }
+        }
+    }
+}
+
+impl Engine {
+    /// Termina dentro del contenedor todos los procesos de la sesión de una
+    /// terminal (la shell y lo que lanzó), con un `exec` sin TTY. Se registra.
+    /// Devuelve cuántos procesos se terminaron.
+    pub async fn kill_terminal_session(
+        &self,
+        id: &str,
+        target: &str,
+        pid: u32,
+    ) -> Result<u32, EngineError> {
+        validate_ref("contenedor", id)?;
+        let cmd: Vec<String> = vec![
+            "/bin/sh".into(),
+            "-c".into(),
+            KILL_SESSION_SCRIPT.into(),
+            "sh".into(),
+            pid.to_string(),
+        ];
+        let cfg = ExecConfig {
+            attach_stdout: Some(true),
+            attach_stderr: Some(true),
+            tty: Some(false),
+            cmd: Some(cmd.clone()),
+            ..Default::default()
+        };
+        let create = ApiOp {
+            category: Category::Container,
+            kind: "container.exec.create",
+            target: Some(target.to_owned()),
+            method: "POST",
+            path: format!("/containers/{id}/exec"),
+            body: Some(serde_json::to_string_pretty(&cfg).unwrap_or_default()),
+            equivalent: None,
+            timeout: Some(Duration::from_secs(10)),
+        };
+        let d = self.docker().clone();
+        let id_s = id.to_owned();
+        let exec = self
+            .call(
+                create,
+                async move { d.create_exec(&id_s, cfg).await },
+                |r| {
+                    Some(format!(
+                        "Exec creado: {}",
+                        r.id.chars().take(12).collect::<String>()
+                    ))
+                },
+            )
+            .await?;
+        let mut eq = vec!["exec".to_owned(), id.to_owned()];
+        eq.extend(cmd);
+        let start = ApiOp {
+            category: Category::Container,
+            kind: "container.exec.cleanup",
+            target: Some(target.to_owned()),
+            method: "POST",
+            path: format!("/exec/{}/start", exec.id),
+            body: None,
+            equivalent: Some(eq),
+            timeout: Some(Duration::from_secs(10)),
+        };
+        let d = self.docker().clone();
+        let eid = exec.id.clone();
+        let out = self
+            .call(
+                start,
+                async move {
+                    let mut text = String::new();
+                    if let StartExecResults::Attached { mut output, .. } =
+                        d.start_exec(&eid, None).await?
+                    {
+                        while let Some(frame) = output.next().await {
+                            if let LogOutput::StdOut { message } = frame? {
+                                text.push_str(&String::from_utf8_lossy(&message));
+                            }
+                        }
+                    }
+                    Ok::<_, bollard::errors::Error>(text)
+                },
+                |t| {
+                    Some(format!(
+                        "Terminados {} procesos de la sesión {pid} de la terminal dentro del contenedor",
+                        t.trim()
+                    ))
+                },
+            )
+            .await?;
+        Ok(out.trim().parse().unwrap_or(0))
+    }
+
+    /// Cuando una sesión de terminal termina sola: ¿sigue el contenedor en
+    /// ejecución? Una consulta real (`GET /containers/{id}/json`), registrada.
+    pub async fn container_after_session(
+        &self,
+        id: &str,
+        target: &str,
+        settle: bool,
+    ) -> Option<ContainerAfter> {
+        // Si se espera que se esté deteniendo, se vuelve a mirar durante 3 s.
+        let tries = if settle { 15 } else { 1 };
+        for n in 0..tries {
+            match self.container_state_once(id, target).await {
+                Some(after) => return Some(after),
+                None if n + 1 < tries => tokio::time::sleep(Duration::from_millis(200)).await,
+                None => {}
+            }
+        }
+        None
+    }
+
+    async fn container_state_once(&self, id: &str, target: &str) -> Option<ContainerAfter> {
+        let mut op = ApiOp::get(
+            Category::Container,
+            "container.inspect",
+            format!("/containers/{id}/json"),
+        );
+        op.target = Some(target.to_owned());
+        op.timeout = Some(Duration::from_secs(10));
+        let d = self.docker().clone();
+        let id_s = id.to_owned();
+        let r = self
+            .call(
+                op,
+                async move {
+                    d.inspect_container(
+                        &id_s,
+                        None::<bollard::query_parameters::InspectContainerOptions>,
+                    )
+                    .await
+                },
+                |c| {
+                    let running = c.state.as_ref().and_then(|s| s.running) == Some(true);
+                    Some(if running {
+                        "El contenedor sigue en ejecución".to_owned()
+                    } else {
+                        "El contenedor ya no está en ejecución".to_owned()
+                    })
+                },
+            )
+            .await;
+        use bollard::models::ContainerStateStatusEnum as St;
+        match r {
+            // `docker rm -f`: Docker lo marca como «removing» y no pasa por «exited».
+            Ok(c) if c.state.as_ref().and_then(|s| s.status) == Some(St::REMOVING) => {
+                Some(ContainerAfter::Removed)
+            }
+            Ok(c) if c.state.as_ref().and_then(|s| s.running) == Some(true) => None,
+            Ok(_) => Some(ContainerAfter::Stopped),
+            Err(e) if e.http_status() == Some(404) => Some(ContainerAfter::Removed),
+            Err(_) => None,
         }
     }
 }
@@ -859,10 +1201,74 @@ mod tests {
 
     #[test]
     fn shell_choices() {
-        assert_eq!(ShellChoice::Sh.argv(), vec!["/bin/sh"]);
+        // Desde la 0.9.1 (D-063) la shell anuncia su PID antes de arrancar; el
+        // resto de la orden no cambia: bash si existe, si no sh.
+        assert_eq!(
+            ShellChoice::Sh.argv(),
+            vec![
+                "/bin/sh",
+                "-c",
+                r#"printf '\033]6973;%s\007' "$$"; exec /bin/sh"#
+            ]
+        );
+        assert_eq!(
+            ShellChoice::Bash.argv(),
+            vec![
+                "/bin/bash",
+                "-c",
+                r#"printf '\033]6973;%s\007' "$$"; exec /bin/bash"#
+            ]
+        );
         assert_eq!(
             render_exec(&ShellChoice::Auto.argv()),
-            "/bin/sh -c 'if [ -x /bin/bash ]; then exec /bin/bash; else exec /bin/sh; fi'"
+            r#"/bin/sh -c 'printf '\''\033]6973;%s\007'\'' "$$"; if [ -x /bin/bash ]; then exec /bin/bash; else exec /bin/sh; fi'"#
         );
+    }
+
+    #[test]
+    fn pid_mark_is_removed_from_the_output() {
+        // Llega en trozos, con texto pegado detrás.
+        let mut m = PidMark::default();
+        assert_eq!(m.feed(b"\x1b]69"), b"");
+        assert_eq!(m.feed(b"73;4"), b"");
+        assert_eq!(m.feed(b"2\x07$ "), b"$ ");
+        assert_eq!(m.pid, Some(42));
+        assert_eq!(m.feed(b"ls\r\n"), b"ls\r\n");
+
+        // Detrás del eco de lo tecleado antes de que arrancara la shell.
+        let mut m = PidMark::default();
+        let mut shown = m.feed(b"echo hola\r\n\x1b]69");
+        shown.extend(m.feed(b"73;7\x07# hola\r\n"));
+        assert_eq!(shown, b"echo hola\r\n# hola\r\n");
+        assert_eq!(m.pid, Some(7));
+
+        // Sin marca: la salida pasa tal cual (salvo un posible principio de
+        // marca al final, que se suelta en cuanto se ve que no lo es).
+        let mut m = PidMark::default();
+        assert_eq!(m.feed(b"hola"), b"hola");
+        assert_eq!(m.pid, None);
+        let mut m = PidMark::default();
+        assert_eq!(m.feed(b"\x1b[31mrojo"), b"\x1b[31mrojo");
+        let mut m = PidMark::default();
+        assert_eq!(m.feed(b"abc\x1b"), b"abc");
+        assert_eq!(m.feed(b"[0m"), b"\x1b[0m");
+
+        // Marca no válida o sin cerrar: no se pierde nada.
+        let mut m = PidMark::default();
+        assert_eq!(m.feed(b"\x1b]6973;abc\x07x"), b"x");
+        assert_eq!(m.pid, None);
+        let mut m = PidMark::default();
+        assert_eq!(m.feed(b"\x1b]6973;12"), b"");
+        assert_eq!(m.flush(), b"\x1b]6973;12");
+        let mut m = PidMark::default();
+        let long = [&b"\x1b]6973;"[..], &[b'1'; 80]].concat();
+        assert_eq!(m.feed(&long), long);
+
+        // Pasada la ventana sin marca, deja de buscar.
+        let mut m = PidMark::default();
+        let big = vec![b'x'; PID_MARK_WINDOW + 10];
+        assert_eq!(m.feed(&big), big);
+        assert_eq!(m.feed(b"\x1b]6973;5\x07"), b"\x1b]6973;5\x07");
+        assert_eq!(m.pid, None);
     }
 }

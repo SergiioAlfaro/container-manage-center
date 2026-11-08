@@ -244,6 +244,83 @@ int main(int argc, char **argv) {
         }
     }
 
+    /// Imagen con shell y algunas órdenes del equipo (0.9.1, terminales
+    /// múltiples): `sleep` para un programa en primer plano, `stty` para leer el
+    /// tamaño de la TTY y `cat`. Sin descargar nada.
+    pub const SHELL_IMAGE: &str = "dcc-test/shell:1";
+
+    /// Programas del equipo y sus bibliotecas (según `ldd`), sin repetir.
+    fn host_programs(names: &[&str]) -> Vec<(String, Vec<u8>)> {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut files = Vec::new();
+        for name in names {
+            let path = ["/bin", "/usr/bin"]
+                .iter()
+                .map(|d| format!("{d}/{name}"))
+                .find(|p| std::path::Path::new(p).exists())
+                .unwrap_or_else(|| panic!("falta {name} en el equipo"));
+            let real = std::fs::canonicalize(&path).unwrap();
+            if seen.insert(format!("/bin/{name}")) {
+                files.push((format!("/bin/{name}"), std::fs::read(&real).unwrap()));
+            }
+            let out = std::process::Command::new("ldd")
+                .arg(&real)
+                .output()
+                .expect("ldd");
+            for line in String::from_utf8_lossy(&out.stdout).lines() {
+                let lib = match line.split_once("=>") {
+                    Some((_, r)) => r.split_whitespace().next(),
+                    None => line.split_whitespace().next(),
+                };
+                if let Some(l) = lib.filter(|p| p.starts_with('/')) {
+                    if seen.insert(l.to_string()) {
+                        let real = std::fs::canonicalize(l).unwrap();
+                        files.push((l.to_string(), std::fs::read(real).unwrap()));
+                    }
+                }
+            }
+        }
+        files
+    }
+
+    pub async fn ensure_shell_image(docker: &bollard::Docker) {
+        static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        let _guard = LOCK.lock().await;
+        if docker.inspect_image(SHELL_IMAGE).await.is_ok() {
+            return;
+        }
+        let mut tar = tar::Builder::new(Vec::new());
+        for (path, data) in host_programs(&["sh", "sleep", "stty", "cat"]) {
+            add_file(&mut tar, &path, &data, 0o755);
+        }
+        // /proc existe al arrancar el contenedor; /tmp para las pruebas.
+        let mut h = tar::Header::new_gnu();
+        h.set_entry_type(tar::EntryType::Directory);
+        h.set_mode(0o1777);
+        h.set_size(0);
+        h.set_cksum();
+        tar.append_data(&mut h, "tmp", std::io::empty()).unwrap();
+        let body = tar.into_inner().unwrap();
+        let opts = CreateImageOptions {
+            from_src: Some("-".into()),
+            repo: Some("dcc-test/shell".into()),
+            tag: Some("1".into()),
+            changes: vec![
+                r#"CMD ["/bin/sleep", "infinity"]"#.into(),
+                "LABEL dcc.test=true".into(),
+            ],
+            ..Default::default()
+        };
+        let mut s = docker.create_image(
+            Some(opts),
+            Some(bollard::body_full(bytes::Bytes::from(body))),
+            None,
+        );
+        while let Some(r) = s.next().await {
+            r.expect("importación de la imagen de prueba con shell");
+        }
+    }
+
     /// Contenedor de prueba detenido. Se elimina al soltar el guardián.
     pub struct TestContainer {
         pub docker: bollard::Docker,

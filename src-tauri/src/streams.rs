@@ -4,8 +4,9 @@
 //! caso de la terminal, para enviarle entrada. Al terminar, el propio flujo se
 //! retira del registro.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use dcc_engine::streams::TerminalInput;
 use parking_lot::Mutex;
@@ -21,12 +22,17 @@ struct Ctl {
 pub struct StreamRegistry {
     next: AtomicU64,
     map: Mutex<HashMap<u64, Ctl>>,
+    /// Flujos cuya tarea aún no ha terminado (aunque se haya pedido cerrarlos):
+    /// una terminal tarda un instante en salir y limpiar sus procesos (D-063).
+    running: Mutex<HashSet<u64>>,
+    finished: tokio::sync::Notify,
 }
 
 impl StreamRegistry {
     pub fn register(&self, input: Option<mpsc::Sender<TerminalInput>>) -> (u64, CancellationToken) {
         let id = self.next.fetch_add(1, Ordering::Relaxed) + 1;
         let cancel = CancellationToken::new();
+        self.running.lock().insert(id);
         self.map.lock().insert(
             id,
             Ctl {
@@ -48,8 +54,16 @@ impl StreamRegistry {
         }
     }
 
+    /// La tarea del flujo ha terminado.
     pub fn remove(&self, id: u64) {
         self.map.lock().remove(&id);
+        self.running.lock().remove(&id);
+        self.finished.notify_waiters();
+    }
+
+    /// Flujos cuya tarea sigue en marcha.
+    pub fn running(&self) -> usize {
+        self.running.lock().len()
     }
 
     pub fn input(&self, id: u64) -> Option<mpsc::Sender<TerminalInput>> {
@@ -65,6 +79,23 @@ impl StreamRegistry {
     pub fn close_all(&self) {
         for (_, ctl) in self.map.lock().drain() {
             ctl.cancel.cancel();
+        }
+    }
+
+    /// Cierra todos los flujos y espera, como mucho `timeout`, a que sus tareas
+    /// terminen (las terminales envían Ctrl+C y Ctrl+D y limpian sus procesos).
+    /// Devuelve cuántas quedaron sin terminar.
+    pub async fn close_all_and_wait(&self, timeout: Duration) -> usize {
+        self.close_all();
+        let deadline = tokio::time::Instant::now() + timeout;
+        loop {
+            let notified = self.finished.notified();
+            if self.running() == 0 {
+                return 0;
+            }
+            if tokio::time::timeout_at(deadline, notified).await.is_err() {
+                return self.running();
+            }
         }
     }
 }
@@ -89,5 +120,31 @@ mod tests {
         r.close_all();
         assert!(cb.is_cancelled());
         assert_eq!(r.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn close_all_waits_for_the_tasks_to_finish() {
+        let r = std::sync::Arc::new(StreamRegistry::default());
+        let (a, ca) = r.register(None);
+        let (b, cb) = r.register(None);
+        // Dos tareas que, al cancelarse, tardan en terminar (como una terminal).
+        for (id, c, ms) in [(a, ca, 150u64), (b, cb, 300)] {
+            let r2 = r.clone();
+            tokio::spawn(async move {
+                c.cancelled().await;
+                tokio::time::sleep(Duration::from_millis(ms)).await;
+                r2.remove(id);
+            });
+        }
+        assert_eq!(r.running(), 2);
+        let t = std::time::Instant::now();
+        assert_eq!(r.close_all_and_wait(Duration::from_secs(5)).await, 0);
+        assert!(
+            t.elapsed() >= Duration::from_millis(300),
+            "esperó a las dos"
+        );
+        // Una que no termina: se devuelve al agotar el plazo.
+        let (_c, _cc) = r.register(None);
+        assert_eq!(r.close_all_and_wait(Duration::from_millis(100)).await, 1);
     }
 }

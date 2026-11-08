@@ -6,11 +6,11 @@
 
 | | |
 |---|---|
-| **Fase actual** | 9 · Configuración y optimización |
-| **Versión** | 0.9.0 |
-| **Estado de la fase** | Implementada; pendiente de validación del propietario |
-| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8 |
-| **Fases pendientes** | 9–10 |
+| **Fase actual** | Actualización 0.9.1 (antes de la Fase 10) |
+| **Versión** | 0.9.1 |
+| **Estado** | Implementada; pendiente de validación del propietario |
+| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8, 9 |
+| **Fases pendientes** | 10 |
 
 | Fase | Estado |
 |---|---|
@@ -22,7 +22,8 @@
 | 6. Volúmenes y bind mounts | **Validada** (2026-11-07, Debian 13, versión 0.6.0) |
 | 7. Docker Compose | **Validada** (2026-11-07, Debian 13, versión 0.7.1) |
 | 8. Actividad, eventos y monitorización | **Validada** (2026-11-08, Debian 13, versión 0.8.0) |
-| 9. Configuración y optimización | Implementada (0.9.0); pendiente de validación |
+| 9. Configuración y optimización | **Validada** (2026-11-08, Debian 13, versión 0.9.0) |
+| Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | Implementada; pendiente de validación |
 | 10. Pruebas finales y distribución | No iniciada |
 
 ---
@@ -698,9 +699,93 @@ Ninguno abierto.
 
 ---
 
+## Actualización 0.9.1 · Terminales, desinstalación, ayuda, idiomas e interacción
+
+### Objetivos
+Cinco bloques antes de la Fase 10, sin rehacer las fases 1–9 (validadas):
+1. Francés e italiano.
+2. Desinstalación selectiva y componentes.
+3. Ayuda integrada con enlace a GitHub.
+4. Estados de interacción.
+5. Apartado «Terminales» con varias sesiones simultáneas.
+
+### Funcionalidades implementadas
+- **Terminales** (D-063, D-064):
+  - Varias sesiones `docker exec -it` reales e independientes.
+  - Distribución 1 / 2 columnas / 1+2 / 2×2 / filas con desplazamiento, con separadores que se mueven con el ratón o el teclado.
+  - Maximizar, renombrar, cerrar, volver a abrir y cerrar todas con confirmación. Las sesiones siguen abiertas al cambiar de apartado. Máximo de 12.
+  - Limpieza de los procesos de cada sesión en el contenedor y aviso de contenedor detenido o eliminado.
+  - Cierre ordenado de todas las sesiones al cerrar la ventana.
+- **Configuración → Desinstalación y componentes** (D-065):
+  - Análisis con dpkg, apt-mark, apt-cache y el historial de APT, también los archivos rotados.
+  - Clasificación de cada paquete con su motivo; Docker Engine, CLI y Compose como herramientas externas protegidas; datos del usuario que no se borran.
+  - Simulación de APT, resumen con el espacio que se libera y confirmación.
+  - Desinstalación real con `pkexec apt-get remove --no-auto-remove`, sin `purge`.
+- **Configuración → Ayuda y documentación** (D-066): 24 secciones en es/en/fr/it, índice, búsqueda, anterior y siguiente, y el botón «Visitar mi perfil de GitHub» (plugin opener limitado a esa dirección).
+- **Francés e italiano** en toda la interfaz, guardados en `config.toml` (D-067).
+- **Interacción** (D-068): estados de `Button`, filas con hover, descripción emergente en todos los botones con solo un icono, foco visible y movimiento reducido.
+
+### Cambios en componentes compartidos (y por qué)
+- **Motor de la terminal** (`run_terminal`, D-063): necesario para limpiar procesos y detectar el estado del contenedor. La terminal del detalle del contenedor gana la limpieza sin cambios en su interfaz. La prueba `shell_choices` se actualizó deliberadamente, porque la orden ahora imprime el PID antes de `exec`.
+- **`StreamRegistry`**: lleva la cuenta de los flujos en ejecución y añade `close_all_and_wait`. El cierre de la ventana espera a que terminen.
+- **`Button`**: deja de usar `pointer-events: none` cuando está desactivado (para que muestre su descripción) y añade `loading`.
+- **Lista de apartados**: «Terminales» va en el grupo nuevo «Herramientas». La prueba del orden del menú se actualizó deliberadamente.
+- **`localeOf`**: añade fr-FR e it-IT.
+
+### Pruebas realizadas (entorno de desarrollo: Ubuntu 24.04, Xvfb; root con DCC_VERIFY_ALLOW_ROOT)
+
+`scripts/verify-update-0.9.1.sh` se ejecutó completo en tres daemons:
+
+| Daemon | Resultado automático |
+|---|---|
+| Docker 29.9.2 (containerd), con `--deb --compat --net` | 51 correctas, 0 fallos, 3 omitidas, 1 aviso (root) |
+| Docker 26.1.3 (clásico) | 43 correctas, 0 fallos, 3 omitidas, 1 aviso |
+| Docker 24.0.7 | 43 correctas, 0 fallos, 3 omitidas, 1 aviso |
+
+| Conjunto | Resultado |
+|---|---|
+| Rust deterministas (workspace) | 444/444 |
+| Vitest | 275/275 (antes 221) |
+| Real · terminales múltiples (`live_terminals`) | 5/5 en Docker 29, 26 y 24 (y 8 ejecuciones seguidas sin fallos durante el desarrollo) |
+| Real · IPC (incluye varias terminales con canales reales y cierre global) | 10/10 en los tres daemons |
+| Real · regresión de las fases 1–9 (motor, contenedores, imágenes, redes, volúmenes, Compose, eventos) | Todas superadas en los tres daemons |
+| Compose 2.26.1 (binario, como en Debian 13) | 6/6 en los tres daemons |
+| Desinstalación real en Ubuntu 22.04 (debootstrap) con el `.deb` compatible 0.9.1 | Superada: instalación con APT, zenity comparte GTK, Docker y Compose protegidos, cancelación (126) sin cambios, desinstalación real, configuración intacta. Repetida dos veces con el paquete 0.9.0 y una con el 0.9.1 |
+| Clippy `-D warnings`, `cargo fmt`, `tsc`, compilación de Vite, prototipo congelado | Correctos |
+| Paquetes | `.deb` normal (Depends real) y compatible (glibc ≤ 2.35) |
+| Recursos de prueba al terminar | Ninguno (verificado por el script) |
+
+**Comprobaciones en la aplicación real** (Xvfb, xdotool y capturas):
+- Dos terminales con salida independiente y `stty size` propio.
+- Distribuciones con 3, 4 y 5 terminales, maximizar y restaurar, y arrastrar el separador.
+- Al cerrar la ventana con `sleep 1000 &` en una sesión, en los contenedores solo queda su proceso principal.
+- Desinstalación y componentes con la aplicación no instalada como paquete.
+- Ayuda.
+- El botón de GitHub abre `xdg-open https://github.com/SergiioAlfaro`.
+- Francés y tema oscuro guardados en `config.toml`, con las sesiones conservadas al cambiar de apartado.
+
+### Errores encontrados y corregidos durante el desarrollo
+- **Distribución con 3 o más terminales**: los paneles crecían más que la ventana, porque los contenedores intermedios no eran flex. Con 5, una altura escrita como `calc(100vh-190px)` sin espacios no era válida en CSS. Lo detecté en la aplicación real, ya que jsdom no calcula diseño. Corregido, y una prueba comprueba ahora la altura de cada fila y que la última ocupa todo el ancho.
+- **Marca del PID visible**: si el usuario escribía antes de que arrancara la shell, el eco llegaba primero. Ahora se busca en los primeros 4 KB.
+- **Procesos «restantes»**: eran zombis del PID 1 `sleep infinity`, que no recoge a sus hijos. Las pruebas y la limpieza ignoran el estado Z.
+- **Carrera detenido/eliminado**: `docker rm -f` deja el contenedor en estado `removing`, que ahora cuenta como eliminado. Si el código de salida es ≥128, se espera a que Docker actualice el estado.
+- **Prueba real de desinstalación**: comprobaba el estado `rc` de dpkg, pero la aplicación no tiene archivos de configuración de dpkg, así que dpkg la olvida. La ausencia de `purge` se comprueba en la orden registrada.
+
+### Limitaciones y observaciones
+- **Textos del backend**: los resúmenes del panel de actividad y los errores con datos concretos siguen en español en todos los idiomas (D-067). Se indica en la ayuda.
+- **Desinstalación en tu equipo**: la prueba automática real necesita un chroot y root, así que en tu equipo se comprueba a mano (M7–M9). La autenticación real de pkexec no se ha podido probar aquí (no hay agente de polkit); sí su orden exacta y el tratamiento de los códigos 126 y 127.
+- **Arranque en Ubuntu 22.04**: en un Ubuntu 22.04 mínimo creado de nuevo con debootstrap, la ventana queda en blanco porque WebKit no inicia su proceso web. Ocurre igual con el paquete 0.9.0, que en la Fase 9 sí arrancó en otro chroot más completo que ya no existe. No lo atribuyo a la 0.9.1, pero el arranque en Ubuntu 22.04 de esta versión no queda comprobado aquí. El binario compatible 0.9.1 sí arranca y funciona en Ubuntu 24.04.
+- **`npm audit`** avisa de vulnerabilidades en Vitest y tinypool. Son herramientas de pruebas: no forman parte del paquete.
+- **Sin probar aquí**: GNOME/Wayland real, un usuario no root y Docker 26.1.5 exacto.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-9.sh --deb --net` en Debian 13 con la versión 0.9.0 (opcionalmente también `--compat`) y envía `verify-phase-9-report.txt`. Solo si el veredicto es "parte automática superada", instala el paquete 0.9.0 y realiza M1–M15.
-2. Corregir lo que surja y marcar la Fase 9 como validada.
+1. El propietario ejecuta `bash scripts/verify-update-0.9.1.sh --deb --net` en Debian 13 y envía `verify-update-0.9.1-report.txt`. Si el veredicto es «parte automática superada», instala el paquete 0.9.1 y realiza M1–M12.
+2. Corregir lo que surja y marcar la 0.9.1 como validada.
 3. Fase 10: pruebas finales y distribución (necesita decidir nombre, licencia y dónde se publica).
 
 ## Decisiones pendientes del propietario

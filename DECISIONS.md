@@ -805,3 +805,76 @@ falla sin la corrección y pasa con ella).
 * **Configuración**:
   * Sección **Sistema**: aplicación, paquete instalado (leído de la base de datos de dpkg, solo lectura), WebKitGTK, glibc, sistema operativo, escritorio, Docker y Compose. Incluye un informe para copiar sin proyectos, variables ni credenciales.
   * **Restablecer preferencias**: apariencia, panel de actividad y actualizaciones, con confirmación. No toca la conexión con Docker ni los proyectos Compose.
+
+## Actualización 0.9.1 (antes de la Fase 10)
+
+### D-063 · Terminales: cada sesión limpia sus procesos y sabe qué le pasó al contenedor
+* **Problema**: al cerrar una sesión, `docker exec` solo termina la shell. Un proceso que la shell dejó en segundo plano (`sleep 100 &`) o un programa que ignora Ctrl+C seguía vivo dentro del contenedor. Además, cuando la sesión terminaba porque el contenedor se detenía o se eliminaba, la interfaz no lo sabía.
+* **Solución**:
+  * La shell imprime su PID al empezar con una secuencia OSC propia (`ESC]6973;PID BEL`). El backend la retira de la salida (`PidMark`, busca en los primeros 4 KB), así que el usuario no la ve.
+  * Al cerrar: Ctrl+C, Ctrl+D y espera (D-037). Si quedan procesos de esa sesión (mismo identificador de sesión del núcleo), se terminan con un `exec` sin TTY que solo usa órdenes internas de `sh` (`KILL_SESSION_SCRIPT`). Primero mueren los que no son el líder; después, el líder si sigue vivo. Los zombis se ignoran. Queda registrado como `container.exec.cleanup`.
+  * Cuando la sesión termina sola, se inspecciona el contenedor. Si se detuvo o se eliminó (`removing` cuenta como eliminado), el final lo indica (`StreamEnd.container`). Si el código de salida es ≥128, se espera hasta 3 s a que Docker actualice el estado (la misma carrera que en D-031).
+  * Al cerrar la ventana se cierran todos los flujos y se espera a que terminen (como mucho 8 s) antes de cerrarla, para que no queden shells ni procesos.
+* **Cambio de comportamiento deliberado**: `ShellChoice::argv()` ya no ejecuta la shell directamente, sino `sh -c 'printf …; exec bash'`. La prueba unitaria `shell_choices` se actualizó en consecuencia. La terminal del detalle del contenedor (Fase 3) usa el mismo motor y gana esta limpieza, sin cambios en su interfaz.
+
+### D-064 · Apartado «Terminales»: sesiones fuera de React
+* **Decisión**: xterm y el identificador del flujo de cada sesión viven en un gestor fuera de React (`features/terminals/sessions.ts`); el estado visible vive en un store de Zustand. El panel de cada sesión solo «presta» su elemento a la terminal mientras está montado.
+* **Por qué**: así, cambiar de apartado no cierra las sesiones ni pierde su contenido, y recolocar los paneles al abrir o cerrar uno no reinicia ninguna sesión.
+* **Alternativa descartada**: un componente por sesión dueño de xterm (como el panel del detalle). Cada cambio de distribución desmontaría los paneles y cerraría las sesiones.
+* **Distribución**:
+  * 1 sesión ocupa todo; 2 van en columnas; 3, una a la izquierda y dos a la derecha; 4, en cuadrícula 2×2.
+  * **Más de 4**: filas de dos con desplazamiento vertical, en lugar de pestañas. Con pestañas solo se vería una sesión a la vez, y lo que se pidió es ver varias.
+  * Los separadores se arrastran o se mueven con el teclado (20–80 %). Maximizar muestra una sola sesión sin cerrar las demás.
+* **Límite**: 12 sesiones a la vez. Cada una mantiene una shell dentro de un contenedor y una terminal en memoria.
+* **Sin sesiones huérfanas**: cerrar una sesión que aún se está abriendo cierra el flujo en cuanto llega su identificador. Los eventos de una apertura anterior se ignoran gracias a un contador de generación.
+* **Panel de actividad**: registra la apertura, el cierre, los errores y la limpieza, nunca la entrada ni la salida de la terminal.
+
+### D-065 · Desinstalación selectiva con APT
+* **Qué se ofrece quitar**: solo el paquete de la aplicación y las dependencias que cumplen las tres condiciones siguientes:
+  1. APT las instaló automáticamente **en una operación que también instaló o actualizó la aplicación**, según `/var/log/apt/history.log`, incluidos los archivos rotados `.gz`, y desde su última desinstalación.
+  2. Siguen marcadas como automáticas (`apt-mark showauto`).
+  3. APT las quitaría al desinstalar la aplicación (`apt-get -s remove --auto-remove`).
+* **Todo lo demás se conserva y se explica**:
+  * Compartidas: se indica qué paquetes las usan, según `apt-cache rdepends --installed`.
+  * Instaladas de forma explícita.
+  * Ya existentes antes de la aplicación.
+  * Origen incierto: si el historial no muestra la instalación, por ejemplo tras `dpkg -i`, no se atribuye nada a la aplicación.
+  * Protegidas: Docker y su motor (`docker*`, `containerd*`, `runc`, `moby-*`), APT, dpkg, polkit y los paquetes esenciales, `required` o `important`.
+* **Antes de ejecutar**:
+  * Se repite el análisis y se simula exactamente `apt-get remove --no-auto-remove <selección>`. Si APT quitaría algo no elegido, no se ejecuta.
+  * Las dependencias solo se pueden quitar junto con la aplicación.
+  * Los nombres se validan según Debian Policy.
+  * No se usa `purge`. Nunca se borran los datos del usuario ni nada de Docker.
+* **Privilegios**: solo la orden de APT se ejecuta con privilegios, con `pkexec /usr/bin/apt-get remove -y --no-auto-remove …`, que muestra el diálogo de autenticación del sistema. Si el usuario cancela (código 126) o no se conceden los permisos (127), se informa y no cambia nada.
+* **Sin pkexec**: se muestra la orden equivalente con `sudo` para ejecutarla a mano. La aplicación nunca guarda ni pide contraseñas.
+* **Registro**: cada consulta (`packages.query`), simulación (`packages.simulate`) y desinstalación (`packages.remove`) es un proceso CLI sin shell que queda en el panel de actividad, con `LC_ALL=C` para poder interpretar su salida.
+* **Pruebas reales**: sobre un Ubuntu 22.04 creado con `debootstrap` (`scripts/prepare-uninstall-chroot.sh`), con Docker y Compose instalados antes. La prueba instala la aplicación con APT, instala zenity, que comparte GTK, comprueba la clasificación, prueba una cancelación y desinstala de verdad.
+* **Alternativas descartadas**:
+  * `apt-get autoremove`: quitaría paquetes prescindibles que no tienen nada que ver con la aplicación.
+  * Ejecutar la aplicación con privilegios.
+  * Un ayudante con setuid.
+
+### D-066 · Ayuda en la aplicación y enlace a GitHub
+* **Documento**: un archivo Markdown por idioma (`ui/src/features/help/docs/*.md`) con 24 secciones identificadas por `{#id}`. Para ampliarlo basta con editar esos archivos. Una prueba exige las mismas secciones, en el mismo orden, en los cuatro idiomas.
+* **Lectura**: un lector propio y mínimo (párrafos, listas, tablas, código, `código` y **negrita**) que produce elementos de React y nunca inserta HTML. Se descartó una biblioteca de Markdown con `innerHTML`.
+* **Interfaz**: índice, búsqueda, anterior y siguiente, como subpágina de Configuración.
+* **Enlace a GitHub**: plugin oficial `tauri-plugin-opener`, con permiso limitado en `capabilities/default.json` a `https://github.com/SergiioAlfaro`. La ventana no puede abrir ninguna otra dirección por esta vía.
+* **Sin cambios**: `open_release_page` (Fase 9, validada) sigue igual con `xdg-open`.
+
+### D-067 · Francés e italiano
+* **Idiomas**: `Language` admite `fr` e `it` en Rust y TypeScript; se guardan en `config.toml` como el resto y los formatos de fecha y número siguen el idioma.
+* **Traducción**: `fr.json` e `it.json` traducen todas las claves (unas 1700).
+* **Pruebas**:
+  * Las claves coinciden en los cuatro idiomas y ningún texto está vacío.
+  * Cada traducción conserva las variables `{{…}}`.
+  * Ninguna cadena de francés o italiano es igual a la inglesa, salvo una lista explícita por idioma de nombres propios, términos técnicos y palabras que se escriben igual.
+* **Límite conocido (sin cambios respecto a la 0.9.0)**:
+  * Los resúmenes del panel de actividad que escribe el backend y los errores con datos concretos se generan en español en todos los idiomas.
+  * Los errores con texto fijo sí se traducen (D-062, ampliado con los de la desinstalación).
+  * Traducir el backend exigiría claves y argumentos en todos los mensajes de las fases 1–9, que están validadas; queda como mejora posible y se indica en la ayuda.
+
+### D-068 · Estados de interacción
+* **`Button` compartido**: estados de encima, pulsado y ocupado (`loading`), con transiciones de 150 ms.
+* **Cambio deliberado en `Button`**: un botón desactivado ya no usa `pointer-events: none`, para que siga mostrando su descripción emergente (que suele explicar por qué no se puede usar). Los estilos de encima solo se aplican si está activo (`enabled:`). Toda la suite anterior sigue pasando.
+* **Reglas globales de baja especificidad** (`:where`): filas de tabla y desplegables con estado de encima, y transiciones de 150 ms. La preferencia «reducir movimiento» ya las anulaba (Fase 1).
+* **Prueba**: recorre todos los apartados y exige nombre accesible y descripción emergente en cada botón de solo icono.

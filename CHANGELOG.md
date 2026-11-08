@@ -1,5 +1,33 @@
 # Cambios
 
+## 0.9.1 — 2026-11-08 (actualización previa a la Fase 10)
+- **Terminales** (nuevo apartado, D-064):
+  - Varias terminales reales (`docker exec -it`) a la vez, en el mismo contenedor o en otros.
+  - Distribución adaptable: 1, 2 columnas, 3, 2×2 y filas con desplazamiento a partir de 5.
+  - Separadores que se arrastran o se mueven con el teclado.
+  - Cada panel muestra el contenedor, un nombre de sesión que se puede cambiar y el estado de conexión, y se puede maximizar, cerrar y volver a abrir.
+  - «Cerrar todas» pide confirmación.
+  - Las sesiones siguen abiertas al cambiar de apartado.
+- **Limpieza de las sesiones de terminal** (D-063):
+  - Al cerrar una sesión se terminan también los procesos que dejó dentro del contenedor.
+  - Se indica si el contenedor se detuvo o se eliminó.
+  - Al cerrar la aplicación se cierran todas las sesiones y se espera a que terminen.
+  - También se aplica a la terminal del detalle del contenedor.
+- **Configuración → Desinstalación y componentes** (D-065):
+  - Muestra el paquete de la aplicación, las dependencias que se pueden quitar y las que se conservan (compartidas, explícitas, previas, de origen incierto o del sistema, con el motivo).
+  - Docker Engine, CLI y Compose se muestran como herramientas externas que se conservan siempre. Los datos del usuario no se tocan.
+  - Simulación de APT, resumen con el espacio que se libera y confirmación.
+  - La desinstalación es real: `pkexec apt-get remove --no-auto-remove`, sin `purge`.
+- **Configuración → Ayuda y documentación** (D-066): documento de 24 secciones en los cuatro idiomas, con índice, búsqueda y navegación, y el botón «Visitar mi perfil de GitHub» (plugin opener de Tauri, limitado a esa dirección).
+- **Francés e italiano** en toda la interfaz (D-067).
+- **Estados de interacción** (D-068):
+  - Estados de encima, pulsado, ocupado y desactivado coherentes; los botones desactivados siguen mostrando su descripción.
+  - Las filas de las tablas se resaltan al pasar el ratón.
+  - Todos los botones con solo un icono tienen nombre accesible y descripción.
+- **Panel de actividad**: registra las nuevas operaciones:
+  - `container.exec.cleanup`.
+  - `packages.query`, `packages.simulate` y `packages.remove`.
+
 ## 0.9.0 — 2026-11-08 (Fase 9: configuración y optimización)
 - **Compatibilidad con Debian 12 y Ubuntu 22.04** (D-059):
   - El paquete declara sus dependencias reales con `dpkg-shlibdeps`, incluida la versión mínima de `libc6`. Antes, un paquete compilado en un sistema más nuevo se instalaba en Debian 12 o Ubuntu 22.04 y no arrancaba («GLIBC_2.39 not found»).

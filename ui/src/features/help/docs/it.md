@@ -1,0 +1,288 @@
+## 1. Che cos’è Docker Control Center {#about}
+
+Docker Control Center è un’applicazione desktop per amministrare **Docker Engine** su Linux senza dipendere dal terminale. Tutto ciò che mostra sono dati reali richiesti a Docker in quel momento, e ogni azione è un’operazione reale: nulla viene simulato.
+
+- Comunica con Docker Engine tramite il suo **socket Unix**, con l’API ufficiale.
+- Esegue **Docker Compose** con il suo programma ufficiale, con argomenti separati e senza shell.
+- Ogni operazione compare nel **pannello attività** con il comando `docker` equivalente, così sai esattamente che cosa è stato fatto.
+
+La finestra ha una **barra laterale** con le sezioni (si comprime con Ctrl+B), l’**area di lavoro**, una **barra superiore** con l’indicatore di connessione e il pulsante **Attività**, e il **pannello attività** a destra (Ctrl+Maiusc+A).
+
+## 2. Requisiti di sistema e dipendenze {#requirements}
+
+- **Sistema**: Debian 12 o successivo, oppure Ubuntu 22.04 o successivo, a 64 bit (x86_64).
+- **Docker Engine 20.10 o successivo** (API 1.41+), in modalità normale o rootless.
+- **Docker Compose v2 o successivo**, solo per la sezione Docker Compose (come plugin `docker compose` o binario `docker-compose` v2). Compose v1 non è supportato.
+- **Dipendenze di esecuzione**: WebKitGTK 4.1, GTK 3, glibc e librerie correlate. APT le installa con il pacchetto.
+
+L’applicazione non ha bisogno di Internet. Solo le operazioni che Docker Engine esegue verso registri remoti (scaricare immagini, cercare su Docker Hub, compilare con immagini di base non presenti sul computer) richiedono che Docker abbia accesso alla rete.
+
+## 3. Installazione e primo avvio {#install}
+
+Installa il pacchetto con APT, che risolve le dipendenze:
+
+```
+sudo apt install ./docker-control-center_X.Y.Z_amd64.deb
+```
+
+L’applicazione compare nel menu come **Docker Control Center**. Si esegue con il tuo utente normale: **non avviarla con sudo** (si rifiuta di partire come root).
+
+All’apertura cerca Docker Engine automaticamente. Se lo trova, la **Dashboard** ne mostra lo stato; altrimenti mostra la diagnosi con la causa e i passaggi per risolverla.
+
+Per aggiornare, installa il nuovo pacchetto allo stesso modo: la configurazione e la cronologia vengono conservate.
+
+## 4. Configurazione iniziale {#first-setup}
+
+Per iniziare non serve configurare nulla: la connessione a Docker è automatica. In **Impostazioni** puoi scegliere:
+
+- Il **tema** (Sistema, Chiaro o Scuro) e la **lingua**.
+- Se il pannello attività si apre da solo quando un’operazione non riesce e quante operazioni conserva.
+- Se la cronologia delle operazioni e degli eventi viene conservata tra una sessione e l’altra.
+- Un socket di Docker specifico, se non vuoi il rilevamento automatico.
+
+Tutto viene salvato subito in `~/.config/docker-control-center/config.toml`.
+
+## 5. Connessione a Docker Engine {#connection}
+
+L’**indicatore di connessione** nella barra superiore mostra lo stato:
+
+| Aspetto | Significato |
+|---|---|
+| Punto verde e `Docker 29.x` | Connesso. Passando il mouse si vede il socket |
+| `Connessione a Docker…` | Rilevamento o connessione in corso |
+| Rosso, `Nessuna connessione a Docker` | Non connesso. Fai clic per vedere la diagnosi |
+
+In modalità **automatica**, l’applicazione prova in quest’ordine: la variabile `DOCKER_HOST` (solo `unix://`), il contesto attivo di Docker, il tuo socket rootless e il socket di sistema `/var/run/docker.sock`. Controlla la connessione ogni 10 secondi e si riconnette da sola quando Docker torna disponibile.
+
+L’applicazione non chiede mai sudo, non modifica permessi né gruppi e non esegue al posto tuo le istruzioni della diagnosi. Il tuo utente deve poter aprire il socket: con Docker rootless oppure appartenendo al gruppo `docker` (il che in pratica equivale ad avere privilegi di amministratore).
+
+## 6. Docker rootless e connessioni tramite socket {#rootless}
+
+Con **Docker rootless** il demone viene eseguito con il tuo utente e il socket si trova in `$XDG_RUNTIME_DIR/docker.sock` (di solito `/run/user/1000/docker.sock`). L’applicazione lo rileva da sola, anche tramite il contesto `rootless`, e lo indica con l’etichetta **rootless**. È l’opzione consigliata per la sicurezza.
+
+In **Impostazioni › Connessione a Docker** puoi:
+
+- Scegliere **Socket personalizzato** e scrivere un percorso assoluto.
+- **Prova connessione**: verifica il percorso senza salvarlo.
+- **Salva e connetti**: applica la configurazione.
+- **Riconnetti**: ripete il rilevamento.
+
+Le connessioni `tcp://` e `ssh://` non sono supportate in questa versione.
+
+## 7. Dashboard e diagnosi {#dashboard}
+
+Con la connessione attiva, la **Dashboard** mostra dati ottenuti in quel momento: versioni di Docker Engine e dell’API, socket e origine della connessione, container (in esecuzione, in pausa, arrestati), immagini, dati del computer (sistema, kernel, CPU, memoria), archiviazione ed esecuzione (driver, directory dei dati, cgroups, log) e gli avvisi del demone. **Aggiorna** li richiede di nuovo.
+
+Senza connessione mostra la **diagnosi**: la causa precisa, i passaggi per risolverla (con i comandi da copiare in un terminale), i socket controllati con il loro esito e ciò che è stato rilevato come installato. I pulsanti **Riconnetti** e **Configura connessione** sono nell’intestazione.
+
+## 8. Gestione dei container {#containers}
+
+La sezione **Container** elenca tutti i container, come `docker ps -a`: stato, nome e ID breve, progetto Compose, immagine, stato di Docker, porte pubblicate ed età. Puoi filtrare per **Tutti / In esecuzione / Arrestati** e cercare per nome, immagine, ID o progetto.
+
+| Stato | Azioni disponibili |
+|---|---|
+| In esecuzione | Arresta, Riavvia, Metti in pausa, Elimina |
+| In pausa | Riprendi, Arresta, Elimina |
+| Creato o arrestato | Avvia, Elimina |
+
+Arresta e riavvia attendono 10 secondi che il processo termini prima di forzarlo, come Docker. Dopo ogni azione viene interrogato lo stato reale del container. Se Docker rifiuta un’azione, il suo messaggio compare sopra la tabella e nel pannello attività. Gli elenchi si aggiornano da soli quando qualcosa cambia in Docker, anche dal terminale.
+
+## 9. Creazione, duplicazione, ispezione ed eliminazione dei container {#container-lifecycle}
+
+**Crea container** apre una procedura guidata con sei schede (solo l’immagine è obbligatoria): Generale, Ambiente, Rete, Archiviazione, Risorse e Avanzate.
+
+- **Comando** ed **Entrypoint** si scrivono come in un terminale e vengono divisi in argomenti, mostrati sotto. Non viene eseguita alcuna shell.
+- Il pannello **Equivalente** mostra il `docker run` equivalente e il corpo esatto inviato all’API.
+- **Revisione** segnala gli errori (impediscono la creazione) e gli avvisi (porte privilegiate, cartelle delicate montate in scrittura, modalità privilegiata…).
+- **Crea** crea il container senza avviarlo; **Crea e avvia** lo avvia anche.
+
+Facendo clic sul nome di un container si apre il suo **dettaglio**: Riepilogo, Log, Terminale, Statistiche e Ispezione JSON (la risposta completa di `docker inspect`, con il pulsante Copia).
+
+**Duplica** apre la procedura guidata con la configurazione del container e il nome `<nome>-copia`, e avvisa delle impostazioni che non vengono riportate.
+
+**Elimina** chiede conferma. Un container in esecuzione o in pausa viene eliminato solo se selezioni **Arrestalo forzatamente ed eliminalo**. Facoltativamente vengono eliminati anche i suoi volumi anonimi; i volumi con nome e le cartelle collegate non vengono toccati. Non si può annullare.
+
+## 10. Log, statistiche e terminali {#logs-stats-terminal}
+
+Nel dettaglio di un container:
+
+- **Log**: output in diretta (stderr in rosso). Puoi scegliere quante righe precedenti caricare, filtrare, mostrare l’ora, seguire la fine, copiare ciò che è visibile e smettere di seguire. Vengono conservate le ultime 10.000 righe.
+- **Statistiche**: CPU, memoria, rete, disco e processi ogni secondo, calcolati come `docker stats`.
+- **Terminale**: **Apri terminale** avvia una shell con `docker exec -it` (Automatica usa `bash` se esiste, altrimenti `sh`; puoi anche sceglierne una). **Chiudi sessione** termina la shell e i processi che ha lasciato nel container.
+
+Sono operazioni reali che compaiono nel pannello attività finché sono aperte e si chiudono quando esci dal dettaglio. Per lavorare con più terminali contemporaneamente, usa la sezione **Terminali**.
+
+## 11. Gestione delle immagini {#images}
+
+La sezione **Immagini** elenca le immagini locali, come `docker image ls`: tag, ID breve, dimensione, età e quali container le usano. Filtri **Tutte / In uso / Inutilizzate / Senza tag** e ricerca per tag o ID.
+
+- **Dettaglio**: Riepilogo (con i valori sensibili delle variabili nascosti), Livelli (come `docker image history`), Container che la usano e Ispezione JSON.
+- **Aggiungi tag** aggiunge un nome `repository:tag`.
+- **Elimina**: se l’immagine ha più tag puoi rimuoverne solo uno; l’immagine intera richiede di forzare. Docker non elimina le immagini dei container in esecuzione.
+- **Pulisci** elimina le immagini senza tag non usate da alcun container oppure, con una conferma aggiuntiva, tutte quelle non usate.
+
+## 12. Download e compilazione delle immagini {#pull-build}
+
+**Scarica immagine** chiede il riferimento (`nginx:1.27`, `utente/app`, `registro.esempio.com:5000/app:v2`; senza tag si usa `latest`). Credenziali:
+
+| Opzione | Che cosa fa |
+|---|---|
+| Quelle di Docker | Usa quanto salvato con `docker login` (o il suo *credential helper*) |
+| Nessuna | Download anonimo |
+| Nome utente e password | Solo per questo download: non vengono salvati e non compaiono nel pannello attività |
+
+Il pannello **Download** mostra l’avanzamento totale e per livello; nel frattempo puoi cambiare sezione e **Annullare**. **Cerca su Docker Hub** cerca come `docker search` (lo fa Docker Engine, che ha bisogno di Internet).
+
+**Compila immagine** apre una procedura guidata: contesto (la cartella inviata, rispettando `.dockerignore`) e Dockerfile, nomi (`--tag`), argomenti (`--build-arg`), metadati (`--label`), fase finale, senza cache, cerca immagini di base più recenti e compilatore (**BuildKit** o **classico**). Si vedono i passaggi con il loro stato e l’output come `docker build --progress=plain`; si può annullare.
+
+## 13. Reti Docker {#networks}
+
+La sezione **Reti** elenca le reti, come `docker network ls`, con driver, sottoreti e container. Le reti **bridge**, **host** e **none** sono predefinite e non possono essere eliminate.
+
+- **Crea rete**: nome, driver (`bridge`, `macvlan`, `ipvlan`, `overlay` o un altro), rete interna, indirizzi IPv4 (sottorete, gateway e intervallo) e IPv6, opzioni del driver e metadati. Si vedono il comando equivalente e la richiesta esatta, e gli errori vengono segnalati prima di inviare qualsiasi cosa a Docker.
+- **Connetti** un container (in esecuzione o arrestato), con alias e IP fisso facoltativi. **Disconnetti** chiede conferma.
+- **Elimina** e **Pulisci** avvisano se ci sono container arrestati che hanno la rete configurata e che dopo non potranno avviarsi.
+
+## 14. Volumi {#volumes}
+
+La sezione **Volumi** elenca i volumi, come `docker volume ls`, con il loro driver e i container che li montano. Quelli anonimi sono contrassegnati come tali. **Calcola dimensioni** chiede a Docker lo spazio di ciascuno (come `docker system df -v`); non viene fatto automaticamente perché può richiedere tempo.
+
+- **Crea volume**: nome (facoltativo) e tipo: local, tmpfs, NFS, una cartella del computer o un altro driver.
+- **Dettaglio**: directory, opzioni, metadati, dimensione, container con il loro percorso e la modalità, e ispezione JSON. **Crea container con questo volume** lo monta in `/data`.
+- **Elimina**: Docker non elimina un volume montato da un container, anche se arrestato.
+- **Pulisci**: elimina i volumi anonimi inutilizzati oppure, con conferma, tutti i volumi inutilizzati.
+
+## 15. Directory collegate (Bind Mounts) {#binds}
+
+Questa sezione mostra le cartelle e i file del tuo computer montati all’interno dei container, raggruppati per percorso: tipo, permessi e proprietario, se esistono, quali container li montano, dove e con quale accesso. Vengono segnalati quelli che richiedono attenzione: il **socket di Docker** (dà al container il controllo di Docker), la radice o le directory di sistema e i percorsi che non esistono più.
+
+Docker non permette di aggiungere una cartella a un container esistente. **Collega una cartella…** apre il selettore di cartelle e poi la procedura guidata dei container con quella cartella montata in `/mnt/<nome>`.
+
+## 16. Docker Compose {#compose}
+
+La sezione **Docker Compose** richiede Compose v2 o successivo; se non è installato, spiega come installarlo. Tutte le operazioni eseguono il Docker Compose ufficiale e compaiono nel pannello attività con il comando esatto.
+
+L’elenco mostra i progetti con container in Docker (anche quelli distribuiti dal terminale) e quelli che aggiungi, con il loro stato (in esecuzione, parziale, arrestato o non distribuito), cartella e servizi.
+
+- **Apri progetto…**: scegli il suo `compose.yaml` (e i file aggiuntivi nell’ordine in cui vengono combinati).
+- **Nuovo progetto**: scegli una cartella, scrivi il contenuto (partendo da un modello) e **Crea progetto**: viene convalidato con Docker Compose prima di creare `compose.yaml`.
+- **Rimuovi dall’elenco** lo toglie solo dall’elenco; non tocca Docker né i file.
+
+## 17. Gestione di progetti e profili Compose {#compose-projects}
+
+Nel dettaglio di un progetto:
+
+- **Servizi**: ogni servizio con la sua immagine, stato, container, porte e **profili**. Ogni riga permette di distribuire, avviare, arrestare, riavviare o vedere i log di quel servizio.
+- **Distribuisci** (`docker compose up --detach`): tutti i servizi o quelli scelti, **profili** da attivare, compilare prima, criterio di download delle immagini, ricreare i container ed eliminare gli orfani. La finestra di dialogo mostra il comando esatto.
+- **Avvia, Arresta, Riavvia**, **Scarica immagini** e **Compila**.
+- **Elimina** (`docker compose down`): container e reti del progetto; facoltativamente i suoi volumi con nome (i loro dati vanno persi) e le sue immagini. Va confermato.
+- **Output** dell’operazione in corso (si può **Interrompere**) e **Log** dei servizi in diretta.
+- **File**: modifica i file; **Convalida** li verifica con Docker Compose senza salvarli, e **Salva** li convalida prima e non sovrascrive se un altro programma li ha modificati.
+- **Configurazione**: la configurazione finale secondo Docker Compose. Può contenere segreti, quindi resta nascosta finché non la richiedi e non viene salvata nel pannello attività.
+
+## 18. Terminali simultanei {#terminals}
+
+La sezione **Terminali** permette di aprire e vedere contemporaneamente più terminali reali (`docker exec -it`) in container in esecuzione, nello stesso container o in altri.
+
+- **Nuovo terminale**: scegli un container in esecuzione, la shell (Automatica, bash o sh) e, se vuoi, un nome per la sessione.
+- Ogni pannello mostra il **container**, il **nome della sessione** e un **indicatore di connessione** (Connessione…, Connessa, Terminata o Errore), con i pulsanti per **rinominare**, **ingrandire** e **chiudere**. Anche il doppio clic sul nome permette di rinominarla.
+- **Disposizione**: un terminale occupa tutto lo spazio; due vanno su due colonne; tre, uno a sinistra e due a destra; quattro, in una griglia 2×2; con più di quattro, in righe da due con scorrimento verticale.
+- I **divisori** si trascinano con il mouse. Con il focus su un divisore, le frecce lo spostano, Inizio e Fine lo portano agli estremi e il doppio clic divide lo spazio in parti uguali.
+- Ogni sessione è indipendente: la propria shell, input e output, dimensione e stato. Ciò che fai in una non influisce sulle altre.
+- Le sessioni **restano aperte quando cambi sezione**. **Chiudi tutte** chiede conferma. Sono consentite fino a 12 sessioni contemporanee.
+- **Chiudere** una sessione termina la sua shell e i processi che ha lasciato in background nel container. Se il container viene **arrestato** o **eliminato**, il pannello lo indica; una sessione terminata si può **riaprire** se il container esiste ancora.
+- **Chiudere l’applicazione** termina tutte le sessioni.
+
+Il pannello attività registra l’apertura, la chiusura e gli errori di ogni sessione, ma non ciò che viene digitato né l’output del terminale.
+
+## 19. Pannello attività e registro delle operazioni {#activity}
+
+Ogni operazione compare nel **pannello attività**: ora, contrassegno **API** (richiesta a Docker Engine tramite il socket) o **CLI** (processo, come `docker compose` o `apt-get`), tipo, risorsa, durata e stato. La riga principale è il comando equivalente, che puoi copiare. Espandendo una voce vedi l’operazione realmente eseguita, il risultato, l’errore e il suo codice HTTP in caso di errore, e l’output dei processi.
+
+La sezione **Eventi e registri** mostra gli eventi di Docker in diretta, quelli salvati, una richiesta a Docker per un periodo (`docker events --since … --until …`; Docker conserva solo gli ultimi 256) e la **cronologia delle operazioni** di questa e di altre sessioni.
+
+La cronologia salva che cosa è stato fatto, quando e con quale esito, ma mai il corpo delle richieste, il comando né l’output, perché possono contenere password. Si trova in `~/.local/state/docker-control-center/`, leggibile solo dal tuo utente.
+
+## 20. Impostazioni, temi e lingue {#settings}
+
+- **Aspetto**: tema (Sistema, Chiaro, Scuro) e lingua: **Español** (predefinita), **English**, **Français** e **Italiano**. La lingua scelta viene salvata e mantenuta alla successiva apertura dell’applicazione.
+- **Pannello attività**: aprirlo in caso di errore, operazioni conservate (50–10.000) e **Conserva la cronologia tra le sessioni**.
+- **Connessione a Docker** e verifica di **Docker Compose**.
+- **Aggiornamenti**: dove vengono pubblicate le versioni e **Controlla ora**. L’applicazione non scarica né installa mai nulla.
+- **Sistema**: versioni dell’applicazione, del pacchetto, di WebKitGTK e glibc, del sistema e di Docker; **Copia** genera un rapporto senza dati sensibili.
+- **Disinstallazione e componenti** e **Guida e documentazione**.
+- **Ripristina le preferenze**, dopo la conferma. Non modifica la connessione a Docker.
+
+| Scorciatoia | Azione |
+|---|---|
+| Ctrl+B | Comprimi o espandi la barra laterale |
+| Ctrl+Maiusc+A | Apri o chiudi il pannello attività |
+| Esc | Chiudi una finestra di dialogo |
+
+I messaggi generati da Docker stesso (ad esempio un errore di Docker Engine) e l’output dei programmi vengono mostrati così come arrivano, senza traduzione. I riepiloghi tecnici che il motore dell’applicazione scrive nel pannello attività (ad esempio, come è terminato un terminale) e i messaggi di errore con dati specifici vengono generati in spagnolo in tutte le lingue.
+
+## 21. Disinstallazione e gestione delle dipendenze {#uninstall}
+
+**Impostazioni › Disinstallazione e componenti** mostra che cosa ha installato l’applicazione e permette di rimuoverlo senza usare il terminale. **Analizza** interroga dpkg e APT senza modificare nulla:
+
+- **Pacchetto dell’applicazione** (`docker-control-center`), con il suo spazio.
+- **Dipendenze rimovibili**: solo quelle che APT ha installato automaticamente **insieme all’applicazione** (secondo la sua cronologia) e di cui nessun altro pacchetto ha bisogno.
+- **Conservate**, con il motivo: dipendenze condivise (con i pacchetti che le usano), installate esplicitamente, già presenti prima, di origine incerta (se la cronologia di APT non mostra come è stata installata l’applicazione) e componenti di sistema.
+- **Strumenti esterni**: Docker Engine, Docker CLI e Docker Compose. **Conservati sempre.**
+- **Dati che non vengono eliminati**: la tua configurazione, la tua cronologia e i dati della finestra. Non viene toccato nulla di Docker: immagini, container, reti, volumi e progetti Compose.
+- La **simulazione di APT** completa della disinstallazione.
+
+Puoi scegliere **Solo Docker Control Center** o **con le dipendenze rimovibili**, oppure selezionare i pacchetti uno per uno; il riepilogo indica quanto spazio si recupera. **Verifica e disinstalla…** controlla di nuovo la selezione e simula esattamente il comando: se APT dovesse rimuovere qualcosa che non hai scelto, non puoi continuare. La finestra di dialogo mostra il comando che verrà eseguito:
+
+```
+pkexec /usr/bin/apt-get remove -y --no-auto-remove docker-control-center …
+```
+
+Alla conferma, il sistema chiede la password di amministratore (pkexec) **solo per quel comando**; l’applicazione continua a funzionare senza privilegi. Se annulli l’autenticazione non viene rimosso nulla. `purge` non viene usato. Tutto viene registrato nel pannello attività. Se viene rimossa l’applicazione stessa, chiudila al termine.
+
+Se `pkexec` non è installato, l’applicazione non può chiedere i permessi: la finestra di dialogo mostra il comando equivalente con `sudo` perché tu lo esegua in un terminale.
+
+## 22. Sicurezza e gestione delle credenziali {#security}
+
+- L’applicazione **non viene eseguita come root**, non chiede mai sudo per funzionare e non modifica i permessi del socket né i gruppi.
+- I comandi esterni vengono eseguiti **senza shell** e con argomenti separati: ciò che scrivi non viene mai interpretato come comandi.
+- **Non salva credenziali.** Quelle di un registro servono solo per un download e non compaiono nel pannello attività. Con «Quelle di Docker» si usano quelle di `docker login`.
+- I valori di variabili come `PASSWORD`, `TOKEN` o `SECRET` sono nascosti sullo schermo e nel pannello (`********`), anche se Docker li riceve per intero.
+- La cronologia persistente non salva mai il corpo delle richieste, i comandi né l’output.
+- Le operazioni distruttive chiedono conferma.
+- La finestra blocca le connessioni esterne. L’unica connessione propria dell’applicazione è il controllo delle versioni, disattivato finché non indichi una fonte. Il pulsante GitHub della Guida può aprire solo quell’indirizzo, nel tuo browser.
+- Montare il socket di Docker in un container o appartenere al gruppo `docker` dà il controllo totale del computer: l’applicazione lo segnala.
+
+## 23. Risoluzione dei problemi frequenti {#troubleshooting}
+
+| Causa mostrata | Che cosa fare |
+|---|---|
+| Docker non sembra installato | `sudo apt install docker.io` o la guida ufficiale di Docker |
+| Docker Engine non trovato / arrestato | `sudo systemctl enable --now docker` (rootless: `systemctl --user enable --now docker`) |
+| Nessun permesso per usare il socket | Docker rootless, oppure il gruppo `docker` e un nuovo accesso |
+| Appartieni già al gruppo, ma non funziona | Esci dalla sessione e accedi di nuovo |
+| Connessione di Docker non supportata | `tcp://` o `ssh://`: usa un socket locale (`docker context use default`) |
+| Docker non risponde in tempo | `sudo systemctl restart docker` |
+| Versione di Docker troppo vecchia | Aggiorna a Docker 20.10 o successivo |
+
+- **Docker Compose non compare**: installalo (Debian 13: `sudo apt install docker-compose`; Ubuntu: `sudo apt install docker-compose-v2`; repository di Docker: `docker-compose-plugin`) e premi **Verifica** in Impostazioni.
+- **Un download o una ricerca non riesce**: Docker Engine ha bisogno di Internet; il messaggio di errore è quello di Docker.
+- **Un terminale non si apre**: il container deve essere in esecuzione e avere una shell (`sh` o `bash`).
+- **La disinstallazione non propone una dipendenza**: la usa un altro programma, era già installata oppure non si può stabilire con certezza; il motivo compare accanto.
+- **Per segnalare un problema**: Impostazioni › Sistema › **Copia** genera un rapporto senza dati sensibili.
+
+## 24. Domande frequenti {#faq}
+
+**L’applicazione esegue comandi `docker`?** No: usa l’API di Docker Engine. Il comando che vedi nel pannello attività è l’equivalente, così puoi riprodurlo. Docker Compose invece viene eseguito con il suo programma ufficiale.
+
+**Devo essere amministratore?** No. Ti basta l’accesso al socket di Docker. Solo la disinstallazione dei pacchetti chiede i permessi, e solo per quel comando.
+
+**Funziona senza Internet?** Sì. Solo le operazioni di Docker verso registri remoti hanno bisogno della rete.
+
+**Che cosa succede ai miei container se chiudo l’applicazione?** Continuano a funzionare: li gestisce Docker. La chiusura termina i terminali aperti e smette di seguire log e statistiche.
+
+**Perdo i miei dati disinstallando?** No. La configurazione, la cronologia e tutto ciò che è in Docker vengono conservati.
+
+**Dove vengono salvate la configurazione e la cronologia?** In `~/.config/docker-control-center/` e `~/.local/state/docker-control-center/`.
+
+**Come cambio la lingua?** In Impostazioni › Aspetto › Lingua.

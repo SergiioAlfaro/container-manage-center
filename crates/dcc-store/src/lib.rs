@@ -165,6 +165,23 @@ mod tests {
     }
 
     #[test]
+    fn french_and_italian_are_saved_and_loaded() {
+        let (_d, s) = store();
+        for lang in [Language::Fr, Language::It] {
+            let mut c = AppConfig::default();
+            c.ui.language = lang;
+            s.save(&c).unwrap();
+            assert_eq!(s.load().unwrap().config.ui.language, lang);
+        }
+        // En el archivo, con el código del idioma.
+        assert!(fs::read_to_string(s.path())
+            .unwrap()
+            .contains("language = \"it\""));
+        fs::write(s.path(), "version = 1\n[ui]\nlanguage = \"fr\"\n").unwrap();
+        assert_eq!(s.load().unwrap().config.ui.language, Language::Fr);
+    }
+
+    #[test]
     fn updates_section_roundtrip_and_normalization() {
         let (_d, s) = store();
         // Un archivo de una versión anterior (sin [updates]) sigue siendo válido.

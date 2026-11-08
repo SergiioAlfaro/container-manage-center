@@ -10,6 +10,7 @@
     "groups": {
       "resources": "Recursos",
       "orchestration": "Orquestación",
+      "tools": "Herramientas",
       "monitoring": "Supervisión"
     }
   },
@@ -66,6 +67,10 @@
         "Inicio, parada, reconstrucción y logs por servicio"
       ],
       "phase": 7
+    },
+    "terminals": {
+      "title": "Terminales",
+      "description": "Varias terminales a la vez en contenedores en ejecución."
     },
     "events": {
       "title": "Eventos y registros",
@@ -157,7 +162,9 @@
     "language": "Idioma",
     "languageNames": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "fr": "Français",
+      "it": "Italiano"
     },
     "activityPanel": "Panel de actividad",
     "openOnError": "Abrir el panel cuando una operación falle",
@@ -176,7 +183,10 @@
     "resetHint": "Vuelve a los valores iniciales de apariencia, panel de actividad y actualizaciones. No cambia la conexión con Docker ni la lista de proyectos Compose.",
     "resetButton": "Restablecer",
     "resetConfirmTitle": "¿Restablecer las preferencias?",
-    "resetConfirmBody": "Tema, idioma, panel de actividad, historial y actualizaciones vuelven a sus valores iniciales. La conexión con Docker, los proyectos Compose y el historial ya guardado no cambian."
+    "resetConfirmBody": "Tema, idioma, panel de actividad, historial y actualizaciones vuelven a sus valores iniciales. La conexión con Docker, los proyectos Compose y el historial ya guardado no cambian.",
+    "maintenance": "Mantenimiento y ayuda",
+    "open": "Abrir",
+    "back": "Configuración"
   },
   "common": {
     "dismiss": "Cerrar aviso",
@@ -208,7 +218,8 @@
       "stats": "Seguir estadísticas",
       "exec": "Sesión de terminal",
       "exec_create": "Preparar terminal",
-      "exec_inspect": "Comprobar fin de la terminal"
+      "exec_inspect": "Comprobar fin de la terminal",
+      "exec_cleanup": "Terminar procesos de la terminal"
     },
     "image": {
       "list": "Listar imágenes",
@@ -256,6 +267,11 @@
     "events": {
       "watch": "Suscripción a los eventos de Docker",
       "query": "Consultar eventos de Docker"
+    },
+    "packages": {
+      "query": "Consultar paquetes instalados",
+      "simulate": "Simular con APT",
+      "remove": "Desinstalar paquetes"
     }
   },
   "conn": {
@@ -642,6 +658,50 @@
     "hint": "Ejecuta una shell con docker exec -it. Al cerrar la sesión se termina la shell.",
     "live": "Sesión abierta",
     "notRunning": "El contenedor no está en ejecución: inícialo para abrir una terminal."
+  },
+  "terminals": {
+    "new": "Nueva terminal",
+    "newTitle": "Nueva terminal",
+    "openSession": "Abrir terminal",
+    "closeAll": "Cerrar todas",
+    "closeAllTitle": "¿Cerrar todas las terminales?",
+    "closeAllBody_one": "Se cerrará {{count}} sesión: se termina su shell y los procesos que dejó dentro del contenedor. El contenedor sigue en ejecución.",
+    "closeAllBody_other": "Se cerrarán {{count}} sesiones: se terminan sus shells y los procesos que dejaron dentro de los contenedores. Los contenedores siguen en ejecución.",
+    "count_one": "{{count}} sesión · {{live}} conectada",
+    "count_other": "{{count}} sesiones · {{live}} conectadas",
+    "hint": "Cada terminal es un docker exec -it independiente. Siguen abiertas al cambiar de apartado y se cierran al salir de la aplicación.",
+    "emptyTitle": "No hay terminales abiertas",
+    "emptyHint": "Abre una terminal en cualquier contenedor en ejecución. Puedes tener varias a la vez, en el mismo contenedor o en otros.",
+    "full": "Has llegado al máximo de {{max}} terminales abiertas: cierra alguna para abrir otra.",
+    "containerField": "Contenedor en ejecución",
+    "noRunning": "No hay contenedores en ejecución: inicia uno para abrir una terminal.",
+    "sessionName": "Nombre de la sesión",
+    "nameHint": "Opcional. Si lo dejas vacío se usa el nombre del contenedor. Puedes cambiarlo después.",
+    "nameProblem": {
+      "empty": "El nombre no puede estar vacío.",
+      "long": "Usa como mucho {{max}} caracteres.",
+      "control": "El nombre no puede contener caracteres de control."
+    },
+    "paneLabel": "Terminal {{name}} en {{container}}",
+    "container": "Contenedor {{name}}",
+    "state": {
+      "opening": "Conectando…",
+      "open": "Conectada",
+      "ended": "Finalizada",
+      "error": "Error"
+    },
+    "after": {
+      "stopped": "Contenedor detenido",
+      "removed": "Contenedor eliminado"
+    },
+    "rename": "Renombrar sesión",
+    "reopen": "Volver a abrir la sesión",
+    "reopenGone": "No se puede volver a abrir: el contenedor se eliminó",
+    "maximize": "Maximizar",
+    "restore": "Restaurar la cuadrícula",
+    "close": "Cerrar sesión",
+    "splitColumns": "Redimensionar columnas",
+    "splitRows": "Redimensionar filas"
   },
   "stats": {
     "stop": "Dejar de recibir",
@@ -1911,6 +1971,102 @@
       "error": "no se pudo comprobar"
     }
   },
+  "components": {
+    "title": "Desinstalación y componentes",
+    "rowHint": "Qué instaló la aplicación, qué se puede quitar y qué se conserva. Nada cambia sin tu confirmación.",
+    "intro": "Analiza los paquetes instalados con dpkg y APT para mostrar qué instaló Docker Control Center y qué se puede quitar con seguridad. Analizar solo consulta y simula: no cambia nada. Docker, tus datos y tu configuración se conservan siempre.",
+    "analyze": "Analizar componentes",
+    "reanalyze": "Volver a analizar",
+    "analyzeHint": "Ejecuta dpkg-query, apt-mark, apt-cache y una simulación de apt-get, sin privilegios. Queda en el panel de actividad.",
+    "unsupported": "Este sistema no usa dpkg y APT: la desinstalación selectiva solo está disponible en Debian, Ubuntu y derivados.",
+    "notPackaged": "Docker Control Center no está instalado como paquete .deb (por ejemplo, se ejecuta compilado desde el código fuente): no hay nada que desinstalar con APT.",
+    "history": {
+      "notFound": "El historial de APT no muestra cómo se instaló la aplicación (por ejemplo, se instaló con dpkg -i o el historial ya se ha rotado). Por seguridad, no se ofrece quitar ninguna dependencia: se conservan todas como de origen incierto.",
+      "unreadable": "No se puede leer el historial de APT (/var/log/apt/history.log). Por seguridad, no se ofrece quitar ninguna dependencia."
+    },
+    "ownTitle": "Paquete de la aplicación",
+    "removeApp": "Desinstalar Docker Control Center",
+    "removableTitle": "Dependencias que se pueden quitar ({{count}})",
+    "noneRemovable": "Ninguna: todas las dependencias las usan otros programas, ya estaban instaladas o no se puede saber con seguridad quién las instaló.",
+    "removePackage": "Quitar {{name}}",
+    "direct": "directa",
+    "presetApp": "Solo Docker Control Center",
+    "presetAll": "Docker Control Center y las dependencias que se pueden quitar",
+    "summary_one": "{{count}} paquete · se liberan {{size}}",
+    "summary_other": "{{count}} paquetes · se liberan {{size}}",
+    "nothingSelected": "No hay nada seleccionado",
+    "review": "Revisar y desinstalar…",
+    "keptTitle": "Se conservan",
+    "group": {
+      "shared_one": "Compartida con otros programas ({{count}})",
+      "shared_other": "Compartidas con otros programas ({{count}})",
+      "manual_one": "Instalada de forma explícita ({{count}})",
+      "manual_other": "Instaladas de forma explícita ({{count}})",
+      "preExisting_one": "Ya estaba instalada antes ({{count}})",
+      "preExisting_other": "Ya estaban instaladas antes ({{count}})",
+      "uncertain_one": "Origen incierto ({{count}})",
+      "uncertain_other": "Origen incierto ({{count}})",
+      "protected_one": "Componente del sistema ({{count}})",
+      "protected_other": "Componentes del sistema ({{count}})"
+    },
+    "class": {
+      "own": "El paquete de la aplicación. Al quitarlo no se borran tu configuración ni tus datos.",
+      "removable": "APT las instaló automáticamente junto con la aplicación y ningún otro paquete las necesita.",
+      "shared": "Se instalaron con la aplicación, pero otros paquetes las necesitan: quitarlas los rompería.",
+      "manual": "Están marcadas como instaladas de forma explícita (por ti o por otro programa): no se quitan.",
+      "preExisting": "Ya estaban instaladas antes que la aplicación: no se quitan.",
+      "uncertain": "No se puede saber con seguridad quién las instaló: se conservan.",
+      "protected": "Paquetes esenciales del sistema, de la gestión de paquetes o de Docker: no se quitan nunca."
+    },
+    "usedBy_one": "La usa: {{list}}",
+    "usedBy_other": "La usan {{count}} paquetes: {{list}}",
+    "externalTitle": "Herramientas externas",
+    "externalHint": "La aplicación las usa, pero no son suyas: se conservan siempre, aunque desinstales la aplicación.",
+    "external": {
+      "engine": "Docker Engine",
+      "cli": "Docker CLI",
+      "compose": "Docker Compose"
+    },
+    "notFound": "no encontrado",
+    "alwaysKept": "Se conserva",
+    "dataTitle": "Datos que no se borran",
+    "dataHint": "Tu configuración y tus datos se conservan. Tampoco se toca nada de Docker: imágenes, contenedores, redes, volúmenes y proyectos Compose. Si quieres borrar estas carpetas, hazlo a mano.",
+    "data": {
+      "config": "Configuración",
+      "state": "Historial y eventos",
+      "webData": "Datos de la ventana",
+      "webCache": "Caché de la ventana"
+    },
+    "absent": "no existe",
+    "fullSimulation": "Simulación de APT de la desinstalación completa",
+    "fullSimulationHint": "Lo que APT quitaría si desinstalaras la aplicación con --auto-remove. Puede incluir paquetes que ya eran prescindibles antes; aquí solo se ofrecen los que se instalaron con la aplicación.",
+    "confirmTitle": "¿Desinstalar?",
+    "confirmBody_one": "Se quitará {{count}} paquete y se liberarán {{size}}:",
+    "confirmBody_other": "Se quitarán {{count}} paquetes y se liberarán {{size}}:",
+    "extra": "APT quitaría también: {{list}}. No se puede continuar; revisa la selección.",
+    "command": "Orden que se ejecutará",
+    "elevationHint": "El sistema te pedirá la contraseña de administrador (pkexec) solo para esta orden. Si cancelas, no se quita nada.",
+    "noElevation": "pkexec no está instalado: la aplicación no puede pedir permisos. Ejecuta tú esta orden en una terminal.",
+    "simulation": "Simulación de APT (sin cambios)",
+    "keptNote": "Se conservan Docker Engine, Docker CLI, Docker Compose, tus datos y tu configuración. No se usa purge.",
+    "selfNote": "Se desinstala la propia aplicación: ciérrala al terminar.",
+    "confirm": "Desinstalar",
+    "removing": "Desinstalando con APT…",
+    "done_one": "Se ha desinstalado {{count}} paquete.",
+    "done_other": "Se han desinstalado {{count}} paquetes.",
+    "doneSelf": "Docker Control Center ya no está instalado: cierra la aplicación.",
+    "stillInstalled": "Siguen instalados: {{list}}."
+  },
+  "help": {
+    "title": "Ayuda y documentación",
+    "rowHint": "Guía de uso de todas las funciones, sin salir de la aplicación.",
+    "toc": "Índice de la ayuda",
+    "search": "Buscar en la ayuda",
+    "results_one": "{{count}} sección contiene el texto buscado",
+    "results_other": "{{count}} secciones contienen el texto buscado",
+    "noResults": "Ninguna sección contiene ese texto.",
+    "github": "Visitar mi perfil de GitHub"
+  },
   "errorCodes": {
     "engine_notConnected": "No hay conexión con Docker Engine.",
     "engine_timeout": "Docker no respondió a tiempo.",
@@ -1919,6 +2075,10 @@
     "ipc_unavailable": "La interfaz se está ejecutando fuera de la aplicación de escritorio.",
     "updates_noSource": "No hay ninguna fuente de actualizaciones configurada.",
     "updates_invalidSource": "Fuente no válida: indica «propietario/repositorio» de GitHub o una dirección https://",
-    "updates_insecureSource": "Solo se admiten direcciones https:// (o http:// hacia esta misma máquina)."
+    "updates_insecureSource": "Solo se admiten direcciones https:// (o http:// hacia esta misma máquina).",
+    "packages_cancelled": "Se canceló la autenticación: no se ha desinstalado nada.",
+    "packages_denied": "No se concedieron permisos de administrador: no se ha desinstalado nada.",
+    "packages_busy": "Ya hay una desinstalación en curso.",
+    "packages_notInstalled": "La aplicación no está instalada como paquete .deb: no hay nada que desinstalar con APT."
   }
 }

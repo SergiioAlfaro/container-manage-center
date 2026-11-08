@@ -62,6 +62,10 @@ import type { EventQueryResult } from "@/shared/ipc/bindings/EventQueryResult";
 import type { HistoryEntry } from "@/shared/ipc/bindings/HistoryEntry";
 import type { HistoryFilter } from "@/shared/ipc/bindings/HistoryFilter";
 import type { HistoryPage } from "@/shared/ipc/bindings/HistoryPage";
+import type { ComponentsReport } from "@/shared/ipc/bindings/ComponentsReport";
+import type { PackageEntry } from "@/shared/ipc/bindings/PackageEntry";
+import type { RemovalPlan } from "@/shared/ipc/bindings/RemovalPlan";
+import type { RemovalResult } from "@/shared/ipc/bindings/RemovalResult";
 import type { SystemInfo } from "@/shared/ipc/bindings/SystemInfo";
 import type { UpdateCheck } from "@/shared/ipc/bindings/UpdateCheck";
 import type { UpdateOutcome } from "@/shared/ipc/bindings/UpdateOutcome";
@@ -658,6 +662,52 @@ function eventPage(all: DockerEvent[], f: Partial<EventFilter>, persistent: bool
   return { events: [...m].reverse(), total: m.length, stored: all.length, persistent };
 }
 
+/** Desinstalación y componentes: un Debian 13 con la aplicación instalada con APT. */
+export function componentsReport(over: Partial<ComponentsReport> = {}): ComponentsReport {
+  const pkg = (name: string, cls: PackageEntry["class"], kib: number, direct = false, usedBy: string[] = []): PackageEntry => ({ name, version: "1.0", installedKib: kib, class: cls, direct, usedBy });
+  return {
+    supported: true,
+    own: pkg("docker-control-center", "own", 25_000, true),
+    packages: [
+      pkg("libwebkit2gtk-4.1-0", "removable", 90_000, true),
+      pkg("libjavascriptcoregtk-4.1-0", "removable", 30_000),
+      pkg("libgtk-3-0", "shared", 9_000, true, ["zenity", "gnome-terminal"]),
+      pkg("libglib2.0-0", "preExisting", 4_000, true),
+      pkg("libsoup-3.0-0", "manual", 1_000, true),
+      pkg("libc6", "protected", 13_000, true),
+    ],
+    external: [
+      { kind: "engine", packages: ["docker.io 26.1.5+dfsg1-9"], binary: "/usr/sbin/dockerd" },
+      { kind: "cli", packages: ["docker-cli 26.1.5+dfsg1-9"], binary: "/usr/bin/docker" },
+      { kind: "compose", packages: ["docker-compose 2.26.1-4"], binary: "/usr/bin/docker-compose" },
+    ],
+    userData: [
+      { kind: "config", path: "/home/u/.config/docker-control-center", exists: true, bytes: 2048 },
+      { kind: "state", path: "/home/u/.local/state/docker-control-center", exists: true, bytes: 1_048_576 },
+      { kind: "webData", path: "/home/u/.local/share/org.dockercontrolcenter.app", exists: false, bytes: 0 },
+      { kind: "webCache", path: "/home/u/.cache/org.dockercontrolcenter.app", exists: true, bytes: 4096 },
+    ],
+    history: "found",
+    simulation: { command: "apt-get -s remove --auto-remove docker-control-center", removes: ["docker-control-center", "libjavascriptcoregtk-4.1-0", "libwebkit2gtk-4.1-0"], output: "NOTE: This is only a simulation!\nRemv docker-control-center [0.9.1]\n" },
+    elevation: "/usr/bin/pkexec",
+    ...over,
+  };
+}
+
+export function removalPlan(packages: string[], over: Partial<RemovalPlan> = {}): RemovalPlan {
+  const sizes: Record<string, number> = { "docker-control-center": 25_000, "libwebkit2gtk-4.1-0": 90_000, "libjavascriptcoregtk-4.1-0": 30_000 };
+  const sorted = [...packages].sort();
+  return {
+    packages: sorted,
+    command: `/usr/bin/pkexec /usr/bin/apt-get remove -y --no-auto-remove ${sorted.join(" ")}`,
+    simulation: { command: `apt-get -s remove --no-auto-remove ${sorted.join(" ")}`, removes: sorted, output: sorted.map((p) => `Remv ${p} [1.0]`).join("\n") },
+    extra: [],
+    freedKib: sorted.reduce((n, p) => n + (sizes[p] ?? 0), 0),
+    removesSelf: sorted.includes("docker-control-center"),
+    ...over,
+  };
+}
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -794,6 +844,10 @@ export const api = {
   updatesLast: vi.fn(async (): Promise<UpdateOutcome | null> => null),
   openReleasePage: vi.fn(async (_url: string) => null),
   systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
+  componentsInspect: vi.fn(async (): Promise<ComponentsReport> => componentsReport()),
+  componentsPlan: vi.fn(async (packages: string[]): Promise<RemovalPlan> => removalPlan(packages)),
+  componentsRemove: vi.fn(async (packages: string[]): Promise<RemovalResult> => ({ removed: packages, stillInstalled: [], output: "Removing…", removedSelf: packages.includes("docker-control-center") })),
+  openGithubProfile: vi.fn(async () => undefined),
   onUpdateResult: vi.fn(async (_h: (o: UpdateOutcome) => void) => () => {}),
   onDockerEvent: vi.fn(async (_h: (e: DockerEvent) => void) => () => {}),
   pickComposeFiles: vi.fn(async (_t: string, _f: string): Promise<string[]> => ["/home/u/tienda/compose.yaml"]),

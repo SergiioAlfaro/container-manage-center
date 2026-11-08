@@ -24,6 +24,7 @@ const load = {
   VolumesView: () => import("@/features/volumes/VolumesView"),
   BindsView: () => import("@/features/binds/BindsView"),
   ComposeView: () => import("@/features/compose/ComposeView"),
+  TerminalsView: () => import("@/features/terminals/TerminalsView"),
   EventsView: () => import("@/features/events/EventsView"),
   SettingsView: () => import("@/features/settings/SettingsView"),
 };
@@ -133,6 +134,8 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <View name="BindsView" />;
     case "compose":
       return <View name="ComposeView" />;
+    case "terminals":
+      return <View name="TerminalsView" />;
     case "events":
       return <View name="EventsView" />;
     case "settings":

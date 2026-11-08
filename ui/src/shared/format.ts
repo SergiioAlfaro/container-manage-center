@@ -2,7 +2,10 @@
 
 /** Idioma de la aplicación ("es", "en") o configuración regional ("es-ES") → configuración regional. */
 export function localeOf(lang: string) {
-  return lang.startsWith("es") ? "es-ES" : "en-US";
+  if (lang.startsWith("es")) return "es-ES";
+  if (lang.startsWith("fr")) return "fr-FR";
+  if (lang.startsWith("it")) return "it-IT";
+  return "en-US";
 }
 
 // Crear un formateador de `Intl` es caro (cientos de microsegundos en WebKit) y

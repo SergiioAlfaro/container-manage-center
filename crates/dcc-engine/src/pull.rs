@@ -276,6 +276,7 @@ impl Engine {
                     reason: EndReason::Finished,
                     summary,
                     exit_code: None,
+                    container: None,
                 })
             }
             Ok(EndReason::Closed) => {
@@ -291,6 +292,7 @@ impl Engine {
                     reason: EndReason::Closed,
                     summary,
                     exit_code: None,
+                    container: None,
                 })
             }
             Err(e) => {

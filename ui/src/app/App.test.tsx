@@ -25,7 +25,7 @@ describe("App", () => {
     configSet.mockImplementation(async (c) => c);
   });
 
-  it("muestra los nueve apartados en el orden requerido", async () => {
+  it("muestra los diez apartados en el orden requerido (0.9.1 añade «Terminales»)", async () => {
     await boot();
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });
     const labels = within(nav)
@@ -39,6 +39,7 @@ describe("App", () => {
       "Volúmenes",
       "Directorios vinculados",
       "Docker Compose",
+      "Terminales",
       "Eventos y registros",
       "Configuración",
     ]);

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RotateCcw } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, PackageX, RotateCcw } from "lucide-react";
 import { DEFAULT_CONFIG, useApp } from "@/app/store";
 import type { Language } from "@/shared/ipc/bindings/Language";
 import type { Theme } from "@/shared/ipc/bindings/Theme";
@@ -8,6 +8,8 @@ import { LANGUAGES } from "@/shared/i18n";
 import { Button, Segmented, Switch } from "@/shared/ui/controls";
 import { Dialog } from "@/shared/ui/feedback";
 import { numberFormat } from "@/shared/format";
+import { HelpView } from "@/features/help/HelpView";
+import { ComponentsSettings } from "./ComponentsSettings";
 import { DockerSettings } from "./DockerSettings";
 import { SystemSettings } from "./SystemSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
@@ -43,11 +45,59 @@ function MaxRecordsInput({ value, onCommit }: { value: number; onCommit: (n: num
   );
 }
 
+/** Páginas propias dentro de Configuración (0.9.1). */
+export type SettingsPage = "main" | "components" | "help";
+
+function SubPage({ title, onBack, wide, children }: { title: string; onBack: () => void; wide?: boolean; children: React.ReactNode }) {
+  const { t } = useTranslation();
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus(), []);
+  return (
+    <div className={wide ? "mx-auto max-w-[1100px] px-8 py-6" : "mx-auto max-w-[760px] px-8 py-6"}>
+      <div className="mb-5 flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft size={14} aria-hidden /> {t("settings.back")}
+        </Button>
+        <h2 ref={heading} tabIndex={-1} className="text-[16px] font-semibold text-ink outline-none">
+          {title}
+        </h2>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function OpenRow({ label, hint, icon, onOpen, action }: { label: string; hint: string; icon: React.ReactNode; onOpen: () => void; action: string }) {
+  return (
+    <Row label={label} hint={hint}>
+      <Button onClick={onOpen}>
+        {icon} {action} <ChevronRight size={14} aria-hidden />
+      </Button>
+    </Row>
+  );
+}
+
 export function SettingsView() {
   const { t, i18n } = useTranslation();
   const { config, updateConfig } = useApp();
   const [resetting, setResetting] = useState(false);
+  const [page, setPage] = useState<SettingsPage>("main");
   const nf = numberFormat(i18n.language);
+
+  if (page === "components") {
+    return (
+      <SubPage title={t("components.title")} onBack={() => setPage("main")}>
+        <ComponentsSettings />
+      </SubPage>
+    );
+  }
+  if (page === "help") {
+    return (
+      <SubPage title={t("help.title")} onBack={() => setPage("main")} wide>
+        <HelpView />
+      </SubPage>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[760px] px-8 py-8">
@@ -100,6 +150,17 @@ export function SettingsView() {
       <UpdatesSettings />
 
       <SystemSettings />
+
+      <Group title={t("settings.maintenance")}>
+        <OpenRow
+          label={t("components.title")}
+          hint={t("components.rowHint")}
+          icon={<PackageX size={14} aria-hidden />}
+          action={t("settings.open")}
+          onOpen={() => setPage("components")}
+        />
+        <OpenRow label={t("help.title")} hint={t("help.rowHint")} icon={<BookOpen size={14} aria-hidden />} action={t("settings.open")} onOpen={() => setPage("help")} />
+      </Group>
 
       <Group title={t("settings.shortcuts")}>
         <Row label={t("settings.shortcutSidebar")}>

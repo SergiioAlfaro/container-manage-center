@@ -6,6 +6,11 @@ type Fn<T> = (v: T) => void;
 
 export class FakeTerminal {
   static last: FakeTerminal | null = null;
+  /** Todas las creadas (el apartado «Terminales» tiene varias a la vez). */
+  static all: FakeTerminal[] = [];
+  disposed = false;
+  opened = false;
+  focused = 0;
   cols = 80;
   rows = 24;
   written: Array<string | Uint8Array> = [];
@@ -13,14 +18,21 @@ export class FakeTerminal {
   private resize: Array<Fn<{ cols: number; rows: number }>> = [];
   constructor(public options: unknown) {
     FakeTerminal.last = this;
+    FakeTerminal.all.push(this);
   }
   loadAddon() {}
-  open() {}
-  focus() {}
+  open() {
+    this.opened = true;
+  }
+  focus() {
+    this.focused++;
+  }
   reset() {
     this.written = [];
   }
-  dispose() {}
+  dispose() {
+    this.disposed = true;
+  }
   write(d: string | Uint8Array) {
     this.written.push(d);
   }

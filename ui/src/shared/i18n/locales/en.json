@@ -10,6 +10,7 @@
     "groups": {
       "resources": "Resources",
       "orchestration": "Orchestration",
+      "tools": "Tools",
       "monitoring": "Monitoring"
     }
   },
@@ -66,6 +67,10 @@
         "Start, stop, rebuild and per-service logs"
       ],
       "phase": 7
+    },
+    "terminals": {
+      "title": "Terminals",
+      "description": "Several terminals at once in running containers."
     },
     "events": {
       "title": "Events and logs",
@@ -157,7 +162,9 @@
     "language": "Language",
     "languageNames": {
       "es": "Español",
-      "en": "English"
+      "en": "English",
+      "fr": "Français",
+      "it": "Italiano"
     },
     "activityPanel": "Activity panel",
     "openOnError": "Open the panel when an operation fails",
@@ -176,7 +183,10 @@
     "resetHint": "Restores the default appearance, activity panel and update settings. The Docker connection and the Compose project list are not changed.",
     "resetButton": "Reset",
     "resetConfirmTitle": "Reset preferences?",
-    "resetConfirmBody": "Theme, language, activity panel, history and update settings go back to their defaults. The Docker connection, Compose projects and the history already saved are not changed."
+    "resetConfirmBody": "Theme, language, activity panel, history and update settings go back to their defaults. The Docker connection, Compose projects and the history already saved are not changed.",
+    "maintenance": "Maintenance and help",
+    "open": "Open",
+    "back": "Settings"
   },
   "common": {
     "dismiss": "Dismiss notice",
@@ -208,7 +218,8 @@
       "stats": "Follow statistics",
       "exec": "Terminal session",
       "exec_create": "Prepare terminal",
-      "exec_inspect": "Check terminal exit"
+      "exec_inspect": "Check terminal exit",
+      "exec_cleanup": "End terminal processes"
     },
     "image": {
       "list": "List images",
@@ -256,6 +267,11 @@
     "events": {
       "watch": "Subscription to Docker events",
       "query": "Ask Docker for events"
+    },
+    "packages": {
+      "query": "Query installed packages",
+      "simulate": "Simulate with APT",
+      "remove": "Uninstall packages"
     }
   },
   "conn": {
@@ -642,6 +658,50 @@
     "hint": "Runs a shell with docker exec -it. Closing the session ends the shell.",
     "live": "Session open",
     "notRunning": "The container is not running: start it to open a terminal."
+  },
+  "terminals": {
+    "new": "New terminal",
+    "newTitle": "New terminal",
+    "openSession": "Open terminal",
+    "closeAll": "Close all",
+    "closeAllTitle": "Close all terminals?",
+    "closeAllBody_one": "{{count}} session will be closed: its shell and the processes it left inside the container are ended. The container keeps running.",
+    "closeAllBody_other": "{{count}} sessions will be closed: their shells and the processes they left inside the containers are ended. The containers keep running.",
+    "count_one": "{{count}} session · {{live}} connected",
+    "count_other": "{{count}} sessions · {{live}} connected",
+    "hint": "Each terminal is an independent docker exec -it. They stay open when you switch sections and are closed when you quit the application.",
+    "emptyTitle": "No terminals open",
+    "emptyHint": "Open a terminal in any running container. You can have several at once, in the same container or in others.",
+    "full": "You have reached the maximum of {{max}} open terminals: close one to open another.",
+    "containerField": "Running container",
+    "noRunning": "No containers are running: start one to open a terminal.",
+    "sessionName": "Session name",
+    "nameHint": "Optional. If left empty the container name is used. You can change it later.",
+    "nameProblem": {
+      "empty": "The name cannot be empty.",
+      "long": "Use at most {{max}} characters.",
+      "control": "The name cannot contain control characters."
+    },
+    "paneLabel": "Terminal {{name}} on {{container}}",
+    "container": "Container {{name}}",
+    "state": {
+      "opening": "Connecting…",
+      "open": "Connected",
+      "ended": "Ended",
+      "error": "Error"
+    },
+    "after": {
+      "stopped": "Container stopped",
+      "removed": "Container removed"
+    },
+    "rename": "Rename session",
+    "reopen": "Reopen the session",
+    "reopenGone": "Cannot reopen: the container was removed",
+    "maximize": "Maximize",
+    "restore": "Restore the grid",
+    "close": "Close session",
+    "splitColumns": "Resize columns",
+    "splitRows": "Resize rows"
   },
   "stats": {
     "stop": "Stop receiving",
@@ -1911,6 +1971,102 @@
       "error": "could not be checked"
     }
   },
+  "components": {
+    "title": "Uninstall and components",
+    "rowHint": "What the application installed, what can be removed and what is kept. Nothing changes without your confirmation.",
+    "intro": "Analyzes the packages installed with dpkg and APT to show what Docker Control Center installed and what can be safely removed. Analyzing only queries and simulates: it changes nothing. Docker, your data and your settings are always kept.",
+    "analyze": "Analyze components",
+    "reanalyze": "Analyze again",
+    "analyzeHint": "Runs dpkg-query, apt-mark, apt-cache and an apt-get simulation, without privileges. It is recorded in the activity panel.",
+    "unsupported": "This system does not use dpkg and APT: selective uninstall is only available on Debian, Ubuntu and derivatives.",
+    "notPackaged": "Docker Control Center is not installed as a .deb package (for example, it runs built from source): there is nothing to uninstall with APT.",
+    "history": {
+      "notFound": "The APT history does not show how the application was installed (for example, it was installed with dpkg -i or the history has been rotated). For safety, no dependency is offered for removal: all are kept as of uncertain origin.",
+      "unreadable": "The APT history (/var/log/apt/history.log) cannot be read. For safety, no dependency is offered for removal."
+    },
+    "ownTitle": "Application package",
+    "removeApp": "Uninstall Docker Control Center",
+    "removableTitle": "Dependencies that can be removed ({{count}})",
+    "noneRemovable": "None: all dependencies are used by other programs, were already installed or it cannot be safely determined who installed them.",
+    "removePackage": "Remove {{name}}",
+    "direct": "direct",
+    "presetApp": "Docker Control Center only",
+    "presetAll": "Docker Control Center and the removable dependencies",
+    "summary_one": "{{count}} package · frees {{size}}",
+    "summary_other": "{{count}} packages · frees {{size}}",
+    "nothingSelected": "Nothing selected",
+    "review": "Review and uninstall…",
+    "keptTitle": "Kept",
+    "group": {
+      "shared_one": "Shared with other programs ({{count}})",
+      "shared_other": "Shared with other programs ({{count}})",
+      "manual_one": "Explicitly installed ({{count}})",
+      "manual_other": "Explicitly installed ({{count}})",
+      "preExisting_one": "Already installed before ({{count}})",
+      "preExisting_other": "Already installed before ({{count}})",
+      "uncertain_one": "Uncertain origin ({{count}})",
+      "uncertain_other": "Uncertain origin ({{count}})",
+      "protected_one": "System component ({{count}})",
+      "protected_other": "System components ({{count}})"
+    },
+    "class": {
+      "own": "The application package. Removing it does not delete your settings or your data.",
+      "removable": "APT installed them automatically together with the application and no other package needs them.",
+      "shared": "They were installed with the application, but other packages need them: removing them would break those packages.",
+      "manual": "They are marked as explicitly installed (by you or by another program): they are not removed.",
+      "preExisting": "They were installed before the application: they are not removed.",
+      "uncertain": "It cannot be safely determined who installed them: they are kept.",
+      "protected": "Essential system, package management or Docker packages: they are never removed."
+    },
+    "usedBy_one": "Used by: {{list}}",
+    "usedBy_other": "Used by {{count}} packages: {{list}}",
+    "externalTitle": "External tools",
+    "externalHint": "The application uses them, but they are not its own: they are always kept, even if you uninstall the application.",
+    "external": {
+      "engine": "Docker Engine",
+      "cli": "Docker CLI",
+      "compose": "Docker Compose"
+    },
+    "notFound": "not found",
+    "alwaysKept": "Kept",
+    "dataTitle": "Data that is not deleted",
+    "dataHint": "Your settings and your data are kept. Nothing in Docker is touched either: images, containers, networks, volumes and Compose projects. If you want to delete these folders, do it manually.",
+    "data": {
+      "config": "Settings",
+      "state": "History and events",
+      "webData": "Window data",
+      "webCache": "Window cache"
+    },
+    "absent": "does not exist",
+    "fullSimulation": "APT simulation of the full uninstall",
+    "fullSimulationHint": "What APT would remove if you uninstalled the application with --auto-remove. It may include packages that were already unneeded before; only those installed with the application are offered here.",
+    "confirmTitle": "Uninstall?",
+    "confirmBody_one": "{{count}} package will be removed, freeing {{size}}:",
+    "confirmBody_other": "{{count}} packages will be removed, freeing {{size}}:",
+    "extra": "APT would also remove: {{list}}. You cannot continue; review the selection.",
+    "command": "Command that will run",
+    "elevationHint": "The system will ask for the administrator password (pkexec) only for this command. If you cancel, nothing is removed.",
+    "noElevation": "pkexec is not installed: the application cannot request permissions. Run this command yourself in a terminal.",
+    "simulation": "APT simulation (no changes)",
+    "keptNote": "Docker Engine, Docker CLI, Docker Compose, your data and your settings are kept. Purge is not used.",
+    "selfNote": "The application itself is uninstalled: close it when finished.",
+    "confirm": "Uninstall",
+    "removing": "Uninstalling with APT…",
+    "done_one": "{{count}} package has been uninstalled.",
+    "done_other": "{{count}} packages have been uninstalled.",
+    "doneSelf": "Docker Control Center is no longer installed: close the application.",
+    "stillInstalled": "Still installed: {{list}}."
+  },
+  "help": {
+    "title": "Help and documentation",
+    "rowHint": "A guide to every feature, without leaving the application.",
+    "toc": "Help contents",
+    "search": "Search the help",
+    "results_one": "{{count}} section contains the searched text",
+    "results_other": "{{count}} sections contain the searched text",
+    "noResults": "No section contains that text.",
+    "github": "Visit my GitHub profile"
+  },
   "errorCodes": {
     "engine_notConnected": "Not connected to Docker Engine.",
     "engine_timeout": "Docker did not respond in time.",
@@ -1919,6 +2075,10 @@
     "ipc_unavailable": "The interface is running outside the desktop application.",
     "updates_noSource": "No update source is configured.",
     "updates_invalidSource": "Invalid source: enter a GitHub \"owner/repository\" or an https:// address.",
-    "updates_insecureSource": "Only https:// addresses are accepted (or http:// to this same computer)."
+    "updates_insecureSource": "Only https:// addresses are accepted (or http:// to this same computer).",
+    "packages_cancelled": "Authentication was cancelled: nothing has been uninstalled.",
+    "packages_denied": "Administrator permissions were not granted: nothing has been uninstalled.",
+    "packages_busy": "An uninstall is already in progress.",
+    "packages_notInstalled": "The application is not installed as a .deb package: there is nothing to uninstall with APT."
   }
 }
