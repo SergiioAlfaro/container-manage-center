@@ -4,7 +4,8 @@ import { ArrowLeft, BookOpen, ChevronRight, PackageX, RotateCcw } from "lucide-r
 import { DEFAULT_CONFIG, useApp } from "@/app/store";
 import type { Language } from "@/shared/ipc/bindings/Language";
 import type { Theme } from "@/shared/ipc/bindings/Theme";
-import { LANGUAGES } from "@/shared/i18n";
+import type { Accent } from "@/shared/ipc/bindings/Accent";
+import { ACCENTS, LANGUAGE_NAMES, LANGUAGES } from "@/shared/i18n";
 import { Button, Segmented, Switch } from "@/shared/ui/controls";
 import { Dialog } from "@/shared/ui/feedback";
 import { numberFormat } from "@/shared/format";
@@ -14,6 +15,9 @@ import { DockerSettings } from "./DockerSettings";
 import { SystemSettings } from "./SystemSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
 import { Group, Row } from "./layout";
+
+/** Muestra del color en el selector (el valor de `--beacon` en el tema claro). */
+const ACCENT_SWATCH: Record<Accent, string> = { teal: "#0d8287", purple: "#7046d4" };
 
 export const MIN_RECORDS = 50;
 export const MAX_RECORDS = 10_000;
@@ -110,13 +114,36 @@ export function SettingsView() {
             options={(["system", "light", "dark"] as Theme[]).map((v) => ({ value: v, label: t(`settings.themeOptions.${v}`) }))}
           />
         </Row>
-        <Row label={t("settings.language")}>
-          <Segmented<Language>
-            label={t("settings.language")}
-            value={config.ui.language}
-            onChange={(language) => void updateConfig({ ui: { language } })}
-            options={LANGUAGES.map((v) => ({ value: v, label: t(`settings.languageNames.${v}`) }))}
+        <Row label={t("settings.accent")} hint={t("settings.accentHint")}>
+          <Segmented<Accent>
+            label={t("settings.accent")}
+            value={config.ui.accent}
+            onChange={(accent) => void updateConfig({ ui: { accent } })}
+            options={ACCENTS.map((v) => ({
+              value: v,
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <span aria-hidden data-swatch={v} className="h-3 w-3 rounded-full border border-black/10" style={{ background: ACCENT_SWATCH[v] }} />
+                  {t(`settings.accentOptions.${v}`)}
+                </span>
+              ),
+            }))}
           />
+        </Row>
+        <Row label={t("settings.language")} htmlFor="ui-language">
+          {/* Con ocho idiomas, una lista desplegable (0.9.2). Cada idioma con su propio nombre. */}
+          <select
+            id="ui-language"
+            value={config.ui.language}
+            onChange={(e) => void updateConfig({ ui: { language: e.target.value as Language } })}
+            className="h-8 min-w-[180px] rounded-md border border-line bg-surface px-2 text-[13px] text-ink outline-none hover:border-line-strong"
+          >
+            {LANGUAGES.map((v) => (
+              <option key={v} value={v} lang={v}>
+                {LANGUAGE_NAMES[v]}
+              </option>
+            ))}
+          </select>
         </Row>
       </Group>
 

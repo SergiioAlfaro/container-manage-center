@@ -5,6 +5,11 @@ export function localeOf(lang: string) {
   if (lang.startsWith("es")) return "es-ES";
   if (lang.startsWith("fr")) return "fr-FR";
   if (lang.startsWith("it")) return "it-IT";
+  // 0.9.2. Portugués de Portugal (las traducciones usan la norma europea).
+  if (lang.startsWith("ca")) return "ca-ES";
+  if (lang.startsWith("gl")) return "gl-ES";
+  if (lang.startsWith("eu")) return "eu-ES";
+  if (lang.startsWith("pt")) return "pt-PT";
   return "en-US";
 }
 

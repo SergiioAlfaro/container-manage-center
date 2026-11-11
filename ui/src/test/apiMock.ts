@@ -45,6 +45,15 @@ import type { VolumeSize } from "@/shared/ipc/bindings/VolumeSize";
 import type { VolumeSpec } from "@/shared/ipc/bindings/VolumeSpec";
 import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import { emptySpec } from "@/features/containers/specModel";
+import type { EditableConfig } from "@/shared/ipc/bindings/EditableConfig";
+import type { EditRequest } from "@/shared/ipc/bindings/EditRequest";
+import type { EditPlan } from "@/shared/ipc/bindings/EditPlan";
+import type { EditOutcome } from "@/shared/ipc/bindings/EditOutcome";
+import type { ApplyOptions } from "@/shared/ipc/bindings/ApplyOptions";
+import type { CommitPreview } from "@/shared/ipc/bindings/CommitPreview";
+import type { CommitRequest } from "@/shared/ipc/bindings/CommitRequest";
+import type { CommitResult } from "@/shared/ipc/bindings/CommitResult";
+import { pendingChanges } from "@/features/containers/edit/model";
 import type { ComposeAction } from "@/shared/ipc/bindings/ComposeAction";
 import type { ComposeConfig } from "@/shared/ipc/bindings/ComposeConfig";
 import type { ComposeEvent } from "@/shared/ipc/bindings/ComposeEvent";
@@ -102,7 +111,7 @@ export const SYSTEM_INFO: SystemInfo = {
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
 const DEFAULT_CONFIG: AppConfig = {
   version: 1,
-  ui: { theme: "system", language: "es", sidebarCollapsed: false },
+  ui: { theme: "system", language: "es", accent: "teal", sidebarCollapsed: false },
   activity: { panelOpen: false, openOnError: true, maxRecords: 500, keepHistory: true },
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
@@ -708,6 +717,124 @@ export function removalPlan(packages: string[], over: Partial<RemovalPlan> = {})
   };
 }
 
+// ---------------------------------------------------------------------------
+// 0.9.2: editar configuración y crear imagen a partir de un contenedor.
+
+export function editableConfig(over: Partial<EditableConfig> = {}): EditableConfig {
+  return {
+    id: "a1b2c3d4e5f6a7b8c9d0",
+    status: "running",
+    current: {
+      name: "web",
+      description: "",
+      restart: { name: "unlessStopped", maxRetries: 0 },
+      cpus: 1.5,
+      memoryBytes: 536_870_912,
+      memoryReservationBytes: null,
+      env: [
+        { key: "MODE", value: "prod" },
+        { key: "DB_PASSWORD", value: "s3cr3t" },
+      ],
+      ports: [{ hostIp: "", hostPort: 8080, containerPort: 80, protocol: "tcp" }],
+      mounts: [
+        { kind: "volume", source: "datos", target: "/var/lib/app", readOnly: false },
+        { kind: "bind", source: "/srv/web", target: "/usr/share/nginx/html", readOnly: true },
+      ],
+    },
+    imageEnv: [{ key: "PATH", value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" }],
+    anonymousVolumes: [],
+    otherMounts: [],
+    networks: [{ name: "bridge", id: "b0b0b0b0b0b0b0b0", ipv4: "172.17.0.2", ipv6: "", mac: "02:42:ac:11:00:02", aliases: [], fixedIpv4: "", fixedIpv6: "" }],
+    networkMode: "bridge",
+    image: "nginx:1.27",
+    imageId: "sha256:1111",
+    entrypoint: ["/docker-entrypoint.sh"],
+    command: ["nginx", "-g", "daemon off;"],
+    workingDir: "",
+    user: "",
+    hostname: "a1b2c3d4e5f6",
+    privileged: false,
+    tty: false,
+    interactive: false,
+    readOnlyRootfs: false,
+    init: false,
+    autoRemove: false,
+    capAdd: [],
+    capDrop: [],
+    extraHosts: [],
+    labels: [{ key: "maintainer", value: "NGINX Docker Maintainers" }],
+    composeProject: null,
+    swarmService: false,
+    sizeRw: 1_234,
+    hostCpus: 8,
+    hostMemory: 16_000_000_000,
+    backups: [],
+    ...over,
+  };
+}
+
+/** Plan con la misma clasificación que el backend (suficiente para la interfaz). */
+export function editPlanOf(id: string, request: EditRequest, base: EditableConfig = editableConfig()): EditPlan {
+  const pending = pendingChanges(base.current, request);
+  const needsRecreate = pending.some((p) => p.kind === "recreate");
+  const show = (v: unknown) => (v === null ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v));
+  const value = (r: EditRequest, f: string) =>
+    show(({ memory: r.memoryBytes, memoryReservation: r.memoryReservationBytes } as Record<string, unknown>)[f] ?? (r as unknown as Record<string, unknown>)[f]);
+  const all = ["name", "description", "restart", "cpus", "memory", "memoryReservation", "env", "ports", "mounts"];
+  return {
+    containerId: id,
+    name: base.current.name,
+    status: base.status,
+    changes: pending.map((p) => ({ field: p.field, kind: p.kind, reason: null, before: value(base.current, p.field), after: value(request, p.field), items: [] })),
+    kept: all.filter((f) => !pending.some((p) => p.field === f)),
+    needsRecreate,
+    issues: [],
+    blockers: [],
+    risks: needsRecreate && (base.sizeRw ?? 0) > 0 ? [{ code: "writableLayer", params: { bytes: String(base.sizeRw) } }] : [],
+    notices: [],
+    willStop: needsRecreate && base.status === "running",
+    backupName: needsRecreate ? `${base.current.name}-dcc-backup-20261111-120000` : null,
+    imageRef: needsRecreate ? base.image : null,
+    equivalent: pending.map((p) => (p.kind === "direct" ? `docker update ${base.current.name}` : `docker create --name ${request.name}`)),
+    createBody: needsRecreate ? "{}" : null,
+  };
+}
+
+export function editOutcome(over: Partial<EditOutcome> = {}): EditOutcome {
+  return {
+    containerId: "a1b2c3d4e5f6a7b8c9d0",
+    name: "web",
+    recreated: false,
+    started: true,
+    backupId: null,
+    backupName: null,
+    rolledBack: false,
+    rollbackFailed: false,
+    steps: [{ code: "update", ok: true, detail: null }],
+    error: null,
+    warnings: [],
+    ...over,
+  };
+}
+
+export function commitPreviewOf(request: CommitRequest, over: Partial<CommitPreview> = {}): CommitPreview {
+  const repo = request.repository.trim();
+  const reference = repo === "" ? null : `${repo}:${request.tag.trim() || "latest"}`;
+  return {
+    containerName: "web",
+    status: "running",
+    reference,
+    issues: [],
+    existingImageId: null,
+    excludedMounts: [
+      { kind: "volume", source: "datos", target: "/var/lib/app" },
+      { kind: "bind", source: "/srv/web", target: "/usr/share/nginx/html" },
+    ],
+    equivalent: `docker commit web ${reference ?? ""}`.trim(),
+    ...over,
+  };
+}
+
 export const api = {
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
@@ -729,6 +856,12 @@ export const api = {
     exitCode: a === "stop" ? 0 : null,
   })),
   containerRemove: vi.fn(async (_id: string, _n: string | null, _f: boolean, _v: boolean) => {}),
+  containerEditConfig: vi.fn(async (_id: string): Promise<EditableConfig> => editableConfig()),
+  containerEditPlan: vi.fn(async (id: string, request: EditRequest): Promise<EditPlan> => editPlanOf(id, request)),
+  containerEditApply: vi.fn(async (_id: string, request: EditRequest, _o: ApplyOptions): Promise<EditOutcome> => editOutcome({ name: request.name })),
+  containerRestoreBackup: vi.fn(async (_id: string, _start: boolean): Promise<EditOutcome> => editOutcome({ steps: [{ code: "rename", ok: true, detail: null }] })),
+  containerCommitPreview: vi.fn(async (_id: string, request: CommitRequest): Promise<CommitPreview> => commitPreviewOf(request)),
+  containerCommit: vi.fn(async (_id: string, request: CommitRequest): Promise<CommitResult> => ({ imageId: "sha256:c0mm17c0mm17c0mm17", reference: `${request.repository}:${request.tag || "latest"}`, replacedImageId: null })),
   imagesList: vi.fn(async () => images),
   containerPreview: vi.fn(async (spec: ContainerSpec): Promise<SpecPreview> => previewOf(spec)),
   containerCreate: vi.fn(async (spec: ContainerSpec, start: boolean): Promise<CreateResult> => ({

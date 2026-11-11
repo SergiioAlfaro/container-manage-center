@@ -1,0 +1,2367 @@
+{
+  "app": {
+    "name": "Docker Control Center",
+    "startupWarning": "Abioko abisua"
+  },
+  "nav": {
+    "label": "Nabigazio nagusia",
+    "collapse": "Tolestu alboko barra",
+    "expand": "Zabaldu alboko barra",
+    "groups": {
+      "resources": "Baliabideak",
+      "orchestration": "Orkestrazioa",
+      "tools": "Tresnak",
+      "monitoring": "Gainbegiratzea"
+    }
+  },
+  "sections": {
+    "dashboard": {
+      "title": "Arbela",
+      "description": "Docker Engineren eta zure baliabideen egoera orokorra."
+    },
+    "containers": {
+      "title": "Edukiontziak",
+      "description": "Sortu, abiarazi, gelditu eta ikuskatu edukiontziak."
+    },
+    "images": {
+      "title": "Irudiak",
+      "description": "Deskargatu, eraiki, etiketatu eta ezabatu irudiak."
+    },
+    "networks": {
+      "title": "Sareak",
+      "description": "Kudeatu sareak eta konektatu edukiontziak elkarren artean.",
+      "planned": [
+        "bridge, host, none, overlay eta macvlan sareak",
+        "Azpisareak, atebideak eta helbide-tarteak",
+        "Edukiontziak konektatzea eta deskonektatzea"
+      ],
+      "phase": 5
+    },
+    "volumes": {
+      "title": "Bolumenak",
+      "description": "Dockerrek kudeatutako biltegiratzea.",
+      "planned": [
+        "Bolumenak zerrendatzea, sortzea eta ikuskatzea",
+        "Bolumen bakoitza erabiltzen duten edukiontziak",
+        "Abisua erabiltzen ari diren bolumenak ezabatu aurretik"
+      ],
+      "phase": 6
+    },
+    "binds": {
+      "title": "Lotutako direktorioak",
+      "description": "Zure sistemako karpetak, edukiontzien barruan muntatuta (bind mounts).",
+      "planned": [
+        "Lotura bakoitzaren jatorrizko eta helburuko bideak",
+        "Direktorio bakoitza erabiltzen duten edukiontziak",
+        "Irakurtzeko soilik edo irakurtzeko eta idazteko muntaketak",
+        "Karpetak fitxategi-arakatzailearekin hautatzea"
+      ],
+      "phase": 6
+    },
+    "compose": {
+      "title": "Docker Compose",
+      "description": "YAMLn definitutako edukiontzi anitzeko proiektuak.",
+      "planned": [
+        "Proiektuak inportatzea eta sortzea",
+        "YAML editorea, aurretiazko balidazioarekin",
+        "Zerbitzu bakoitzaren abioa, gelditzea, berreraikitzea eta erregistroak"
+      ],
+      "phase": 7
+    },
+    "terminals": {
+      "title": "Terminalak",
+      "description": "Hainbat terminal aldi berean, exekutatzen ari diren edukiontzietan."
+    },
+    "events": {
+      "title": "Gertaerak eta erregistroak",
+      "description": "Dockerren gertaerak denbora errealean eta eragiketen historia."
+    },
+    "settings": {
+      "title": "Konfigurazioa",
+      "description": "Aplikazioaren hobespenak."
+    }
+  },
+  "pending": {
+    "phase": "{{phase}}. fasetik aurrera erabilgarri",
+    "intro": "Atal hau oraindik ez dago Dockerrekin konektatuta. Inplementatzen denean, hau egin ahal izango da:"
+  },
+  "activity": {
+    "title": "Jarduera",
+    "subtitle": "Dockerren gainean exekutatutako eragiketak",
+    "open": "Ireki jarduera-panela",
+    "close": "Itxi jarduera-panela",
+    "shortcut": "Ktrl+Maius+A",
+    "running": "{{count}} abian",
+    "failed_one": "Errore {{count}}",
+    "failed_other": "{{count}} errore",
+    "search": "Bilatu komandoak, baliabideak edo eragiketak",
+    "filterCategory": "Arloa",
+    "filterStatus": "Egoera",
+    "all": "Guztiak",
+    "allStatus": "Guztiak",
+    "clear": "Garbitu historia",
+    "clearHint": "Ikusten den historia husten du. Abian dauden eragiketak mantentzen dira.",
+    "emptyTitle": "Oraindik ez dago eragiketarik",
+    "emptyBody": "Aplikazioak Dockerren gainean egiten duen ekintza bakoitza hemen agertuko da, bere komando baliokidearekin, egoerarekin eta emaitzarekin.",
+    "noMatches": "Ez dago iragazkiekin bat datorren eragiketarik.",
+    "resetFilters": "Kendu iragazkiak",
+    "via": {
+      "api": "API",
+      "cli": "CLI",
+      "app": "APP"
+    },
+    "viaLong": {
+      "api": "Docker Engine APIa",
+      "cli": "CLI prozesua",
+      "app": "Aplikazioaren eragiketa"
+    },
+    "executed": "Exekutatutako eragiketa",
+    "executedCommand": "Exekutatutako komandoa",
+    "equivalent": "Komando baliokidea",
+    "equivalentNote": "Orientazio-itzulpena da. Eragiketa Docker Engine APIaren bidez egin da, ez komando hau exekutatuz.",
+    "noEquivalent": "Eragiketa honek ez du docker komando baliokide zehatzik.",
+    "endpoint": "Socketa",
+    "requestBody": "Eskaeraren gorputza",
+    "stdout": "Irteera estandarra",
+    "stderr": "Errore-irteera",
+    "error": "Errorea",
+    "summary": "Emaitza",
+    "httpStatus": "HTTP kodea",
+    "exitCode": "Irteera-kodea",
+    "started": "Hasiera",
+    "finished": "Amaiera",
+    "duration": "Iraupena",
+    "truncated": "Irteera moztuta dago: {{total}} bytetatik lehen {{shown}}ak erakusten dira.",
+    "copy": "Kopiatu",
+    "copied": "Kopiatuta",
+    "copyFailed": "Ezin izan da kopiatu",
+    "details": "Xehetasunak",
+    "status": {
+      "running": "Abian",
+      "succeeded": "Zuzena",
+      "failed": "Errorea",
+      "cancelled": "Etenda"
+    },
+    "category": {
+      "system": "Sistema",
+      "container": "Edukiontziak",
+      "image": "Irudiak",
+      "network": "Sareak",
+      "volume": "Bolumenak",
+      "bind": "Lotutako direktorioak",
+      "compose": "Compose"
+    },
+    "loadError": "Ezin izan da jarduera-historia kargatu: {{message}}",
+    "executedApp": "Aplikazioaren eragiketa"
+  },
+  "settings": {
+    "appearance": "Itxura",
+    "theme": "Gaia",
+    "themeOptions": {
+      "system": "Sistemarena",
+      "light": "Argia",
+      "dark": "Iluna"
+    },
+    "language": "Hizkuntza",
+    "activityPanel": "Jarduera-panela",
+    "openOnError": "Ireki panela eragiketa batek huts egiten duenean",
+    "openOnErrorHint": "Errorea erakusten du, zuk bilatu beharrik gabe.",
+    "maxRecords": "Gordetako eragiketak",
+    "maxRecordsHint": "{{min}} eta {{max}} artean. Zaharrenak baztertu egiten dira.",
+    "saveError": "Ezin izan da konfigurazioa gorde: {{message}}",
+    "saved": "Gordeta",
+    "shortcuts": "Laster-teklak",
+    "shortcutSidebar": "Tolestu edo zabaldu alboko barra",
+    "shortcutActivity": "Ireki edo itxi jarduera-panela",
+    "keepHistory": "Gorde historia saioen artean",
+    "keepHistoryHint": "Eragiketak (gorputzik, komandorik eta irteerarik gabe, sekretuak izan ditzaketelako) eta Dockerren gertaerak diskoan gordetzen ditu, Gertaerak eta erregistroak atalean kontsultatzeko.",
+    "reset": "Berrezarri",
+    "resetLabel": "Berrezarri hobespenak",
+    "resetHint": "Itxuraren, jarduera-panelaren eta eguneratzeen hasierako balioetara itzultzen da. Ez ditu aldatzen Dockerrekiko konexioa eta Compose proiektuen zerrenda.",
+    "resetButton": "Berrezarri",
+    "resetConfirmTitle": "Hobespenak berrezarri nahi dituzu?",
+    "resetConfirmBody": "Gaia, hizkuntza, jarduera-panela, historia eta eguneratzeak hasierako balioetara itzultzen dira. Dockerrekiko konexioa, Compose proiektuak eta lehendik gordetako historia ez dira aldatzen.",
+    "maintenance": "Mantentzea eta laguntza",
+    "open": "Ireki",
+    "back": "Konfigurazioa",
+    "accent": "Kolore nagusia",
+    "accentHint": "Berehala aplikatzen da botoietan, hautapenean, adierazleetan eta nabigazioan.",
+    "accentOptions": {
+      "teal": "Berde urdinxka",
+      "purple": "Morea"
+    }
+  },
+  "common": {
+    "dismiss": "Itxi abisua",
+    "unknown": "Ezezaguna",
+    "loading": "Kargatzen…",
+    "retry": "Saiatu berriro",
+    "yes": "Bai",
+    "no": "Ez",
+    "cancel": "Utzi",
+    "close": "Itxi"
+  },
+  "ops": {
+    "system": {
+      "ping": "Egiaztatu konexioa",
+      "version": "Kontsultatu bertsioa",
+      "info": "Kontsultatu sistemaren informazioa"
+    },
+    "container": {
+      "list": "Zerrendatu edukiontziak",
+      "start": "Abiarazi edukiontzia",
+      "stop": "Gelditu edukiontzia",
+      "restart": "Berrabiarazi edukiontzia",
+      "pause": "Pausatu edukiontzia",
+      "unpause": "Berrekin edukiontziari",
+      "remove": "Ezabatu edukiontzia",
+      "state": "Egiaztatu edukiontziaren egoera",
+      "create": "Sortu edukiontzia",
+      "inspect": "Ikuskatu edukiontzia",
+      "logs": "Jarraitu erregistroak",
+      "stats": "Jarraitu estatistikak",
+      "exec": "Terminal-saioa",
+      "exec_create": "Prestatu terminala",
+      "exec_inspect": "Egiaztatu terminalaren amaiera",
+      "exec_cleanup": "Amaitu terminalaren prozesuak",
+      "rename": "Aldatu edukiontziaren izena",
+      "update": "Eguneratu baliabideak edo berrabiaraztea",
+      "recreate": "Birsortu edukiontzia",
+      "restoreBackup": "Leheneratu edukiontziaren kopia",
+      "commit": "Sortu irudia edukiontzi batetik"
+    },
+    "image": {
+      "list": "Zerrendatu irudiak",
+      "inspect": "Ikuskatu irudia",
+      "pull": "Deskargatu irudia",
+      "build": "Eraiki irudia",
+      "history": "Kontsultatu geruzak",
+      "tag": "Etiketatu irudia",
+      "remove": "Ezabatu irudia",
+      "prune": "Garbitu irudiak",
+      "search": "Bilatu irudiak"
+    },
+    "compose": {
+      "version": "Kontsultatu Composeren bertsioa",
+      "config": "Irakurri Composeren konfigurazioa",
+      "up": "Hedatu proiektua",
+      "down": "Ezabatu proiektua",
+      "start": "Abiarazi proiektua",
+      "stop": "Gelditu proiektua",
+      "restart": "Berrabiarazi proiektua",
+      "pull": "Deskargatu proiektuaren irudiak",
+      "build": "Eraiki proiektuaren irudiak",
+      "logs": "Proiektuaren erregistroak"
+    },
+    "network": {
+      "list": "Zerrendatu sareak",
+      "inspect": "Ikuskatu sarea",
+      "create": "Sortu sarea",
+      "remove": "Ezabatu sarea",
+      "prune": "Garbitu sareak",
+      "connect": "Konektatu edukiontzia sarera",
+      "disconnect": "Deskonektatu edukiontzia saretik"
+    },
+    "volume": {
+      "list": "Zerrendatu bolumenak",
+      "inspect": "Ikuskatu bolumena",
+      "usage": "Neurtu bolumenak",
+      "create": "Sortu bolumena",
+      "remove": "Ezabatu bolumena",
+      "prune": "Garbitu bolumenak"
+    },
+    "registry": {
+      "credentials": "Lortu erregistroaren kredentzialak"
+    },
+    "events": {
+      "watch": "Dockerren gertaeretarako harpidetza",
+      "query": "Kontsultatu Dockerren gertaerak"
+    },
+    "packages": {
+      "query": "Kontsultatu instalatutako paketeak",
+      "simulate": "Simulatu APTrekin",
+      "remove": "Desinstalatu paketeak"
+    },
+    "ui": {
+      "language": "Aldatu hizkuntza",
+      "accent": "Aldatu kolore nagusia"
+    }
+  },
+  "conn": {
+    "connecting": "Dockerrekin konektatzen…",
+    "connected": "Docker {{version}}",
+    "disconnected": "Ez dago Dockerrekiko konexiorik",
+    "rootless": "rootless",
+    "source": {
+      "custom": "Socket pertsonalizatua",
+      "dockerHost": "DOCKER_HOST aldagaia",
+      "context": "«{{name}}» testuingurua",
+      "rootless": "Erabiltzailearen Docker rootless",
+      "system": "Sistemaren socketa"
+    },
+    "reconnect": "Konektatu berriro",
+    "reconnecting": "Konektatzen…",
+    "configure": "Konfiguratu konexioa",
+    "openDashboard": "Ikusi diagnostikoa",
+    "notConnectedTitle": "Atal honek Dockerrekiko konexioa behar du",
+    "notConnectedBody": "Ez dago Docker Enginerekiko konexiorik. Arbelak azaltzen du zergatia eta nola konpondu.",
+    "autoRetry": "Aplikazioa automatikoki saiatzen da berriro segundo gutxiro.",
+    "badgeTitle": "{{path}} socketera konektatuta"
+  },
+  "diag": {
+    "title": "Konexioaren diagnostikoa",
+    "steps": "Nola konpondu",
+    "candidates": "Egiaztatutako socketak",
+    "candidatesHint": "Bilatzen diren ordenan.",
+    "installation": "Detektatutako instalazioa",
+    "cli": "Dockerren CLIa",
+    "daemon": "Deabrua (dockerd)",
+    "rootlessTools": "Rootless tresnak",
+    "notFound": "Ez da aurkitu",
+    "yes": "Bai",
+    "no": "Ez",
+    "user": "Erabiltzailea",
+    "probe": {
+      "reachable": "Erantzuten du",
+      "missing": "Ez dago",
+      "notASocket": "Ez da socket bat",
+      "permissionDenied": "Baimena ukatuta",
+      "refused": "Inor ez dago entzuten",
+      "errorLabel": "Errorea"
+    },
+    "rootGroupWarning": "{{group}} taldeko kide izatea ordenagailu honetan administratzaile-pribilegioak edukitzearen baliokidea da. Aukera seguruagoa Docker rootless moduan erabiltzea da.",
+    "noAutoFix": "Docker Control Centerrek ez ditu sistemaren baimenak eta taldeak aldatzen: urrats hauek zuk exekutatu behar dituzu terminal batean.",
+    "problems": {
+      "noSocket": {
+        "title": "Ez da Docker Engine aurkitzen",
+        "body": "Ez dago Dockerren socketik ohiko kokapenetan."
+      },
+      "notInstalled": {
+        "title": "Badirudi Docker ez dagoela instalatuta",
+        "body": "Ez da aurkitu ez socketik, ez Dockerren CLIrik, ez deabrurik."
+      },
+      "daemonNotRunning": {
+        "title": "Docker Engine geldituta dago",
+        "body": "{{path}} socketa badago, baina ez dago bertan erantzuten duen prozesurik."
+      },
+      "permissionDenied": {
+        "title": "Ez dago Dockerren socketa erabiltzeko baimenik",
+        "body": "Zure erabiltzaileak ({{user}}) ezin du {{path}} ireki. {{owner}}:{{group}} jabearena da, {{mode}} baimenekin."
+      },
+      "unsupportedHost": {
+        "title": "Dockerren konexio bateraezina",
+        "body": "DOCKER_HOST aldagaiak edo testuinguru aktiboak {{host}} adierazten dute. Bertsio honek tokiko Unix socketak soilik onartzen ditu."
+      },
+      "invalidPath": {
+        "title": "Konfiguratutako bidea ez da baliozkoa",
+        "body": "«{{path}}»: {{reason}}."
+      },
+      "notASocket": {
+        "title": "Bidea ez da socket bat",
+        "body": "{{path}} badago, baina ez da Unix socket bat."
+      },
+      "notDocker": {
+        "title": "Socketak ez du Dockerrek bezala erantzuten",
+        "body": "{{path}} socketak konexioak onartzen ditu, baina ez du Docker Engine APIak bezala erantzuten: {{message}}"
+      },
+      "timeout": {
+        "title": "Dockerrek ez du garaiz erantzuten",
+        "body": "{{path}} socketak ez du 5 segundotan erantzun. Baliteke deabrua blokeatuta edo oso kargatuta egotea."
+      },
+      "apiTooOld": {
+        "title": "Dockerren bertsioa zaharregia da",
+        "body": "Docker Enginek {{api}} APIa eskaintzen du, eta {{min}} edo berriagoa behar da (Docker 20.10 edo berriagoa)."
+      },
+      "other": {
+        "title": "Errorea Dockerrekin konektatzean",
+        "body": "{{message}}"
+      }
+    },
+    "stepsText": {
+      "install": "Instalatu Docker Engine. Debian edo Ubunturen paketeekin:",
+      "installOfficial": "Edo jarraitu Debian/Ubunturako instalazio-gida ofiziala, docs.docker.com/engine/install helbidean.",
+      "startSystem": "Abiarazi Docker zerbitzua eta gaitu ordenagailua abiaraztean:",
+      "startRootless": "Docker rootless erabiltzen baduzu, abiarazi zure erabiltzailearen zerbitzua:",
+      "checkStatus": "Abiarazten ez bada, berrikusi haren egoera eta azken mezuak:",
+      "addGroup": "Gehitu zure erabiltzailea {{group}} taldera:",
+      "relogin": "Ondoren, itxi saioa eta sartu berriro, taldea aktiba dadin.",
+      "alreadyInGroup": "Dagoeneko {{group}} taldeko kidea zara, baina uneko saioak oraindik ez du aktibo. Itxi saioa eta sartu berriro, edo berrabiarazi ordenagailua.",
+      "ownerUnexpected": "Socketa ez da docker taldearena. Berrikusi docker.socket zerbitzuaren SocketGroup aukera.",
+      "rootlessAlternative": "Pribilegiorik gabeko aukera: Docker rootless moduan (docs.docker.com/engine/security/rootless).",
+      "unsetHost": "Tokiko socketa erabiltzeko, kendu DOCKER_HOST zure ingurunetik edo itzuli testuinguru lehenetsira:",
+      "customPath": "Edo adierazi Unix socket zehatz bat Konfigurazioa atalean, Dockerrekiko konexioa sekzioan.",
+      "fixPath": "Zuzendu bidea Konfigurazioa atalean, Dockerrekiko konexioa sekzioan. Bide absolutua izan behar du, adibidez /var/run/docker.sock.",
+      "checkPath": "Egiaztatu bidea Dockerren socketari dagokiola eta ez beste zerbitzu bati.",
+      "upgrade": "Eguneratu Docker Engine 20.10 bertsiora edo berriago batera.",
+      "restart": "Berrabiarazi Docker zerbitzua:",
+      "retry": "Konpondu duzunean, sakatu «Konektatu berriro». Aplikazioa ere bere kabuz saiatzen da berriro."
+    }
+  },
+  "dashboard": {
+    "refresh": "Eguneratu",
+    "engine": "Docker Engine",
+    "containers": "Edukiontziak",
+    "images": "Irudiak",
+    "running": "Exekutatzen",
+    "paused": "Pausatuta",
+    "stopped": "Geldituta",
+    "viewContainers": "Ikusi edukiontziak",
+    "viewImages": "Ikusi irudiak",
+    "host": "Ordenagailua",
+    "hostName": "Izena",
+    "os": "Sistema eragilea",
+    "kernel": "Nukleoa",
+    "arch": "Arkitektura",
+    "cpus": "PUZ",
+    "memory": "Memoria",
+    "runtime": "Biltegiratzea eta exekuzioa",
+    "storageDriver": "Biltegiratzea",
+    "rootDir": "Datu-direktorioa",
+    "cgroup": "cgroups",
+    "logging": "Erregistroak",
+    "api": "API",
+    "minApi": "Gutxieneko APIa",
+    "go": "Go",
+    "commit": "Commit",
+    "warnings": "Deabruaren abisuak",
+    "swarm": "Swarm aktibo",
+    "connection": "Konexioa",
+    "socket": "Socketa",
+    "source": "Jatorria",
+    "loadError": "Ezin izan da Dockerren informazioa lortu: {{message}}",
+    "imagesHint": "tokiko irudi"
+  },
+  "containers": {
+    "refresh": "Eguneratu",
+    "search": "Bilatu izenaren, irudiaren edo IDaren arabera",
+    "filter": {
+      "all": "Guztiak",
+      "running": "Exekutatzen",
+      "stopped": "Geldituta"
+    },
+    "count_one": "Edukiontzi {{count}}",
+    "count_other": "{{count}} edukiontzi",
+    "columns": {
+      "name": "Izena",
+      "image": "Irudia",
+      "status": "Egoera",
+      "ports": "Atakak",
+      "created": "Sortua",
+      "actions": "Ekintzak"
+    },
+    "state": {
+      "created": "Sortuta",
+      "running": "Exekutatzen",
+      "paused": "Pausatuta",
+      "restarting": "Berrabiarazten",
+      "exited": "Geldituta",
+      "removing": "Ezabatzen",
+      "dead": "Hilda"
+    },
+    "action": {
+      "start": "Abiarazi",
+      "stop": "Gelditu",
+      "restart": "Berrabiarazi",
+      "pause": "Pausatu",
+      "unpause": "Berrekin",
+      "remove": "Ezabatu"
+    },
+    "actionOn": "{{action}}: {{name}}",
+    "failed": "{{action}}: {{name}}: {{message}}",
+    "empty": "Ez dago edukiontzirik",
+    "emptyBody": "Dockerren dauden edukiontziak hemen agertuko dira. Erabili «Sortu edukiontzia» tokiko irudi batetik bat sortzeko.",
+    "noMatches": "Ez dago bilaketarekin bat datorren edukiontzirik.",
+    "loadError": "Ezin izan da edukiontzien zerrenda lortu: {{message}}",
+    "removeTitle": "Ezabatu {{name}}",
+    "removeBody": "Edukiontzia eta haren idazketa-geruza ezabatuko dira. Ezin da desegin.",
+    "removeRunning": "Edukiontzia {{state}} dago. Ezabatzeko, behartuta gelditu behar da.",
+    "removeForce": "Behartuta gelditu eta ezabatu",
+    "removeVolumes": "Ezabatu baita haren bolumen anonimoak ere",
+    "removeVolumesHint": "Izena duten bolumenak eta lotutako direktorioak ez dira ukitzen.",
+    "cancel": "Utzi",
+    "confirmRemove": "Ezabatu edukiontzia",
+    "dismiss": "Itxi",
+    "create": "Sortu edukiontzia",
+    "openDetail": "Ireki {{name}}",
+    "moreActions": "{{name}} edukiontziaren ekintza gehiago"
+  },
+  "images": {
+    "refresh": "Eguneratu",
+    "search": "Bilatu etiketaren edo IDaren arabera",
+    "filter": {
+      "all": "Guztiak",
+      "used": "Erabiltzen",
+      "unused": "Erabili gabe",
+      "dangling": "Etiketarik gabe"
+    },
+    "count_one": "Irudi {{count}}",
+    "count_other": "{{count}} irudi",
+    "columns": {
+      "tags": "Irudia",
+      "id": "ID",
+      "size": "Tamaina",
+      "created": "Sortua",
+      "usage": "Erabilera",
+      "actions": "Ekintzak"
+    },
+    "dangling": "Etiketarik gabe",
+    "usedBy_one": "Edukiontzi {{count}}",
+    "usedBy_other": "{{count}} edukiontzi",
+    "unused": "Erabili gabe",
+    "empty": "Ez dago tokiko irudirik",
+    "emptyBody": "Deskargatu irudi bat erregistro batetik edo eraiki bat Dockerfile batetik abiatuta.",
+    "noMatches": "Ez dago bilaketarekin bat datorren irudirik.",
+    "loadError": "Ezin izan da irudien zerrenda lortu: {{message}}",
+    "pull": "Deskargatu irudia",
+    "searchHub": "Bilatu Docker Hub-en",
+    "build": "Eraiki irudia",
+    "prune": "Garbitu",
+    "buildRunning": "Eraikuntza bat dago abian.",
+    "buildShow": "Ikusi aurrerapena",
+    "open": "Ireki {{name}}",
+    "createContainer": "Sortu edukiontzia {{name}} irudiarekin",
+    "tagAction": "Etiketatu {{name}}",
+    "removeAction": "Ezabatu {{name}}"
+  },
+  "settingsDocker": {
+    "title": "Dockerrekiko konexioa",
+    "mode": "Konexio modua",
+    "modeAuto": "Automatikoa",
+    "modeCustom": "Socket pertsonalizatua",
+    "autoHint": "DOCKER_HOST, Dockerren testuinguru aktiboa, zure erabiltzailearen rootless socketa eta sistemaren socketa bilatzen ditu, ordena horretan.",
+    "customHint": "Unix socket baten bide absolutua, adibidez /run/user/1000/docker.sock.",
+    "socketPath": "Socketaren bidea",
+    "pathRequired": "Adierazi socketaren bidea.",
+    "test": "Probatu konexioa",
+    "testing": "Probatzen…",
+    "save": "Gorde eta konektatu",
+    "testOk": "Konexio zuzena: Docker {{version}}, {{path}} socketean",
+    "testFailed": "Ezin izan da konektatu: {{reason}}",
+    "current": "Uneko konexioa",
+    "none": "Konexiorik gabe",
+    "rootless": "Rootless modua",
+    "versions": "Bertsioak",
+    "engineVersion": "Docker Engine",
+    "apiVersion": "API",
+    "compose": "Docker Compose",
+    "composeCheck": "Egiaztatu",
+    "composeChecking": "Egiaztatzen…",
+    "composeNotChecked": "Egiaztatu gabe",
+    "composeError": "Errorea: {{message}}",
+    "composeHint": "«docker compose version» exekutatuz lortzen da. Docker Compose atalerako behar da (7. fasea); aplikazioaren gainerakoak hura gabe funtzionatzen du.",
+    "security": "Dockerren socketerako sarbidea administratzaile-pribilegioen baliokidea da. Aplikazioak ez ditu inoiz sistemaren baimenak eta taldeak aldatzen.",
+    "composePlugin": "{{version}} («docker compose» plugina)",
+    "composeStandalone": "{{version}} («docker-compose» bitarra)",
+    "composeNotInstalled": "Instalatu gabe",
+    "composeUnusable": "Plugina {{path}} bidean dago, baina Dockerren CLIak ez du erabiltzen",
+    "composeLegacy": "Compose v1 {{version}} bakarrik, ez da onartzen",
+    "composeUnrecognized": "Erantzun ezezaguna: {{output}}",
+    "composeInstall": "Instalatu Docker Compose v2 (Debian 12k v1 bakarrik eskaintzen du, eta ez da onartzen: erabili Dockerren biltegi ofiziala):",
+    "composeInstallOn": {
+      "debian13": "Debian 13:",
+      "ubuntu": "Ubuntu 22.04 edo berriagoa:",
+      "dockerRepo": "Dockerren biltegi ofizialarekin:"
+    }
+  },
+  "crash": {
+    "title": "Interfazeak errore bat aurkitu du",
+    "body": "Dockerrek ez du kalterik izan. Leihoa berriro kargatu dezakezu; errorea errepikatzen bada, kopiatu testu hau jakinarazteko.",
+    "reload": "Kargatu berriro leihoa"
+  },
+  "restart": {
+    "no": "Ez berrabiarazi",
+    "always": "Beti",
+    "unlessStopped": "Eskuz gelditu ez bada",
+    "onFailure": "Huts egiten badu"
+  },
+  "detail": {
+    "back": "Edukiontziak",
+    "duplicate": "Bikoiztu",
+    "duplicateFailed": "Ezin izan da konfigurazioa irakurri hura bikoizteko: {{message}}",
+    "loadError": "Ezin izan da edukiontzia ikuskatu: {{message}}",
+    "notFound": "{{name}} edukiontzia jada ez dago Dockerren.",
+    "tabs": {
+      "summary": "Laburpena",
+      "logs": "Erregistroak",
+      "terminal": "Terminala",
+      "stats": "Estatistikak",
+      "inspect": "JSON ikuskapena"
+    },
+    "s": {
+      "general": "Orokorra",
+      "process": "Prozesua",
+      "ports": "Argitaratutako atakak",
+      "restartResources": "Berrabiaraztea eta baliabideak",
+      "env": "Ingurune-aldagaiak",
+      "networks": "Sareak",
+      "mounts": "Biltegiratzea",
+      "labels": "Etiketak"
+    },
+    "f": {
+      "id": "ID",
+      "image": "Irudia",
+      "created": "Sortua",
+      "started": "Abiarazia",
+      "finished": "Amaitua",
+      "exitCode": "Irteera-kodea",
+      "oom": "Memoria faltagatik amaitua",
+      "error": "Errorea",
+      "health": "Osasuna",
+      "pid": "PID",
+      "restartCount": "Berrabiarazteak",
+      "compose": "Compose proiektua",
+      "entrypoint": "Sarrera-puntua",
+      "command": "Komandoa",
+      "workingDir": "Laneko direktorioa",
+      "user": "Erabiltzailea",
+      "hostname": "Ostalari-izena",
+      "tty": "TTY",
+      "stdin": "STDIN irekita",
+      "restart": "Berrabiarazte-politika",
+      "cpus": "PUZ",
+      "memory": "Memoria",
+      "memoryReservation": "Memoria-erreserba",
+      "flags": "Aukerak",
+      "network": "Sarea",
+      "gateway": "Atebidea"
+    },
+    "imageDefault": "irudiarena",
+    "maxRetries_one": "gehienez saiakera {{count}}",
+    "maxRetries_other": "gehienez {{count}} saiakera",
+    "unlimited": "mugarik gabe",
+    "noPorts": "Ez du atakarik argitaratzen ordenagailuan.",
+    "exposedOnly": "Agerian baina argitaratu gabe: {{ports}}",
+    "noEnv": "Aldagairik ez.",
+    "revealSecrets_one": "Erakutsi ezkutatutako balio {{count}}",
+    "revealSecrets_other": "Erakutsi ezkutatutako {{count}} balio",
+    "hideSecrets": "Ezkutatu balio sentikorrak",
+    "hidden": "ezkutatuta",
+    "reveal": "Erakutsi balioa",
+    "hide": "Ezkutatu balioa",
+    "networkMode": "Sare-modua: {{mode}}",
+    "noNetworks": "Sarerik ez.",
+    "noMounts": "Muntaketarik ez.",
+    "readOnly": "irakurtzeko soilik",
+    "noLabels": "Etiketarik ez.",
+    "inspectHint": "docker inspect {{name}} komandoaren irteera osoa, Dockerrek itzultzen duen bezala."
+  },
+  "logs": {
+    "tail": "Azkenak",
+    "all": "Guztiak",
+    "lastN_one": "Lerro {{count}}",
+    "lastN_other": "{{count}} lerro",
+    "filter": "Iragazi lerroak",
+    "timestamps": "Denbora-zigiluak",
+    "follow": "Jarraitu amaieran",
+    "stop": "Utzi jarraitzeari",
+    "reopen": "Ireki berriro",
+    "live": "Erregistroak zuzenean jasotzen",
+    "count_one": "Lerro {{count}}",
+    "count_other": "{{count}} lerro",
+    "dropped": "Azken {{max}} lerroak bakarrik erakusten dira; aurrekoak baztertu egin dira.",
+    "opening": "Erregistroak irekitzen…",
+    "empty": "Oraindik ez dago irteerarik.",
+    "noMatches": "Ez dago iragazkiarekin bat datorren lerrorik."
+  },
+  "terminal": {
+    "shell": "Shella",
+    "auto": "Automatikoa",
+    "open": "Ireki terminala",
+    "reopen": "Ireki beste saio bat",
+    "close": "Itxi saioa",
+    "hint": "Shell bat exekutatzen du docker exec -it erabiliz. Saioa ixtean shella amaitzen da.",
+    "live": "Saioa irekita",
+    "notRunning": "Edukiontzia ez dago exekutatzen: abiarazi terminal bat irekitzeko."
+  },
+  "terminals": {
+    "new": "Terminal berria",
+    "newTitle": "Terminal berria",
+    "openSession": "Ireki terminala",
+    "closeAll": "Itxi guztiak",
+    "closeAllTitle": "Terminal guztiak itxi nahi dituzu?",
+    "closeAllBody_one": "Saio {{count}} itxiko da: haren shella eta edukiontzi barruan utzitako prozesuak amaituko dira. Edukiontziak exekutatzen jarraituko du.",
+    "closeAllBody_other": "{{count}} saio itxiko dira: haien shellak eta edukiontzien barruan utzitako prozesuak amaituko dira. Edukiontziek exekutatzen jarraituko dute.",
+    "count_one": "Saio {{count}} · {{live}} konektatuta",
+    "count_other": "{{count}} saio · {{live}} konektatuta",
+    "hint": "Terminal bakoitza docker exec -it independente bat da. Irekita jarraitzen dute atalez aldatzean, eta aplikaziotik irtetean ixten dira.",
+    "emptyTitle": "Ez dago terminal irekirik",
+    "emptyHint": "Ireki terminal bat exekutatzen ari den edozein edukiontzitan. Hainbat izan ditzakezu aldi berean, edukiontzi berean edo beste batzuetan.",
+    "full": "Gehienez {{max}} terminal ireki daitezke: itxi bat beste bat irekitzeko.",
+    "containerField": "Exekutatzen ari den edukiontzia",
+    "noRunning": "Ez dago edukiontzirik exekutatzen: abiarazi bat terminal bat irekitzeko.",
+    "sessionName": "Saioaren izena",
+    "nameHint": "Aukerakoa. Hutsik uzten baduzu, edukiontziaren izena erabiliko da. Gero alda dezakezu.",
+    "nameProblem": {
+      "empty": "Izenak ezin du hutsik egon.",
+      "long": "Erabili gehienez {{max}} karaktere.",
+      "control": "Izenak ezin du kontrol-karaktererik izan."
+    },
+    "paneLabel": "{{name}} terminala, {{container}} edukiontzian",
+    "container": "{{name}} edukiontzia",
+    "state": {
+      "opening": "Konektatzen…",
+      "open": "Konektatuta",
+      "ended": "Amaituta",
+      "error": "Errorea"
+    },
+    "after": {
+      "stopped": "Edukiontzia geldituta",
+      "removed": "Edukiontzia ezabatuta"
+    },
+    "rename": "Aldatu saioaren izena",
+    "reopen": "Ireki berriro saioa",
+    "reopenGone": "Ezin da berriro ireki: edukiontzia ezabatu egin da",
+    "maximize": "Maximizatu",
+    "restore": "Leheneratu sareta",
+    "close": "Itxi saioa",
+    "splitColumns": "Aldatu zutabeen tamaina",
+    "splitRows": "Aldatu errenkaden tamaina"
+  },
+  "stats": {
+    "stop": "Utzi jasotzeari",
+    "reopen": "Ireki berriro",
+    "live": "Estatistikak jasotzen",
+    "samples_one": "Lagin {{count}}",
+    "samples_other": "{{count}} lagin",
+    "notRunning": "Edukiontzia ez dago exekutatzen: ez dago estatistikarik erakusteko.",
+    "cpu": "PUZ",
+    "cpuSub_one": "PUZ {{count}} erabilgarri",
+    "cpuSub_other": "{{count}} PUZ erabilgarri",
+    "cpuTrend": "PUZaren erabileraren bilakaera",
+    "memory": "Memoria",
+    "memorySub": "{{limit}}-tik · {{pct}}",
+    "memoryTrend": "Memoria-erabileraren bilakaera",
+    "pids": "Prozesuak",
+    "net": "Sarea (jasoa / bidalia)",
+    "block": "Diskoa",
+    "read": "irakurria",
+    "written": "idatzia",
+    "formulaHint": "Balioak docker stats-ek bezala kalkulatzen dira: PUZa PUZ bakarraren gaineko ehunekoa da, eta memoriari orrien cachea kentzen zaio."
+  },
+  "stream": {
+    "opening": "Irekitzen…",
+    "openFailed": "Ezin izan da ireki: {{message}}",
+    "failed": "Fluxua errore batekin amaitu da: {{message}}",
+    "idle": "Itxita."
+  },
+  "create": {
+    "title": "Sortu edukiontzia",
+    "titleDuplicate": "Bikoiztu {{name}}",
+    "notesTitle": "Jatorrizkoaren ezarpen batzuk ez dira eramaten:",
+    "tabs": {
+      "general": "Orokorra",
+      "env": "Ingurunea",
+      "network": "Sarea",
+      "storage": "Biltegiratzea",
+      "resources": "Baliabideak",
+      "advanced": "Aurreratua"
+    },
+    "f": {
+      "name": "Izena",
+      "image": "Irudia",
+      "command": "Komandoa",
+      "entrypoint": "Sarrera-puntua",
+      "workingDir": "Laneko direktorioa",
+      "network": "Sarea",
+      "hostname": "Ostalari-izena",
+      "hostIp": "Ordenagailuaren IPa",
+      "hostPort": "Ordenagailuaren ataka",
+      "containerPort": "Edukiontziaren ataka",
+      "protocol": "Protokoloa",
+      "publishAll": "Argitaratu agerian dauden ataka guztiak ataka libreetan",
+      "mountKind": "Muntaketa mota",
+      "readOnly": "Irakurtzeko soilik",
+      "volumeName": "Bolumena",
+      "hostPath": "Ordenagailuko karpeta",
+      "target": "Bidea edukiontzian",
+      "cpus": "PUZ",
+      "memory": "Memoria-muga",
+      "memoryReservation": "Memoria-erreserba",
+      "unit": "Unitatea",
+      "restart": "Politika",
+      "maxRetries": "Gehienezko saiakerak",
+      "user": "Erabiltzailea",
+      "tty": "Esleitu TTY bat",
+      "interactive": "Mantendu STDIN irekita",
+      "init": "Erabili init prozesu bat",
+      "readOnlyRootfs": "Irakurtzeko soilik den erroko fitxategi-sistema",
+      "autoRemove": "Ezabatu amaitzean",
+      "privileged": "Modu pribilegiatua",
+      "capAdd": "Gehitu gaitasunak",
+      "capDrop": "Kendu gaitasunak",
+      "key": "{{n}}. gakoa",
+      "value": "{{n}}. balioa"
+    },
+    "h": {
+      "name": "Aukerakoa: hutsik uzten baduzu, Dockerrek bat sortuko du.",
+      "image": "Ordenagailu honetan egon behar du (deskargak 4. fasean iristen dira).",
+      "imageLocal": "Tokiko irudia: {{ref}}",
+      "imageReading": "Irudiaren konfigurazioa irakurtzen…",
+      "argv": "Shellean bezala zatitzen da argumentutan, komatxoekin, baina ez da shellik exekutatzen.",
+      "fromImage": "Hutsik = irudiarena: {{value}}",
+      "entrypointMulti": "Dockerrek exekutagarri bakarra onartzen du --entrypoint aukeran: gainerako elementuak komandoaren hasieran bidaltzen dira.",
+      "network": "Sareak 5. fasean kudeatzen dira.",
+      "publishAll": "--publish-all aukeraren baliokidea.",
+      "volumeName": "Hutsik = bolumen anonimoa. Ez badago, Dockerrek sortzen du.",
+      "cpus": "Adibidez 0.5 edo 2.",
+      "maxRetries": "0 = mugarik gabe.",
+      "user": "Izena edo UID[:GID]. Hutsik = irudiarena."
+    },
+    "ph": {
+      "name": "web-zerbitzaria",
+      "hostname": "ID laburra",
+      "allIps": "guztiak",
+      "anyPort": "libre bat",
+      "anonymous": "anonimoa",
+      "unlimited": "mugarik gabe"
+    },
+    "g": {
+      "process": "Prozesua",
+      "processHint": "Edukiontzia abiaraztean exekutatzen dena.",
+      "env": "Ingurune-aldagaiak",
+      "envHint": "PASSWORD edo TOKEN bezalako gakoen balioak pantailan ezkutatzen dira, baina Dockerri bere horretan bidaltzen zaizkio, eta Dockerrerako sarbidea duen edonork ikus ditzake.",
+      "labels": "Etiketak",
+      "ports": "Atakak",
+      "portsHint": "Edukiontziaren atakak ordenagailu honetan argitaratzen ditu.",
+      "hosts": "/etc/hosts sarrerak",
+      "hostsHint": "Ostalari-izena eta IPa (edo host-gateway).",
+      "mounts": "Muntaketak",
+      "mountsHint": "Dockerren bolumenak edo ordenagailu honetako karpetak (bind mounts).",
+      "limits": "Mugak",
+      "limitsHint": "Hutsik = mugarik gabe.",
+      "restart": "Berrabiaraztea",
+      "restartHint": "Zer egiten duen Dockerrek prozesu nagusia amaitzen denean.",
+      "options": "Aukerak",
+      "caps": "Nukleoaren gaitasunak",
+      "capsHint": "Komaz bereizita, adib. NET_ADMIN edo ALL."
+    },
+    "add": {
+      "env": "Gehitu aldagaia",
+      "label": "Gehitu etiketa",
+      "port": "Gehitu ataka",
+      "host": "Gehitu sarrera",
+      "mount": "Gehitu muntaketa"
+    },
+    "remove": {
+      "row": "Kendu {{n}}. errenkada",
+      "port": "Kendu {{n}}. ataka",
+      "mount": "Kendu {{n}}. muntaketa"
+    },
+    "empty": {
+      "env": "Aldagai gehigarririk ez.",
+      "labels": "Etiketarik ez.",
+      "ports": "Ez da atakarik argitaratzen.",
+      "hosts": "Sarrerarik ez.",
+      "mounts": "Muntaketarik ez."
+    },
+    "mountKind": {
+      "volume": "Bolumena",
+      "bind": "Ordenagailuko karpeta"
+    },
+    "defaultNetwork": "Lehenetsia (bridge)",
+    "addExposed": "Argitaratu agerian daudenak ({{ports}})",
+    "imageEnv_one": "Irudiak aldagai {{count}} definitzen du dagoeneko",
+    "imageEnv_other": "Irudiak {{count}} aldagai definitzen ditu dagoeneko",
+    "imageVolumes": "Irudiak bolumenak deklaratzen ditu bide hauetan: {{paths}}. Hor ezer muntatzen ez baduzu, Dockerrek bolumen anonimoak sortzen ditu.",
+    "imageNotLocal": "{{ref}} irudia ez dago ordenagailu honetan. Dockerrek ez du deskargatuko edukiontzia sortzean; deskargatu aurretik (4. fasea) edo aukeratu tokiko bat.",
+    "imageDefaultsError": "Ezin izan da irudiaren konfigurazioa irakurri: {{message}}",
+    "listError": "Ezin izan da zerrenda lortu: {{message}}",
+    "pickFolder": "Aukeratu karpeta",
+    "argsParsed": "Ondoriozko argumentuak",
+    "equivalent": "Baliokidea",
+    "apiBody": "API",
+    "equivalentHint": "Dockerren CLIko komando baliokidea. Aplikazioak ez du exekutatzen: eskaera APIra bidaltzen du eta jarduera-panelean erregistratzen du.",
+    "bodyHint": "Dockerri bidaliko zaion POST /containers/create eskaeraren gorputza.",
+    "previewing": "Egiaztatzen…",
+    "review": "Berrikuspena",
+    "noIssues": "Arazorik ez.",
+    "blocked_one": "Zuzendu errore {{count}} jarraitzeko.",
+    "blocked_other": "Zuzendu {{count}} errore jarraitzeko.",
+    "create": "Sortu",
+    "createStart": "Sortu eta abiarazi",
+    "failed": "Ezin izan da edukiontzia sortu: {{message}}",
+    "startFailed": "Edukiontzia sortu da, baina ezin izan da abiarazi: {{message}}",
+    "dockerWarning": "Dockerren abisua: {{message}}",
+    "secretsHidden_one": "Balio sentikor {{count}} ******** gisa agertzen da hemen eta jarduera-panelean; Dockerri osorik bidaltzen zaio.",
+    "secretsHidden_other": "{{count}} balio sentikor ******** gisa agertzen dira hemen eta jarduera-panelean; Dockerri osorik bidaltzen zaizkio."
+  },
+  "issues": {
+    "name": {
+      "invalid": "Izen baliogabea: erabili letrak, zenbakiak, «_», «.» edo «-», eta hasi letra edo zenbaki batekin.",
+      "required": "Izena derrigorrezkoa da.",
+      "reserved": "{{value}} Dockerren sare aurredefinitu bat da.",
+      "backupReserved": "Izen hori babeskopietarako gordeta dago («-dcc-backup-», «-dcc-replaced-»).",
+      "inUse": "Badago izen hori duen beste edukiontzi bat."
+    },
+    "image": {
+      "required": "Adierazi irudi bat.",
+      "invalid": "Irudi-erreferentzia baliogabea."
+    },
+    "argv": {
+      "nul": "Ezin du karaktere nulua izan.",
+      "unclosedQuote": "Komatxo bat itxi gabe dago.",
+      "trailingEscape": "Alderantzizko barra batekin amaitzen da, atzean karaktererik gabe."
+    },
+    "path": {
+      "notAbsolute": "Bide absolutua izan behar du (/ batekin hasi)."
+    },
+    "user": {
+      "invalid": "Erabiltzaileak ezin du zuriunerik izan."
+    },
+    "hostname": {
+      "invalid": "Ostalari-izen baliogabea (letrak, zenbakiak, «-» eta «.», gehienez 63)."
+    },
+    "env": {
+      "keyRequired": "Aldagaiaren izena falta da.",
+      "keyInvalid": "Aldagai-izen baliogabea: {{key}}",
+      "duplicate": "{{key}} errepikatuta dago; azken balioa erabiliko da."
+    },
+    "label": {
+      "keyInvalid": "Etiketa-gako baliogabea.",
+      "duplicate": "Etiketa errepikatua: {{key}}"
+    },
+    "network": {
+      "invalid": "Sare-izen baliogabea."
+    },
+    "ports": {
+      "ignoredWithNetwork": "«{{network}}» sarearekin, Dockerrek ez ditu kontuan hartzen argitaratutako atakak."
+    },
+    "port": {
+      "invalid": "Ataka baliogabea (1–65535).",
+      "duplicate": "Ordenagailuaren {{port}} ataka errepikatuta dago.",
+      "privileged": "{{port}} ataka pribilegiatua da: Docker rootless-ekin huts egin dezake.",
+      "inUseByContainer": "{{port}} ataka {{container}} edukiontziak argitaratzen du dagoeneko, eta exekutatzen ari da."
+    },
+    "ip": {
+      "invalid": "IP baliogabea: {{ip}}"
+    },
+    "mount": {
+      "targetInvalid": "Edukiontziko bideak absolutua izan behar du, eta / ez beste bat.",
+      "targetDuplicate": "Badago muntaketa bat {{target}} bidean."
+    },
+    "volume": {
+      "invalid": "Bolumen-izen baliogabea.",
+      "nameRequired": "Bolumen berriak izena behar du: anonimo bat ezin izango litzateke berriro muntatu geroko birsortze batean."
+    },
+    "bind": {
+      "required": "Adierazi ordenagailuko karpeta.",
+      "missing": "{{path}} karpeta ez dago ordenagailu honetan.",
+      "sensitive": "{{path}} idazteko baimenarekin muntatzeak sistemaren gaineko kontrola ematen dio edukiontziari. Markatu irakurtzeko soilik, behar ez baduzu."
+    },
+    "cpus": {
+      "range": "Adierazi PUZ kopuru bat, 0,01 eta 1024 artean."
+    },
+    "memory": {
+      "min": "Dockerrek gutxienez 6 MiB eskatzen ditu.",
+      "invalid": "Adierazi zenbaki bat.",
+      "reservationAboveLimit": "Erreserbak ezin du muga gainditu."
+    },
+    "autoRemove": {
+      "restart": "«Ezabatu amaitzean» ez da bateragarria berrabiarazte-politika batekin."
+    },
+    "privileged": "Modu pribilegiatuak ia sarbide osoa ematen dio edukiontziari ordenagailuan.",
+    "cap": {
+      "invalid": "Gaitasun baliogabea: {{cap}}"
+    },
+    "host": {
+      "invalid": "Ostalari-izen baliogabea."
+    },
+    "ref": {
+      "empty": "Adierazi irudi bat.",
+      "tooLong": "Erreferentzia luzeegia da.",
+      "invalidRegistry": "Erregistroaren izena ez da baliozkoa.",
+      "invalidRepository": "Izen baliogabea: minuskulak, zenbakiak eta . _ - bereizleak soilik",
+      "invalidTag": "Etiketa baliogabea: letrak, zenbakiak, _ . - (gehienez 128, . edo - batekin hasi gabe).",
+      "invalidDigest": "Digest baliogabea (sha256:<64 karaktere hamaseitar>)."
+    },
+    "context": {
+      "required": "Adierazi testuinguru-karpeta.",
+      "missing": "{{path}} karpeta ez dago.",
+      "notDir": "{{path}} ez da karpeta bat.",
+      "huge": "{{path}} testuinguru gisa erabiltzeak fitxategi-kopuru izugarria bidaliko luke."
+    },
+    "dockerfile": {
+      "invalid": "Bide baliogabea: erlatiboa izan behar du eta testuinguruaren barruan egon.",
+      "missing": "{{path}} ez dago testuinguru-karpetan."
+    },
+    "tags": {
+      "none": "Izenik gabe, irudia <none> gisa geratuko da."
+    },
+    "tag": {
+      "invalid": "Etiketa baliogabea: {{tag}}",
+      "duplicate": "Etiketa errepikatua: {{tag}}"
+    },
+    "arg": {
+      "keyInvalid": "Izen baliogabea: {{key}}",
+      "duplicate": "Errepikatua: {{key}}",
+      "secret": "{{key}} sekretu bat dirudi: argumentuak irudiaren historian geratzen dira."
+    },
+    "target": {
+      "invalid": "Etapa-izen baliogabea."
+    },
+    "driver": {
+      "invalid": "Kontrolatzaile-izen baliogabea.",
+      "singleton": "{{value}} kontrolatzailea duen sare bakarra egon daiteke (aurredefinitua).",
+      "swarm": "Overlay sareek Docker Swarm behar dute: hura gabe, Dockerrek sorrera baztertuko du.",
+      "noParent": "«parent» aukerarik gabe, sareak ez du irteerarik izango interfaze fisikoren batetik."
+    },
+    "subnet": {
+      "required": "Adierazi azpisarea atebidea edo tartea erabiltzeko.",
+      "invalid": "Azpisare baliogabea: erabili CIDR notazioa (adib. 172.30.0.0/24).",
+      "hostBits": "{{value}} ez da sare-helbide bat; {{fixed}} izan beharko luke.",
+      "family": "{{value}} ez da helbide-familia honetakoa."
+    },
+    "gateway": {
+      "invalid": "Helbide baliogabea.",
+      "outside": "{{value}} ez dago {{subnet}} barruan.",
+      "family": "{{value}} ez da helbide-familia honetakoa."
+    },
+    "ipRange": {
+      "invalid": "Tarte baliogabea: erabili CIDR notazioa.",
+      "outside": "{{value}} ez dago {{subnet}} barruan.",
+      "hostBits": "{{value}} ez da sare-helbide bat; {{fixed}} izan beharko luke.",
+      "family": "{{value}} ez da helbide-familia honetakoa."
+    },
+    "ipv6": {
+      "disabled": "Gaitu IPv6 IPv6 azpisare bat erabiltzeko."
+    },
+    "option": {
+      "keyInvalid": "Aukera-izen baliogabea: {{key}}",
+      "duplicate": "Aukera errepikatua: {{key}}"
+    },
+    "volumeName": {
+      "short": "Izenak gutxienez bi karaktere izan behar ditu.",
+      "invalid": "Izen baliogabea: erabili letrak, zenbakiak, «_», «.» edo «-», eta hasi letra edo zenbaki batekin.",
+      "exists": "Badago {{value}} izeneko bolumen bat. Dockerrek lehendik dagoena itzuliko luke, aldaketa hauek aplikatu gabe."
+    },
+    "volumeOpt": {
+      "unknownLocal": "Tokiko kontrolatzaileak type, device eta o bakarrik erabiltzen ditu: «{{key}}» bidali egingo da hala ere.",
+      "deviceWithoutType": "«device» erabiltzean, «type» ere behar izaten da (adib. none o=bind-ekin, nfs edo tmpfs)."
+    },
+    "description": {
+      "tooLong": "Gehienez {{max}} karaktere.",
+      "invalid": "Ezin du kontrol-karaktererik izan."
+    },
+    "edit": {
+      "numberInvalid": "Idatzi zero baino handiagoa den zenbaki bat edo utzi eremua hutsik."
+    },
+    "commit": {
+      "repositoryRequired": "Adierazi biltegiaren izena.",
+      "repositoryInvalid": "Biltegi baliogabea: minuskulak, zenbakiak eta «.», «_», «-» eta «/» bereizleak (adib. nire-aplikazioa edo erregistroa.local:5000/taldea/app).",
+      "tagInvalid": "Etiketa baliogabea: letrak, zenbakiak, «_», «.» eta «-», gehienez 128 karaktere, «.» edo «-» batekin hasi gabe.",
+      "tooLong": "Gehienez {{max}} karaktere.",
+      "controlChars": "Ezin du lerro-jauzirik edo beste kontrol-karaktererik izan."
+    }
+  },
+  "dupNotes": {
+    "composeLabels": "Composeren etiketak kendu dira: bikoiztua ez da proiektukoa izango.",
+    "portsConflict": "Ordenagailuaren ataka berak jatorrizkoak erabiltzen ditu dagoeneko; aldatu itzazu edo gelditu jatorrizkoa abiarazi aurretik.",
+    "mountTypeUnsupported": "Badira laguntzaileak onartzen ez duen motako muntaketak (tmpfs, npipe…).",
+    "namedVolumesShared": "Izena duten bolumenak jatorrizkoarekin partekatzen dira, ez dira kopiatzen.",
+    "extraNetworks": "Lehen sarera bakarrik konektatzen da; gainerakoak ez dira eramaten.",
+    "devices": "Gailuak (--device) ez dira eramaten.",
+    "dns": "DNS konfigurazioa ez da eramaten.",
+    "securityOpt": "Segurtasun-aukerak (--security-opt) ez dira eramaten.",
+    "tmpfs": "tmpfs muntaketak ez dira eramaten.",
+    "volumesFrom": "--volumes-from ez da eramaten.",
+    "ulimits": "ulimit-ak ez dira eramaten.",
+    "cpuset": "PUZ zehatzen esleipena (--cpuset-cpus) ez da eramaten.",
+    "pidsLimit": "Prozesuen muga ez da eramaten.",
+    "logConfig": "Erregistroen konfigurazioa ez da eramaten.",
+    "healthcheck": "Osasun-egiaztapen pertsonalizatua ez da eramaten.",
+    "stopSignal": "Gelditzeko seinale pertsonalizatua ez da eramaten.",
+    "imageMissing": "Jatorrizko irudia jada ez dago ordenagailu honetan: ezin izan dira haren balio lehenetsiak bereizi."
+  },
+  "pull": {
+    "title": "Deskargatu irudia",
+    "start": "Deskargatu",
+    "reference": "Irudia",
+    "referenceHint": "Izena, aukerako etiketarekin: nginx:1.27, erabiltzailea/app, erregistroa.adibidea.com:5000/app:v2. Etiketarik gabe, latest erabiltzen da.",
+    "resolved": "{{name}} deskargatuko da, {{tag}} etiketarekin.",
+    "auth": "Kredentzialak",
+    "authDocker": "Dockerrenak",
+    "authAnonymous": "Bat ere ez",
+    "authManual": "Erabiltzailea eta pasahitza",
+    "authHint": {
+      "dockerConfig": "docker pull bezala: docker login-ekin (edo haren credential helper-arekin) gordetako kredentzialak erabiltzen ditu, erregistro horretarako baldin badaude.",
+      "anonymous": "Deskarga anonimoa, kredentzialik gabe.",
+      "manual": "Deskarga honetarako bakarrik: ez dira inon gordetzen eta ez dira jarduera-panelean agertzen."
+    },
+    "username": "Erabiltzailea",
+    "password": "Pasahitza edo tokena",
+    "equivalent": "Baliokidea:",
+    "panel": "Deskargak",
+    "clear": "Kendu amaitutakoak",
+    "cancel": "Utzi",
+    "progress": "{{ref}} irudiaren aurrerapena",
+    "layers_one": "Geruza {{count}}",
+    "layers_other": "{{count}} geruza",
+    "status": {
+      "starting": "Abiarazten…",
+      "running": "Deskargatzen",
+      "done": "Deskargatuta",
+      "failed": "Errorea",
+      "cancelled": "Bertan behera utzita"
+    }
+  },
+  "search": {
+    "title": "Bilatu Docker Hub-en",
+    "term": "Bilaketa-terminoa",
+    "placeholder": "nginx, postgres, python…",
+    "officialOnly": "Irudi ofizialak soilik",
+    "limit": "Emaitzak",
+    "submit": "Bilatu",
+    "hint": "Bilaketa Docker Enginek egiten du Docker Hub-en (docker search); Dockerrek Interneterako sarbidea izan behar du.",
+    "failed": "Bilaketak huts egin du: {{message}}",
+    "failedHint": "Dockerrek ez badu Interneterako edo Docker Hub-erako sarbiderik, ezin da bilatu.",
+    "none": "Emaitzarik ez.",
+    "name": "Izena",
+    "description": "Deskribapena",
+    "stars": "Izarrak",
+    "official": "Ofiziala",
+    "pull": "Deskargatu",
+    "pullName": "Deskargatu {{name}}"
+  },
+  "imageDetail": {
+    "back": "Irudiak",
+    "createContainer": "Sortu edukiontzia",
+    "pullAgain": "Deskargatu berriro",
+    "notFound": "{{name}} irudia jada ez dago Dockerren.",
+    "loadError": "Ezin izan da irudia ikuskatu: {{message}}",
+    "tabs": {
+      "summary": "Laburpena",
+      "layers": "Geruzak",
+      "containers": "Edukiontziak",
+      "inspect": "JSON ikuskapena"
+    },
+    "s": {
+      "general": "Orokorra",
+      "config": "Exekuzio-konfigurazioa",
+      "labels": "Metadatuak (LABEL)"
+    },
+    "f": {
+      "id": "ID",
+      "tags": "Etiketak",
+      "digests": "Digest-ak",
+      "created": "Sortua",
+      "size": "Tamaina",
+      "platform": "Plataforma",
+      "layers": "Geruzak",
+      "author": "Egilea",
+      "ports": "Agerian dauden atakak",
+      "volumes": "Bolumenak",
+      "stopSignal": "Gelditzeko seinalea",
+      "healthcheck": "Osasun-egiaztapena"
+    },
+    "localOnly": "bat ere ez (ordenagailu honetan eraiki edo inportatutako irudia)",
+    "layersSummary_one": "Sarrera {{count}} historian, {{data}} datuekin, {{size}} guztira.",
+    "layersSummary_other": "{{count}} sarrera historian, {{data}} datuekin, {{size}} guztira.",
+    "layersError": "Ezin izan da historia lortu: {{message}}",
+    "instruction": "Instrukzioa",
+    "noContainers": "Ez dago irudi hau erabiltzen duen edukiontzirik.",
+    "inspectHint": "docker image inspect {{name}} komandoaren irteera osoa, Dockerrek itzultzen duen bezala."
+  },
+  "imageOps": {
+    "tagTitle": "Etiketatu irudia",
+    "tag": "Etiketatu",
+    "tagSource": "Jatorrizko irudia:",
+    "repository": "Biltegia",
+    "repositoryHint": "Adibidez nireapp, erabiltzailea/nireapp edo erregistroa.adibidea.com:5000/nireapp.",
+    "tagName": "Etiketa",
+    "tagged": "{{target}} gisa etiketatuta.",
+    "failed": "Dockerrek eragiketa baztertu du: {{message}}",
+    "removeTitle": "Ezabatu {{name}}",
+    "removeWhat": "Zer ezabatu",
+    "onlyTag": "Etiketa soilik",
+    "wholeImage_one": "Irudi osoa",
+    "wholeImage_other": "Irudi osoa (haren {{count}} etiketak)",
+    "removeTag": "Kendu etiketa",
+    "removeImage": "Ezabatu irudia",
+    "removeTagBody": "Etiketa hau kentzen da. Bakarra bada, Dockerrek irudia eta erabili gabeko geruzak ere ezabatzen ditu.",
+    "removeImageBody": "Irudia eta beste irudi batek erabiltzen ez dituen geruzak ezabatzen dira. Ezin da desegin: berriro deskargatu edo eraiki beharko litzateke.",
+    "inUse_one": "Edukiontzi {{count}}ek erabiltzen du:",
+    "inUse_other": "{{count}} edukiontzik erabiltzen dute:",
+    "runningRefuses": "Dockerrek ez du ezabatzen exekutatzen ari den edukiontzi batek erabiltzen duen irudirik, ezta behartuta ere: gelditu eta ezabatu edukiontzia aurretik.",
+    "stoppedNeedForce": "Ezabatzeko, behartu egin behar da; edukiontziek existitzen jarraituko dute, baina irudirik gabe ezin izango dituzu birsortu.",
+    "force": "Behartu ezabaketa",
+    "forceMulti": "Beharrezkoa etiketa bat baino gehiago dituen irudi bat ezabatzeko (--force).",
+    "forceUsed": "Beharrezkoa, geldituta dauden edukiontziek erabiltzen dutelako (--force).",
+    "removed": "{{untagged}} etiketa kendu dira eta {{deleted}} geruza edo irudi ezabatu dira.",
+    "pruneTitle": "Garbitu irudiak",
+    "prune": "Garbitu",
+    "pruneDangling": "Edukiontzirik erabiltzen ez dituen etiketarik gabeko irudiak soilik",
+    "pruneAll": "Edukiontzirik erabiltzen ez dituen irudi guztiak, etiketatuak barne",
+    "pruneEstimate_one": "Uneko zerrendaren arabera, irudi {{count}} ezabatuko litzateke ({{size}}).",
+    "pruneEstimate_other": "Uneko zerrendaren arabera, {{count}} irudi ezabatuko lirateke ({{size}}).",
+    "pruneNote": "Azken erabakia Dockerrena da, eta lotutako eraikuntza-cachea ere ezabatzen du. Ezin da desegin.",
+    "pruneSure": "Ulertzen dut irudi horiek berriro deskargatu edo eraiki beharko ditudala",
+    "pruned": "Garbiketa amaituta: {{count}} elementu ezabatu dira, {{size}} berreskuratu dira.",
+    "pruneWhilePulling_one": "Deskarga {{count}} dago abian. Itxaron amaitu arte: containerd-en irudi-biltegiarekin, Dockerrek abian dauden deskargak hutsarazten ditu garbitzean.",
+    "pruneWhilePulling_other": "{{count}} deskarga daude abian. Itxaron amaitu arte: containerd-en irudi-biltegiarekin, Dockerrek abian dauden deskargak hutsarazten ditu garbitzean."
+  },
+  "build": {
+    "title": "Eraiki irudia",
+    "g": {
+      "context": "Testuingurua",
+      "contextHint": "Dockerri bidaltzen zaion edukia duen karpeta (.dockerignore errespetatuz) eta haren barruko Dockerfile-a.",
+      "tags": "Irudiaren izenak",
+      "tagsHint": "Ondoriozko irudiaren biltegia:etiketa (docker build --tag). Izenik gabe, irudia <none> gisa geratzen da.",
+      "args": "Eraikuntza-argumentuak",
+      "argsHint": "ARG instrukzioetarako balioak (--build-arg). Irudiaren historian geratzen dira: ez erabili sekretuetarako.",
+      "labels": "Metadatuak (LABEL)",
+      "options": "Aukerak"
+    },
+    "f": {
+      "context": "Testuinguru-karpeta",
+      "dockerfile": "Dockerfile",
+      "target": "Azken etapa",
+      "builder": "Eraikitzailea",
+      "noCache": "Ez erabili cachea",
+      "pull": "Bilatu oinarrizko irudien bertsio berriak"
+    },
+    "h": {
+      "dockerfile": "Testuinguru-karpetarekiko bide erlatiboa.",
+      "target": "Etapa anitzeko Dockerfile-etan soilik (--target).",
+      "buildKit": "Dockerren egungo eraikitzailea (docker build-ek erabiltzen duena).",
+      "classic": "Aurreko eraikitzailea, zaharkitua; DOCKER_BUILDKIT=0 docker build-en baliokidea."
+    },
+    "ph": {
+      "target": "azkena",
+      "context": "/home/erabiltzailea/proiektua"
+    },
+    "classic": "Klasikoa",
+    "pickContext": "Aukeratu testuinguru-karpeta",
+    "pickDockerfile": "Aukeratu Dockerfile-a",
+    "outsideContext": "Dockerfile-ak testuinguru-karpetaren barruan egon behar du.",
+    "addTag": "Gehitu izena",
+    "removeTag": "Kendu {{n}}. izena",
+    "tagN": "{{n}}. izena",
+    "noTags": "Izenik ez.",
+    "addArg": "Gehitu argumentua",
+    "noArgs": "Argumenturik ez.",
+    "secretsHidden_one": "Balio sentikor {{count}} ******** gisa agertzen da hemen eta jarduera-panelean.",
+    "secretsHidden_other": "{{count}} balio sentikor ******** gisa agertzen dira hemen eta jarduera-panelean.",
+    "context": "Bidaliko den testuingurua",
+    "contextPending": "Aukeratu Dockerfile bat duen karpeta bat.",
+    "contextSummary": "{{files}} fitxategi {{dirs}} karpetatan, {{size}} guztira.",
+    "excluded_one": ".dockerignore-k sarrera {{count}} baztertzen du.",
+    "excluded_other": ".dockerignore-k {{count}} sarrera baztertzen ditu.",
+    "noDockerignore": ".dockerignore gabe: dena bidaltzen da.",
+    "patterns_one": ".dockerignore-ko eredu {{count}}",
+    "patterns_other": ".dockerignore-ko {{count}} eredu",
+    "badIgnore": ".dockerignore-ko lerro baliogabeak: {{lines}}",
+    "special_one": "Fitxategi berezi {{count}} (socketa, gailua edo FIFOa) ez da bidaltzen.",
+    "special_other": "{{count}} fitxategi berezi (socketak, gailuak edo FIFOak) ez dira bidaltzen.",
+    "unreadable": "Ezin dira irakurri: {{files}}. Eraikuntzak huts egingo luke.",
+    "bigContext": "Testuingurua handia da: kontuan hartu karpetak .dockerignore-rekin baztertzea.",
+    "largest": "Fitxategi handienak",
+    "start": "Eraiki",
+    "cancel": "Utzi",
+    "edit": "Itzuli formulariora",
+    "viewImage": "Ikusi irudia",
+    "steps": "Urratsak",
+    "sending": "Testuingurua bidaltzen…",
+    "waiting": "Dockerren irteeraren zain…",
+    "cached": "cachea",
+    "dropped": "{{count}} lerro zahar baztertu dira.",
+    "failed": "Eraikuntzak huts egin du: {{message}}",
+    "status": {
+      "starting": "Testuingurua Dockerri bidaltzen…",
+      "running": "Eraikitzen…",
+      "done": "Irudia eraikita",
+      "failed": "Eraikuntzak huts egin du",
+      "cancelled": "Eraikuntza bertan behera utzita"
+    }
+  },
+  "networks": {
+    "create": "Sortu sarea",
+    "prune": "Garbitu",
+    "refresh": "Eguneratu",
+    "search": "Bilatu izenaren, IDaren, azpisarearen edo edukiontziaren arabera",
+    "filterLabel": "Iragazkia",
+    "filter": {
+      "all": "Guztiak",
+      "inUse": "Erabiltzen",
+      "unused": "Erabili gabe",
+      "custom": "Erabiltzaileak sortuak"
+    },
+    "count_one": "Sare {{count}}",
+    "count_other": "{{count}} sare",
+    "columns": {
+      "name": "Sarea",
+      "id": "ID",
+      "driver": "Kontrolatzailea",
+      "subnet": "Azpisarea",
+      "containers": "Edukiontziak",
+      "actions": "Ekintzak"
+    },
+    "badge": {
+      "predefined": "Aurredefinitua",
+      "internal": "Barnekoa",
+      "attachable": "Konektagarria",
+      "compose": "Compose: {{project}}"
+    },
+    "noContainers": "Edukiontzirik ez",
+    "members_one": "Edukiontzi {{count}} ({{running}} martxan)",
+    "members_other": "{{count}} edukiontzi ({{running}} martxan)",
+    "empty": "Ez dago sarerik.",
+    "noMatches": "Ez dago bilaketarekin bat datorren sarerik.",
+    "loadError": "Ezin izan da sareen zerrenda lortu: {{message}}",
+    "open": "Ireki {{name}}",
+    "connectAction": "Konektatu edukiontzi bat {{name}} sarera",
+    "removeAction": "Ezabatu {{name}}"
+  },
+  "netDetail": {
+    "back": "Sareak",
+    "tabs": {
+      "summary": "Laburpena",
+      "containers": "Edukiontziak",
+      "inspect": "JSON ikuskapena"
+    },
+    "s": {
+      "general": "Orokorra",
+      "ipam": "Helbideak (IPAM)",
+      "options": "Kontrolatzailearen aukerak",
+      "labels": "Metadatuak (labels)"
+    },
+    "f": {
+      "id": "ID",
+      "driver": "Kontrolatzailea",
+      "scope": "Esparrua",
+      "created": "Sortua",
+      "internal": "Barnekoa (kanporako irteerarik gabe)",
+      "attachable": "Eskuz konektagarria",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "compose": "Compose proiektua",
+      "subnet": "Azpisarea",
+      "gateway": "Atebidea",
+      "ipRange": "Esleitu daitekeen tartea",
+      "aux": "Erreserbatutako helbideak"
+    },
+    "ipamDriver": "IPAM kontrolatzailea: {{driver}}",
+    "noPools": "Dockerrek ez dio azpisarerik esleitu sare honi.",
+    "wholeSubnet": "Azpisare osoa",
+    "noOptions": "Aukerarik ez.",
+    "membersHint": "Sare hau konfiguratuta duten edukiontziak, martxan egon edo ez. Helbideak edukiontzia martxan dagoen bitartean bakarrik existitzen dira.",
+    "noMembers": "Ez dago sare hau erabiltzen duen edukiontzirik.",
+    "c": {
+      "name": "Edukiontzia",
+      "state": "Egoera",
+      "ip": "IP helbidea",
+      "mac": "MAC"
+    },
+    "ipWhenRunning": "Abiaraztean esleitzen da",
+    "inspectHint": "Dockerren erantzun osoa, «docker network inspect {{name}}» bezala.",
+    "notFound": "{{name}} sarea jada ez dago.",
+    "loadError": "Ezin izan da sarea ikuskatu: {{message}}"
+  },
+  "netCreate": {
+    "title": "Sortu sarea",
+    "g": {
+      "general": "Orokorra",
+      "ipv4": "IPv4 helbideak",
+      "ipv4Hint": "Aukerakoa: azpisarerik gabe, Dockerrek libre dagoen bat aukeratzen du.",
+      "ipv6": "IPv6",
+      "options": "Kontrolatzailearen aukerak",
+      "optionsHint": "Kontrolatzaileari bere horretan bidaltzen zaizkio (--opt).",
+      "labels": "Metadatuak (labels)"
+    },
+    "f": {
+      "name": "Izena",
+      "driver": "Kontrolatzailea",
+      "driverName": "Kontrolatzailearen izena",
+      "internal": "Barneko sarea",
+      "attachable": "Eskuz konektagarria",
+      "subnet": "Azpisarea",
+      "gateway": "Atebidea",
+      "ipRange": "Esleitu daitekeen tartea",
+      "ipv6": "Gaitu IPv6"
+    },
+    "h": {
+      "name": "Letrak, zenbakiak, «_», «.» edo «-».",
+      "driver": {
+        "bridge": "Ordenagailu honetako sare pribatua; edukiontziak izenaren bidez komunikatzen dira elkarren artean.",
+        "macvlan": "Edukiontzi bakoitzak bere MAC propioa du sare fisikoan. Adierazi interfazea «parent» aukeran.",
+        "ipvlan": "Interfaze fisikoaren MACa partekatzen du. Adierazi interfazea «parent» aukeran.",
+        "overlay": "Hainbat ordenagailuren arteko sarea: Docker Swarm behar du.",
+        "other": "Dockerren instalatutako plugin baten kontrolatzailea."
+      },
+      "internal": "Kanporako sarbiderik gabe (--internal).",
+      "attachable": "Overlay sareetarako: edukiontzi solteak konektatzea ahalbidetzen du (--attachable).",
+      "subnet": "CIDR notazioan, adib. 172.30.0.0/24.",
+      "gateway": "Azpisarearen barruan egon behar du.",
+      "ipRange": "Dockerrek automatikoki esleitzen duen azpisarearen zatia.",
+      "ipv6": "Nukleoak eta Dockerrek IPv6 izatea behar du (--ipv6)."
+    },
+    "otherDriver": "Beste bat",
+    "addOption": "Gehitu aukera",
+    "noOptions": "Aukerarik ez.",
+    "body": "Eskaeraren gorputza",
+    "ready": "Sortzeko prest.",
+    "submit": "Sortu sarea"
+  },
+  "netOps": {
+    "failed": "Dockerrek eragiketa baztertu du: {{message}}",
+    "removeTitle": "Ezabatu {{name}} sarea",
+    "remove": "Ezabatu sarea",
+    "removeBody": "Sarea ezabatu egiten da. Ezin da desegin.",
+    "predefined": "Dockerrek sortzen ditu bridge, host eta none sareak, eta ez du haiek ezabatzen uzten.",
+    "runningBlocks_one": "Martxan dagoen edukiontzi {{count}} dago konektatuta: Dockerrek ez du sarea ezabatuko hura deskonektatu edo gelditu arte.",
+    "runningBlocks_other": "Martxan dauden {{count}} edukiontzi daude konektatuta: Dockerrek ez du sarea ezabatuko haiek deskonektatu edo gelditu arte.",
+    "stoppedBreak_one": "Geldituta dagoen edukiontzi {{count}}ek sare hau konfiguratuta du. Dockerrek hala ere ezabatuko du, eta edukiontzi hori ezin izango da abiarazi deskonektatu edo sarea berriro sortu arte:",
+    "stoppedBreak_other": "Geldituta dauden {{count}} edukiontzik sare hau konfiguratuta dute. Dockerrek hala ere ezabatuko du, eta edukiontzi horiek ezin izango dira abiarazi deskonektatu edo sarea berriro sortu arte:",
+    "stoppedSure": "Ulertzen dut edukiontzi horiek ezin izango direla abiarazi",
+    "removed": "{{name}} sarea ezabatu da.",
+    "pruneTitle": "Garbitu sareak",
+    "prune": "Garbitu sareak",
+    "pruneBody": "Martxan dagoen edukiontzirik ez duten erabiltzaileak sortutako sareak ezabatzen dira. Aurredefinituak ez dira ukitzen.",
+    "pruneEstimate_one": "Uneko zerrendaren arabera, sare {{count}} ezabatuko da:",
+    "pruneEstimate_other": "Uneko zerrendaren arabera, {{count}} sare ezabatuko dira:",
+    "pruneEstimate_zero": "Uneko zerrendaren arabera, ez dago ezabatzeko sarerik.",
+    "usedByStopped": "geldituta dauden edukiontziek erabiltzen dute: {{names}}",
+    "pruneStoppedWarn_one": "Sare horietako {{count}} geldituta dauden edukiontzietan dago konfiguratuta: Dockerrek hala ere ezabatzen du, eta edukiontzi horiek ezin izango dira abiarazi.",
+    "pruneStoppedWarn_other": "Sare horietako {{count}} geldituta dauden edukiontzietan daude konfiguratuta: Dockerrek hala ere ezabatzen ditu, eta edukiontzi horiek ezin izango dira abiarazi.",
+    "pruned_one": "Sare {{count}} ezabatu da: {{names}}",
+    "pruned_other": "{{count}} sare ezabatu dira: {{names}}",
+    "pruned_zero": "Ez zegoen ezabatzeko sarerik.",
+    "connectTitle": "Konektatu edukiontzi bat {{name}} sarera",
+    "connect": "Konektatu",
+    "connectShort": "Konektatu edukiontzia",
+    "container": "Edukiontzia",
+    "containerHint": "Martxan edo geldituta dagoela konekta daiteke.",
+    "noContainers": "Ez dago edukiontzirik.",
+    "block": {
+      "already": "Dagoeneko sare honetara konektatuta dago.",
+      "host": "Host moduko edukiontziak ezin dira beste sare batzuetara konektatu, eta besteak ezin dira host sarera konektatu.",
+      "none": "Sarerik gabeko edukiontzi bat (none) ezin da beste sare batzuetara konektatu, eta besteak ezin dira none sarera konektatu."
+    },
+    "blockShort": {
+      "already": "konektatuta dago",
+      "host": "host modua",
+      "none": "sarerik gabe"
+    },
+    "aliases": "Aliasak sare honetan",
+    "aliasesHint": "Sareko beste edukiontziek hura aurkitzeko erabiltzen dituzten izen gehigarriak, zuriunez bereizita.",
+    "noAliases": "bridge sare aurredefinituak ez du aliasik onartzen.",
+    "ipv4": "IPv4 finkoa",
+    "ipv6": "IPv6 finkoa",
+    "auto": "Automatikoa",
+    "ipHint": "{{subnets}} barruan. Dockerrek IP finkoa onartzen du soilik azpisarea sarea sortzean adierazi bazen.",
+    "ipAuto": "Dockerrek IP finkoa onartzen du soilik azpisarea sarea sortzean adierazi bazen.",
+    "connected": "{{container}} {{network}} sarera konektatu da.",
+    "disconnectTitle": "Deskonektatu {{container}} {{network}} saretik",
+    "disconnect": "Deskonektatu",
+    "disconnectAction": "Deskonektatu {{container}}",
+    "disconnectRunning": "Edukiontzia martxan dago: berehala galtzen du sare honen bidezko konexioa.",
+    "disconnectStopped": "Edukiontziak sare hau konfiguratuta izateari uzten dio.",
+    "force": "Behartu",
+    "forceHint": "Dockerrek ohiko moduan deskonektatu ezin badu bakarrik (--force).",
+    "disconnected": "{{container}} {{network}} saretik deskonektatu da.",
+    "checking": "Uneko egoera Dockerri kontsultatzen…",
+    "gone": "{{name}} sarea jada ez dago.",
+    "lastNetwork": "Edukiontzi honen sare bakarra da: deskonektatzean, sareko konexiorik gabe geratuko da beste batera konektatu arte."
+  },
+  "volumes": {
+    "create": "Sortu bolumena",
+    "prune": "Garbitu",
+    "refresh": "Eguneratu",
+    "sizes": "Kalkulatu tamainak",
+    "sizesAgain": "Kalkulatu berriro",
+    "sizesNote": "Dockerrek kalkulatutako tamainak («docker system df -v»); denbora behar dezakete bolumen handiekin.",
+    "sizesError": "Ezin izan dira tamainak kalkulatu: {{message}}",
+    "sizeUnknown": "Ez dago erabilgarri",
+    "search": "Bilatu izenaren, kontrolatzailearen, edukiontziaren edo metadatuaren arabera",
+    "filterLabel": "Iragazkia",
+    "filter": {
+      "all": "Guztiak",
+      "inUse": "Erabiltzen",
+      "unused": "Erabili gabe",
+      "anonymous": "Anonimoak"
+    },
+    "count_one": "Bolumen {{count}}",
+    "count_other": "{{count}} bolumen",
+    "columns": {
+      "name": "Bolumena",
+      "driver": "Kontrolatzailea",
+      "size": "Tamaina",
+      "containers": "Edukiontziak",
+      "actions": "Ekintzak"
+    },
+    "anonymous": "Anonimoa",
+    "unused": "Erabili gabe",
+    "users_one": "Muntaketa {{count}}",
+    "users_other": "{{count}} muntaketa",
+    "empty": "Ez dago bolumenik",
+    "emptyBody": "Sortu bolumen bat edukiontziak desagertu ondoren ere irauten duten datuak gordetzeko.",
+    "noMatches": "Ez dago bilaketarekin bat datorren bolumenik.",
+    "loadError": "Ezin izan da bolumenen zerrenda lortu: {{message}}",
+    "createContainer": "Sortu edukiontzia {{name}} bolumenarekin",
+    "removeAction": "Ezabatu {{name}}"
+  },
+  "volDetail": {
+    "back": "Bolumenak",
+    "tabs": {
+      "summary": "Laburpena",
+      "containers": "Edukiontziak",
+      "inspect": "JSON ikuskapena"
+    },
+    "s": {
+      "general": "Orokorra",
+      "options": "Kontrolatzailearen aukerak",
+      "status": "Kontrolatzailearen egoera"
+    },
+    "f": {
+      "name": "Izena",
+      "driver": "Kontrolatzailea",
+      "scope": "Esparrua",
+      "mountpoint": "Direktorioa ordenagailuan",
+      "created": "Sortua",
+      "size": "Tamaina"
+    },
+    "sizeNotMeasured": "Kalkulatu gabe",
+    "measure": "Kalkulatu",
+    "noOptions": "Aukerarik ez.",
+    "noContainers": "Ez dago bolumen hau muntatzen duen edukiontzirik.",
+    "c": {
+      "destination": "Bidea edukiontzian",
+      "access": "Sarbidea"
+    },
+    "rw": "Irakurtzeko eta idazteko",
+    "ro": "Irakurtzeko soilik",
+    "createContainer": "Sortu edukiontzia harekin",
+    "inspectHint": "Dockerren erantzun osoa, «docker volume inspect {{name}}» bezala.",
+    "notFound": "{{name}} bolumena jada ez dago.",
+    "loadError": "Ezin izan da bolumena ikuskatu: {{message}}"
+  },
+  "volCreate": {
+    "title": "Sortu bolumena",
+    "g": {
+      "general": "Orokorra",
+      "options": "Kontrolatzailearen aukerak",
+      "optionsHint": "Tokiko kontrolatzailearentzat, «mount»-en aukeren baliokideak dira: type, device eta o."
+    },
+    "f": {
+      "name": "Izena",
+      "kind": "Mota"
+    },
+    "h": {
+      "name": "Aukerakoa: izenik gabe, Dockerrek bolumen anonimo bat sortzen du. Letrak, zenbakiak, «_», «.» edo «-» (gutxienez 2).",
+      "preset": {
+        "plain": "Dockerrek ordenagailu honetan kudeatzen duen direktorioa (ohikoena).",
+        "tmpfs": "Memorian: hura erabiltzen duen azken edukiontzia gelditzean galtzen da.",
+        "nfs": "NFS bidez partekatutako karpeta: doitu zerbitzariaren helbidea eta bidea.",
+        "bind": "Ordenagailuko karpeta existente bat adierazten duen izendun bolumena.",
+        "other": "Dockerren instalatutako plugin baten kontrolatzailea."
+      }
+    },
+    "ph": {
+      "name": "hutsik = anonimoa"
+    },
+    "preset": {
+      "plain": "Tokikoa",
+      "tmpfs": "tmpfs",
+      "nfs": "NFS",
+      "bind": "Karpeta",
+      "other": "Beste kontrolatzaile bat"
+    },
+    "readyAnonymous": "Bolumen anonimo bat sortzeko prest.",
+    "submit": "Sortu bolumena"
+  },
+  "volOps": {
+    "failed": "Dockerrek eragiketa baztertu du: {{message}}",
+    "removeTitle": "Ezabatu {{name}} bolumena",
+    "remove": "Ezabatu bolumena",
+    "removeBody": "Bolumena eta haren datu guztiak ezabatzen dira. Ezin da desegin.",
+    "inUse_one": "Edukiontzi {{count}}ek muntatzen du: Dockerrek ez du ezabatzen erabiltzen ari den bolumenik, ezta geldituta dagoen edukiontzi batena ere. Ezabatu edukiontzia aurretik.",
+    "inUse_other": "{{count}} edukiontzik muntatzen dute: Dockerrek ez du ezabatzen erabiltzen ari den bolumenik, ezta geldituta dauden edukiontziena ere. Ezabatu edukiontziak aurretik.",
+    "sure": "Ulertzen dut haren datuak ezabatuko direla",
+    "gone": "{{name}} bolumena jada ez dago.",
+    "removed": "{{name}} bolumena ezabatu da.",
+    "pruneTitle": "Garbitu bolumenak",
+    "prune": "Garbitu bolumenak",
+    "pruneAnonymous": "Edukiontzirik muntatzen ez dituen bolumen anonimoak soilik",
+    "pruneAll": "Edukiontzirik muntatzen ez dituen bolumen guztiak (izena dutenak ere bai)",
+    "legacy": "Dockerren bertsio honek (API {{api}}) erabili gabeko bolumen guztiak ezabatzen ditu, izena dutenak ere bai: ez ditu bereizten anonimoak eta izendunak.",
+    "pruneEstimate_one": "Uneko egoeraren arabera, bolumen {{count}} ezabatuko da",
+    "pruneEstimate_other": "Uneko egoeraren arabera, {{count}} bolumen ezabatuko dira",
+    "pruneEstimate_zero": "Uneko egoeraren arabera, ez dago ezabatzeko bolumenik",
+    "pruneBytes": "({{size}}, azken kalkuluaren arabera)",
+    "pruneNote": "Erabili gabeko bolumen batek datu garrantzitsuak gorde ditzake (adibidez, edukiontzia ezabatu zenuen datu-base batenak).",
+    "pruneSure_one": "Ulertzen dut izendun bolumen {{count}}en datuak ezabatuko direla",
+    "pruneSure_other": "Ulertzen dut izendun {{count}} bolumenen datuak ezabatuko direla",
+    "pruned_one": "Bolumen {{count}} ezabatu da; {{size}} berreskuratu dira.",
+    "pruned_other": "{{count}} bolumen ezabatu dira; {{size}} berreskuratu dira.",
+    "pruned_zero": "Ez zegoen ezabatzeko bolumenik."
+  },
+  "binds": {
+    "bindFolder": "Lotu karpeta bat…",
+    "pickTitle": "Edukiontziak ikusiko duen karpeta",
+    "intro": "Ordenagailu honetako karpetak, edukiontzien barruan muntatuta. Dockerrek ez du uzten muntaketak gehitzen lehendik dagoen edukiontzi bati: karpeta bat lotzeko, edukiontzi berri bat sortzen da laguntzailearekin.",
+    "search": "Bilatu bidearen edo edukiontziaren arabera",
+    "filter": {
+      "all": "Guztiak",
+      "writable": "Idazteko baimenarekin",
+      "attention": "Arreta behar dute ({{count}})"
+    },
+    "count_one": "Karpeta {{count}}",
+    "count_other": "{{count}} karpeta",
+    "kind": {
+      "directory": "Karpeta",
+      "file": "Fitxategia",
+      "socket": "Socketa",
+      "other": "Bestelakoa",
+      "missing": "Ez dago"
+    },
+    "writable": "Idazteko baimenarekin",
+    "readOnly": "Irakurtzeko soilik",
+    "permissions": "Baimenak eta jabea ordenagailuan",
+    "notReadable": "Zure erabiltzaileak ezin du irakurri",
+    "newContainer": "Edukiontzi berria harekin",
+    "newContainerHint": "Edukiontzien laguntzailea irekitzen du, karpeta hau dagoeneko lotuta duela",
+    "risk": {
+      "dockerSocket": "Dockerren socketa: edukiontziak Docker kontrola dezake eta, praktikan, ordenagailu osoa (Docker rootless-ekin izan ezik).",
+      "hostRoot": "Ordenagailuaren fitxategi-sistemaren erroa.",
+      "system": "Sistemaren direktorio bat."
+    },
+    "riskWritable": "Idazteko baimenarekin muntatzen da: edukiontziak alda dezake.",
+    "missing": "Ez dago ordenagailu honetan. Edukiontzia «-v» aukerarekin sortu bazen, Dockerrek hutsik sortuko du berriro (root gisa) hura abiaraztean.",
+    "attentionBanner_one": "Lotura {{count}}ek arreta behar du (Dockerren socketa, sistemaren direktorioa edo existitzen ez den karpeta).",
+    "attentionBanner_other": "{{count}} loturak arreta behar dute (Dockerren socketa, sistemaren direktorioak edo existitzen ez diren karpetak).",
+    "empty": "Ez dago karpeta loturik duen edukiontzirik",
+    "emptyBody": "Lotu karpeta bat, edukiontzi batek ordenagailu honetako fitxategiekin lan egin dezan.",
+    "noMatches": "Ez dago bilaketarekin bat datorren karpetarik.",
+    "loadError": "Ezin izan da edukiontzien zerrenda lortu: {{message}}"
+  },
+  "composeList": {
+    "add": "Ireki proiektua…",
+    "new": "Proiektu berria",
+    "refresh": "Eguneratu",
+    "intro": "Dockerren edukiontziak dituzten proiektuak (etiketen bidez detektatzen dira) eta zuk zerrendara gehitzen dituzunak. Eragiketa guztiak Docker Compose ofizialarekin exekutatzen dira, eta jarduera-panelean geratzen dira komando zehatzarekin.",
+    "filterLabel": "Iragazi proiektuak",
+    "filter": {
+      "all": "Guztiak",
+      "running": "Martxan",
+      "stopped": "Geldituta",
+      "notDeployed": "Hedatu gabe"
+    },
+    "search": "Bilatu izenaren, karpetaren edo zerbitzuaren arabera",
+    "count_one": "Proiektu {{count}}",
+    "count_other": "{{count}} proiektu",
+    "loadError": "Ezin izan da proiektuen zerrenda lortu: {{message}}",
+    "empty": "Ez dago Docker Compose proiekturik",
+    "emptyBody": "Ireki lehendik duzun proiektu bat (haren compose.yaml fitxategia) edo sortu berri bat. Terminaletik hedatutako proiektuak automatikoki agertzen dira hemen.",
+    "c": {
+      "name": "Proiektua",
+      "state": "Egoera",
+      "location": "Karpeta",
+      "services": "Zerbitzuak",
+      "actions": "Ekintzak"
+    },
+    "registered": "Zerrendan",
+    "missing": "Fitxategiak falta dira",
+    "noLocation": "Fitxategi ezagunik gabe",
+    "state": {
+      "running": "Martxan · {{running}}/{{total}}",
+      "partial": "Partziala · {{running}}/{{total}}",
+      "stopped": "Geldituta · 0/{{total}}",
+      "notDeployed": "Hedatu gabe"
+    },
+    "stop": "Gelditu {{name}}",
+    "start": "Abiarazi {{name}}",
+    "open": "Ireki {{name}}",
+    "unavailable": "Docker Compose ez dago erabilgarri"
+  },
+  "composeDetail": {
+    "back": "Proiektuak",
+    "refresh": "Eguneratu",
+    "tabs": {
+      "services": "Zerbitzuak",
+      "logs": "Erregistroak",
+      "file": "Fitxategia",
+      "config": "Konfigurazioa",
+      "output": "Irteera"
+    },
+    "c": {
+      "service": "Zerbitzua",
+      "image": "Irudia",
+      "state": "Egoera",
+      "containers": "Edukiontziak",
+      "ports": "Atakak",
+      "actions": "Ekintzak"
+    },
+    "state": {
+      "running": "Martxan ({{running}}/{{total}})",
+      "partial": "Partziala ({{running}}/{{total}})",
+      "stopped": "Geldituta",
+      "notCreated": "Sortu gabe"
+    },
+    "profile": "{{name}} profila",
+    "orphan": "Ez dago fitxategian",
+    "built": "Eraiki egiten da ({{context}})",
+    "builtFrom": "{{context}} testuingurutik eraikitzen da",
+    "noServices": "Proiektuak ez du zerbitzurik.",
+    "loadingModel": "Fitxategia Docker Composerekin irakurtzen…",
+    "upService": "Hedatu {{name}}",
+    "startService": "Abiarazi {{name}}",
+    "stopService": "Gelditu {{name}}",
+    "restartService": "Berrabiarazi {{name}}",
+    "logsService": "{{name}} zerbitzuaren erregistroak",
+    "needsFiles": "Proiektuaren fitxategiak behar dira",
+    "needsValid": "Zuzendu fitxategia lehenik: Composek baztertu egiten du",
+    "register": "Gehitu zerrendara",
+    "registerHint": "Mantendu proiektua zerrendan, haren edukiontziak ezabatzen badira ere",
+    "unregister": "Kendu zerrendatik",
+    "unregisterHint": "Zerrendatik kentzen du bakarrik: ez ditu ukitzen Docker eta fitxategiak",
+    "gone": "«{{name}}» proiektuak jada ez du edukiontzirik eta ez dago zerrendan.",
+    "createdBy": "Docker Compose {{version}} bertsioarekin sortutako edukiontziak",
+    "missingFiles": "Ez dira aurkitzen fitxategi hauek: {{files}}. Proiektua gelditu, abiarazi, haren erregistroak ikusi edo ezabatu dezakezu; hedatzeko, fitxategiak behar dira.",
+    "noFiles": "Dockerrek ez ditu proiektu honen fitxategiak adierazten. Gelditu, abiarazi, haren erregistroak ikusi edo ezabatu dezakezu.",
+    "invalidConfig": "Docker Composek proiektuaren konfigurazioa baztertzen du:",
+    "noConfig": "Ez dago erakusteko konfiguraziorik (fitxategiak falta dira).",
+    "configHint": "Azken konfigurazioa, Docker Composek ulertzen duen bezala (fitxategiak konbinatuta, aldagaiak ordezkatuta, profil guztiak).",
+    "secretsWarn": "Ebatzitako konfigurazioak aldagaien balioak ditu (adibidez, .env fitxategiko pasahitzak). Leiho honetan bakarrik erakusten da, eta ez da jarduera-panelean gordetzen.",
+    "showResolved": "Erakutsi ebatzitako konfigurazioa"
+  },
+  "composeOps": {
+    "verb": {
+      "up": "Hedapena",
+      "down": "Ezabaketa",
+      "start": "Abioa",
+      "stop": "Gelditzea",
+      "restart": "Berrabiaraztea",
+      "pull": "Irudien deskarga",
+      "build": "Eraikuntza"
+    },
+    "running": "{{verb}} abian…",
+    "succeeded": {
+      "up": "Hedapena osatu da",
+      "down": "Ezabaketa osatu da",
+      "start": "Abioa osatu da",
+      "stop": "Gelditzea osatu da",
+      "restart": "Berrabiaraztea osatu da",
+      "pull": "Irudien deskarga osatu da",
+      "build": "Eraikuntza osatu da"
+    },
+    "stopped": {
+      "up": "Zuk eten duzu hedapena",
+      "down": "Zuk eten duzu ezabaketa",
+      "start": "Zuk eten duzu abioa",
+      "stop": "Zuk eten duzu gelditzea",
+      "restart": "Zuk eten duzu berrabiaraztea",
+      "pull": "Zuk eten duzu irudien deskarga",
+      "build": "Zuk eten duzu eraikuntza"
+    },
+    "failed": "{{verb}}: huts egin du ({{code}} kodea)",
+    "error": "{{verb}}: ezin izan da exekutatu",
+    "stop": "Eten",
+    "dismiss": "Itxi",
+    "none": "Oraindik ez da eragiketarik exekutatu proiektu honetan.",
+    "waiting": "Docker Composeren irteeraren zain…",
+    "noOutput": "Docker Composek ez du irteerarik erakutsi.",
+    "dropped_one": "Lerro zahar {{count}} baztertu da, memoria gehiegi ez hartzeko.",
+    "dropped_other": "{{count}} lerro zahar baztertu dira, memoria gehiegi ez hartzeko.",
+    "stoppedNote": "Docker Compose eten da. Dagoeneko egindakoa (sortutako edukiontziak, deskargatutako irudiak…) mantendu egiten da.",
+    "command": "Exekutatuko den komandoa:",
+    "up": "Hedatu",
+    "upTitle": "Hedatu {{name}}",
+    "upBody": "Proiektuaren edukiontziak, sareak eta bolumenak sortu edo eguneratzen ditu, eta martxan uzten ditu (docker compose up --detach).",
+    "services": "Zerbitzuak",
+    "allServices": "Ezer hautatu gabe, zerbitzu guztiak hedatzen dira (aktibatu gabeko profiletakoak izan ezik).",
+    "someServices": "Aukeratutako zerbitzuak eta haiek behar dituztenak (depends_on) bakarrik.",
+    "profiles": "Profilak",
+    "profilesHint": "Profila duten zerbitzuak haien profila aktibatzen baduzu edo goian aukeratzen badituzu bakarrik hedatzen dira.",
+    "pull": "Deskargatu irudiak",
+    "pullPolicy": {
+      "missing": "Falta badira",
+      "always": "Beti",
+      "never": "Inoiz ez"
+    },
+    "build": "Eraiki irudiak aurretik",
+    "buildHint": "build: duten zerbitzuetarako (bestela, irudia ez badago bakarrik eraikitzen dira).",
+    "forceRecreate": "Sortu berriro edukiontziak, aldatu ez badira ere",
+    "removeOrphans": "Ezabatu edukiontzi umezurtzak",
+    "removeOrphansHint": "Jada fitxategian ez dauden zerbitzuenak.",
+    "down": "Ezabatu",
+    "downTitle": "Ezabatu {{name}}",
+    "downBody_one": "Proiektuaren edukiontzi {{count}} eta haren sareak geldituko eta ezabatuko dira (docker compose down). Bolumenak eta irudiak mantendu egiten dira, zuk besterik adierazten ez baduzu.",
+    "downBody_other": "Proiektuaren {{count}} edukiontziak eta haien sareak geldituko eta ezabatuko dira (docker compose down). Bolumenak eta irudiak mantendu egiten dira, zuk besterik adierazten ez baduzu.",
+    "downVolumes": "Ezabatu baita proiektuaren izendun bolumenak ere",
+    "downVolumesUnknown": "Fitxategiak deklaratzen dituenak (edo proiektuaren etiketa dutenak).",
+    "downVolumesWarn": "Bolumen horietan gordetako datuak betiko galduko dira.",
+    "downImages": "Irudiak",
+    "images": {
+      "none": "Mantendu",
+      "local": "Eraikitakoak",
+      "all": "Guztiak"
+    },
+    "imagesHint": {
+      "local": "Etiketa propiorik ez duten irudiak ezabatzen ditu (Composek eraikitzen dituenak).",
+      "all": "Zerbitzuek erabiltzen dituzten irudi guztiak ezabatzen ditu, deskargatutakoak ere bai."
+    },
+    "downSure": "Ulertzen dut proiektuaren edukiontziak eta sareak ezabatuko direla",
+    "start": "Abiarazi",
+    "stopAction": "Gelditu",
+    "restart": "Berrabiarazi",
+    "pullAction": "Deskargatu irudiak",
+    "buildAction": "Eraiki"
+  },
+  "composeAdd": {
+    "title": "Ireki proiektua",
+    "body": "Aukeratu proiektuaren compose.yaml fitxategia. Hainbat fitxategi erabiltzen baditu (adibidez, oinarrizko bat eta aldaketak dituen beste bat), gehitu konbinatzen diren ordenan.",
+    "pick": "Aukeratu fitxategia…",
+    "pickMore": "Gehitu beste fitxategi bat…",
+    "pickTitle": "Docker Compose fitxategia",
+    "filter": "YAML fitxategiak",
+    "removeFile": "Kendu {{file}}",
+    "order": "Ordena honetan konbinatzen dira: azkenek lehenak aldatzen dituzte.",
+    "name": "Proiektuaren izena (aukerakoa)",
+    "namePh": "fitxategiak edo karpetak adierazten duena",
+    "nameHint": "Hutsik uzten baduzu, Docker Composek erabakitzen duena erabiliko da (fitxategiko name: edo karpetaren izena).",
+    "badName": "Minuskulak, zenbakiak, - eta _ soilik, letra edo zenbaki batekin hasita.",
+    "submit": "Gehitu",
+    "invalid": "Docker Composek fitxategiak baztertzen ditu: {{message}}"
+  },
+  "composeFile": {
+    "files": "Proiektuaren fitxategiak",
+    "validate": "Balidatu",
+    "save": "Gorde",
+    "revert": "Desegin aldaketak",
+    "hint": "Gordetzean, lehenik edukia Docker Composerekin balidatzen da (gorde gabe). Fitxategia ez da gainidazten, bitartean beste programa batek aldatu badu.",
+    "unsaved": "Gorde gabeko aldaketak",
+    "saved": "Gordeta",
+    "loadError": "Ezin izan da fitxategia irakurri: {{message}}",
+    "readOnly": "Ez duzu fitxategi hau aldatzeko baimenik: irakurtzeko moduan erakusten da.",
+    "conflict": "Fitxategia diskoan aldatu da ireki zenuenetik. Ez da ezer gorde, aldaketa horiek ez galtzeko.",
+    "reload": "Kargatu berriro fitxategia (zure aldaketak baztertzen ditu)",
+    "saveInvalid": "Docker Composek eduki hau baztertzen du. Editatzen jarrai dezakezu edo hala ere gorde.",
+    "saveAnyway": "Gorde hala ere",
+    "invalid": "Docker Composek edukia baztertzen du:",
+    "valid_one": "Konfigurazio baliozkoa: zerbitzu {{count}}.",
+    "valid_other": "Konfigurazio baliozkoa: {{count}} zerbitzu.",
+    "discard": "Gorde gabeko aldaketak dituzu fitxategi honetan.",
+    "discardYes": "Baztertu eta aldatu fitxategiz",
+    "discardNo": "Jarraitu editatzen",
+    "editorLabel": "{{file}} fitxategiaren edukia"
+  },
+  "composeLogs": {
+    "services": "Zerbitzuak",
+    "all": "Guztiak",
+    "tail": "Aurreko lerroak",
+    "tailN_one": "Azkena",
+    "tailN_other": "Azken {{count}}ak",
+    "timestamps": "Denbora-zigiluak",
+    "pause": "Pausatu",
+    "follow": "Jarraitu",
+    "clear": "Hustu",
+    "live": "Zuzenean",
+    "opening": "Irekitzen…",
+    "paused": "Pausatuta: ez da erregistrorik jasotzen",
+    "ended": "Edukiontziak amaitu dira",
+    "closed": "Itxita",
+    "empty": "Oraindik ez dago erregistrorik."
+  },
+  "composeNew": {
+    "title": "Proiektu berria",
+    "folder": "Proiektuaren karpeta",
+    "pickFolder": "Aukeratu karpeta…",
+    "changeFolder": "Aldatu…",
+    "pickTitle": "Proiektu berriaren karpeta",
+    "nameHint": "Izen bat idazten baduzu, fitxategiari gehitzen zaio (name:), terminalak ere bera erabil dezan. Bestela, Docker Composek karpetaren izena erabiltzen du.",
+    "exists": "Karpeta honek badu Docker Compose fitxategi bat ({{file}}). Ez da gainidazten.",
+    "addExisting": "Ireki proiektu hori",
+    "editorHint": "compose.yaml karpetan sortuko da. Sortu aurretik Docker Composerekin balidatzen da.",
+    "create": "Sortu proiektua",
+    "needFolder": "Aukeratu lehenik proiektuaren karpeta.",
+    "editorLabel": "compose.yaml fitxategiaren edukia"
+  },
+  "events": {
+    "tabsLabel": "Ikuspegia",
+    "tabs": {
+      "live": "Zuzenean",
+      "journal": "Gordetakoak",
+      "docker": "Kontsultatu Dockerri",
+      "history": "Eragiketen historia"
+    },
+    "type": {
+      "container": "Edukiontzia",
+      "image": "Irudia",
+      "volume": "Bolumena",
+      "network": "Sarea",
+      "daemon": "Docker",
+      "plugin": "Plugina",
+      "builder": "Eraikuntza",
+      "service": "Zerbitzua",
+      "node": "Nodoa",
+      "secret": "Sekretua",
+      "config": "Konfigurazioa"
+    },
+    "allTypes": "Guztiak",
+    "filterType": "Mota",
+    "search": "Bilatu izenaren, IDaren, ekintzaren edo irudiaren arabera",
+    "actions": "Ekintzak",
+    "resource": "Baliabidea",
+    "resourcePh": "izena edo IDa",
+    "resourceNeedsType": "aukeratu baliabide-mota bat",
+    "pause": "Pausatu",
+    "resume": "Berrekin",
+    "resumeN_one": "Berrekin ({{count}} berri)",
+    "resumeN_other": "Berrekin ({{count}} berri)",
+    "clearView": "Hustu ikuspegia",
+    "clearViewHint": "Pantailako zerrenda bakarrik husten du; gordetako gertaerak mantendu egiten dira.",
+    "liveOn": "Zuzenean: Dockerreko aldaketak berehala agertzen dira eta aplikazio osoa eguneratzen dute",
+    "livePaused": "Pausatuta: gertaerak jasotzen jarraitzen dira eta aplikazioa eguneratzen jarraitzen du",
+    "liveOff": "Dockerrekiko konexiorik gabe: ez da gertaerarik jasotzen",
+    "count_one": "Gertaera {{count}}",
+    "count_other": "{{count}} gertaera",
+    "liveEmpty": "Oraindik ez da ezer gertatu Dockerren saio honetan. Sortu, abiarazi edo gelditu zerbait (terminaletik ere bai), eta hemen agertuko da.",
+    "noMatches": "Ez dago iragazkiekin bat datorren gertaerarik.",
+    "details": "Gertaeraren xehetasunak",
+    "since": "Noiztik",
+    "until": "Noiz arte",
+    "refresh": "Eguneratu",
+    "journalIntro": "Aplikazioak irekita eta konektatuta zegoen bitartean jasotako gertaerak, aurreko saioetakoak ere bai (azken 20 000ak gordetzen dira). «Noiz arte» hutsik badago, orain arte.",
+    "journalOff": "Gordetzea desgaituta dago Konfigurazioa › Jarduera atalean: gertaera berriak ez dira gordetzen.",
+    "journalCount": "Iragazkiak betetzen dituzten {{total}}etatik {{shown}} erakusten dira ({{stored}} gordeta).",
+    "journalClear": "Ezabatu gordetako gertaerak",
+    "journalClearTitle": "Ezabatu gordetako gertaerak",
+    "journalClearBody": "Gordetako {{count}} gertaerak diskotik ezabatuko dira. Ez du eraginik Dockerren eta eragiketen historian.",
+    "dockerIntro": "Dockerri eskatzen dizkio gordetzen dituen gertaerak (docker events --since … --until …): aplikazioa itxita zegoela gertatutakoa barne, baina Dockerrek azken 256 gertaerak bakarrik gordetzen ditu memorian, eta berrabiaraztean galtzen ditu. Iragazkia Dockerren aplikatzen da.",
+    "query": "Kontsultatu",
+    "truncated": "5000 gertaera baino gehiago daude: berrienak erakusten dira.",
+    "dockerEmpty": "Dockerrek ez du gertaerarik gordetzen tarte horretan iragazki horiekin."
+  },
+  "history": {
+    "intro": "Aplikazioak Dockerren gainean exekutatutako eragiketak, aurreko saioetakoak ere bai (azken 10 000ak gordetzen dira). Zer egin zen, noiz eta zer emaitzarekin gordetzen da; eskaeren gorputzak, komando baliokideak eta irteerak ez dira gordetzen, pasahitzak edo beste sekretu batzuk izan ditzaketelako.",
+    "off": "Historia desgaituta dago Konfigurazioa › Jarduera atalean: eragiketa berriak ez dira gordetzen.",
+    "search": "Bilatu eragiketaren, baliabidearen edo errorearen arabera",
+    "previous": "Aurreko saioa",
+    "count": "Iragazkiak betetzen dituzten {{total}}etatik {{shown}} erakusten dira ({{stored}} gordeta).",
+    "empty": "Oraindik ez dago gordetako eragiketarik.",
+    "noMatches": "Ez dago iragazkiekin bat datorren eragiketarik.",
+    "notKept": "Xehetasunak",
+    "notKeptBody": "Eskaeraren gorputza, komando baliokidea eta irteera jarduera-panelean bakarrik daude, exekutatu zen saioan.",
+    "clear": "Ezabatu historia",
+    "clearTitle": "Ezabatu eragiketen historia",
+    "clearBody": "Gordetako {{count}} eragiketak diskotik ezabatuko dira. Saio honetako jarduera-panela ez da aldatzen."
+  },
+  "updates": {
+    "title": "Eguneratzeak",
+    "installed": "Instalatutako bertsioa",
+    "installedPackage": ".deb paketea instalatuta ({{version}})",
+    "installedLocal": "Ez dago pakete gisa instalatuta (tokiko konpilazioa)",
+    "source": "Bertsioak non argitaratzen diren",
+    "sourceHint": "GitHub biltegia («jabea/biltegia») edo «version» duen JSON fitxategi baten https:// helbidea. Aplikazioak kontsultatu eta abisatu baino ez du egiten: ez du inoiz ezer deskargatzen edo instalatzen.",
+    "sourcePlaceholder": "jabea/biltegia edo https://…/latest.json",
+    "checkNow": "Egiaztatu orain",
+    "checking": "Egiaztatzen…",
+    "onStart": "Egiaztatu aplikazioa abiaraztean",
+    "onStartHint": "Adierazitako iturriari kontsulta bat aplikazioa irekitzen den bakoitzean. Konexiorik gabe ez da ezer gertatzen: hemen idazten da.",
+    "onStartNoSource": "Adierazi lehenik non argitaratzen diren bertsioak.",
+    "newer": "Bertsio berri bat dago: {{latest}} (zuk {{current}} duzu).",
+    "published": "argitaratze-data: {{date}}",
+    "upToDate": "Bertsio berriena duzu ({{current}}; argitaratutakoa {{latest}} da).",
+    "openPage": "Ireki bertsioaren orria",
+    "notes": "Berritasunak",
+    "checkedAt": "{{url}} kontsultatu da ({{time}}).",
+    "lastFailed": "Azken egiaztapenak huts egin du: {{message}}",
+    "howTo": "Eguneratzeko, deskargatu pakete berria eta instalatu «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb» komandoarekin. Zure konfigurazioa eta historia mantendu egiten dira.",
+    "banner": "Docker Control Centerren bertsio berri bat dago: {{latest}}.",
+    "bannerOpen": "Ikusi Konfigurazioan"
+  },
+  "system": {
+    "title": "Sistema",
+    "hint": "Bertsioak eta ordenagailuaren datuak. «Kopiatu» aukerak testu-txosten bat sortzen du arazo bat jakinarazteko (proiekturik, aldagairik eta kredentzialik gabe).",
+    "app": "Aplikazioa",
+    "host": "Ordenagailua",
+    "docker": "Docker",
+    "appVersion": "Bertsioa",
+    "package": ".deb paketea",
+    "notInstalled": "instalatu gabe (tokiko konpilazioa)",
+    "executable": "Exekutagarria",
+    "webkit": "WebKitGTK",
+    "configPath": "Konfigurazioa",
+    "stateDir": "Historia eta gertaerak",
+    "os": "Sistema eragilea",
+    "kernel": "Nukleoa",
+    "arch": "Arkitektura",
+    "glibc": "glibc",
+    "desktop": "Mahaigaina",
+    "engine": "Docker Engine",
+    "dockerOs": "Dockerren sistema",
+    "storage": "Biltegiratzea",
+    "cgroup": "cgroups",
+    "rootDir": "Datu-karpeta",
+    "resources": "Baliabideak",
+    "rootless": "Rootless",
+    "notConnected": "konexiorik gabe",
+    "compose": {
+      "label": "Docker Compose",
+      "notInstalled": "instalatu gabe",
+      "pluginUnusable": "instalatuta, baina ez dabil",
+      "legacy": "1. bertsioa (ez da bateragarria)",
+      "unrecognized": "ezezaguna",
+      "error": "ezin izan da egiaztatu"
+    }
+  },
+  "components": {
+    "title": "Desinstalazioa eta osagaiak",
+    "rowHint": "Aplikazioak zer instalatu zuen, zer ken daitekeen eta zer mantentzen den. Ez da ezer aldatzen zuk berretsi gabe.",
+    "intro": "dpkg eta APT bidez instalatutako paketeak aztertzen ditu, Docker Control Centerrek zer instalatu zuen eta zer ken daitekeen segurtasunez erakusteko. Aztertzeak kontsultatu eta simulatu baino ez du egiten: ez du ezer aldatzen. Docker, zure datuak eta zure konfigurazioa beti mantentzen dira.",
+    "analyze": "Aztertu osagaiak",
+    "reanalyze": "Aztertu berriro",
+    "analyzeHint": "dpkg-query, apt-mark, apt-cache eta apt-get simulazio bat exekutatzen ditu, pribilegiorik gabe. Jarduera-panelean geratzen da.",
+    "unsupported": "Sistema honek ez ditu dpkg eta APT erabiltzen: desinstalazio hautakorra Debian, Ubuntu eta haien eratorrietan bakarrik dago erabilgarri.",
+    "notPackaged": "Docker Control Center ez dago .deb pakete gisa instalatuta (adibidez, iturburu-kodetik konpilatuta exekutatzen da): ez dago ezer APTrekin desinstalatzeko.",
+    "history": {
+      "notFound": "APTren historiak ez du erakusten aplikazioa nola instalatu zen (adibidez, dpkg -i erabiliz instalatu zen edo historia dagoeneko biratu da). Segurtasunagatik, ez da mendekotasunik kentzea eskaintzen: guztiak jatorri ziurgabekotzat hartu eta mantentzen dira.",
+      "unreadable": "Ezin da APTren historia irakurri (/var/log/apt/history.log). Segurtasunagatik, ez da mendekotasunik kentzea eskaintzen."
+    },
+    "ownTitle": "Aplikazioaren paketea",
+    "removeApp": "Desinstalatu Docker Control Center",
+    "removableTitle": "Ken daitezkeen mendekotasunak ({{count}})",
+    "noneRemovable": "Bat ere ez: mendekotasun guztiak beste programa batzuek erabiltzen dituzte, lehendik instalatuta zeuden edo ezin da ziur jakin nork instalatu zituen.",
+    "removePackage": "Kendu {{name}}",
+    "direct": "zuzena",
+    "presetApp": "Docker Control Center soilik",
+    "presetAll": "Docker Control Center eta ken daitezkeen mendekotasunak",
+    "summary_one": "Pakete {{count}} · {{size}} askatzen dira",
+    "summary_other": "{{count}} pakete · {{size}} askatzen dira",
+    "nothingSelected": "Ez dago ezer hautatuta",
+    "review": "Berrikusi eta desinstalatu…",
+    "keptTitle": "Mantentzen direnak",
+    "group": {
+      "shared_one": "Beste programa batzuekin partekatua ({{count}})",
+      "shared_other": "Beste programa batzuekin partekatuak ({{count}})",
+      "manual_one": "Esplizituki instalatua ({{count}})",
+      "manual_other": "Esplizituki instalatuak ({{count}})",
+      "preExisting_one": "Lehendik instalatuta zegoen ({{count}})",
+      "preExisting_other": "Lehendik instalatuta zeuden ({{count}})",
+      "uncertain_one": "Jatorri ziurgabea ({{count}})",
+      "uncertain_other": "Jatorri ziurgabea ({{count}})",
+      "protected_one": "Sistemaren osagaia ({{count}})",
+      "protected_other": "Sistemaren osagaiak ({{count}})"
+    },
+    "class": {
+      "own": "Aplikazioaren paketea. Kentzean, ez dira ezabatzen zure konfigurazioa eta zure datuak.",
+      "removable": "APTk automatikoki instalatu zituen aplikazioarekin batera, eta beste paketerik ez ditu behar.",
+      "shared": "Aplikazioarekin instalatu ziren, baina beste pakete batzuek behar dituzte: kentzeak pakete horiek apurtuko lituzke.",
+      "manual": "Esplizituki instalatutzat markatuta daude (zuk edo beste programa batek): ez dira kentzen.",
+      "preExisting": "Aplikazioa baino lehen instalatuta zeuden: ez dira kentzen.",
+      "uncertain": "Ezin da ziur jakin nork instalatu zituen: mantendu egiten dira.",
+      "protected": "Sistemaren, pakete-kudeaketaren edo Dockerren funtsezko paketeak: ez dira inoiz kentzen."
+    },
+    "usedBy_one": "Erabiltzen duena: {{list}}",
+    "usedBy_other": "{{count}} paketek erabiltzen dute: {{list}}",
+    "externalTitle": "Kanpoko tresnak",
+    "externalHint": "Aplikazioak erabiltzen ditu, baina ez dira berea: beti mantentzen dira, aplikazioa desinstalatzen baduzu ere.",
+    "external": {
+      "engine": "Docker Engine",
+      "cli": "Docker CLI",
+      "compose": "Docker Compose"
+    },
+    "notFound": "ez da aurkitu",
+    "alwaysKept": "Mantendu egiten da",
+    "dataTitle": "Ezabatzen ez diren datuak",
+    "dataHint": "Zure konfigurazioa eta zure datuak mantendu egiten dira. Dockerren ere ez da ezer ukitzen: irudiak, edukiontziak, sareak, bolumenak eta Compose proiektuak. Karpeta horiek ezabatu nahi badituzu, egin eskuz.",
+    "data": {
+      "config": "Konfigurazioa",
+      "state": "Historia eta gertaerak",
+      "webData": "Leihoaren datuak",
+      "webCache": "Leihoaren cachea"
+    },
+    "absent": "ez dago",
+    "fullSimulation": "Desinstalazio osoaren APT simulazioa",
+    "fullSimulationHint": "APTk zer kenduko lukeen aplikazioa --auto-remove aukerarekin desinstalatuko bazenu. Lehendik alferrikakoak ziren paketeak izan ditzake; hemen aplikazioarekin instalatutakoak bakarrik eskaintzen dira.",
+    "confirmTitle": "Desinstalatu nahi duzu?",
+    "confirmBody_one": "Pakete {{count}} kenduko da eta {{size}} askatuko dira:",
+    "confirmBody_other": "{{count}} pakete kenduko dira eta {{size}} askatuko dira:",
+    "extra": "APTk hauek ere kenduko lituzke: {{list}}. Ezin da jarraitu; berrikusi hautapena.",
+    "command": "Exekutatuko den komandoa",
+    "elevationHint": "Sistemak administratzaile-pasahitza eskatuko dizu (pkexec) komando honetarako bakarrik. Bertan behera uzten baduzu, ez da ezer kentzen.",
+    "noElevation": "pkexec ez dago instalatuta: aplikazioak ezin du baimenik eskatu. Exekutatu zuk komando hau terminal batean.",
+    "simulation": "APT simulazioa (aldaketarik gabe)",
+    "keptNote": "Docker Engine, Docker CLI, Docker Compose, zure datuak eta zure konfigurazioa mantendu egiten dira. Ez da purge erabiltzen.",
+    "selfNote": "Aplikazioa bera desinstalatzen da: itxi amaitzean.",
+    "confirm": "Desinstalatu",
+    "removing": "APTrekin desinstalatzen…",
+    "done_one": "Pakete {{count}} desinstalatu da.",
+    "done_other": "{{count}} pakete desinstalatu dira.",
+    "doneSelf": "Docker Control Center jada ez dago instalatuta: itxi aplikazioa.",
+    "stillInstalled": "Instalatuta jarraitzen dute: {{list}}."
+  },
+  "help": {
+    "title": "Laguntza eta dokumentazioa",
+    "rowHint": "Funtzio guztien erabilera-gida, aplikaziotik irten gabe.",
+    "toc": "Laguntzaren aurkibidea",
+    "search": "Bilatu laguntzan",
+    "results_one": "Atal {{count}}ek du bilatutako testua",
+    "results_other": "{{count}} atalek dute bilatutako testua",
+    "noResults": "Ez dago testu hori duen atalik.",
+    "github": "Bisitatu nire GitHub profila"
+  },
+  "errorCodes": {
+    "engine_notConnected": "Ez dago Docker Enginerekiko konexiorik.",
+    "engine_timeout": "Dockerrek ez du garaiz erantzun.",
+    "engine_notConfirmed": "Eragiketak berrespen esplizitua behar du.",
+    "engine_composeUnavailable": "Docker Compose ez dago erabilgarri.",
+    "ipc_unavailable": "Interfazea mahaigaineko aplikaziotik kanpo exekutatzen ari da.",
+    "updates_noSource": "Ez dago eguneratze-iturririk konfiguratuta.",
+    "updates_invalidSource": "Iturri baliogabea: adierazi GitHubeko «jabea/biltegia» edo https:// helbide bat",
+    "updates_insecureSource": "https:// helbideak soilik onartzen dira (edo http://, makina honetara bertara).",
+    "packages_cancelled": "Autentifikazioa bertan behera utzi da: ez da ezer desinstalatu.",
+    "packages_denied": "Ez da administratzaile-baimenik eman: ez da ezer desinstalatu.",
+    "packages_busy": "Dagoeneko desinstalazio bat dago abian.",
+    "packages_notInstalled": "Aplikazioa ez dago .deb pakete gisa instalatuta: ez dago ezer APTrekin desinstalatzeko."
+  },
+  "commit": {
+    "action": "Sortu irudia edukiontzi honetatik",
+    "short": "Sortu irudia",
+    "title": "Sortu irudia {{name}} edukiontzitik",
+    "intro": "Irudi berri bat sortzen da edukiontziaren fitxategi-sistemaren uneko egoerarekin (docker commit). Edukiontzia ez da aldatzen.",
+    "repository": "Biltegia",
+    "repositoryHint": "Adibidez: nire-aplikazioa edo erregistroa.local:5000/taldea/app",
+    "tag": "Etiketa",
+    "tagHint": "Hutsik = latest",
+    "author": "Egilea (aukerakoa)",
+    "authorPh": "Izena <helbidea@adibidea.eus>",
+    "message": "Mezua (aukerakoa)",
+    "messagePh": "Irudi honek zer duen",
+    "preview": "Izen osoa:",
+    "refPlaceholder": "BILTEGIA:ETIKETA",
+    "notIncludedTitle": "Irudiak ez ditu barne hartzen bolumenak eta muntatutako karpetak",
+    "notIncluded": "Edukiontziaren idazketa-geruza bakarrik gordetzen da (haren muntaketetatik kanpo aldatutako fitxategiak). Muntaketa hauetako datuak ez dira irudian sartzen:",
+    "excludedList": "Irudian sartzen ez diren muntaketak",
+    "noMounts": "Edukiontzi honek ez du muntaketarik: haren fitxategi-sistema osoa gordetzen da.",
+    "mountKind": {
+      "volume": "bolumena",
+      "bind": "karpeta",
+      "tmpfs": "tmpfs"
+    },
+    "running": "Edukiontzia exekutatzen ari da. Haren prozesuak ez dira gelditzen.",
+    "pause": "Pausatu edukiontzia irudia sortzen den bitartean (gomendatua)",
+    "pauseHint": "Dockerrek segundo batzuetan izozten du, irudia koherentea izan dadin, eta gero berriro abiatzen du. Denbora horretan ez die eskaerei erantzuten.",
+    "noPauseHint": "Ez da eteten, baina irudiak erdi idatzitako fitxategiak izan ditzake.",
+    "exists": "Badago {{reference}} izeneko irudi bat ({{id}}).",
+    "replace": "Erabili izen hau irudi berrirako",
+    "replaceHint": "Aurreko irudia ez da ezabatzen: izen hori galtzen du (etiketarik gabe geratzen da), eta haren edukiontziek funtzionatzen jarraitzen dute.",
+    "create": "Sortu irudia",
+    "creating": "Irudia sortzen…",
+    "fixFirst": "Zuzendu markatutako datuak",
+    "failed": "Ezin izan da irudia sortu: {{message}}",
+    "loadError": "Ezin izan da edukiontzia irakurri: {{message}}",
+    "doneTitle": "Irudia sortu da",
+    "done": "{{reference}} irudia sortu da ({{id}}).",
+    "replaced": "Aurreko irudia ({{id}}) etiketarik gabe mantentzen da.",
+    "originalUntouched": "{{name}} edukiontzia lehen bezala dago.",
+    "openImage": "Ikusi irudia"
+  },
+  "edit": {
+    "action": "Editatu konfigurazioa",
+    "title": "Editatu {{name}} edukiontziaren konfigurazioa",
+    "back": "Itzuli edukiontzira",
+    "loadError": "Ezin izan da edukiontziaren konfigurazioa irakurri: {{message}}",
+    "sections": "Konfigurazioaren atalak",
+    "tabs": {
+      "general": "Orokorra",
+      "network": "Sarea",
+      "storage": "Biltegiratzea",
+      "env": "Aldagaiak",
+      "ports": "Atakak",
+      "resources": "Baliabideak",
+      "advanced": "Aurreratua"
+    },
+    "tabHasErrors": "Atal honetan zuzendu beharreko datuak daude",
+    "kind": {
+      "direct": "Aldaketa zuzena",
+      "recreate": "Birsortu behar da"
+    },
+    "g": {
+      "identity": "Identifikazioa eta berrabiaraztea",
+      "lifecycle": "Egoera",
+      "backups": "Babeskopiak",
+      "networks": "Konektatutako sareak",
+      "connect": "Konektatu beste sare batera",
+      "mounts": "Bolumenak eta karpetak",
+      "env": "Ingurune-aldagaiak",
+      "ports": "Argitaratutako atakak",
+      "resources": "PUZ eta memoria-mugak",
+      "advanced": "Exekuzio-konfigurazioa"
+    },
+    "f": {
+      "name": "Izena",
+      "restart": "Berrabiarazte-politika",
+      "description": "Deskribapena",
+      "network": "Sarea"
+    },
+    "h": {
+      "description": "Barneko oharra; edukiontziaren dcc.description etiketan gordetzen da.",
+      "lifecycle": "Ekintza hauek berehala aplikatzen dira.",
+      "backups": "Hau birsortzean gorde ziren jatorrizko edukiontziak. Geldituta daude eta bolumen berak partekatzen dituzte.",
+      "networks": "Sareak konektatzea eta deskonektatzea berehala aplikatzen da, edukiontzia birsortu gabe.",
+      "connect": "Aukeratu lehendik dagoen sare bat; hurrengo urratsean aliasak edo IP finko bat adieraz ditzakezu.",
+      "mounts": "Ordenagailuko bideak edo bolumenak, eta edukiontzi barruko bidea.",
+      "env": "Edukiontziaren aldagai propioak. Irudikoak heredatu egiten dira hala ere.",
+      "ports": "Ordenagailuaren eta edukiontziaren atakeen arteko lotura.",
+      "resources": "Dockerrek muga hauek eguneratzen ditu edukiontzia berrabiarazi gabe.",
+      "cpus": "Nukleoak, adib. 0.5. Ordenagailuak {{max}} ditu.",
+      "limitRemoval": "Muga bat kentzea (eremua hutsik utzita) ezin da docker update-rekin egin: edukiontzia birsortu behar da.",
+      "advanced": "Dockerrek ez du uzten aukera hauek aldatzen lehendik dagoen edukiontzi batean.",
+      "duplicateInstead": "Aldatzeko, sortu edukiontzi berri bat honetatik abiatuta:"
+    },
+    "recreateNote": {
+      "mounts": "Muntaketak aldatzeko, edukiontzia birsortu behar da. Bolumenak eta karpetak ez dira inoiz ezabatzen: kentzen duzun muntaketa deskonektatu egiten da, besterik ez.",
+      "ports": "Atakak aldatzeko, edukiontzia birsortu behar da. Aplikatu aurretik, beste edukiontzi batek erabiltzen ez dituela egiaztatzen da."
+    },
+    "anonymousVolumes": "Eduki berarekin berriro muntatuko diren bolumen anonimoak: {{names}}",
+    "otherMounts": "Beste muntaketa batzuk (mantendu egiten dira, ez dira hemen editatzen):",
+    "secretsWarning": "Aldagaien balioak docker inspect-ekin eta edukiontzi barrutik ikus daitezke. Aplikazioan, sekretuak diruditenak ezkutatzen dira (pasahitzak, tokenak, gakoak), eta ez dira inoiz jarduera-panelean gordetzen.",
+    "imageEnvHint": "Irudikoak dira eta heredatu egiten dira; izen bereko bat hemen definitzen baduzu, zurea lehenesten da.",
+    "portsNotApplicable": "«{{mode}}» sare-moduarekin, Dockerrek ez du atakarik argitaratzen.",
+    "hostLimits": "Ordenagailua: {{cpus}} PUZ eta {{memory}} memoria.",
+    "networkModeSpecial": "Edukiontzi honek «{{mode}}» sare-modua erabiltzen du: Dockerrek ez du uzten sareetara konektatzen edo haietatik deskonektatzen.",
+    "noNetworks": "Ez dago inongo saretara konektatuta.",
+    "net": {
+      "name": "Sarea",
+      "ip": "IP helbidea",
+      "mac": "MAC",
+      "aliases": "Aliasak",
+      "noIp": "IPrik gabe (geldituta)",
+      "fixed": "IP finkoa: {{ip}}"
+    },
+    "aliasesRestriction": "Dockerrek ez du uzten lehendik dagoen konexio baten aliasak edo IPa aldatzen: deskonektatu sarea eta konektatu berriro balio berriekin. bridge sare lehenetsian ez dago aliasik.",
+    "pickNetwork": "Aukeratu sare bat…",
+    "noOtherNetworks": "Ez dago beste sare erabilgarririk",
+    "noChanges": "Ez dago aldaketarik zain.",
+    "pendingDirect_one": "Aldaketa {{count}} zain. Zuzenean aplikatzen da, edukiontzia birsortu gabe.",
+    "pendingDirect_other": "{{count}} aldaketa zain. Zuzenean aplikatzen dira, edukiontzia birsortu gabe.",
+    "pendingRecreate_one": "Aldaketa {{count}} zain. Edukiontzia birsortu behar da.",
+    "pendingRecreate_other": "{{count}} aldaketa zain. Horietakoren batek edukiontzia birsortzea eskatzen du.",
+    "discard": "Baztertu aldaketak",
+    "review": "Berrikusi aldaketak",
+    "fixFirst": "Zuzendu markatutako datuak jarraitu aurretik",
+    "restore": "Leheneratu",
+    "restoreTitle": "{{name}} leheneratu nahi duzu?",
+    "restoreBody": "Kopiak {{original}} izena berreskuratzen du eta abiarazi egiten da. Orain izen hori duen edukiontzia gelditu eta beste izen batekin baztertzen da.",
+    "restoreSafe": "Ez da edukiontzirik, bolumenik edo irudirik ezabatzen. Kopia abiarazten ez bada, dena lehen bezala geratzen da.",
+    "removeBackup": "Ezabatu kopia",
+    "removeBackupTitle": "{{name}} kopia ezabatu nahi duzu?",
+    "removeBackupBody": "Kopiaren edukiontzia bakarrik ezabatzen da (eta haren muntaketetatik kanpo idatzi zuena). Haren bolumenak ez dira ukitzen: uneko edukiontziak erabiltzen ditu.",
+    "failed": "Ezin izan da aplikatu: {{message}}",
+    "rolledBack": "Jatorrizko edukiontzira itzuli da, bere izenarekin eta egoerarekin.",
+    "rollbackFailed": "Ezin izan da erabat aurreko egoerara itzuli. Berrikusi beheko urratsak.",
+    "rollbackFailedHelp": "Zure datuak hor daude oraindik: ez da bolumenik, karpetarik edo irudirik ezabatu, eta jatorrizko edukiontzia badago (bere izenarekin edo kopiaren izenarekin). Orokorra ataletik leheneratu dezakezu.",
+    "nothingChanged": "Edukiontzia ez da aldatu.",
+    "comparing": "Uneko konfigurazioarekin alderatzen…",
+    "planError": "Ezin izan dira aldaketak alderatu: {{message}}",
+    "backToEdit": "Itzuli editatzera",
+    "reviewTitle": "Berrikusi aldaketak",
+    "needsRecreate": "Edukiontzia birsortu behar da",
+    "directOnly": "Aldaketa zuzenak, birsortu gabe",
+    "hasErrors": "Datu batzuk zuzendu behar dira aplikatu aurretik:",
+    "comparison": "Konfigurazioaren alderaketa",
+    "col": {
+      "setting": "Ezarpena",
+      "current": "Unekoa",
+      "new": "Berria",
+      "kind": "Nola aplikatzen den"
+    },
+    "field": {
+      "name": "Izena",
+      "description": "Deskribapena",
+      "restart": "Berrabiarazte-politika",
+      "cpus": "PUZ",
+      "memory": "Memoria",
+      "memoryReservation": "Erreserbatutako memoria",
+      "env": "Ingurune-aldagaiak",
+      "ports": "Atakak",
+      "mounts": "Muntaketak"
+    },
+    "reason": {
+      "labelsImmutable": "Etiketak ezin dira aldatu lehendik dagoen edukiontzi batean.",
+      "limitRemoval": "Dockerrek ez du uzten muga bat kentzen docker update-rekin."
+    },
+    "restartValue": {
+      "no": "Ez berrabiarazi",
+      "always": "Beti",
+      "unless-stopped": "Eskuz gelditu ez bada",
+      "on-failure": "Huts egiten badu {{n}}"
+    },
+    "op": {
+      "added": "Berria",
+      "removed": "Kentzen da",
+      "modified": "Aldatzen da"
+    },
+    "none": "(baliorik gabe)",
+    "kept": "Mantentzen direnak:",
+    "keptRest": "Gainerako konfigurazioa (irudia, komandoa, erabiltzailea, sareak, aldatzen ez diren muntaketak eta beste aukerak) bere horretan mantentzen da.",
+    "recreateTitle": "Birsortze segurua",
+    "plan": {
+      "stop": "Uneko edukiontzia gelditzen da.",
+      "backup": "Izena {{backup}} izatera aldatzen zaio eta babeskopia gisa gordetzen da.",
+      "create": "Edukiontzi berri bat sortzen da jatorrizko izenarekin, {{image}} irudiarekin eta konfigurazio osoarekin, zure aldaketak barne.",
+      "startVerify": "Abiarazi egiten da, eta segundo batzuetan exekutatzen jarraitzen duela egiaztatzen da.",
+      "verifyStopped": "Dockerrek ondo sortu duela egiaztatzen da. Geldituta geratzen da, jatorrizkoa bezala.",
+      "rollback": "Zerbaitek huts egiten badu, edukiontzi berria ezabatu egiten da, eta jatorrizkoak bere izena eta egoera berreskuratzen ditu."
+    },
+    "dataPromise": "Ez da bolumenik, karpetarik edo irudirik ezabatzen. Bolumenak eta karpetak edukiontzi berrian muntatzen dira berriro, eduki berarekin.",
+    "interruption": "Zerbitzua eten egingo da birsortzean (normalean segundo batzuk).",
+    "blocker": {
+      "state": "Edukiontzia «{{status}}» egoeran dago. Gelditu edo berrekin birsortu aurretik.",
+      "autoRemove": "Edukiontzia «ezabatu gelditzean» aukerarekin sortu zen (--rm): gelditzean, Dockerrek ezabatu egingo luke eta ezingo litzateke kopia gisa gorde. Ezin da segurtasunez birsortu.",
+      "composeManaged": "Edukiontzia «{{project}}» Compose proiektukoa da. Aldatu Compose fitxategian eta hedatu berriro: hemen birsortuko balitz, Composek berriro ordeztuko luke.",
+      "swarmManaged": "Edukiontzia Swarm zerbitzu batek kudeatzen du. Aldatu zerbitzua, ez edukiontzia.",
+      "imageMissing": "{{image}} irudia jada ez dago erabilgarri ordenagailu honetan: hura gabe, ezin da edukiontzi berria sortu. Deskargatu lehenik.",
+      "configUnreadable": "Ezin izan da edukiontziaren konfigurazio osoa irakurri ({{detail}}); beraz, ezin da segurtasunez gorde."
+    },
+    "risksTitle": "Jarraitu aurretik, berretsi arrisku hauek ulertzen dituzula:",
+    "risk": {
+      "writableLayer": "Edukiontziak {{size}} ditu idatzita bere bolumenetatik kanpo. Fitxategi horiek ez dira edukiontzi berrira pasatzen (kopian geratzen dira).",
+      "writableLayerUnknown": "Ezin izan da jakin edukiontziak bere bolumenetatik kanpo idatzitako fitxategirik duen. Baditu, ez dira edukiontzi berrira pasatzen (kopian geratzen dira).",
+      "dependents": "Edukiontzi hauek honen sarea erabiltzen dute ({{containers}}), eta harekin konektatuta egoteari utziko diote birsortu arte.",
+      "mountDetached": "Muntatuta egoteari uzten diote: {{mounts}}. Haien edukia ez da ezabatzen.",
+      "imageTagMoved": "{{image}} etiketak beste irudi bat adierazten du orain. Edukiontzi berriak jatorrizkoaren irudi bera erabiliko du (haren IDaren bidez), ez berria."
+    },
+    "riskHint": {
+      "writableLayer": "Behar badituzu, sortu aurretik irudi bat edukiontzi honetatik edo gorde itzazu bolumen batean."
+    },
+    "notice": {
+      "macUnknown": "Edukiontzia geldituta dago eta Dockerrek ez du haren MAC helbidea erakusten: edukiontzi berriak beste bat jasoko du. MAC bat finkatu bazenuen, abiarazi edukiontzia birsortu aurretik, hura gorde ahal izateko.",
+      "macLegacy": "Dockerren bertsio honek ez du uzten MAC helbidea gordetzen birsortzean: edukiontzi berriak beste bat jasoko du."
+    },
+    "keepMac": "Gorde uneko MAC helbideak",
+    "keepMacHint": "Markatu MAC bat finkatu bazenuen (--mac-address). Dockerrek ez du adierazten MAC bat finkoa den edo automatikoki esleitua.",
+    "finalConfig": "Ikusi edukiontzi berriaren azken konfigurazioa",
+    "confirmRecreate": "Aldaketak berrikusi ditut eta {{name}} birsortu nahi dut",
+    "operations": "Aurreikusitako eragiketak",
+    "applying": "Aplikatzen…",
+    "recreating": "Edukiontzia birsortzen…",
+    "blockedHint": "Birsortzea ezin da segurtasunez egin (ikusi arrazoiak)",
+    "confirmHint": "Berretsi arriskuak eta birsortzea jarraitzeko",
+    "recreate": "Birsortu edukiontzia",
+    "apply": "Aplikatu aldaketak",
+    "doneDirect": "Aldaketak {{name}} edukiontzian aplikatu eta egiaztatu dira.",
+    "doneRecreated": "{{name}} aldaketekin birsortu da eta ondo dabil.",
+    "backupKept": "Jatorrizko edukiontzia geldituta gordetzen da {{backup}} izenarekin. Orokorra ataletik leheneratu edo ezabatu dezakezu.",
+    "stepsTitle": "Egindako urratsak",
+    "stepOk": "Zuzena",
+    "stepFailed": "Errorea",
+    "step": {
+      "update": "Eguneratu baliabideak eta berrabiaraztea (docker update)",
+      "rename": "Aldatu izena",
+      "verify": "Egiaztatu emaitza",
+      "stop": "Gelditu edukiontzia",
+      "prepare": "Prestatu edukiontzi berriaren konfigurazioa",
+      "backup": "Baztertu jatorrizkoa kopia gisa",
+      "create": "Sortu edukiontzi berria",
+      "connect": "Konektatu sare gehigarri bat",
+      "disconnect": "Deskonektatu jatorrizkoak jada ez zuen sare bat",
+      "start": "Abiarazi edukiontzia",
+      "rollbackRemove": "Desegin: ezabatu edukiontzi berria (bolumenik gabe)",
+      "rollbackRename": "Desegin: itzuli jatorrizko izena",
+      "rollbackStart": "Desegin: abiarazi berriro jatorrizkoa",
+      "rollbackStop": "Desegin: gelditu kopia"
+    },
+    "openContainer": "Ireki edukiontzia"
+  }
+}

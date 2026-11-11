@@ -398,7 +398,7 @@ fn validation_only_reports_what_the_user_changed() {
         let (c, _) = diff(&cur, &des);
         assert!(validate(&cur, &des, &c, false, false)
             .iter()
-            .any(|i| i.code == "name.reserved"));
+            .any(|i| i.code == "name.backupReserved"));
     }
 }
 

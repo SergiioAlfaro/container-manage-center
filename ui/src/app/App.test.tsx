@@ -85,7 +85,7 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: "Configuración" }));
     await userEvent.click(await screen.findByRole("radio", { name: "Oscuro" }));
     expect(document.documentElement.dataset.theme).toBe("dark");
-    await userEvent.click(screen.getByRole("radio", { name: "English" }));
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Idioma" }), "English");
     expect(await screen.findByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
     expect(configSet).toHaveBeenLastCalledWith(expect.objectContaining({ ui: expect.objectContaining({ theme: "dark", language: "en" }) }));
   });

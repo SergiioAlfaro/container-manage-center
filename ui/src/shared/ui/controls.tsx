@@ -51,7 +51,21 @@ export function Segmented<T extends string>({
   label: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border border-line bg-surface-sunk p-0.5">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="inline-flex rounded-lg border border-line bg-surface-sunk p-0.5"
+      // Patrón de grupo de opciones (0.9.2): las flechas eligen la anterior o la siguiente.
+      onKeyDown={(e) => {
+        const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+        if (step === 0) return;
+        e.preventDefault();
+        const i = options.findIndex((o) => o.value === value);
+        const next = (i + step + options.length) % options.length;
+        onChange(options[next]!.value);
+        (e.currentTarget.querySelectorAll<HTMLButtonElement>("[role=radio]")[next])?.focus();
+      }}
+    >
       {options.map((o) => {
         const active = o.value === value;
         return (

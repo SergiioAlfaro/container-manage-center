@@ -909,7 +909,7 @@ pub fn validate(
     if changed("name")
         && (desired.name.contains(BACKUP_INFIX) || desired.name.contains(REPLACED_INFIX))
     {
-        out.push(issue(Severity::Error, "name", "name.reserved", &[]));
+        out.push(issue(Severity::Error, "name", "name.backupReserved", &[]));
     }
     if changed("description") {
         if desired.description.chars().count() > MAX_DESCRIPTION {

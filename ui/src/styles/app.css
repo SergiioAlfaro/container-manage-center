@@ -24,10 +24,12 @@
   --hull-ink: #c9d4df;
   --hull-ink-dim: #8194a7;
 
-  --beacon: #0e858a;
+  --beacon: #0d8287;
   --beacon-strong: #0a6b6f;
-  --beacon-soft: rgb(14 133 138 / 0.11);
+  --beacon-soft: rgb(13 130 135 / 0.11);
   --beacon-ink: #ffffff;
+  /* Acento sobre el casco (barra lateral, siempre oscura): 0.9.2, D-072. */
+  --beacon-nav: #25b0b3;
 
   --signal-ok: #2b8a57;
   --signal-run: #2a74b0;
@@ -65,6 +67,7 @@
   --beacon-strong: #4cc6c8;
   --beacon-soft: rgb(37 176 179 / 0.14);
   --beacon-ink: #071317;
+  --beacon-nav: #4cc6c8;
 
   --signal-ok: #4fb57c;
   --signal-run: #5b9fd6;
@@ -79,6 +82,29 @@
   --focus: #5b9fd6;
   --shadow-panel: -18px 0 40px -24px rgb(0 0 0 / 0.7);
   color-scheme: dark;
+}
+
+/*
+ * Color principal morado (0.9.2, D-072). Solo cambian los tokens del acento;
+ * todos los componentes los usan, así que no hay reglas por componente.
+ * Contrastes (WCAG): ver styles/accent.test.ts.
+ */
+:root[data-accent="purple"] {
+  --beacon: #7046d4;
+  --beacon-strong: #5a32b3;
+  --beacon-soft: rgb(112 70 212 / 0.11);
+  --beacon-ink: #ffffff;
+  --beacon-nav: #a184f2;
+  --focus: #6a3fd0;
+}
+
+:root[data-theme="dark"][data-accent="purple"] {
+  --beacon: #a184f2;
+  --beacon-strong: #bba6f7;
+  --beacon-soft: rgb(161 132 242 / 0.15);
+  --beacon-ink: #140b2b;
+  --beacon-nav: #bba6f7;
+  --focus: #b49cf7;
 }
 
 @theme inline {
@@ -100,6 +126,7 @@
   --color-beacon-strong: var(--beacon-strong);
   --color-beacon-soft: var(--beacon-soft);
   --color-beacon-ink: var(--beacon-ink);
+  --color-beacon-nav: var(--beacon-nav);
   --color-ok: var(--signal-ok);
   --color-run: var(--signal-run);
   --color-warn: var(--signal-warn);

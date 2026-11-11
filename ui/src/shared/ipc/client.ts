@@ -28,6 +28,14 @@ import type { ImageSummary } from "./bindings/ImageSummary";
 import type { SystemOverview } from "./bindings/SystemOverview";
 import type { ContainerDetails } from "./bindings/ContainerDetails";
 import type { ContainerSpec } from "./bindings/ContainerSpec";
+import type { EditableConfig } from "./bindings/EditableConfig";
+import type { EditOutcome } from "./bindings/EditOutcome";
+import type { EditPlan } from "./bindings/EditPlan";
+import type { EditRequest } from "./bindings/EditRequest";
+import type { ApplyOptions } from "./bindings/ApplyOptions";
+import type { CommitPreview } from "./bindings/CommitPreview";
+import type { CommitRequest } from "./bindings/CommitRequest";
+import type { CommitResult } from "./bindings/CommitResult";
 import type { CreateResult } from "./bindings/CreateResult";
 import type { DuplicateSpec } from "./bindings/DuplicateSpec";
 import type { ImageDefaults } from "./bindings/ImageDefaults";
@@ -183,6 +191,13 @@ export const api = {
   containerCreate: (spec: ContainerSpec, start: boolean) => call<CreateResult>("container_create", { spec, start }),
   containerInspect: (id: string, name: string | null) => call<ContainerDetails>("container_inspect", { id, name }),
   containerDuplicateSpec: (id: string, name: string | null) => call<DuplicateSpec>("container_duplicate_spec", { id, name }),
+  // 0.9.2: editar configuración, recreación segura, copia de seguridad e imagen desde contenedor.
+  containerEditConfig: (id: string) => call<EditableConfig>("container_edit_config", { id }),
+  containerEditPlan: (id: string, request: EditRequest) => call<EditPlan>("container_edit_plan", { id, request }),
+  containerEditApply: (id: string, request: EditRequest, options: ApplyOptions) => call<EditOutcome>("container_edit_apply", { id, request, options }),
+  containerRestoreBackup: (id: string, start: boolean) => call<EditOutcome>("container_restore_backup", { id, start, confirmed: true }),
+  containerCommitPreview: (id: string, request: CommitRequest) => call<CommitPreview>("container_commit_preview", { id, request }),
+  containerCommit: (id: string, request: CommitRequest) => call<CommitResult>("container_commit", { id, request }),
   imageDefaults: (image: string) => call<ImageDefaults>("image_defaults", { image }),
   networksBrief: () => call<NetworkBrief[]>("networks_brief"),
   volumesBrief: () => call<VolumeBrief[]>("volumes_brief"),

@@ -21,7 +21,15 @@ export function renderArgv(program: string, args: string[]): string {
 
 /** Texto de la operación realmente ejecutada. */
 export function describeTransport(t: Transport): string {
-  return t.via === "api" ? `${t.method} ${t.path}` : renderArgv(t.program, t.args);
+  switch (t.via) {
+    case "api":
+      return `${t.method} ${t.path}`;
+    case "cli":
+      return renderArgv(t.program, t.args);
+    case "app":
+      // Operación propia de la aplicación (0.9.2): sin petición ni proceso.
+      return t.action;
+  }
 }
 
 /**

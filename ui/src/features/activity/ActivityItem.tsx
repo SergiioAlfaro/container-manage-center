@@ -99,7 +99,7 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
             title={t(`activity.viaLong.${r.transport.via}`)}
             className={cx(
               "rounded-[4px] px-1.5 py-px text-[10.5px] font-semibold",
-              isApi ? "bg-beacon-soft text-beacon-strong" : "bg-warn/15 text-warn",
+              isApi ? "bg-beacon-soft text-beacon-strong" : r.transport.via === "app" ? "bg-surface-sunk text-ink-2" : "bg-warn/15 text-warn",
             )}
           >
             {t(`activity.via.${r.transport.via}`)}
@@ -132,7 +132,10 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
 
       {open && (
         <div id={detailsId} className="border-t border-log-rule bg-surface/50 px-4 py-3 pl-[37px] text-[12.5px]">
-          <Block label={isApi ? t("activity.executed") : t("activity.executedCommand")} action={<CopyButton text={describeTransport(r.transport)} />}>
+          <Block
+            label={isApi ? t("activity.executed") : r.transport.via === "app" ? t("activity.executedApp") : t("activity.executedCommand")}
+            action={r.transport.via === "app" ? undefined : <CopyButton text={describeTransport(r.transport)} />}
+          >
             <Code>{describeTransport(r.transport)}</Code>
             <p className="mt-1 text-[11.5px] text-ink-3">
               {t(`activity.viaLong.${r.transport.via}`)}

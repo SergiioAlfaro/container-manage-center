@@ -63,7 +63,7 @@ export function Checkbox({ checked, onChange, label, hint, disabled }: { checked
  * Diálogo modal: Escape cierra, el foco entra en el diálogo al abrir y vuelve
  * al elemento anterior al cerrar; Tab no sale del diálogo.
  */
-export function Dialog({ title, children, onClose, footer }: { title: string; children: ReactNode; onClose: () => void; footer: ReactNode }) {
+export function Dialog({ title, children, onClose, footer, wide = false }: { title: string; children: ReactNode; onClose: () => void; footer: ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -98,11 +98,11 @@ export function Dialog({ title, children, onClose, footer }: { title: string; ch
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[rgb(10_16_24/0.45)] p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className="panel-enter w-full max-w-[460px] rounded-xl border border-line bg-surface shadow-2xl">
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className={cx("panel-enter flex max-h-[calc(100vh-48px)] w-full flex-col rounded-xl border border-line bg-surface shadow-2xl", wide ? "max-w-[620px]" : "max-w-[460px]")}>
         <h2 id={titleId} className="border-b border-line px-5 py-3.5 text-[15px] font-semibold [overflow-wrap:anywhere]">
           {title}
         </h2>
-        <div className="space-y-3 px-5 py-4 text-[13.5px]">{children}</div>
+        <div className="min-h-0 space-y-3 overflow-y-auto px-5 py-4 text-[13.5px]">{children}</div>
         <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>
       </div>
     </div>

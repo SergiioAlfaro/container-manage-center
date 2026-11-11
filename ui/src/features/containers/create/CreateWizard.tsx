@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, EyeOff, FolderOpen, Play, Plus } from "lucide-react";
+import { ArrowLeft, Play, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/shared/ipc/client";
 import type { CommandError } from "@/shared/ipc/bindings/CommandError";
 import type { ContainerSpec } from "@/shared/ipc/bindings/ContainerSpec";
-import type { KeyValue } from "@/shared/ipc/bindings/KeyValue";
-import type { MountSpec } from "@/shared/ipc/bindings/MountSpec";
 import type { PortSpec } from "@/shared/ipc/bindings/PortSpec";
 import type { RestartName } from "@/shared/ipc/bindings/RestartName";
 import type { SpecIssue } from "@/shared/ipc/bindings/SpecIssue";
@@ -17,7 +15,8 @@ import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { joinArgs, splitArgs } from "../shellwords";
 import { WIZARD_TABS, bytesFrom, emptySpec, isSecretKey, issuesFor, tabOf, toMemField, type MemUnit, type WizardTab } from "../specModel";
 import { useContainersNav, type Notice } from "../store";
-import { Field, Group, IssueList, RowList, Select, TextInput, useIssueText } from "./fields";
+import { Field, Group, IssueList, Select, TextInput, useIssueText } from "./fields";
+import { KvEditor, MemField, MountsEditor, PortsEditor } from "./editors";
 
 const RESTARTS: RestartName[] = ["no", "always", "unlessStopped", "onFailure"];
 
@@ -90,13 +89,6 @@ export function effectiveSpec(spec: ContainerSpec, t: Texts): { spec: ContainerS
   return { spec: out, issues };
 }
 
-const port = (s: string): number | null => {
-  const v = s.trim();
-  if (v === "") return null;
-  const n = Number(v);
-  // Fuera de rango → 0, que el backend señala como puerto no válido.
-  return Number.isInteger(n) && n > 0 && n <= 65535 ? n : 0;
-};
 
 export function CreateWizard({ initial, notes, sourceName }: { initial: ContainerSpec | null; notes: string[]; sourceName: string | null }) {
   const { t } = useTranslation();
@@ -336,36 +328,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                   }
                 >
                   <IssueList issues={of("ports")} />
-                  <RowList<PortSpec>
-                    rows={spec.ports}
-                    onChange={(v) => set("ports", v)}
-                    make={() => ({ hostIp: "", hostPort: null, containerPort: 0, protocol: "tcp" })}
-                    addLabel={t("create.add.port")}
-                    removeLabel={(i) => t("create.remove.port", { n: i + 1 })}
-                    empty={t("create.empty.ports")}
-                    render={(p, setP, i) => (
-                      <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_90px] gap-2">
-                        <Field label={t("create.f.hostIp")} issues={of(`ports.${i}.hostIp`)}>
-                          {(id, inv) => <TextInput id={id} invalid={inv} value={p.hostIp} onChange={(e) => setP({ ...p, hostIp: e.target.value })} placeholder={t("create.ph.allIps")} />}
-                        </Field>
-                        <Field label={t("create.f.hostPort")} issues={of(`ports.${i}.hostPort`)}>
-                          {(id, inv) => <PortInput id={id} invalid={inv} value={p.hostPort} onChange={(v) => setP({ ...p, hostPort: v })} placeholder={t("create.ph.anyPort")} />}
-                        </Field>
-                        <Field label={t("create.f.containerPort")} issues={of(`ports.${i}.containerPort`)}>
-                          {(id, inv) => <PortInput id={id} invalid={inv} value={p.containerPort || null} onChange={(v) => setP({ ...p, containerPort: v ?? 0 })} placeholder="80" />}
-                        </Field>
-                        <Field label={t("create.f.protocol")}>
-                          {(id) => (
-                            <Select id={id} value={p.protocol} onChange={(e) => setP({ ...p, protocol: e.target.value as PortSpec["protocol"] })}>
-                              <option value="tcp">tcp</option>
-                              <option value="udp">udp</option>
-                              <option value="sctp">sctp</option>
-                            </Select>
-                          )}
-                        </Field>
-                      </div>
-                    )}
-                  />
+                  <PortsEditor ports={spec.ports} onChange={(v) => set("ports", v)} issues={issues} />
                   <Checkbox checked={spec.publishAll} onChange={(v) => set("publishAll", v)} label={t("create.f.publishAll")} hint={t("create.h.publishAll")} />
                 </Group>
                 <Group title={t("create.g.hosts")} description={t("create.g.hostsHint")}>
@@ -383,58 +346,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                     <option key={v.name} value={v.name} />
                   ))}
                 </datalist>
-                <RowList<MountSpec>
-                  rows={spec.mounts}
-                  onChange={(v) => set("mounts", v)}
-                  make={() => ({ kind: "volume", source: "", target: "", readOnly: false })}
-                  addLabel={t("create.add.mount")}
-                  removeLabel={(i) => t("create.remove.mount", { n: i + 1 })}
-                  empty={t("create.empty.mounts")}
-                  render={(m, setM, i) => (
-                    <div className="space-y-2 rounded-lg border border-line p-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Segmented<MountSpec["kind"]>
-                          label={t("create.f.mountKind")}
-                          value={m.kind}
-                          onChange={(k) => setM({ ...m, kind: k, source: "" })}
-                          options={[
-                            { value: "volume", label: t("create.mountKind.volume") },
-                            { value: "bind", label: t("create.mountKind.bind") },
-                          ]}
-                        />
-                        <Checkbox checked={m.readOnly} onChange={(v) => setM({ ...m, readOnly: v })} label={t("create.f.readOnly")} />
-                      </div>
-                      <div className="grid gap-2 md:grid-cols-2">
-                        <Field label={m.kind === "volume" ? t("create.f.volumeName") : t("create.f.hostPath")} issues={of(`mounts.${i}.source`)} hint={m.kind === "volume" ? t("create.h.volumeName") : undefined}>
-                          {(id, inv) =>
-                            m.kind === "volume" ? (
-                              <TextInput id={id} invalid={inv} list="dcc-volumes" value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder={t("create.ph.anonymous")} />
-                            ) : (
-                              <div className="flex gap-1.5">
-                                <TextInput id={id} invalid={inv} value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder="/home/usuario/datos" />
-                                <Button
-                                  size="sm"
-                                  className="h-8 shrink-0"
-                                  aria-label={t("create.pickFolder")}
-                                  title={t("create.pickFolder")}
-                                  onClick={async () => {
-                                    const dir = await api.pickFolder(t("create.pickFolder"));
-                                    if (dir) setM({ ...m, source: dir });
-                                  }}
-                                >
-                                  <FolderOpen size={14} />
-                                </Button>
-                              </div>
-                            )
-                          }
-                        </Field>
-                        <Field label={t("create.f.target")} issues={of(`mounts.${i}.target`)}>
-                          {(id, inv) => <TextInput id={id} invalid={inv} value={m.target} onChange={(e) => setM({ ...m, target: e.target.value })} placeholder="/data" />}
-                        </Field>
-                      </div>
-                    </div>
-                  )}
-                />
+                <MountsEditor mounts={spec.mounts} onChange={(v) => set("mounts", v)} issues={issues} />
               </Group>
             )}
 
@@ -619,92 +531,6 @@ function ArgvField({ label, field, value, onChange, placeholder, args, issues, h
         </>
       )}
     </Field>
-  );
-}
-
-function PortInput({ value, onChange, ...rest }: { value: number | null; onChange: (v: number | null) => void; id: string; invalid: boolean; placeholder: string }) {
-  const [text, setText] = useState(value === null ? "" : String(value));
-  useEffect(() => {
-    if (port(text) !== value && !(value === 0 && port(text) === 0)) setText(value === null ? "" : String(value));
-    // Solo sincroniza cuando el valor cambia desde fuera (p. ej. al añadir los puertos expuestos).
-  }, [value]);
-  return (
-    <TextInput
-      {...rest}
-      inputMode="numeric"
-      value={text}
-      onChange={(e) => {
-        setText(e.target.value);
-        onChange(port(e.target.value));
-      }}
-    />
-  );
-}
-
-function MemField({ label, value, onChange, issues }: { label: string; value: { value: string; unit: MemUnit }; onChange: (v: { value: string; unit: MemUnit }) => void; issues: SpecIssue[] }) {
-  const { t } = useTranslation();
-  return (
-    <Field label={label} issues={issues}>
-      {(id, inv) => (
-        <div className="flex gap-1.5">
-          <TextInput id={id} invalid={inv} inputMode="decimal" value={value.value} onChange={(e) => onChange({ ...value, value: e.target.value })} placeholder={t("create.ph.unlimited")} />
-          <div className="w-[80px] shrink-0">
-            <Select aria-label={t("create.f.unit")} value={value.unit} onChange={(e) => onChange({ ...value, unit: e.target.value as MemUnit })}>
-              <option value="m">MiB</option>
-              <option value="g">GiB</option>
-            </Select>
-          </div>
-        </div>
-      )}
-    </Field>
-  );
-}
-
-function KvEditor({ rows, onChange, field, issues, keyPh, valuePh, secret = false, addLabel, empty }: { rows: KeyValue[]; onChange: (v: KeyValue[]) => void; field: string; issues: SpecIssue[]; keyPh: string; valuePh: string; secret?: boolean; addLabel: string; empty: string }) {
-  const { t } = useTranslation();
-  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
-  return (
-    <RowList<KeyValue>
-      rows={rows}
-      onChange={onChange}
-      make={() => ({ key: "", value: "" })}
-      addLabel={addLabel}
-      removeLabel={(i) => t("create.remove.row", { n: i + 1 })}
-      empty={empty}
-      render={(kv, setKv, i) => {
-        const hidden = secret && isSecretKey(kv.key) && !revealed[i];
-        const own = [...issuesFor(issues, `${field}.${i}.key`), ...issuesFor(issues, `${field}.${i}.value`)];
-        return (
-          <div>
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
-              <TextInput aria-label={t("create.f.key", { n: i + 1 })} invalid={issuesFor(issues, `${field}.${i}.key`).some((x) => x.severity === "error")} value={kv.key} onChange={(e) => setKv({ ...kv, key: e.target.value })} placeholder={keyPh} />
-              <div className="flex gap-1">
-                <TextInput
-                  aria-label={t("create.f.value", { n: i + 1 })}
-                  invalid={issuesFor(issues, `${field}.${i}.value`).some((x) => x.severity === "error")}
-                  type={hidden ? "password" : "text"}
-                  value={kv.value}
-                  onChange={(e) => setKv({ ...kv, value: e.target.value })}
-                  placeholder={valuePh}
-                />
-                {secret && isSecretKey(kv.key) && (
-                  <button
-                    type="button"
-                    onClick={() => setRevealed((r) => ({ ...r, [i]: !r[i] }))}
-                    aria-label={hidden ? t("detail.reveal") : t("detail.hide")}
-                    title={hidden ? t("detail.reveal") : t("detail.hide")}
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-3 hover:bg-surface-sunk hover:text-ink"
-                  >
-                    {hidden ? <Eye size={15} /> : <EyeOff size={15} />}
-                  </button>
-                )}
-              </div>
-            </div>
-            <IssueList issues={own} />
-          </div>
-        );
-      }}
-    />
   );
 }
 

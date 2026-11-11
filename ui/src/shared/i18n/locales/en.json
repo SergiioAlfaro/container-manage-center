@@ -107,11 +107,13 @@
     "resetFilters": "Clear filters",
     "via": {
       "api": "API",
-      "cli": "CLI"
+      "cli": "CLI",
+      "app": "APP"
     },
     "viaLong": {
       "api": "Docker Engine API",
-      "cli": "CLI process"
+      "cli": "CLI process",
+      "app": "Application operation"
     },
     "executed": "Executed operation",
     "executedCommand": "Executed command",
@@ -149,7 +151,8 @@
       "bind": "Bind mounts",
       "compose": "Compose"
     },
-    "loadError": "Could not load the activity history: {{message}}"
+    "loadError": "Could not load the activity history: {{message}}",
+    "executedApp": "Application operation"
   },
   "settings": {
     "appearance": "Appearance",
@@ -160,12 +163,6 @@
       "dark": "Dark"
     },
     "language": "Language",
-    "languageNames": {
-      "es": "Español",
-      "en": "English",
-      "fr": "Français",
-      "it": "Italiano"
-    },
     "activityPanel": "Activity panel",
     "openOnError": "Open the panel when an operation fails",
     "openOnErrorHint": "Shows the error without you having to look for it.",
@@ -186,7 +183,13 @@
     "resetConfirmBody": "Theme, language, activity panel, history and update settings go back to their defaults. The Docker connection, Compose projects and the history already saved are not changed.",
     "maintenance": "Maintenance and help",
     "open": "Open",
-    "back": "Settings"
+    "back": "Settings",
+    "accent": "Primary color",
+    "accentHint": "Applied immediately to buttons, selection, indicators and navigation.",
+    "accentOptions": {
+      "teal": "Teal",
+      "purple": "Purple"
+    }
   },
   "common": {
     "dismiss": "Dismiss notice",
@@ -195,7 +198,8 @@
     "retry": "Retry",
     "yes": "Yes",
     "no": "No",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "ops": {
     "system": {
@@ -219,7 +223,12 @@
       "exec": "Terminal session",
       "exec_create": "Prepare terminal",
       "exec_inspect": "Check terminal exit",
-      "exec_cleanup": "End terminal processes"
+      "exec_cleanup": "End terminal processes",
+      "rename": "Rename container",
+      "update": "Update resources or restart policy",
+      "recreate": "Recreate container",
+      "restoreBackup": "Restore container backup",
+      "commit": "Create image from container"
     },
     "image": {
       "list": "List images",
@@ -272,6 +281,10 @@
       "query": "Query installed packages",
       "simulate": "Simulate with APT",
       "remove": "Uninstall packages"
+    },
+    "ui": {
+      "language": "Change language",
+      "accent": "Change primary color"
     }
   },
   "conn": {
@@ -469,7 +482,8 @@
     "confirmRemove": "Remove container",
     "dismiss": "Dismiss",
     "create": "Create container",
-    "openDetail": "Open {{name}}"
+    "openDetail": "Open {{name}}",
+    "moreActions": "More actions for {{name}}"
   },
   "images": {
     "refresh": "Refresh",
@@ -875,7 +889,9 @@
     "name": {
       "invalid": "Invalid name: use letters, digits, “_”, “.” or “-”, starting with a letter or digit.",
       "required": "The name is required.",
-      "reserved": "{{value}} is a predefined Docker network."
+      "reserved": "{{value}} is a predefined Docker network.",
+      "backupReserved": "That name is reserved for backups (“-dcc-backup-”, “-dcc-replaced-”).",
+      "inUse": "Another container already has that name."
     },
     "image": {
       "required": "Enter an image.",
@@ -913,7 +929,8 @@
     "port": {
       "invalid": "Invalid port (1–65535).",
       "duplicate": "Host port {{port}} is repeated.",
-      "privileged": "Port {{port}} is privileged: it may fail with rootless Docker."
+      "privileged": "Port {{port}} is privileged: it may fail with rootless Docker.",
+      "inUseByContainer": "Port {{port}} is already published by the running container {{container}}."
     },
     "ip": {
       "invalid": "Invalid IP: {{ip}}"
@@ -923,7 +940,8 @@
       "targetDuplicate": "There is already a mount at {{target}}."
     },
     "volume": {
-      "invalid": "Invalid volume name."
+      "invalid": "Invalid volume name.",
+      "nameRequired": "A new volume needs a name: an anonymous one could not be mounted again in a later recreation."
     },
     "bind": {
       "required": "Enter the host folder.",
@@ -1019,6 +1037,20 @@
     "volumeOpt": {
       "unknownLocal": "The local driver only uses type, device and o: \"{{key}}\" will be sent anyway.",
       "deviceWithoutType": "\"device\" usually needs \"type\" (e.g. none with o=bind, nfs or tmpfs)."
+    },
+    "description": {
+      "tooLong": "At most {{max}} characters.",
+      "invalid": "It cannot contain control characters."
+    },
+    "edit": {
+      "numberInvalid": "Enter a number greater than zero or leave the field empty."
+    },
+    "commit": {
+      "repositoryRequired": "Enter the repository name.",
+      "repositoryInvalid": "Invalid repository: lowercase letters, digits and the separators “.”, “_”, “-” and “/” (e.g. my-app or registry.local:5000/team/app).",
+      "tagInvalid": "Invalid tag: letters, digits, “_”, “.” and “-”, up to 128 characters, not starting with “.” or “-”.",
+      "tooLong": "At most {{max}} characters.",
+      "controlChars": "It cannot contain line breaks or other control characters."
     }
   },
   "dupNotes": {
@@ -1427,7 +1459,8 @@
     "forceHint": "Only if Docker cannot disconnect it normally (--force).",
     "disconnected": "{{container}} disconnected from {{network}}.",
     "checking": "Checking the current state with Docker…",
-    "gone": "The network {{name}} no longer exists."
+    "gone": "The network {{name}} no longer exists.",
+    "lastNetwork": "This is the container's only network: once disconnected it will have no network access until you connect it to another one."
   },
   "volumes": {
     "create": "Create volume",
@@ -2080,5 +2113,255 @@
     "packages_denied": "Administrator permissions were not granted: nothing has been uninstalled.",
     "packages_busy": "An uninstall is already in progress.",
     "packages_notInstalled": "The application is not installed as a .deb package: there is nothing to uninstall with APT."
+  },
+  "commit": {
+    "action": "Create image from this container",
+    "short": "Create image",
+    "title": "Create image from {{name}}",
+    "intro": "A new image is created from the current state of the container's file system (docker commit). The container is not modified.",
+    "repository": "Repository",
+    "repositoryHint": "For example: my-app or registry.local:5000/team/app",
+    "tag": "Tag",
+    "tagHint": "Empty = latest",
+    "author": "Author (optional)",
+    "authorPh": "Name <email@example.com>",
+    "message": "Message (optional)",
+    "messagePh": "What this image contains",
+    "preview": "Full name:",
+    "refPlaceholder": "REPOSITORY:TAG",
+    "notIncludedTitle": "The image does not include volumes or mounted folders",
+    "notIncluded": "Only the container's writable layer is saved (the files it changed outside its mounts). The data in these mounts is not part of the image:",
+    "excludedList": "Mounts not included in the image",
+    "noMounts": "This container has no mounts: its whole file system is saved.",
+    "mountKind": {
+      "volume": "volume",
+      "bind": "folder",
+      "tmpfs": "tmpfs"
+    },
+    "running": "The container is running. Its processes are not stopped.",
+    "pause": "Pause the container while the image is created (recommended)",
+    "pauseHint": "Docker freezes it for a few seconds so the image is consistent, then resumes it. It does not serve requests during that time.",
+    "noPauseHint": "It is not interrupted, but the image may include half-written files.",
+    "exists": "An image named {{reference}} ({{id}}) already exists.",
+    "replace": "Use this name for the new image",
+    "replaceHint": "The previous image is not deleted: it loses this name (becomes untagged) and its containers keep working.",
+    "create": "Create image",
+    "creating": "Creating image…",
+    "fixFirst": "Fix the highlighted fields",
+    "failed": "The image could not be created: {{message}}",
+    "loadError": "The container could not be read: {{message}}",
+    "doneTitle": "Image created",
+    "done": "The image {{reference}} ({{id}}) has been created.",
+    "replaced": "The previous image ({{id}}) is kept untagged.",
+    "originalUntouched": "The container {{name}} is unchanged.",
+    "openImage": "View image"
+  },
+  "edit": {
+    "action": "Edit configuration",
+    "title": "Edit configuration of {{name}}",
+    "back": "Back to container",
+    "loadError": "The container configuration could not be read: {{message}}",
+    "sections": "Configuration sections",
+    "tabs": {
+      "general": "General",
+      "network": "Network",
+      "storage": "Storage",
+      "env": "Variables",
+      "ports": "Ports",
+      "resources": "Resources",
+      "advanced": "Advanced"
+    },
+    "tabHasErrors": "Some fields in this section need fixing",
+    "kind": {
+      "direct": "Direct change",
+      "recreate": "Requires recreation"
+    },
+    "g": {
+      "identity": "Identity and restart",
+      "lifecycle": "State",
+      "backups": "Backups",
+      "networks": "Connected networks",
+      "connect": "Connect to another network",
+      "mounts": "Volumes and folders",
+      "env": "Environment variables",
+      "ports": "Published ports",
+      "resources": "CPU and memory limits",
+      "advanced": "Runtime configuration"
+    },
+    "f": {
+      "name": "Name",
+      "restart": "Restart policy",
+      "description": "Description",
+      "network": "Network"
+    },
+    "h": {
+      "description": "Internal note; stored in the container's dcc.description label.",
+      "lifecycle": "These actions are applied immediately.",
+      "backups": "Original containers kept when this one was recreated. They are stopped and share the same volumes.",
+      "networks": "Connecting and disconnecting networks is applied immediately, without recreating the container.",
+      "connect": "Pick an existing network; in the next step you can set aliases or a fixed IP.",
+      "mounts": "Host paths or volumes and the path inside the container.",
+      "env": "The container's own variables. Those from the image are inherited anyway.",
+      "ports": "Mapping between host ports and container ports.",
+      "resources": "Docker updates these limits without restarting the container.",
+      "cpus": "Cores, e.g. 0.5. This computer has {{max}}.",
+      "limitRemoval": "Removing a limit (leaving the field empty) cannot be done with docker update: it requires recreating the container.",
+      "advanced": "Docker does not allow changing these options on an existing container.",
+      "duplicateInstead": "To change them, create a new container based on this one:"
+    },
+    "recreateNote": {
+      "mounts": "Changing mounts requires recreating the container. Volumes and folders are never deleted: a mount you remove is just no longer attached.",
+      "ports": "Changing ports requires recreating the container. Before applying, the app checks that no other container uses them."
+    },
+    "anonymousVolumes": "Anonymous volumes that will be mounted again with the same contents: {{names}}",
+    "otherMounts": "Other mounts (kept, not edited here):",
+    "secretsWarning": "Variable values can be seen with docker inspect and from inside the container. The app hides those that look secret (passwords, tokens, keys) and never stores them in the activity panel.",
+    "imageEnvHint": "They come from the image and are inherited; if you define one here with the same name, yours takes precedence.",
+    "portsNotApplicable": "With the “{{mode}}” network mode Docker does not publish ports.",
+    "hostLimits": "This computer: {{cpus}} CPUs and {{memory}} of memory.",
+    "networkModeSpecial": "This container uses the “{{mode}}” network mode: Docker does not allow connecting it to or disconnecting it from networks.",
+    "noNetworks": "It is not connected to any network.",
+    "net": {
+      "name": "Network",
+      "ip": "IP address",
+      "mac": "MAC",
+      "aliases": "Aliases",
+      "noIp": "No IP (stopped)",
+      "fixed": "Fixed IP: {{ip}}"
+    },
+    "aliasesRestriction": "Docker does not allow changing the aliases or the IP of an existing connection: disconnect the network and connect it again with the new values. The default bridge network has no aliases.",
+    "pickNetwork": "Pick a network…",
+    "noOtherNetworks": "No other networks available",
+    "noChanges": "No pending changes.",
+    "pendingDirect_one": "{{count}} pending change. It is applied directly, without recreating the container.",
+    "pendingDirect_other": "{{count}} pending changes. They are applied directly, without recreating the container.",
+    "pendingRecreate_one": "{{count}} pending change. It requires recreating the container.",
+    "pendingRecreate_other": "{{count}} pending changes. At least one requires recreating the container.",
+    "discard": "Discard changes",
+    "review": "Review changes",
+    "fixFirst": "Fix the highlighted fields before continuing",
+    "restore": "Restore",
+    "restoreTitle": "Restore {{name}}?",
+    "restoreBody": "The backup is named {{original}} again and started. The container that has that name now is stopped and set aside under another name.",
+    "restoreSafe": "No container, volume or image is deleted. If the backup does not start, everything goes back to how it was.",
+    "removeBackup": "Delete backup",
+    "removeBackupTitle": "Delete the backup {{name}}?",
+    "removeBackupBody": "Only the backup container is deleted (and anything it wrote outside its mounts). Its volumes are not touched: the current container uses them.",
+    "failed": "Could not apply: {{message}}",
+    "rolledBack": "The original container is back, with its name and state.",
+    "rollbackFailed": "The previous state could not be fully restored. Check the steps below.",
+    "rollbackFailedHelp": "Your data is still there: no volume, folder or image has been deleted, and the original container exists (under its name or the backup name). You can restore it from the General section.",
+    "nothingChanged": "The container has not been modified.",
+    "comparing": "Comparing with the current configuration…",
+    "planError": "The changes could not be compared: {{message}}",
+    "backToEdit": "Back to editing",
+    "reviewTitle": "Review the changes",
+    "needsRecreate": "Requires recreating the container",
+    "directOnly": "Direct changes, no recreation",
+    "hasErrors": "Some fields must be fixed before applying:",
+    "comparison": "Configuration comparison",
+    "col": {
+      "setting": "Setting",
+      "current": "Current",
+      "new": "New",
+      "kind": "How it is applied"
+    },
+    "field": {
+      "name": "Name",
+      "description": "Description",
+      "restart": "Restart policy",
+      "cpus": "CPU",
+      "memory": "Memory",
+      "memoryReservation": "Memory reservation",
+      "env": "Environment variables",
+      "ports": "Ports",
+      "mounts": "Mounts"
+    },
+    "reason": {
+      "labelsImmutable": "Labels cannot be changed on an existing container.",
+      "limitRemoval": "Docker cannot remove a limit with docker update."
+    },
+    "restartValue": {
+      "no": "Do not restart",
+      "always": "Always",
+      "unless-stopped": "Unless stopped manually",
+      "on-failure": "On failure {{n}}"
+    },
+    "op": {
+      "added": "New",
+      "removed": "Removed",
+      "modified": "Changed"
+    },
+    "none": "(no value)",
+    "kept": "Unchanged:",
+    "keptRest": "The rest of the configuration (image, command, user, networks, unchanged mounts and other options) is kept as is.",
+    "recreateTitle": "Safe recreation",
+    "plan": {
+      "stop": "The current container is stopped.",
+      "backup": "It is renamed to {{backup}} and kept as a backup.",
+      "create": "A new container is created with the original name, the image {{image}} and the full configuration including your changes.",
+      "startVerify": "It is started and checked to keep running for a few seconds.",
+      "verifyStopped": "The app checks that Docker created it correctly. It stays stopped, like the original.",
+      "rollback": "If anything fails, the new container is deleted and the original gets its name and state back."
+    },
+    "dataPromise": "No volume, folder or image is deleted. Volumes and folders are mounted again in the new container with the same contents.",
+    "interruption": "The service will be interrupted during the recreation (usually a few seconds).",
+    "blocker": {
+      "state": "The container is “{{status}}”. Stop or resume it before recreating it.",
+      "autoRemove": "The container was created with “remove when stopped” (--rm): stopping it would make Docker delete it, so it could not be kept as a backup. It cannot be recreated safely.",
+      "composeManaged": "The container belongs to the Compose project “{{project}}”. Change it in the Compose file and redeploy: if it were recreated here, Compose would replace it again.",
+      "swarmManaged": "The container is managed by a Swarm service. Change the service instead of the container.",
+      "imageMissing": "The image {{image}} is no longer available on this computer: without it the new container cannot be created. Pull it first.",
+      "configUnreadable": "The full container configuration could not be read ({{detail}}), so it cannot be kept safely."
+    },
+    "risksTitle": "Before continuing, confirm that you understand these risks:",
+    "risk": {
+      "writableLayer": "The container has {{size}} written outside its volumes. Those files are not carried over to the new container (they stay in the backup).",
+      "writableLayerUnknown": "It could not be determined whether the container has files written outside its volumes. If it does, they are not carried over to the new container (they stay in the backup).",
+      "dependents": "These containers use this container's network ({{containers}}) and will lose that connection until you recreate them.",
+      "mountDetached": "No longer mounted: {{mounts}}. Their contents are not deleted.",
+      "imageTagMoved": "The tag {{image}} now points to a different image. The new container will use the same image as the original (by its ID), not the new one."
+    },
+    "riskHint": {
+      "writableLayer": "If you need them, first create an image from this container or move them to a volume."
+    },
+    "notice": {
+      "macUnknown": "The container is stopped and Docker does not show its MAC address: the new container will get a new one. If you set a fixed MAC, start the container before recreating it so it can be kept.",
+      "macLegacy": "This Docker version cannot keep the MAC address when recreating: the new container will get a new one."
+    },
+    "keepMac": "Keep the current MAC addresses",
+    "keepMacHint": "Tick this if you set a fixed MAC (--mac-address). Docker does not tell whether a MAC is fixed or assigned automatically.",
+    "finalConfig": "View the final configuration of the new container",
+    "confirmRecreate": "I have reviewed the changes and want to recreate {{name}}",
+    "operations": "Planned operations",
+    "applying": "Applying…",
+    "recreating": "Recreating the container…",
+    "blockedHint": "The recreation cannot be done safely (see the reasons)",
+    "confirmHint": "Confirm the risks and the recreation to continue",
+    "recreate": "Recreate container",
+    "apply": "Apply changes",
+    "doneDirect": "Changes applied to {{name}} and verified.",
+    "doneRecreated": "{{name}} has been recreated with the changes and is working correctly.",
+    "backupKept": "The original container is kept, stopped, as {{backup}}. You can restore or delete it from the General section.",
+    "stepsTitle": "Steps performed",
+    "stepOk": "Done",
+    "stepFailed": "Error",
+    "step": {
+      "update": "Update resources and restart policy (docker update)",
+      "rename": "Rename",
+      "verify": "Verify the result",
+      "stop": "Stop the container",
+      "prepare": "Prepare the new container's configuration",
+      "backup": "Set the original aside as a backup",
+      "create": "Create the new container",
+      "connect": "Connect an additional network",
+      "disconnect": "Disconnect a network the original no longer had",
+      "start": "Start the container",
+      "rollbackRemove": "Undo: delete the new container (not its volumes)",
+      "rollbackRename": "Undo: restore the original name",
+      "rollbackStart": "Undo: start the original again",
+      "rollbackStop": "Undo: stop the backup"
+    },
+    "openContainer": "Open the container"
   }
 }

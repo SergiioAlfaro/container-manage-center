@@ -271,7 +271,20 @@ export function ConnectDialog({ network: initial, initialContainer, onClose, onD
 }
 
 /** Desconectar: corta la conectividad del contenedor por esta red. */
-export function DisconnectDialog({ network, member, onClose, onDone }: { network: Pick<NetworkSummary, "id" | "name">; member: NetworkMember; onClose: () => void; onDone: (msg: string) => void }) {
+export function DisconnectDialog({
+  network,
+  member,
+  onClose,
+  onDone,
+  lastNetwork = false,
+}: {
+  network: Pick<NetworkSummary, "id" | "name">;
+  member: NetworkMember;
+  onClose: () => void;
+  onDone: (msg: string) => void;
+  /** Es la única red del contenedor (0.9.2): se queda sin conectividad. */
+  lastNetwork?: boolean;
+}) {
   const { t } = useTranslation();
   const invalidate = useInvalidateNetworks();
   const [force, setForce] = useState(false);
@@ -298,6 +311,7 @@ export function DisconnectDialog({ network, member, onClose, onDone }: { network
       }
     >
       <p className="text-[13px]">{member.state === "running" ? t("netOps.disconnectRunning") : t("netOps.disconnectStopped")}</p>
+      {lastNetwork && <Banner tone="warn">{t("netOps.lastNetwork")}</Banner>}
       <Checkbox checked={force} onChange={setForce} label={t("netOps.force")} hint={t("netOps.forceHint")} />
       <p className="text-[12px] text-ink-3">
         {t("pull.equivalent")} <code className="selectable font-mono text-ink-2">{disconnectCommand(network.name, member.name, force)}</code>

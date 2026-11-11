@@ -33,8 +33,8 @@ export function Sidebar({ active, collapsed, onNavigate, onToggle }: Props) {
             isActive ? "bg-hull-3 text-white" : "text-hull-ink hover:bg-hull-2 hover:text-white",
           )}
         >
-          {isActive && <span aria-hidden className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-beacon" />}
-          <Icon size={18} strokeWidth={1.75} className={cx("shrink-0", isActive ? "text-beacon-strong" : "text-hull-ink-dim group-hover:text-hull-ink")} />
+          {isActive && <span aria-hidden className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-beacon-nav" />}
+          <Icon size={18} strokeWidth={1.75} className={cx("shrink-0", isActive ? "text-beacon-nav" : "text-hull-ink-dim group-hover:text-hull-ink")} />
           {!collapsed && <span className="truncate">{label}</span>}
         </button>
       </li>

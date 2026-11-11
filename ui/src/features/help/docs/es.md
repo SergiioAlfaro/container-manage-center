@@ -35,7 +35,7 @@ Para actualizar, instala el paquete nuevo de la misma forma: se conservan tu con
 
 No hace falta configurar nada para empezar: la conexión con Docker es automática. En **Configuración** puedes elegir:
 
-- El **tema** (Sistema, Claro u Oscuro) y el **idioma**.
+- El **tema** (Sistema, Claro u Oscuro), el **color principal** (verde azulado o morado) y el **idioma**.
 - Si el panel de actividad se abre solo cuando una operación falla y cuántas operaciones conserva.
 - Si se guarda el historial de operaciones y eventos entre sesiones.
 - Un socket concreto de Docker, si no quieres la detección automática.
@@ -77,7 +77,7 @@ Sin conexión muestra el **diagnóstico**: la causa concreta, los pasos para res
 
 ## 8. Gestión de contenedores {#containers}
 
-El apartado **Contenedores** lista todos los contenedores, como `docker ps -a`: estado, nombre e ID corto, proyecto Compose, imagen, estado de Docker, puertos publicados y antigüedad. Puedes filtrar por **Todos / En ejecución / Detenidos** y buscar por nombre, imagen, ID o proyecto.
+El apartado **Contenedores** lista todos los contenedores, como `docker ps -a`: estado, nombre e ID corto, proyecto Compose, imagen, estado de Docker, puertos publicados y antigüedad. Puedes filtrar por **Todos / En ejecución / Detenidos** y buscar por nombre, imagen, ID o proyecto. El menú **⋯** de cada fila (o el botón derecho) ofrece **Editar configuración** y **Crear imagen a partir de este contenedor**.
 
 | Estado | Acciones disponibles |
 |---|---|
@@ -102,7 +102,45 @@ Al pulsar el nombre de un contenedor se abre su **detalle**: Resumen, Logs, Term
 
 **Eliminar** pide confirmación. Un contenedor en ejecución o en pausa solo se elimina si marcas **Detenerlo a la fuerza y eliminarlo**. Opcionalmente se eliminan sus volúmenes anónimos; los volúmenes con nombre y las carpetas vinculadas no se tocan. No se puede deshacer.
 
-## 10. Logs, estadísticas y terminales {#logs-stats-terminal}
+## 10. Editar la configuración de un contenedor {#container-edit}
+
+**Editar configuración** está en el menú **⋯** de cada contenedor (también con el botón derecho sobre la fila) y en la cabecera del detalle. La configuración se organiza en pestañas: **General**, **Red**, **Almacenamiento**, **Variables**, **Puertos**, **Recursos** y **Avanzado**. Cada cambio indica cómo se aplica:
+
+| Cambio | Cómo se aplica |
+|---|---|
+| Nombre | Directo (`docker rename`) |
+| Política de reinicio, CPU, memoria y memoria reservada | Directo (`docker update`), sin reiniciar el contenedor |
+| Conectar o desconectar redes | Directo y al momento (`docker network connect` / `disconnect`) |
+| Variables de entorno, puertos, volúmenes y carpetas, descripción | Requiere **recrear** el contenedor |
+| Quitar un límite de CPU o memoria | Requiere recrear (`docker update` no sabe quitarlo) |
+| Imagen, comando, usuario, directorio de trabajo y demás opciones de **Avanzado** | Solo lectura: Docker no permite cambiarlas. Usa **Duplicar** |
+
+- **Red**: muestra las redes, IP, MAC y alias. Docker no permite cambiar los alias ni la IP de una conexión existente: hay que desconectar y volver a conectar. Si es la única red del contenedor, se avisa antes de desconectarla.
+- **Variables**: los valores que parecen secretos se ocultan en pantalla y nunca se guardan en el panel de actividad.
+- **Descripción**: se guarda en la etiqueta `dcc.description` del contenedor.
+
+**Revisar cambios** compara la configuración actual con la nueva: qué cambia (antes y después, elemento a elemento), qué se mantiene y qué requiere recrear. Nada se aplica hasta que lo confirmas.
+
+**Recreación segura.** Cuando un cambio exige recrear, el asistente:
+
+1. Comprueba la imagen, los conflictos de nombre y de puertos con otros contenedores y los motivos que impiden recrear con seguridad: contenedores de Compose o Swarm, creados con `--rm`, en pausa o reiniciándose. En esos casos no deja continuar.
+2. Muestra los riesgos que debes aceptar uno a uno: archivos escritos fuera de los volúmenes (no pasan al contenedor nuevo), montajes que dejan de estar montados, contenedores que usan la red de este…
+3. Al confirmar: detiene el contenedor si está en marcha, le cambia el nombre a `<nombre>-dcc-backup-<fecha>` (copia de seguridad), crea el nuevo con **toda** la configuración original más tus cambios, conecta sus redes y, si estaba en marcha, lo inicia y comprueba que sigue funcionando unos segundos.
+4. Si algo falla, elimina el contenedor nuevo (sin tocar sus volúmenes), devuelve el nombre al original y lo vuelve a iniciar.
+
+**Nunca se eliminan volúmenes, carpetas ni imágenes.** Los volúmenes anónimos se vuelven a montar con su contenido. La copia queda detenida en **General › Copias de seguridad**, desde donde puedes **Restaurarla** (el contenedor actual se aparta, no se elimina) o **Eliminarla** cuando ya no la necesites. Todas las operaciones quedan en el panel de actividad, sin valores sensibles.
+
+## 11. Crear una imagen a partir de un contenedor {#container-commit}
+
+**Crear imagen a partir de este contenedor** (menú **⋯** de la lista y cabecera del detalle) equivale a `docker commit`: guarda el estado actual del sistema de archivos del contenedor como una imagen nueva.
+
+- Indica el **repositorio** y la **etiqueta** (vacía = `latest`); opcionalmente, **autor** y **mensaje**. Se ve el nombre completo antes de crear y se valida.
+- **No incluye los volúmenes ni las carpetas montadas**: solo la capa de escritura del contenedor. El diálogo lista los montajes que quedan fuera.
+- Si el contenedor está en ejecución, por defecto se **pausa** unos segundos mientras se crea la imagen, para que sea coherente; puedes desmarcarlo. Nunca se detiene.
+- Si ya existe una imagen con ese nombre, se avisa y hay que aceptarlo expresamente: la anterior no se elimina, se queda sin etiqueta.
+- El contenedor original no se modifica. Al terminar, **Ver la imagen** abre su detalle en Imágenes.
+
+## 12. Logs, estadísticas y terminales {#logs-stats-terminal}
 
 En el detalle de un contenedor:
 
@@ -112,7 +150,7 @@ En el detalle de un contenedor:
 
 Son operaciones reales que aparecen en el panel de actividad mientras están abiertas y se cierran al salir del detalle. Para trabajar con varias terminales a la vez, usa el apartado **Terminales**.
 
-## 11. Gestión de imágenes {#images}
+## 13. Gestión de imágenes {#images}
 
 El apartado **Imágenes** lista las imágenes locales, como `docker image ls`: etiquetas, ID corto, tamaño, antigüedad y qué contenedores las usan. Filtros **Todas / En uso / Sin uso / Sin etiqueta** y búsqueda por etiqueta o ID.
 
@@ -121,7 +159,7 @@ El apartado **Imágenes** lista las imágenes locales, como `docker image ls`: e
 - **Eliminar**: si la imagen tiene varias etiquetas puedes quitar solo una; la imagen completa exige forzar. Docker no elimina imágenes de contenedores en ejecución.
 - **Limpiar** elimina las imágenes sin etiqueta que no usa ningún contenedor o, con confirmación adicional, todas las que no se usan.
 
-## 12. Descarga y construcción de imágenes {#pull-build}
+## 14. Descarga y construcción de imágenes {#pull-build}
 
 **Descargar imagen** pide la referencia (`nginx:1.27`, `usuario/app`, `registro.ejemplo.com:5000/app:v2`; sin etiqueta se usa `latest`). Credenciales:
 
@@ -135,7 +173,7 @@ El panel **Descargas** muestra el progreso total y por capa; puedes cambiar de a
 
 **Construir imagen** abre un asistente: contexto (la carpeta que se envía, respetando `.dockerignore`) y Dockerfile, nombres (`--tag`), argumentos (`--build-arg`), metadatos (`--label`), etapa final, sin caché, buscar imágenes base nuevas y constructor (**BuildKit** o **clásico**). Se ven los pasos con su estado y la salida como `docker build --progress=plain`; se puede cancelar.
 
-## 13. Redes Docker {#networks}
+## 15. Redes Docker {#networks}
 
 El apartado **Redes** lista las redes, como `docker network ls`, con driver, subredes y contenedores. Las redes **bridge**, **host** y **none** son predefinidas y no se pueden eliminar.
 
@@ -143,7 +181,7 @@ El apartado **Redes** lista las redes, como `docker network ls`, con driver, sub
 - **Conectar** un contenedor (en marcha o detenido), con alias e IP fija opcionales. **Desconectar** pide confirmación.
 - **Eliminar** y **Limpiar** avisan si hay contenedores detenidos que tienen configurada la red y que no podrán arrancar después.
 
-## 14. Volúmenes {#volumes}
+## 16. Volúmenes {#volumes}
 
 El apartado **Volúmenes** lista los volúmenes, como `docker volume ls`, con su driver y los contenedores que los montan. Los anónimos se marcan como tales. **Calcular tamaños** pide a Docker el espacio de cada uno (como `docker system df -v`); no se hace automáticamente porque puede tardar.
 
@@ -152,13 +190,13 @@ El apartado **Volúmenes** lista los volúmenes, como `docker volume ls`, con su
 - **Eliminar**: Docker no elimina un volumen que monte cualquier contenedor, aunque esté detenido.
 - **Limpiar**: elimina los volúmenes anónimos sin uso o, con confirmación, todos los volúmenes sin uso.
 
-## 15. Directorios vinculados (Bind Mounts) {#binds}
+## 17. Directorios vinculados (Bind Mounts) {#binds}
 
 Este apartado muestra las carpetas y archivos de tu equipo montados dentro de contenedores, agrupados por ruta: tipo, permisos y propietario, si existen, qué contenedores los montan, dónde y con qué acceso. Se señalan los que requieren atención: el **socket de Docker** (da control de Docker al contenedor), la raíz o directorios del sistema y las rutas que ya no existen.
 
 Docker no permite añadir una carpeta a un contenedor que ya existe. **Vincular una carpeta…** abre el selector de carpetas y después el asistente de contenedores con esa carpeta montada en `/mnt/<nombre>`.
 
-## 16. Docker Compose {#compose}
+## 18. Docker Compose {#compose}
 
 El apartado **Docker Compose** necesita Compose v2 o posterior; si no está instalado, explica cómo instalarlo. Todas las operaciones ejecutan el Docker Compose oficial y aparecen en el panel de actividad con el comando exacto.
 
@@ -168,7 +206,7 @@ La lista muestra los proyectos con contenedores en Docker (también los desplega
 - **Nuevo proyecto**: elige una carpeta, escribe el contenido (se parte de una plantilla) y **Crear proyecto**: se valida con Docker Compose antes de crear `compose.yaml`.
 - **Quitar de la lista** solo la quita de la lista; no toca Docker ni los archivos.
 
-## 17. Gestión de proyectos y perfiles Compose {#compose-projects}
+## 19. Gestión de proyectos y perfiles Compose {#compose-projects}
 
 En el detalle de un proyecto:
 
@@ -180,7 +218,7 @@ En el detalle de un proyecto:
 - **Archivo**: edita los archivos; **Validar** los comprueba con Docker Compose sin guardar, y **Guardar** valida antes y no sobrescribe si otro programa los cambió.
 - **Configuración**: la configuración final según Docker Compose. Puede contener secretos, así que está oculta hasta que la pides y no se guarda en el panel de actividad.
 
-## 18. Terminales simultáneas {#terminals}
+## 20. Terminales simultáneas {#terminals}
 
 El apartado **Terminales** permite abrir y ver a la vez varias terminales reales (`docker exec -it`) en contenedores en ejecución, en el mismo contenedor o en otros.
 
@@ -195,17 +233,17 @@ El apartado **Terminales** permite abrir y ver a la vez varias terminales reales
 
 El panel de actividad registra la apertura, el cierre y los errores de cada sesión, pero no lo que se escribe ni la salida de la terminal.
 
-## 19. Panel de actividad y registro de operaciones {#activity}
+## 21. Panel de actividad y registro de operaciones {#activity}
 
-Cada operación aparece en el **panel de actividad**: hora, distintivo **API** (petición a Docker Engine por el socket) o **CLI** (proceso, como `docker compose` o `apt-get`), tipo, recurso, duración y estado. La línea principal es el comando equivalente, que puedes copiar. Al desplegar una entrada ves la operación ejecutada de verdad, el resultado, el error y su código HTTP si falló, y las salidas de los procesos.
+Cada operación aparece en el **panel de actividad**: hora, distintivo **API** (petición a Docker Engine por el socket), **CLI** (proceso, como `docker compose` o `apt-get`) o **APP** (operación de la propia aplicación, como un cambio de idioma o de color, o el resumen de una recreación cuyos pasos aparecen aparte), tipo, recurso, duración y estado. La línea principal es el comando equivalente, que puedes copiar. Al desplegar una entrada ves la operación ejecutada de verdad, el resultado, el error y su código HTTP si falló, y las salidas de los procesos.
 
 El apartado **Eventos y registros** muestra los eventos de Docker en directo, los guardados, la consulta a Docker de un periodo (`docker events --since … --until …`; Docker solo conserva los últimos 256) y el **historial de operaciones** de esta y otras sesiones.
 
 El historial guarda qué se hizo, cuándo y con qué resultado, pero nunca el cuerpo de las peticiones, el comando ni las salidas, porque pueden contener contraseñas. Está en `~/.local/state/docker-control-center/`, solo legible por tu usuario.
 
-## 20. Configuración, temas e idiomas {#settings}
+## 22. Configuración, temas e idiomas {#settings}
 
-- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma: **Español** (predeterminado), **English**, **Français** e **Italiano**. El idioma elegido se guarda y se mantiene al volver a abrir la aplicación.
+- **Apariencia**: tema (Sistema, Claro, Oscuro), **color principal** (verde azulado o **morado**; se aplica al momento a botones, selección, indicadores y navegación) e idioma, por este orden: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** y **Português**. Cada idioma aparece con su propio nombre. El idioma y el color se guardan, se mantienen al volver a abrir la aplicación y sus cambios quedan en el panel de actividad.
 - **Panel de actividad**: abrirlo ante errores, operaciones conservadas (50–10 000) y **Guardar el historial entre sesiones**.
 - **Conexión con Docker** y comprobación de **Docker Compose**.
 - **Actualizaciones**: dónde se publican las versiones y **Comprobar ahora**. La aplicación nunca descarga ni instala nada.
@@ -221,7 +259,7 @@ El historial guarda qué se hizo, cuándo y con qué resultado, pero nunca el cu
 
 Los mensajes que genera el propio Docker (por ejemplo, un error de Docker Engine) y la salida de los programas se muestran tal como llegan, sin traducir. Los resúmenes técnicos que el motor de la aplicación escribe en el panel de actividad (por ejemplo, cómo terminó una terminal) y los mensajes de error con datos concretos se generan en español en todos los idiomas.
 
-## 21. Desinstalación y gestión de dependencias {#uninstall}
+## 23. Desinstalación y gestión de dependencias {#uninstall}
 
 **Configuración › Desinstalación y componentes** muestra qué instaló la aplicación y permite quitarlo sin usar la terminal. **Analizar** consulta dpkg y APT sin cambiar nada:
 
@@ -242,7 +280,7 @@ Al confirmar, el sistema pide tu contraseña de administrador (pkexec) **solo pa
 
 Si `pkexec` no está instalado, la aplicación no puede pedir permisos: el diálogo muestra la orden equivalente con `sudo` para que la ejecutes tú en una terminal.
 
-## 22. Seguridad y tratamiento de credenciales {#security}
+## 24. Seguridad y tratamiento de credenciales {#security}
 
 - La aplicación **no se ejecuta como root**, nunca pide sudo para funcionar y no cambia permisos del socket ni grupos.
 - Los comandos externos se ejecutan **sin shell** y con argumentos separados: lo que escribes nunca se interpreta como órdenes.
@@ -253,7 +291,7 @@ Si `pkexec` no está instalado, la aplicación no puede pedir permisos: el diál
 - La ventana bloquea conexiones externas. La única conexión propia es la comprobación de versiones, desactivada mientras no indiques una fuente. El botón de GitHub de la Ayuda solo puede abrir esa dirección, en tu navegador.
 - Montar el socket de Docker en un contenedor o pertenecer al grupo `docker` da control total del equipo: la aplicación lo señala.
 
-## 23. Solución de problemas frecuentes {#troubleshooting}
+## 25. Solución de problemas frecuentes {#troubleshooting}
 
 | Causa mostrada | Qué hacer |
 |---|---|
@@ -268,10 +306,11 @@ Si `pkexec` no está instalado, la aplicación no puede pedir permisos: el diál
 - **Docker Compose no aparece**: instálalo (Debian 13: `sudo apt install docker-compose`; Ubuntu: `sudo apt install docker-compose-v2`; repositorio de Docker: `docker-compose-plugin`) y pulsa **Comprobar** en Configuración.
 - **Una descarga o búsqueda falla**: Docker Engine necesita acceso a Internet; el mensaje de error es el de Docker.
 - **Una terminal no se abre**: el contenedor debe estar en ejecución y tener una shell (`sh` o `bash`).
+- **No se permite recrear un contenedor**: el motivo aparece en la revisión (contenedor de Compose, creado con `--rm`, en pausa, imagen que ya no existe…).
 - **La desinstalación no ofrece una dependencia**: la usa otro programa, ya estaba instalada o no se puede saber con seguridad; el motivo aparece junto a ella.
 - **Para informar de un problema**: Configuración › Sistema › **Copiar** genera un informe sin datos sensibles.
 
-## 24. Preguntas frecuentes {#faq}
+## 26. Preguntas frecuentes {#faq}
 
 **¿La aplicación ejecuta comandos `docker`?** No: usa la API de Docker Engine. El comando que ves en el panel de actividad es el equivalente, para que puedas reproducirlo. Docker Compose sí se ejecuta con su programa oficial.
 
@@ -280,6 +319,8 @@ Si `pkexec` no está instalado, la aplicación no puede pedir permisos: el diál
 **¿Funciona sin Internet?** Sí. Solo las operaciones de Docker contra registros remotos necesitan red.
 
 **¿Qué pasa con mis contenedores si cierro la aplicación?** Siguen funcionando: los gestiona Docker. Al cerrar se terminan las terminales abiertas y se dejan de seguir logs y estadísticas.
+
+**¿Puedo perder datos al editar un contenedor?** No se elimina ningún volumen, carpeta ni imagen, y el original se conserva como copia. Solo los archivos escritos fuera de los volúmenes se quedan en la copia, y la revisión te lo avisa antes.
 
 **¿Se pierden mis datos al desinstalar?** No. Se conservan tu configuración, tu historial y todo lo de Docker.
 

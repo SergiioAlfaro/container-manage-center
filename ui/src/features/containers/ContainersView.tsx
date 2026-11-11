@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { MoreHorizontal, PackagePlus, PencilLine, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { formatAbsolute, formatRelative, shortId, uniquePorts } from "@/shared/format";
@@ -10,11 +10,14 @@ import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";
 import { keys } from "@/shared/query";
 import { Button, Segmented, cx } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
+import { Menu } from "@/shared/ui/Menu";
 import { ICONS, RemoveDialog, STATE_DOT, allowedActions } from "./containerUi";
 
 export { allowedActions };
 import { CreateWizard } from "./create/CreateWizard";
 import { ContainerDetail } from "./detail/ContainerDetail";
+import { CommitDialog } from "./edit/CommitDialog";
+import { EditContainer } from "./edit/EditContainer";
 import { useContainersNav } from "./store";
 
 type Filter = "all" | "running" | "stopped";
@@ -46,9 +49,17 @@ const ContainerRow = memo(function ContainerRow({
   onOpen,
   onRun,
   onRemove,
+  menuOpen,
+  onMenu,
+  onEdit,
+  onCommit,
 }: {
   c: ContainerSummary;
   op: Op | undefined;
+  menuOpen: boolean;
+  onMenu: (id: string | null) => void;
+  onEdit: (id: string, name: string) => void;
+  onCommit: (c: ContainerSummary) => void;
   /** Solo provoca que la fila se vuelva a pintar al cambiar de minuto. */
   minute: number;
   onOpen: (id: string, name: string) => void;
@@ -58,7 +69,15 @@ const ContainerRow = memo(function ContainerRow({
   const { t, i18n } = useTranslation();
   const ports = uniquePorts(c.ports);
   return (
-    <tr className={cx("align-top", op && "bg-surface-2/60")}>
+    <tr
+      className={cx("align-top", op && "bg-surface-2/60")}
+      onContextMenu={(e) => {
+        // Botón derecho: el mismo menú de acciones de la fila (0.9.2).
+        if (op) return;
+        e.preventDefault();
+        onMenu(c.id);
+      }}
+    >
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span aria-hidden className={cx("h-2 w-2 shrink-0 rounded-full", STATE_DOT[c.state] ?? "bg-off")} />
@@ -124,6 +143,16 @@ const ContainerRow = memo(function ContainerRow({
               >
                 <Trash2 size={15} strokeWidth={1.75} />
               </button>
+              <Menu
+                label={t("containers.moreActions", { name: c.name })}
+                trigger={<MoreHorizontal size={15} strokeWidth={1.75} />}
+                open={menuOpen}
+                onOpenChange={(o) => onMenu(o ? c.id : null)}
+                items={[
+                  { id: "edit", label: t("edit.action"), icon: <PencilLine size={14} />, onSelect: () => onEdit(c.id, c.name) },
+                  { id: "commit", label: t("commit.action"), icon: <PackagePlus size={14} />, onSelect: () => onCommit(c) },
+                ]}
+              />
             </>
           )}
         </div>
@@ -141,6 +170,8 @@ function ContainersTable() {
   const [busy, setBusy] = useState<Record<string, Op>>({});
   const [failure, setFailure] = useState<Failure | null>(null);
   const [removing, setRemoving] = useState<ContainerSummary | null>(null);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [committing, setCommitting] = useState<ContainerSummary | null>(null);
   const nav = useContainersNav();
 
   const run = useMutation({
@@ -235,12 +266,24 @@ function ContainersTable() {
                 <th className="w-[16%] px-3 py-2 font-medium">{t("containers.columns.status")}</th>
                 <th className="w-[15%] px-3 py-2 font-medium">{t("containers.columns.ports")}</th>
                 <th className="w-[120px] px-3 py-2 font-medium">{t("containers.columns.created")}</th>
-                <th className="w-[148px] px-3 py-2 text-right font-medium">{t("containers.columns.actions")}</th>
+                <th className="w-[180px] px-3 py-2 text-right font-medium">{t("containers.columns.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {visible.map((c) => (
-                <ContainerRow key={c.id} c={c} op={busy[c.id]} minute={minute} onOpen={nav.showDetail} onRun={run.mutate} onRemove={setRemoving} />
+                <ContainerRow
+                  key={c.id}
+                  c={c}
+                  op={busy[c.id]}
+                  minute={minute}
+                  onOpen={nav.showDetail}
+                  onRun={run.mutate}
+                  onRemove={setRemoving}
+                  menuOpen={menu === c.id}
+                  onMenu={setMenu}
+                  onEdit={nav.showEdit}
+                  onCommit={setCommitting}
+                />
               ))}
             </tbody>
           </table>
@@ -248,6 +291,7 @@ function ContainersTable() {
         </div>
       )}
 
+      {committing && <CommitDialog id={committing.id} name={committing.name} onClose={() => setCommitting(null)} />}
       {removing && (
         <RemoveDialog
           c={removing}
@@ -268,6 +312,8 @@ function ContainersPages() {
   switch (page.kind) {
     case "detail":
       return <ContainerDetail key={page.id} id={page.id} name={page.name} tab={page.tab} />;
+    case "edit":
+      return <EditContainer key={page.id} id={page.id} name={page.name} />;
     case "create":
       return <CreateWizard initial={page.spec} notes={page.notes} sourceName={page.sourceName} />;
     default:

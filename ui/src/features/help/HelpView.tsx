@@ -8,14 +8,18 @@ import es from "./docs/es.md?raw";
 import en from "./docs/en.md?raw";
 import fr from "./docs/fr.md?raw";
 import it from "./docs/it.md?raw";
+import ca from "./docs/ca.md?raw";
+import gl from "./docs/gl.md?raw";
+import eu from "./docs/eu.md?raw";
+import pt from "./docs/pt.md?raw";
 import { BlockView, parseHelp, type Block } from "./markdown";
 
 /** Documento de cada idioma. Para ampliar la ayuda basta con editar estos
  *  archivos (las mismas secciones `{#id}` en todos los idiomas: lo comprueba
  *  una prueba). */
-export const HELP_DOCS: Record<string, string> = { es, en, fr, it };
+export const HELP_DOCS: Record<string, string> = { en, es, ca, gl, eu, fr, it, pt };
 
-/** Secciones exigidas, en orden (0.9.1). */
+/** Secciones exigidas, en orden (0.9.2). */
 export const HELP_SECTION_IDS = [
   "about",
   "requirements",
@@ -26,6 +30,8 @@ export const HELP_SECTION_IDS = [
   "dashboard",
   "containers",
   "container-lifecycle",
+  "container-edit",
+  "container-commit",
   "logs-stats-terminal",
   "images",
   "pull-build",

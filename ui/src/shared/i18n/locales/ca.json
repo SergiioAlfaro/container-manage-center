@@ -1,0 +1,2367 @@
+{
+  "app": {
+    "name": "Docker Control Center",
+    "startupWarning": "Avís en iniciar"
+  },
+  "nav": {
+    "label": "Navegació principal",
+    "collapse": "Plegar la barra lateral",
+    "expand": "Desplegar la barra lateral",
+    "groups": {
+      "resources": "Recursos",
+      "orchestration": "Orquestració",
+      "tools": "Eines",
+      "monitoring": "Supervisió"
+    }
+  },
+  "sections": {
+    "dashboard": {
+      "title": "Tauler",
+      "description": "Estat general de Docker Engine i dels teus recursos."
+    },
+    "containers": {
+      "title": "Contenidors",
+      "description": "Crea, inicia, atura i inspecciona contenidors."
+    },
+    "images": {
+      "title": "Imatges",
+      "description": "Baixa, construeix, etiqueta i elimina imatges."
+    },
+    "networks": {
+      "title": "Xarxes",
+      "description": "Gestiona xarxes i connecta contenidors entre ells.",
+      "planned": [
+        "Xarxes bridge, host, none, overlay i macvlan",
+        "Subxarxes, passarel·les i rangs d’adreces",
+        "Connexió i desconnexió de contenidors"
+      ],
+      "phase": 5
+    },
+    "volumes": {
+      "title": "Volums",
+      "description": "Emmagatzematge gestionat per Docker.",
+      "planned": [
+        "Llistat, creació i inspecció de volums",
+        "Contenidors que fan servir cada volum",
+        "Avís abans d’eliminar volums en ús"
+      ],
+      "phase": 6
+    },
+    "binds": {
+      "title": "Directoris vinculats",
+      "description": "Carpetes del teu sistema muntades dins de contenidors (bind mounts).",
+      "planned": [
+        "Rutes d’origen i de destinació de cada vinculació",
+        "Contenidors que fan servir cada directori",
+        "Muntatges de només lectura o de lectura i escriptura",
+        "Selecció de carpetes amb l’explorador de fitxers"
+      ],
+      "phase": 6
+    },
+    "compose": {
+      "title": "Docker Compose",
+      "description": "Projectes multicontenidor definits en YAML.",
+      "planned": [
+        "Importació i creació de projectes",
+        "Editor YAML amb validació prèvia",
+        "Inici, aturada, reconstrucció i registres per servei"
+      ],
+      "phase": 7
+    },
+    "terminals": {
+      "title": "Terminals",
+      "description": "Diversos terminals alhora en contenidors en execució."
+    },
+    "events": {
+      "title": "Esdeveniments i registres",
+      "description": "Esdeveniments de Docker en temps real i historial d’operacions."
+    },
+    "settings": {
+      "title": "Configuració",
+      "description": "Preferències de l’aplicació."
+    }
+  },
+  "pending": {
+    "phase": "Disponible a partir de la fase {{phase}}",
+    "intro": "Aquest apartat encara no està connectat a Docker. Quan s’implementi, permetrà:"
+  },
+  "activity": {
+    "title": "Activitat",
+    "subtitle": "Operacions executades sobre Docker",
+    "open": "Obrir el tauler d’activitat",
+    "close": "Tancar el tauler d’activitat",
+    "shortcut": "Ctrl+Maj+A",
+    "running": "{{count}} en curs",
+    "failed_one": "{{count}} error",
+    "failed_other": "{{count}} errors",
+    "search": "Cerca ordres, recursos o operacions",
+    "filterCategory": "Àrea",
+    "filterStatus": "Estat",
+    "all": "Totes",
+    "allStatus": "Tots",
+    "clear": "Netejar l’historial",
+    "clearHint": "Buida l’historial visual. Les operacions en curs es mantenen.",
+    "emptyTitle": "Encara no hi ha operacions",
+    "emptyBody": "Cada acció que l’aplicació faci sobre Docker apareixerà aquí amb la seva ordre equivalent, el seu estat i el seu resultat.",
+    "noMatches": "Cap operació no coincideix amb els filtres.",
+    "resetFilters": "Treure els filtres",
+    "via": {
+      "api": "API",
+      "cli": "CLI",
+      "app": "APP"
+    },
+    "viaLong": {
+      "api": "Docker Engine API",
+      "cli": "Procés CLI",
+      "app": "Operació de l’aplicació"
+    },
+    "executed": "Operació executada",
+    "executedCommand": "Ordre executada",
+    "equivalent": "Ordre equivalent",
+    "equivalentNote": "Traducció orientativa. L’operació s’ha fet mitjançant la Docker Engine API, no executant aquesta ordre.",
+    "noEquivalent": "Aquesta operació no té una ordre docker equivalent exacta.",
+    "endpoint": "Sòcol",
+    "requestBody": "Cos de la petició",
+    "stdout": "Sortida estàndard",
+    "stderr": "Sortida d’error",
+    "error": "Error",
+    "summary": "Resultat",
+    "httpStatus": "Codi HTTP",
+    "exitCode": "Codi de sortida",
+    "started": "Inici",
+    "finished": "Fi",
+    "duration": "Durada",
+    "truncated": "Sortida retallada: es mostren els primers {{shown}} de {{total}} bytes.",
+    "copy": "Copiar",
+    "copied": "Copiat",
+    "copyFailed": "No s’ha pogut copiar",
+    "details": "Detalls",
+    "status": {
+      "running": "En curs",
+      "succeeded": "Correcte",
+      "failed": "Error",
+      "cancelled": "Interrompuda"
+    },
+    "category": {
+      "system": "Sistema",
+      "container": "Contenidors",
+      "image": "Imatges",
+      "network": "Xarxes",
+      "volume": "Volums",
+      "bind": "Directoris vinculats",
+      "compose": "Compose"
+    },
+    "loadError": "No s’ha pogut carregar l’historial d’activitat: {{message}}",
+    "executedApp": "Operació de l’aplicació"
+  },
+  "settings": {
+    "appearance": "Aparença",
+    "theme": "Tema",
+    "themeOptions": {
+      "system": "Sistema",
+      "light": "Clar",
+      "dark": "Fosc"
+    },
+    "language": "Idioma",
+    "activityPanel": "Tauler d’activitat",
+    "openOnError": "Obrir el tauler quan una operació falli",
+    "openOnErrorHint": "Mostra l’error sense que l’hagis de buscar.",
+    "maxRecords": "Operacions conservades",
+    "maxRecordsHint": "Entre {{min}} i {{max}}. Les més antigues es descarten.",
+    "saveError": "No s’ha pogut desar la configuració: {{message}}",
+    "saved": "Desat",
+    "shortcuts": "Dreceres de teclat",
+    "shortcutSidebar": "Plegar o desplegar la barra lateral",
+    "shortcutActivity": "Obrir o tancar el tauler d’activitat",
+    "keepHistory": "Desar l’historial entre sessions",
+    "keepHistoryHint": "Desa al disc les operacions (sense cossos, ordres ni sortides, que poden contenir secrets) i els esdeveniments de Docker, per consultar-los a Esdeveniments i registres.",
+    "reset": "Restablir",
+    "resetLabel": "Restablir les preferències",
+    "resetHint": "Torna als valors inicials d’aparença, tauler d’activitat i actualitzacions. No canvia la connexió amb Docker ni la llista de projectes Compose.",
+    "resetButton": "Restablir",
+    "resetConfirmTitle": "Vols restablir les preferències?",
+    "resetConfirmBody": "El tema, l’idioma, el tauler d’activitat, l’historial i les actualitzacions tornen als valors inicials. La connexió amb Docker, els projectes Compose i l’historial ja desat no canvien.",
+    "maintenance": "Manteniment i ajuda",
+    "open": "Obrir",
+    "back": "Configuració",
+    "accent": "Color principal",
+    "accentHint": "S’aplica a l’instant als botons, la selecció, els indicadors i la navegació.",
+    "accentOptions": {
+      "teal": "Verd blavós",
+      "purple": "Morat"
+    }
+  },
+  "common": {
+    "dismiss": "Tancar l’avís",
+    "unknown": "Desconegut",
+    "loading": "S’està carregant…",
+    "retry": "Tornar-ho a provar",
+    "yes": "Sí",
+    "no": "No",
+    "cancel": "Cancel·lar",
+    "close": "Tancar"
+  },
+  "ops": {
+    "system": {
+      "ping": "Comprovar la connexió",
+      "version": "Consultar la versió",
+      "info": "Consultar la informació del sistema"
+    },
+    "container": {
+      "list": "Llistar contenidors",
+      "start": "Iniciar el contenidor",
+      "stop": "Aturar el contenidor",
+      "restart": "Reiniciar el contenidor",
+      "pause": "Posar en pausa el contenidor",
+      "unpause": "Reprendre el contenidor",
+      "remove": "Eliminar el contenidor",
+      "state": "Comprovar l’estat del contenidor",
+      "create": "Crear un contenidor",
+      "inspect": "Inspeccionar el contenidor",
+      "logs": "Seguir els registres",
+      "stats": "Seguir les estadístiques",
+      "exec": "Sessió de terminal",
+      "exec_create": "Preparar el terminal",
+      "exec_inspect": "Comprovar el final del terminal",
+      "exec_cleanup": "Acabar els processos del terminal",
+      "rename": "Canviar el nom del contenidor",
+      "update": "Actualitzar recursos o reinici",
+      "recreate": "Recrear el contenidor",
+      "restoreBackup": "Restaurar la còpia del contenidor",
+      "commit": "Crear una imatge des d’un contenidor"
+    },
+    "image": {
+      "list": "Llistar imatges",
+      "inspect": "Inspeccionar la imatge",
+      "pull": "Baixar la imatge",
+      "build": "Construir la imatge",
+      "history": "Consultar les capes",
+      "tag": "Etiquetar la imatge",
+      "remove": "Eliminar la imatge",
+      "prune": "Netejar imatges",
+      "search": "Cercar imatges"
+    },
+    "compose": {
+      "version": "Consultar la versió de Compose",
+      "config": "Llegir la configuració de Compose",
+      "up": "Desplegar el projecte",
+      "down": "Eliminar el projecte",
+      "start": "Iniciar el projecte",
+      "stop": "Aturar el projecte",
+      "restart": "Reiniciar el projecte",
+      "pull": "Baixar les imatges del projecte",
+      "build": "Construir les imatges del projecte",
+      "logs": "Registres del projecte"
+    },
+    "network": {
+      "list": "Llistar xarxes",
+      "inspect": "Inspeccionar la xarxa",
+      "create": "Crear una xarxa",
+      "remove": "Eliminar la xarxa",
+      "prune": "Netejar xarxes",
+      "connect": "Connectar un contenidor a la xarxa",
+      "disconnect": "Desconnectar un contenidor de la xarxa"
+    },
+    "volume": {
+      "list": "Llistar volums",
+      "inspect": "Inspeccionar el volum",
+      "usage": "Mesurar volums",
+      "create": "Crear un volum",
+      "remove": "Eliminar el volum",
+      "prune": "Netejar volums"
+    },
+    "registry": {
+      "credentials": "Obtenir les credencials del registre"
+    },
+    "events": {
+      "watch": "Subscripció als esdeveniments de Docker",
+      "query": "Consultar esdeveniments de Docker"
+    },
+    "packages": {
+      "query": "Consultar els paquets instal·lats",
+      "simulate": "Simular amb APT",
+      "remove": "Desinstal·lar paquets"
+    },
+    "ui": {
+      "language": "Canviar l’idioma",
+      "accent": "Canviar el color principal"
+    }
+  },
+  "conn": {
+    "connecting": "S’està connectant amb Docker…",
+    "connected": "Docker {{version}}",
+    "disconnected": "Sense connexió amb Docker",
+    "rootless": "rootless",
+    "source": {
+      "custom": "Sòcol personalitzat",
+      "dockerHost": "Variable DOCKER_HOST",
+      "context": "Context «{{name}}»",
+      "rootless": "Docker rootless de l’usuari",
+      "system": "Sòcol del sistema"
+    },
+    "reconnect": "Tornar a connectar",
+    "reconnecting": "S’està connectant…",
+    "configure": "Configurar la connexió",
+    "openDashboard": "Veure el diagnòstic",
+    "notConnectedTitle": "Aquest apartat necessita connexió amb Docker",
+    "notConnectedBody": "No hi ha connexió amb Docker Engine. El tauler n’explica la causa i com resoldre-ho.",
+    "autoRetry": "L’aplicació ho torna a provar automàticament cada pocs segons.",
+    "badgeTitle": "Connectat a {{path}}"
+  },
+  "diag": {
+    "title": "Diagnòstic de la connexió",
+    "steps": "Com resoldre-ho",
+    "candidates": "Sòcols comprovats",
+    "candidatesHint": "En l’ordre en què es busquen.",
+    "installation": "Instal·lació detectada",
+    "cli": "CLI de Docker",
+    "daemon": "Dimoni (dockerd)",
+    "rootlessTools": "Eines rootless",
+    "notFound": "No s’ha trobat",
+    "yes": "Sí",
+    "no": "No",
+    "user": "Usuari",
+    "probe": {
+      "reachable": "Respon",
+      "missing": "No existeix",
+      "notASocket": "No és un sòcol",
+      "permissionDenied": "Permís denegat",
+      "refused": "No hi escolta ningú",
+      "errorLabel": "Error"
+    },
+    "rootGroupWarning": "Pertànyer al grup {{group}} equival a tenir privilegis d’administrador en aquest equip. L’alternativa més segura és Docker en mode rootless.",
+    "noAutoFix": "Docker Control Center no canvia permisos ni grups del sistema: aquests passos els has d’executar tu en un terminal.",
+    "problems": {
+      "noSocket": {
+        "title": "No es troba Docker Engine",
+        "body": "No hi ha cap sòcol de Docker a les ubicacions habituals."
+      },
+      "notInstalled": {
+        "title": "Sembla que Docker no està instal·lat",
+        "body": "No s’ha trobat cap sòcol, ni el CLI ni el dimoni de Docker."
+      },
+      "daemonNotRunning": {
+        "title": "Docker Engine està aturat",
+        "body": "El sòcol {{path}} existeix, però cap procés no hi respon."
+      },
+      "permissionDenied": {
+        "title": "Sense permís per fer servir el sòcol de Docker",
+        "body": "El teu usuari ({{user}}) no pot obrir {{path}}. Pertany a {{owner}}:{{group}} amb permisos {{mode}}."
+      },
+      "unsupportedHost": {
+        "title": "Connexió de Docker no compatible",
+        "body": "DOCKER_HOST o el context actiu apunten a {{host}}. Aquesta versió només admet sòcols Unix locals."
+      },
+      "invalidPath": {
+        "title": "La ruta configurada no és vàlida",
+        "body": "«{{path}}»: {{reason}}."
+      },
+      "notASocket": {
+        "title": "La ruta no és un sòcol",
+        "body": "{{path}} existeix, però no és un sòcol Unix."
+      },
+      "notDocker": {
+        "title": "El sòcol no respon com Docker",
+        "body": "{{path}} accepta connexions, però no respon com l’API de Docker Engine: {{message}}"
+      },
+      "timeout": {
+        "title": "Docker no respon a temps",
+        "body": "{{path}} no ha respost en 5 segons. Pot ser que el dimoni estigui bloquejat o molt carregat."
+      },
+      "apiTooOld": {
+        "title": "Versió de Docker massa antiga",
+        "body": "Docker Engine ofereix l’API {{api}} i cal la {{min}} o superior (Docker 20.10 o posterior)."
+      },
+      "other": {
+        "title": "Error en connectar amb Docker",
+        "body": "{{message}}"
+      }
+    },
+    "stepsText": {
+      "install": "Instal·la Docker Engine. Amb els paquets de Debian o Ubuntu:",
+      "installOfficial": "O segueix la guia oficial d’instal·lació per a Debian/Ubuntu a docs.docker.com/engine/install.",
+      "startSystem": "Inicia el servei de Docker i activa’l en arrencar l’equip:",
+      "startRootless": "Si fas servir Docker rootless, inicia el servei del teu usuari:",
+      "checkStatus": "Si no arrenca, revisa’n l’estat i els últims missatges:",
+      "addGroup": "Afegeix el teu usuari al grup {{group}}:",
+      "relogin": "Després, tanca la sessió i torna a entrar perquè el grup s’activi.",
+      "alreadyInGroup": "Ja pertanys al grup {{group}}, però la sessió actual encara no el té actiu. Tanca la sessió i torna a entrar, o reinicia l’equip.",
+      "ownerUnexpected": "El sòcol no pertany al grup docker. Revisa l’opció SocketGroup del servei docker.socket.",
+      "rootlessAlternative": "Alternativa sense privilegis: Docker en mode rootless (docs.docker.com/engine/security/rootless).",
+      "unsetHost": "Per fer servir el sòcol local, treu DOCKER_HOST del teu entorn o torna al context per defecte:",
+      "customPath": "O indica un sòcol Unix concret a Configuració, secció Connexió amb Docker.",
+      "fixPath": "Corregeix la ruta a Configuració, secció Connexió amb Docker. Ha de ser absoluta, per exemple /var/run/docker.sock.",
+      "checkPath": "Comprova que la ruta correspon al sòcol de Docker i no a un altre servei.",
+      "upgrade": "Actualitza Docker Engine a la versió 20.10 o posterior.",
+      "restart": "Reinicia el servei de Docker:",
+      "retry": "Quan ho hagis resolt, prem «Tornar a connectar». L’aplicació també ho torna a provar sola."
+    }
+  },
+  "dashboard": {
+    "refresh": "Actualitzar",
+    "engine": "Docker Engine",
+    "containers": "Contenidors",
+    "images": "Imatges",
+    "running": "En execució",
+    "paused": "En pausa",
+    "stopped": "Aturats",
+    "viewContainers": "Veure els contenidors",
+    "viewImages": "Veure les imatges",
+    "host": "Equip",
+    "hostName": "Nom",
+    "os": "Sistema operatiu",
+    "kernel": "Nucli",
+    "arch": "Arquitectura",
+    "cpus": "CPU",
+    "memory": "Memòria",
+    "runtime": "Emmagatzematge i execució",
+    "storageDriver": "Emmagatzematge",
+    "rootDir": "Directori de dades",
+    "cgroup": "cgroups",
+    "logging": "Registres",
+    "api": "API",
+    "minApi": "API mínima",
+    "go": "Go",
+    "commit": "Commit",
+    "warnings": "Avisos del dimoni",
+    "swarm": "Swarm actiu",
+    "connection": "Connexió",
+    "socket": "Sòcol",
+    "source": "Origen",
+    "loadError": "No s’ha pogut obtenir la informació de Docker: {{message}}",
+    "imagesHint": "imatges locals"
+  },
+  "containers": {
+    "refresh": "Actualitzar",
+    "search": "Cerca per nom, imatge o ID",
+    "filter": {
+      "all": "Tots",
+      "running": "En execució",
+      "stopped": "Aturats"
+    },
+    "count_one": "{{count}} contenidor",
+    "count_other": "{{count}} contenidors",
+    "columns": {
+      "name": "Nom",
+      "image": "Imatge",
+      "status": "Estat",
+      "ports": "Ports",
+      "created": "Creat",
+      "actions": "Accions"
+    },
+    "state": {
+      "created": "Creat",
+      "running": "En execució",
+      "paused": "En pausa",
+      "restarting": "S’està reiniciant",
+      "exited": "Aturat",
+      "removing": "S’està eliminant",
+      "dead": "Mort"
+    },
+    "action": {
+      "start": "Iniciar",
+      "stop": "Aturar",
+      "restart": "Reiniciar",
+      "pause": "Pausar",
+      "unpause": "Reprendre",
+      "remove": "Eliminar"
+    },
+    "actionOn": "{{action}} {{name}}",
+    "failed": "{{action}} {{name}}: {{message}}",
+    "empty": "No hi ha contenidors",
+    "emptyBody": "Els contenidors que hi hagi a Docker apareixeran aquí. Fes servir «Crear un contenidor» per crear-ne un a partir d’una imatge local.",
+    "noMatches": "Cap contenidor no coincideix amb la cerca.",
+    "loadError": "No s’ha pogut obtenir la llista de contenidors: {{message}}",
+    "removeTitle": "Eliminar {{name}}",
+    "removeBody": "S’eliminarà el contenidor i la seva capa d’escriptura. No es pot desfer.",
+    "removeRunning": "El contenidor està {{state}}. Per eliminar-lo, cal aturar-lo a la força.",
+    "removeForce": "Aturar-lo a la força i eliminar-lo",
+    "removeVolumes": "Eliminar també els seus volums anònims",
+    "removeVolumesHint": "Els volums amb nom i els directoris vinculats no es toquen.",
+    "cancel": "Cancel·lar",
+    "confirmRemove": "Eliminar el contenidor",
+    "dismiss": "Tancar",
+    "create": "Crear un contenidor",
+    "openDetail": "Obrir {{name}}",
+    "moreActions": "Més accions de {{name}}"
+  },
+  "images": {
+    "refresh": "Actualitzar",
+    "search": "Cerca per etiqueta o ID",
+    "filter": {
+      "all": "Totes",
+      "used": "En ús",
+      "unused": "Sense ús",
+      "dangling": "Sense etiqueta"
+    },
+    "count_one": "{{count}} imatge",
+    "count_other": "{{count}} imatges",
+    "columns": {
+      "tags": "Imatge",
+      "id": "ID",
+      "size": "Mida",
+      "created": "Creada",
+      "usage": "Ús",
+      "actions": "Accions"
+    },
+    "dangling": "Sense etiqueta",
+    "usedBy_one": "{{count}} contenidor",
+    "usedBy_other": "{{count}} contenidors",
+    "unused": "Sense ús",
+    "empty": "No hi ha imatges locals",
+    "emptyBody": "Baixa una imatge d’un registre o construeix-ne una a partir d’un Dockerfile.",
+    "noMatches": "Cap imatge no coincideix amb la cerca.",
+    "loadError": "No s’ha pogut obtenir la llista d’imatges: {{message}}",
+    "pull": "Baixar una imatge",
+    "searchHub": "Cercar a Docker Hub",
+    "build": "Construir una imatge",
+    "prune": "Netejar",
+    "buildRunning": "Hi ha una construcció en curs.",
+    "buildShow": "Veure el progrés",
+    "open": "Obrir {{name}}",
+    "createContainer": "Crear un contenidor amb {{name}}",
+    "tagAction": "Etiquetar {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "settingsDocker": {
+    "title": "Connexió amb Docker",
+    "mode": "Mode de connexió",
+    "modeAuto": "Automàtic",
+    "modeCustom": "Sòcol personalitzat",
+    "autoHint": "Busca DOCKER_HOST, el context actiu de Docker, el sòcol rootless del teu usuari i el sòcol del sistema, en aquest ordre.",
+    "customHint": "Ruta absoluta d’un sòcol Unix, per exemple /run/user/1000/docker.sock.",
+    "socketPath": "Ruta del sòcol",
+    "pathRequired": "Indica la ruta del sòcol.",
+    "test": "Provar la connexió",
+    "testing": "S’està provant…",
+    "save": "Desar i connectar",
+    "testOk": "Connexió correcta: Docker {{version}} a {{path}}",
+    "testFailed": "No s’ha pogut connectar: {{reason}}",
+    "current": "Connexió actual",
+    "none": "Sense connexió",
+    "rootless": "Mode rootless",
+    "versions": "Versions",
+    "engineVersion": "Docker Engine",
+    "apiVersion": "API",
+    "compose": "Docker Compose",
+    "composeCheck": "Comprovar",
+    "composeChecking": "S’està comprovant…",
+    "composeNotChecked": "Sense comprovar",
+    "composeError": "Error: {{message}}",
+    "composeHint": "S’obté executant «docker compose version». Cal per a l’apartat Docker Compose (fase 7); la resta de l’aplicació funciona sense.",
+    "security": "L’accés al sòcol de Docker equival a privilegis d’administrador. L’aplicació no canvia mai permisos ni grups del sistema.",
+    "composePlugin": "{{version}} (connector «docker compose»)",
+    "composeStandalone": "{{version}} (binari «docker-compose»)",
+    "composeNotInstalled": "No instal·lat",
+    "composeUnusable": "El connector és a {{path}}, però el CLI de Docker no el fa servir",
+    "composeLegacy": "Només Compose v1 {{version}}, no admès",
+    "composeUnrecognized": "Resposta no reconeguda: {{output}}",
+    "composeInstall": "Instal·la Docker Compose v2 (Debian 12 només ofereix la v1, no admesa: fes servir el repositori oficial de Docker):",
+    "composeInstallOn": {
+      "debian13": "Debian 13:",
+      "ubuntu": "Ubuntu 22.04 o posterior:",
+      "dockerRepo": "Amb el repositori oficial de Docker:"
+    }
+  },
+  "crash": {
+    "title": "La interfície ha trobat un error",
+    "body": "Docker no s’ha vist afectat. Pots tornar a carregar la finestra; si l’error es repeteix, copia aquest text per notificar-lo.",
+    "reload": "Tornar a carregar la finestra"
+  },
+  "restart": {
+    "no": "No reiniciar",
+    "always": "Sempre",
+    "unlessStopped": "Tret que s’hagi aturat a mà",
+    "onFailure": "Si falla"
+  },
+  "detail": {
+    "back": "Contenidors",
+    "duplicate": "Duplicar",
+    "duplicateFailed": "No s’ha pogut llegir la configuració per duplicar-la: {{message}}",
+    "loadError": "No s’ha pogut inspeccionar el contenidor: {{message}}",
+    "notFound": "El contenidor {{name}} ja no existeix a Docker.",
+    "tabs": {
+      "summary": "Resum",
+      "logs": "Registres",
+      "terminal": "Terminal",
+      "stats": "Estadístiques",
+      "inspect": "Inspecció JSON"
+    },
+    "s": {
+      "general": "General",
+      "process": "Procés",
+      "ports": "Ports publicats",
+      "restartResources": "Reinici i recursos",
+      "env": "Variables d’entorn",
+      "networks": "Xarxes",
+      "mounts": "Emmagatzematge",
+      "labels": "Etiquetes"
+    },
+    "f": {
+      "id": "ID",
+      "image": "Imatge",
+      "created": "Creat",
+      "started": "Iniciat",
+      "finished": "Acabat",
+      "exitCode": "Codi de sortida",
+      "oom": "Acabat per manca de memòria",
+      "error": "Error",
+      "health": "Salut",
+      "pid": "PID",
+      "restartCount": "Reinicis",
+      "compose": "Projecte Compose",
+      "entrypoint": "Punt d’entrada",
+      "command": "Ordre",
+      "workingDir": "Directori de treball",
+      "user": "Usuari",
+      "hostname": "Nom d’amfitrió",
+      "tty": "TTY",
+      "stdin": "STDIN obert",
+      "restart": "Política de reinici",
+      "cpus": "CPU",
+      "memory": "Memòria",
+      "memoryReservation": "Reserva de memòria",
+      "flags": "Opcions",
+      "network": "Xarxa",
+      "gateway": "Passarel·la"
+    },
+    "imageDefault": "el de la imatge",
+    "maxRetries_one": "màx. {{count}} intent",
+    "maxRetries_other": "màx. {{count}} intents",
+    "unlimited": "sense límit",
+    "noPorts": "No publica ports a l’equip.",
+    "exposedOnly": "Exposats sense publicar: {{ports}}",
+    "noEnv": "Sense variables.",
+    "revealSecrets_one": "Mostrar {{count}} valor ocult",
+    "revealSecrets_other": "Mostrar {{count}} valors ocults",
+    "hideSecrets": "Amagar els valors sensibles",
+    "hidden": "ocult",
+    "reveal": "Mostrar el valor",
+    "hide": "Amagar el valor",
+    "networkMode": "Mode de xarxa: {{mode}}",
+    "noNetworks": "Sense xarxes.",
+    "noMounts": "Sense muntatges.",
+    "readOnly": "només lectura",
+    "noLabels": "Sense etiquetes.",
+    "inspectHint": "Sortida completa de docker inspect {{name}}, tal com la retorna Docker."
+  },
+  "logs": {
+    "tail": "Últimes",
+    "all": "Totes",
+    "lastN_one": "{{count}} línia",
+    "lastN_other": "{{count}} línies",
+    "filter": "Filtrar les línies",
+    "timestamps": "Marques de temps",
+    "follow": "Seguir al final",
+    "stop": "Deixar de seguir",
+    "reopen": "Tornar a obrir",
+    "live": "S’estan rebent registres en directe",
+    "count_one": "{{count}} línia",
+    "count_other": "{{count}} línies",
+    "dropped": "Només es mostren les últimes {{max}} línies; les anteriors s’han descartat.",
+    "opening": "S’estan obrint els registres…",
+    "empty": "Encara no hi ha sortida.",
+    "noMatches": "Cap línia no coincideix amb el filtre."
+  },
+  "terminal": {
+    "shell": "Intèrpret",
+    "auto": "Automàtic",
+    "open": "Obrir un terminal",
+    "reopen": "Obrir una altra sessió",
+    "close": "Tancar la sessió",
+    "hint": "Executa un intèrpret amb docker exec -it. En tancar la sessió s’acaba l’intèrpret.",
+    "live": "Sessió oberta",
+    "notRunning": "El contenidor no està en execució: inicia’l per obrir un terminal."
+  },
+  "terminals": {
+    "new": "Terminal nou",
+    "newTitle": "Terminal nou",
+    "openSession": "Obrir el terminal",
+    "closeAll": "Tancar-los tots",
+    "closeAllTitle": "Vols tancar tots els terminals?",
+    "closeAllBody_one": "Es tancarà {{count}} sessió: s’acaba el seu intèrpret i els processos que ha deixat dins del contenidor. El contenidor continua en execució.",
+    "closeAllBody_other": "Es tancaran {{count}} sessions: s’acaben els seus intèrprets i els processos que han deixat dins dels contenidors. Els contenidors continuen en execució.",
+    "count_one": "{{count}} sessió · {{live}} connectada",
+    "count_other": "{{count}} sessions · {{live}} connectades",
+    "hint": "Cada terminal és un docker exec -it independent. Continuen oberts en canviar d’apartat i es tanquen en sortir de l’aplicació.",
+    "emptyTitle": "No hi ha terminals oberts",
+    "emptyHint": "Obre un terminal en qualsevol contenidor en execució. Pots tenir-ne diversos alhora, en el mateix contenidor o en d’altres.",
+    "full": "Has arribat al màxim de {{max}} terminals oberts: tanca’n algun per obrir-ne un altre.",
+    "containerField": "Contenidor en execució",
+    "noRunning": "No hi ha contenidors en execució: inicia’n un per obrir un terminal.",
+    "sessionName": "Nom de la sessió",
+    "nameHint": "Opcional. Si el deixes buit, es fa servir el nom del contenidor. El pots canviar després.",
+    "nameProblem": {
+      "empty": "El nom no pot estar buit.",
+      "long": "Fes servir com a màxim {{max}} caràcters.",
+      "control": "El nom no pot contenir caràcters de control."
+    },
+    "paneLabel": "Terminal {{name}} a {{container}}",
+    "container": "Contenidor {{name}}",
+    "state": {
+      "opening": "S’està connectant…",
+      "open": "Connectat",
+      "ended": "Finalitzat",
+      "error": "Error"
+    },
+    "after": {
+      "stopped": "Contenidor aturat",
+      "removed": "Contenidor eliminat"
+    },
+    "rename": "Canviar el nom de la sessió",
+    "reopen": "Tornar a obrir la sessió",
+    "reopenGone": "No es pot tornar a obrir: el contenidor s’ha eliminat",
+    "maximize": "Maximitzar",
+    "restore": "Restaurar la quadrícula",
+    "close": "Tancar la sessió",
+    "splitColumns": "Redimensionar les columnes",
+    "splitRows": "Redimensionar les files"
+  },
+  "stats": {
+    "stop": "Deixar de rebre",
+    "reopen": "Tornar a obrir",
+    "live": "S’estan rebent estadístiques",
+    "samples_one": "{{count}} mostra",
+    "samples_other": "{{count}} mostres",
+    "notRunning": "El contenidor no està en execució: no hi ha estadístiques per mostrar.",
+    "cpu": "CPU",
+    "cpuSub_one": "{{count}} CPU disponible",
+    "cpuSub_other": "{{count}} CPU disponibles",
+    "cpuTrend": "Evolució de l’ús de CPU",
+    "memory": "Memòria",
+    "memorySub": "de {{limit}} · {{pct}}",
+    "memoryTrend": "Evolució de l’ús de memòria",
+    "pids": "Processos",
+    "net": "Xarxa (rebut / enviat)",
+    "block": "Disc",
+    "read": "llegit",
+    "written": "escrit",
+    "formulaHint": "Valors calculats com docker stats: la CPU és el percentatge sobre una CPU i la memòria descompta la memòria cau de pàgines."
+  },
+  "stream": {
+    "opening": "S’està obrint…",
+    "openFailed": "No s’ha pogut obrir: {{message}}",
+    "failed": "El flux ha acabat amb un error: {{message}}",
+    "idle": "Tancat."
+  },
+  "create": {
+    "title": "Crear un contenidor",
+    "titleDuplicate": "Duplicar {{name}}",
+    "notesTitle": "Alguns paràmetres de l’original no es traslladen:",
+    "tabs": {
+      "general": "General",
+      "env": "Entorn",
+      "network": "Xarxa",
+      "storage": "Emmagatzematge",
+      "resources": "Recursos",
+      "advanced": "Avançat"
+    },
+    "f": {
+      "name": "Nom",
+      "image": "Imatge",
+      "command": "Ordre",
+      "entrypoint": "Punt d’entrada",
+      "workingDir": "Directori de treball",
+      "network": "Xarxa",
+      "hostname": "Nom d’amfitrió",
+      "hostIp": "IP de l’equip",
+      "hostPort": "Port de l’equip",
+      "containerPort": "Port del contenidor",
+      "protocol": "Protocol",
+      "publishAll": "Publicar tots els ports exposats en ports lliures",
+      "mountKind": "Tipus de muntatge",
+      "readOnly": "Només lectura",
+      "volumeName": "Volum",
+      "hostPath": "Carpeta de l’equip",
+      "target": "Ruta al contenidor",
+      "cpus": "CPU",
+      "memory": "Límit de memòria",
+      "memoryReservation": "Reserva de memòria",
+      "unit": "Unitat",
+      "restart": "Política",
+      "maxRetries": "Intents màxims",
+      "user": "Usuari",
+      "tty": "Assignar un TTY",
+      "interactive": "Mantenir STDIN obert",
+      "init": "Fer servir un procés init",
+      "readOnlyRootfs": "Sistema de fitxers arrel de només lectura",
+      "autoRemove": "Eliminar en acabar",
+      "privileged": "Mode privilegiat",
+      "capAdd": "Afegir capacitats",
+      "capDrop": "Treure capacitats",
+      "key": "Clau {{n}}",
+      "value": "Valor {{n}}"
+    },
+    "h": {
+      "name": "Opcional: si el deixes buit, Docker en genera un.",
+      "image": "Ha d’existir en aquest equip (les baixades arriben a la fase 4).",
+      "imageLocal": "Imatge local: {{ref}}",
+      "imageReading": "S’està llegint la configuració de la imatge…",
+      "argv": "Es divideix en arguments amb cometes com a l’intèrpret, però no s’executa cap intèrpret.",
+      "fromImage": "Buit = el de la imatge: {{value}}",
+      "entrypointMulti": "Docker només admet un executable a --entrypoint: els altres elements s’envien al principi de l’ordre.",
+      "network": "Les xarxes es gestionen a la fase 5.",
+      "publishAll": "Equival a --publish-all.",
+      "volumeName": "Buit = volum anònim. Si no existeix, Docker el crea.",
+      "cpus": "Per exemple 0.5 o 2.",
+      "maxRetries": "0 = sense límit.",
+      "user": "Nom o UID[:GID]. Buit = el de la imatge."
+    },
+    "ph": {
+      "name": "servidor-web",
+      "hostname": "l’ID curt",
+      "allIps": "totes",
+      "anyPort": "un de lliure",
+      "anonymous": "anònim",
+      "unlimited": "sense límit"
+    },
+    "g": {
+      "process": "Procés",
+      "processHint": "El que s’executa en iniciar el contenidor.",
+      "env": "Variables d’entorn",
+      "envHint": "Els valors de claus com PASSWORD o TOKEN s’amaguen a la pantalla, però s’envien a Docker tal qual i qualsevol amb accés a Docker els pot veure.",
+      "labels": "Etiquetes",
+      "ports": "Ports",
+      "portsHint": "Publica ports del contenidor en aquest equip.",
+      "hosts": "Entrades de /etc/hosts",
+      "hostsHint": "Nom d’amfitrió i IP (o host-gateway).",
+      "mounts": "Muntatges",
+      "mountsHint": "Volums de Docker o carpetes d’aquest equip (bind mounts).",
+      "limits": "Límits",
+      "limitsHint": "Buit = sense límit.",
+      "restart": "Reinici",
+      "restartHint": "Què fa Docker quan el procés principal acaba.",
+      "options": "Opcions",
+      "caps": "Capacitats del nucli",
+      "capsHint": "Separades per comes, p. ex. NET_ADMIN o ALL."
+    },
+    "add": {
+      "env": "Afegir una variable",
+      "label": "Afegir una etiqueta",
+      "port": "Afegir un port",
+      "host": "Afegir una entrada",
+      "mount": "Afegir un muntatge"
+    },
+    "remove": {
+      "row": "Treure la fila {{n}}",
+      "port": "Treure el port {{n}}",
+      "mount": "Treure el muntatge {{n}}"
+    },
+    "empty": {
+      "env": "Sense variables addicionals.",
+      "labels": "Sense etiquetes.",
+      "ports": "No es publica cap port.",
+      "hosts": "Sense entrades.",
+      "mounts": "Sense muntatges."
+    },
+    "mountKind": {
+      "volume": "Volum",
+      "bind": "Carpeta de l’equip"
+    },
+    "defaultNetwork": "Predeterminada (bridge)",
+    "addExposed": "Publicar els exposats ({{ports}})",
+    "imageEnv_one": "La imatge ja defineix {{count}} variable",
+    "imageEnv_other": "La imatge ja defineix {{count}} variables",
+    "imageVolumes": "La imatge declara volums a {{paths}}. Si no hi muntes res, Docker crea volums anònims.",
+    "imageNotLocal": "La imatge {{ref}} no és en aquest equip. Docker no la baixarà en crear el contenidor; baixa-la abans (fase 4) o tria’n una de local.",
+    "imageDefaultsError": "No s’ha pogut llegir la configuració de la imatge: {{message}}",
+    "listError": "No s’ha pogut obtenir la llista: {{message}}",
+    "pickFolder": "Triar una carpeta",
+    "argsParsed": "Arguments resultants",
+    "equivalent": "Equivalent",
+    "apiBody": "API",
+    "equivalentHint": "Ordre equivalent del CLI de Docker. L’aplicació no l’executa: envia la petició a l’API i la registra al tauler d’activitat.",
+    "bodyHint": "Cos de POST /containers/create que s’enviarà a Docker.",
+    "previewing": "S’està comprovant…",
+    "review": "Revisió",
+    "noIssues": "Sense problemes.",
+    "blocked_one": "Corregeix {{count}} error per continuar.",
+    "blocked_other": "Corregeix {{count}} errors per continuar.",
+    "create": "Crear",
+    "createStart": "Crear i iniciar",
+    "failed": "No s’ha pogut crear el contenidor: {{message}}",
+    "startFailed": "El contenidor s’ha creat, però no s’ha pogut iniciar: {{message}}",
+    "dockerWarning": "Avís de Docker: {{message}}",
+    "secretsHidden_one": "{{count}} valor sensible apareix com a ******** aquí i al tauler d’activitat; a Docker s’envia complet.",
+    "secretsHidden_other": "{{count}} valors sensibles apareixen com a ******** aquí i al tauler d’activitat; a Docker s’envien complets."
+  },
+  "issues": {
+    "name": {
+      "invalid": "Nom no vàlid: fes servir lletres, xifres, «_», «.» o «-», i comença per una lletra o una xifra.",
+      "required": "El nom és obligatori.",
+      "reserved": "{{value}} és una xarxa predefinida de Docker.",
+      "backupReserved": "Aquest nom està reservat per a les còpies de seguretat («-dcc-backup-», «-dcc-replaced-»).",
+      "inUse": "Ja hi ha un altre contenidor amb aquest nom."
+    },
+    "image": {
+      "required": "Indica una imatge.",
+      "invalid": "Referència d’imatge no vàlida."
+    },
+    "argv": {
+      "nul": "No pot contenir el caràcter nul.",
+      "unclosedQuote": "Hi ha una cometa sense tancar.",
+      "trailingEscape": "Acaba en una barra inversa sense cap caràcter al darrere."
+    },
+    "path": {
+      "notAbsolute": "Ha de ser una ruta absoluta (començar per /)."
+    },
+    "user": {
+      "invalid": "L’usuari no pot contenir espais."
+    },
+    "hostname": {
+      "invalid": "Nom d’amfitrió no vàlid (lletres, xifres, «-» i «.», màxim 63)."
+    },
+    "env": {
+      "keyRequired": "Falta el nom de la variable.",
+      "keyInvalid": "Nom de variable no vàlid: {{key}}",
+      "duplicate": "{{key}} està repetida; es farà servir l’últim valor."
+    },
+    "label": {
+      "keyInvalid": "Clau d’etiqueta no vàlida.",
+      "duplicate": "Etiqueta repetida: {{key}}"
+    },
+    "network": {
+      "invalid": "Nom de xarxa no vàlid."
+    },
+    "ports": {
+      "ignoredWithNetwork": "Amb la xarxa «{{network}}», Docker ignora els ports publicats."
+    },
+    "port": {
+      "invalid": "Port no vàlid (1–65535).",
+      "duplicate": "El port {{port}} de l’equip està repetit.",
+      "privileged": "El port {{port}} és privilegiat: amb Docker rootless pot fallar.",
+      "inUseByContainer": "El port {{port}} ja el publica el contenidor {{container}}, que està en execució."
+    },
+    "ip": {
+      "invalid": "IP no vàlida: {{ip}}"
+    },
+    "mount": {
+      "targetInvalid": "La ruta al contenidor ha de ser absoluta i diferent de /.",
+      "targetDuplicate": "Ja hi ha un muntatge a {{target}}."
+    },
+    "volume": {
+      "invalid": "Nom de volum no vàlid.",
+      "nameRequired": "Un volum nou necessita nom: un d’anònim no es podria tornar a muntar en una recreació posterior."
+    },
+    "bind": {
+      "required": "Indica la carpeta de l’equip.",
+      "missing": "La carpeta {{path}} no existeix en aquest equip.",
+      "sensitive": "Muntar {{path}} amb escriptura dona al contenidor control sobre el sistema. Marca’l com a només lectura si no ho necessites."
+    },
+    "cpus": {
+      "range": "Indica un nombre de CPU entre 0,01 i 1024."
+    },
+    "memory": {
+      "min": "Docker exigeix com a mínim 6 MiB.",
+      "invalid": "Indica una quantitat numèrica.",
+      "reservationAboveLimit": "La reserva no pot superar el límit."
+    },
+    "autoRemove": {
+      "restart": "«Eliminar en acabar» no és compatible amb una política de reinici."
+    },
+    "privileged": "El mode privilegiat dona al contenidor accés gairebé complet a l’equip.",
+    "cap": {
+      "invalid": "Capacitat no vàlida: {{cap}}"
+    },
+    "host": {
+      "invalid": "Nom d’amfitrió no vàlid."
+    },
+    "ref": {
+      "empty": "Indica una imatge.",
+      "tooLong": "La referència és massa llarga.",
+      "invalidRegistry": "El nom del registre no és vàlid.",
+      "invalidRepository": "Nom no vàlid: només minúscules, xifres i els separadors . _ -",
+      "invalidTag": "Etiqueta no vàlida: lletres, xifres, _ . - (màxim 128, sense començar per . o -).",
+      "invalidDigest": "Digest no vàlid (sha256:<64 caràcters hexadecimals>)."
+    },
+    "context": {
+      "required": "Indica la carpeta de context.",
+      "missing": "La carpeta {{path}} no existeix.",
+      "notDir": "{{path}} no és una carpeta.",
+      "huge": "Fer servir {{path}} com a context enviaria una quantitat enorme de fitxers."
+    },
+    "dockerfile": {
+      "invalid": "Ruta no vàlida: ha de ser relativa i dins del context.",
+      "missing": "No existeix {{path}} a la carpeta de context."
+    },
+    "tags": {
+      "none": "Sense nom, la imatge quedarà com a <none>."
+    },
+    "tag": {
+      "invalid": "Etiqueta no vàlida: {{tag}}",
+      "duplicate": "Etiqueta repetida: {{tag}}"
+    },
+    "arg": {
+      "keyInvalid": "Nom no vàlid: {{key}}",
+      "duplicate": "Repetit: {{key}}",
+      "secret": "{{key}} sembla un secret: els arguments queden a l’historial de la imatge."
+    },
+    "target": {
+      "invalid": "Nom d’etapa no vàlid."
+    },
+    "driver": {
+      "invalid": "Nom de controlador no vàlid.",
+      "singleton": "Només hi pot haver una xarxa amb el controlador {{value}} (la predefinida).",
+      "swarm": "Les xarxes overlay requereixen Docker Swarm: sense ell, Docker en rebutjarà la creació.",
+      "noParent": "Sense l’opció «parent», la xarxa no tindrà sortida per cap interfície física."
+    },
+    "subnet": {
+      "required": "Indica la subxarxa per fer servir una passarel·la o un rang.",
+      "invalid": "Subxarxa no vàlida: fes servir notació CIDR (p. ex. 172.30.0.0/24).",
+      "hostBits": "{{value}} no és una adreça de xarxa; hauria de ser {{fixed}}.",
+      "family": "{{value}} no és d’aquesta família d’adreces."
+    },
+    "gateway": {
+      "invalid": "Adreça no vàlida.",
+      "outside": "{{value}} no és dins de {{subnet}}.",
+      "family": "{{value}} no és d’aquesta família d’adreces."
+    },
+    "ipRange": {
+      "invalid": "Rang no vàlid: fes servir notació CIDR.",
+      "outside": "{{value}} no és dins de {{subnet}}.",
+      "hostBits": "{{value}} no és una adreça de xarxa; hauria de ser {{fixed}}.",
+      "family": "{{value}} no és d’aquesta família d’adreces."
+    },
+    "ipv6": {
+      "disabled": "Activa IPv6 per fer servir una subxarxa IPv6."
+    },
+    "option": {
+      "keyInvalid": "Nom d’opció no vàlid: {{key}}",
+      "duplicate": "Opció repetida: {{key}}"
+    },
+    "volumeName": {
+      "short": "El nom ha de tenir com a mínim dos caràcters.",
+      "invalid": "Nom no vàlid: fes servir lletres, xifres, «_», «.» o «-», i comença per una lletra o una xifra.",
+      "exists": "Ja existeix un volum anomenat {{value}}. Docker retornaria l’existent sense aplicar aquests canvis."
+    },
+    "volumeOpt": {
+      "unknownLocal": "El controlador local només fa servir type, device i o: «{{key}}» s’enviarà igualment.",
+      "deviceWithoutType": "Amb «device» sol caldre «type» (p. ex. none amb o=bind, nfs o tmpfs)."
+    },
+    "description": {
+      "tooLong": "Com a màxim {{max}} caràcters.",
+      "invalid": "No pot contenir caràcters de control."
+    },
+    "edit": {
+      "numberInvalid": "Escriu un nombre més gran que zero o deixa el camp buit."
+    },
+    "commit": {
+      "repositoryRequired": "Indica el nom del repositori.",
+      "repositoryInvalid": "Repositori no vàlid: minúscules, xifres i separadors «.», «_», «-» i «/» (p. ex. la-meva-aplicacio o registre.local:5000/equip/app).",
+      "tagInvalid": "Etiqueta no vàlida: lletres, xifres, «_», «.» i «-», fins a 128 caràcters, sense començar per «.» ni «-».",
+      "tooLong": "Com a màxim {{max}} caràcters.",
+      "controlChars": "No pot contenir salts de línia ni altres caràcters de control."
+    }
+  },
+  "dupNotes": {
+    "composeLabels": "S’han tret les etiquetes de Compose: el duplicat no pertanyerà al projecte.",
+    "portsConflict": "Els mateixos ports de l’equip ja els fa servir l’original; canvia’ls o atura l’original abans d’iniciar.",
+    "mountTypeUnsupported": "Hi ha muntatges d’un tipus que l’assistent no admet (tmpfs, npipe…).",
+    "namedVolumesShared": "Els volums amb nom es comparteixen amb l’original, no es copien.",
+    "extraNetworks": "Només es connecta a la primera xarxa; les altres no es traslladen.",
+    "devices": "Els dispositius (--device) no es traslladen.",
+    "dns": "La configuració DNS no es trasllada.",
+    "securityOpt": "Les opcions de seguretat (--security-opt) no es traslladen.",
+    "tmpfs": "Els muntatges tmpfs no es traslladen.",
+    "volumesFrom": "--volumes-from no es trasllada.",
+    "ulimits": "Els ulimits no es traslladen.",
+    "cpuset": "L’assignació de CPU concretes (--cpuset-cpus) no es trasllada.",
+    "pidsLimit": "El límit de processos no es trasllada.",
+    "logConfig": "La configuració dels registres no es trasllada.",
+    "healthcheck": "La comprovació de salut personalitzada no es trasllada.",
+    "stopSignal": "El senyal d’aturada personalitzat no es trasllada.",
+    "imageMissing": "La imatge original ja no és en aquest equip: no se n’han pogut separar els valors per defecte."
+  },
+  "pull": {
+    "title": "Baixar una imatge",
+    "start": "Baixar",
+    "reference": "Imatge",
+    "referenceHint": "Nom amb etiqueta opcional: nginx:1.27, usuari/app, registre.exemple.com:5000/app:v2. Sense etiqueta es fa servir latest.",
+    "resolved": "Es baixarà {{name}} amb l’etiqueta {{tag}}.",
+    "auth": "Credencials",
+    "authDocker": "Les de Docker",
+    "authAnonymous": "Cap",
+    "authManual": "Usuari i contrasenya",
+    "authHint": {
+      "dockerConfig": "Com docker pull: fa servir les credencials desades amb docker login (o el seu credential helper), si n’hi ha per a aquest registre.",
+      "anonymous": "Baixada anònima, sense credencials.",
+      "manual": "Només per a aquesta baixada: no es desen enlloc ni apareixen al tauler d’activitat."
+    },
+    "username": "Usuari",
+    "password": "Contrasenya o testimoni",
+    "equivalent": "Equival a",
+    "panel": "Baixades",
+    "clear": "Treure les acabades",
+    "cancel": "Cancel·lar",
+    "progress": "Progrés de {{ref}}",
+    "layers_one": "{{count}} capa",
+    "layers_other": "{{count}} capes",
+    "status": {
+      "starting": "S’està iniciant…",
+      "running": "S’està baixant",
+      "done": "Baixada",
+      "failed": "Error",
+      "cancelled": "Cancel·lada"
+    }
+  },
+  "search": {
+    "title": "Cercar a Docker Hub",
+    "term": "Terme de cerca",
+    "placeholder": "nginx, postgres, python…",
+    "officialOnly": "Només imatges oficials",
+    "limit": "Resultats",
+    "submit": "Cercar",
+    "hint": "La cerca la fa Docker Engine a Docker Hub (docker search); cal que Docker tingui accés a Internet.",
+    "failed": "La cerca ha fallat: {{message}}",
+    "failedHint": "Si Docker no té accés a Internet o a Docker Hub, la cerca no és possible.",
+    "none": "Sense resultats.",
+    "name": "Nom",
+    "description": "Descripció",
+    "stars": "Estrelles",
+    "official": "Oficial",
+    "pull": "Baixar",
+    "pullName": "Baixar {{name}}"
+  },
+  "imageDetail": {
+    "back": "Imatges",
+    "createContainer": "Crear un contenidor",
+    "pullAgain": "Tornar a baixar",
+    "notFound": "La imatge {{name}} ja no existeix a Docker.",
+    "loadError": "No s’ha pogut inspeccionar la imatge: {{message}}",
+    "tabs": {
+      "summary": "Resum",
+      "layers": "Capes",
+      "containers": "Contenidors",
+      "inspect": "Inspecció JSON"
+    },
+    "s": {
+      "general": "General",
+      "config": "Configuració d’execució",
+      "labels": "Metadades (LABEL)"
+    },
+    "f": {
+      "id": "ID",
+      "tags": "Etiquetes",
+      "digests": "Digests",
+      "created": "Creada",
+      "size": "Mida",
+      "platform": "Plataforma",
+      "layers": "Capes",
+      "author": "Autor",
+      "ports": "Ports exposats",
+      "volumes": "Volums",
+      "stopSignal": "Senyal d’aturada",
+      "healthcheck": "Comprovació de salut"
+    },
+    "localOnly": "cap (imatge construïda o importada en aquest equip)",
+    "layersSummary_one": "{{count}} entrada a l’historial, {{data}} amb dades, {{size}} en total.",
+    "layersSummary_other": "{{count}} entrades a l’historial, {{data}} amb dades, {{size}} en total.",
+    "layersError": "No s’ha pogut obtenir l’historial: {{message}}",
+    "instruction": "Instrucció",
+    "noContainers": "Cap contenidor no fa servir aquesta imatge.",
+    "inspectHint": "Sortida completa de docker image inspect {{name}}, tal com la retorna Docker."
+  },
+  "imageOps": {
+    "tagTitle": "Etiquetar la imatge",
+    "tag": "Etiquetar",
+    "tagSource": "Imatge d’origen:",
+    "repository": "Repositori",
+    "repositoryHint": "Per exemple lamevaapp, usuari/lamevaapp o registre.exemple.com:5000/lamevaapp.",
+    "tagName": "Etiqueta",
+    "tagged": "Etiquetada com a {{target}}.",
+    "failed": "Docker ha rebutjat l’operació: {{message}}",
+    "removeTitle": "Eliminar {{name}}",
+    "removeWhat": "Què cal eliminar",
+    "onlyTag": "Només l’etiqueta",
+    "wholeImage_one": "La imatge completa",
+    "wholeImage_other": "La imatge completa (les seves {{count}} etiquetes)",
+    "removeTag": "Treure l’etiqueta",
+    "removeImage": "Eliminar la imatge",
+    "removeTagBody": "Es treu aquesta etiqueta. Si és l’única, Docker també elimina la imatge i les capes que no es facin servir.",
+    "removeImageBody": "S’eliminen la imatge i les capes que no faci servir cap altra imatge. No es pot desfer: caldria tornar-la a baixar o a construir.",
+    "inUse_one": "La fa servir {{count}} contenidor:",
+    "inUse_other": "La fan servir {{count}} contenidors:",
+    "runningRefuses": "Docker no elimina una imatge que fa servir un contenidor en execució, ni forçant-ho: atura’l i elimina’l abans.",
+    "stoppedNeedForce": "Per eliminar-la cal forçar-ho; els contenidors continuaran existint, però sense la imatge no els podràs recrear.",
+    "force": "Forçar l’eliminació",
+    "forceMulti": "Necessari per eliminar una imatge amb diverses etiquetes (--force).",
+    "forceUsed": "Necessari perquè la fan servir contenidors aturats (--force).",
+    "removed": "{{untagged}} etiquetes tretes i {{deleted}} capes o imatges eliminades.",
+    "pruneTitle": "Netejar imatges",
+    "prune": "Netejar",
+    "pruneDangling": "Només les imatges sense etiqueta que no fa servir cap contenidor",
+    "pruneAll": "Totes les imatges que no fa servir cap contenidor, també les etiquetades",
+    "pruneEstimate_one": "Segons la llista actual s’eliminaria {{count}} imatge ({{size}}).",
+    "pruneEstimate_other": "Segons la llista actual s’eliminarien {{count}} imatges ({{size}}).",
+    "pruneNote": "La decisió final és de Docker, que també elimina la memòria cau de construcció associada. No es pot desfer.",
+    "pruneSure": "Entenc que hauré de tornar a baixar o construir aquestes imatges",
+    "pruned": "Neteja acabada: {{count}} elements eliminats, {{size}} recuperats.",
+    "pruneWhilePulling_one": "Hi ha {{count}} baixada en curs. Espera que acabi: amb el magatzem d’imatges de containerd, Docker fa fallar les baixades en curs en netejar.",
+    "pruneWhilePulling_other": "Hi ha {{count}} baixades en curs. Espera que acabin: amb el magatzem d’imatges de containerd, Docker fa fallar les baixades en curs en netejar."
+  },
+  "build": {
+    "title": "Construir una imatge",
+    "g": {
+      "context": "Context",
+      "contextHint": "Carpeta el contingut de la qual s’envia a Docker (respectant .dockerignore) i Dockerfile que hi ha dins.",
+      "tags": "Noms de la imatge",
+      "tagsHint": "repositori:etiqueta de la imatge resultant (docker build --tag). Sense nom, la imatge queda com a <none>.",
+      "args": "Arguments de construcció",
+      "argsHint": "Valors per a les instruccions ARG (--build-arg). Queden a l’historial de la imatge: no els facis servir per a secrets.",
+      "labels": "Metadades (LABEL)",
+      "options": "Opcions"
+    },
+    "f": {
+      "context": "Carpeta de context",
+      "dockerfile": "Dockerfile",
+      "target": "Etapa final",
+      "builder": "Constructor",
+      "noCache": "No fer servir la memòria cau",
+      "pull": "Cercar versions noves de les imatges base"
+    },
+    "h": {
+      "dockerfile": "Ruta relativa a la carpeta de context.",
+      "target": "Només en Dockerfiles multietapa (--target).",
+      "buildKit": "El constructor actual de Docker (el que fa servir docker build).",
+      "classic": "El constructor anterior, obsolet; equival a DOCKER_BUILDKIT=0 docker build."
+    },
+    "ph": {
+      "target": "l’última",
+      "context": "/home/usuari/projecte"
+    },
+    "classic": "Clàssic",
+    "pickContext": "Triar la carpeta de context",
+    "pickDockerfile": "Triar el Dockerfile",
+    "outsideContext": "El Dockerfile ha de ser dins de la carpeta de context.",
+    "addTag": "Afegir un nom",
+    "removeTag": "Treure el nom {{n}}",
+    "tagN": "Nom {{n}}",
+    "noTags": "Sense noms.",
+    "addArg": "Afegir un argument",
+    "noArgs": "Sense arguments.",
+    "secretsHidden_one": "{{count}} valor sensible apareix com a ******** aquí i al tauler d’activitat.",
+    "secretsHidden_other": "{{count}} valors sensibles apareixen com a ******** aquí i al tauler d’activitat.",
+    "context": "Context que s’enviarà",
+    "contextPending": "Tria una carpeta amb un Dockerfile.",
+    "contextSummary": "{{files}} fitxers en {{dirs}} carpetes, {{size}} en total.",
+    "excluded_one": ".dockerignore exclou {{count}} entrada.",
+    "excluded_other": ".dockerignore exclou {{count}} entrades.",
+    "noDockerignore": "Sense .dockerignore: s’envia tot.",
+    "patterns_one": "{{count}} patró de .dockerignore",
+    "patterns_other": "{{count}} patrons de .dockerignore",
+    "badIgnore": "Línies de .dockerignore no vàlides: {{lines}}",
+    "special_one": "{{count}} fitxer especial (sòcol, dispositiu o FIFO) no s’envia.",
+    "special_other": "{{count}} fitxers especials (sòcols, dispositius o FIFO) no s’envien.",
+    "unreadable": "No es poden llegir: {{files}}. La construcció fallaria.",
+    "bigContext": "El context és gran: considera excloure carpetes amb .dockerignore.",
+    "largest": "Fitxers més grans",
+    "start": "Construir",
+    "cancel": "Cancel·lar",
+    "edit": "Tornar al formulari",
+    "viewImage": "Veure la imatge",
+    "steps": "Passos",
+    "sending": "S’està enviant el context…",
+    "waiting": "S’està esperant la sortida de Docker…",
+    "cached": "memòria cau",
+    "dropped": "S’han descartat {{count}} línies antigues.",
+    "failed": "La construcció ha fallat: {{message}}",
+    "status": {
+      "starting": "S’està enviant el context a Docker…",
+      "running": "S’està construint…",
+      "done": "Imatge construïda",
+      "failed": "La construcció ha fallat",
+      "cancelled": "Construcció cancel·lada"
+    }
+  },
+  "networks": {
+    "create": "Crear una xarxa",
+    "prune": "Netejar",
+    "refresh": "Actualitzar",
+    "search": "Cerca per nom, ID, subxarxa o contenidor",
+    "filterLabel": "Filtre",
+    "filter": {
+      "all": "Totes",
+      "inUse": "En ús",
+      "unused": "Sense ús",
+      "custom": "Creades per l’usuari"
+    },
+    "count_one": "{{count}} xarxa",
+    "count_other": "{{count}} xarxes",
+    "columns": {
+      "name": "Xarxa",
+      "id": "ID",
+      "driver": "Controlador",
+      "subnet": "Subxarxa",
+      "containers": "Contenidors",
+      "actions": "Accions"
+    },
+    "badge": {
+      "predefined": "Predefinida",
+      "internal": "Interna",
+      "attachable": "Connectable",
+      "compose": "Compose: {{project}}"
+    },
+    "noContainers": "Sense contenidors",
+    "members_one": "{{count}} contenidor ({{running}} en marxa)",
+    "members_other": "{{count}} contenidors ({{running}} en marxa)",
+    "empty": "No hi ha xarxes.",
+    "noMatches": "Cap xarxa no coincideix amb la cerca.",
+    "loadError": "No s’ha pogut obtenir la llista de xarxes: {{message}}",
+    "open": "Obrir {{name}}",
+    "connectAction": "Connectar un contenidor a {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "netDetail": {
+    "back": "Xarxes",
+    "tabs": {
+      "summary": "Resum",
+      "containers": "Contenidors",
+      "inspect": "Inspecció JSON"
+    },
+    "s": {
+      "general": "General",
+      "ipam": "Adreces (IPAM)",
+      "options": "Opcions del controlador",
+      "labels": "Metadades (labels)"
+    },
+    "f": {
+      "id": "ID",
+      "driver": "Controlador",
+      "scope": "Àmbit",
+      "created": "Creada",
+      "internal": "Interna (sense sortida a l’exterior)",
+      "attachable": "Connectable manualment",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "compose": "Projecte Compose",
+      "subnet": "Subxarxa",
+      "gateway": "Passarel·la",
+      "ipRange": "Rang assignable",
+      "aux": "Adreces reservades"
+    },
+    "ipamDriver": "Controlador d’IPAM: {{driver}}",
+    "noPools": "Docker no ha assignat subxarxes a aquesta xarxa.",
+    "wholeSubnet": "Tota la subxarxa",
+    "noOptions": "Sense opcions.",
+    "membersHint": "Contenidors que tenen aquesta xarxa configurada, en marxa o no. Les adreces només existeixen mentre el contenidor està en marxa.",
+    "noMembers": "Cap contenidor no fa servir aquesta xarxa.",
+    "c": {
+      "name": "Contenidor",
+      "state": "Estat",
+      "ip": "Adreça IP",
+      "mac": "MAC"
+    },
+    "ipWhenRunning": "S’assigna en arrencar",
+    "inspectHint": "Resposta completa de Docker, com «docker network inspect {{name}}».",
+    "notFound": "La xarxa {{name}} ja no existeix.",
+    "loadError": "No s’ha pogut inspeccionar la xarxa: {{message}}"
+  },
+  "netCreate": {
+    "title": "Crear una xarxa",
+    "g": {
+      "general": "General",
+      "ipv4": "Adreces IPv4",
+      "ipv4Hint": "Opcional: sense subxarxa, Docker en tria una de lliure.",
+      "ipv6": "IPv6",
+      "options": "Opcions del controlador",
+      "optionsHint": "S’envien tal qual al controlador (--opt).",
+      "labels": "Metadades (labels)"
+    },
+    "f": {
+      "name": "Nom",
+      "driver": "Controlador",
+      "driverName": "Nom del controlador",
+      "internal": "Xarxa interna",
+      "attachable": "Connectable manualment",
+      "subnet": "Subxarxa",
+      "gateway": "Passarel·la",
+      "ipRange": "Rang assignable",
+      "ipv6": "Activar IPv6"
+    },
+    "h": {
+      "name": "Lletres, xifres, «_», «.» o «-».",
+      "driver": {
+        "bridge": "Xarxa privada en aquest equip; els contenidors es comuniquen entre ells pel nom.",
+        "macvlan": "Cada contenidor obté la seva pròpia MAC a la xarxa física. Indica la interfície a l’opció «parent».",
+        "ipvlan": "Comparteix la MAC de la interfície física. Indica la interfície a l’opció «parent».",
+        "overlay": "Xarxa entre diversos equips: requereix Docker Swarm.",
+        "other": "Controlador d’un connector instal·lat a Docker."
+      },
+      "internal": "Sense accés a l’exterior (--internal).",
+      "attachable": "Per a xarxes overlay: permet connectar contenidors solts (--attachable).",
+      "subnet": "En notació CIDR, p. ex. 172.30.0.0/24.",
+      "gateway": "Ha de ser dins de la subxarxa.",
+      "ipRange": "Part de la subxarxa que Docker assigna automàticament.",
+      "ipv6": "Requereix que el nucli i Docker tinguin IPv6 (--ipv6)."
+    },
+    "otherDriver": "Un altre",
+    "addOption": "Afegir una opció",
+    "noOptions": "Sense opcions.",
+    "body": "Cos de la petició",
+    "ready": "A punt per crear.",
+    "submit": "Crear la xarxa"
+  },
+  "netOps": {
+    "failed": "Docker ha rebutjat l’operació: {{message}}",
+    "removeTitle": "Eliminar la xarxa {{name}}",
+    "remove": "Eliminar la xarxa",
+    "removeBody": "S’elimina la xarxa. No es pot desfer.",
+    "predefined": "Docker crea les xarxes bridge, host i none, i no permet eliminar-les.",
+    "runningBlocks_one": "Hi ha {{count}} contenidor en marxa connectat: Docker no eliminarà la xarxa fins que el desconnectis o l’aturis.",
+    "runningBlocks_other": "Hi ha {{count}} contenidors en marxa connectats: Docker no eliminarà la xarxa fins que els desconnectis o els aturis.",
+    "stoppedBreak_one": "{{count}} contenidor aturat té configurada aquesta xarxa. Docker l’eliminarà igualment i aquest contenidor no podrà arrencar fins que el desconnectis o tornis a crear la xarxa:",
+    "stoppedBreak_other": "{{count}} contenidors aturats tenen configurada aquesta xarxa. Docker l’eliminarà igualment i aquests contenidors no podran arrencar fins que els desconnectis o tornis a crear la xarxa:",
+    "stoppedSure": "Entenc que aquests contenidors no podran arrencar",
+    "removed": "Xarxa {{name}} eliminada.",
+    "pruneTitle": "Netejar xarxes",
+    "prune": "Netejar xarxes",
+    "pruneBody": "S’eliminen les xarxes creades per l’usuari que no tenen contenidors en marxa. Les predefinides no es toquen.",
+    "pruneEstimate_one": "Segons la llista actual s’eliminarà {{count}} xarxa:",
+    "pruneEstimate_other": "Segons la llista actual s’eliminaran {{count}} xarxes:",
+    "pruneEstimate_zero": "Segons la llista actual no hi ha xarxes per eliminar.",
+    "usedByStopped": "la fan servir contenidors aturats: {{names}}",
+    "pruneStoppedWarn_one": "{{count}} d’aquestes xarxes està configurada en contenidors aturats: Docker l’elimina igualment i aquests contenidors no podran arrencar.",
+    "pruneStoppedWarn_other": "{{count}} d’aquestes xarxes estan configurades en contenidors aturats: Docker les elimina igualment i aquests contenidors no podran arrencar.",
+    "pruned_one": "{{count}} xarxa eliminada: {{names}}",
+    "pruned_other": "{{count}} xarxes eliminades: {{names}}",
+    "pruned_zero": "No hi havia xarxes per eliminar.",
+    "connectTitle": "Connectar un contenidor a {{name}}",
+    "connect": "Connectar",
+    "connectShort": "Connectar un contenidor",
+    "container": "Contenidor",
+    "containerHint": "Es pot connectar en marxa o aturat.",
+    "noContainers": "No hi ha contenidors.",
+    "block": {
+      "already": "Ja està connectat a aquesta xarxa.",
+      "host": "Els contenidors en mode host no es poden connectar a altres xarxes, ni altres a la xarxa host.",
+      "none": "Un contenidor sense xarxa (none) no es pot connectar a altres xarxes, ni altres a la xarxa none."
+    },
+    "blockShort": {
+      "already": "ja connectat",
+      "host": "mode host",
+      "none": "sense xarxa"
+    },
+    "aliases": "Àlies en aquesta xarxa",
+    "aliasesHint": "Noms addicionals amb què el troben altres contenidors de la xarxa, separats per espais.",
+    "noAliases": "La xarxa predefinida bridge no admet àlies.",
+    "ipv4": "IPv4 fixa",
+    "ipv6": "IPv6 fixa",
+    "auto": "Automàtica",
+    "ipHint": "Dins de {{subnets}}. Docker només admet una IP fixa si la subxarxa es va indicar en crear la xarxa.",
+    "ipAuto": "Docker només admet una IP fixa si la subxarxa es va indicar en crear la xarxa.",
+    "connected": "{{container}} connectat a {{network}}.",
+    "disconnectTitle": "Desconnectar {{container}} de {{network}}",
+    "disconnect": "Desconnectar",
+    "disconnectAction": "Desconnectar {{container}}",
+    "disconnectRunning": "El contenidor està en marxa: perd a l’instant la connexió per aquesta xarxa.",
+    "disconnectStopped": "El contenidor deixa de tenir configurada aquesta xarxa.",
+    "force": "Forçar",
+    "forceHint": "Només si Docker no el pot desconnectar normalment (--force).",
+    "disconnected": "{{container}} desconnectat de {{network}}.",
+    "checking": "S’està consultant a Docker l’estat actual…",
+    "gone": "La xarxa {{name}} ja no existeix.",
+    "lastNetwork": "És l’única xarxa d’aquest contenidor: en desconnectar-la es quedarà sense connexió de xarxa fins que el connectis a una altra."
+  },
+  "volumes": {
+    "create": "Crear un volum",
+    "prune": "Netejar",
+    "refresh": "Actualitzar",
+    "sizes": "Calcular les mides",
+    "sizesAgain": "Tornar a calcular",
+    "sizesNote": "Mides calculades per Docker («docker system df -v»); poden trigar amb volums grans.",
+    "sizesError": "No s’han pogut calcular les mides: {{message}}",
+    "sizeUnknown": "No disponible",
+    "search": "Cerca per nom, controlador, contenidor o metadada",
+    "filterLabel": "Filtre",
+    "filter": {
+      "all": "Tots",
+      "inUse": "En ús",
+      "unused": "Sense ús",
+      "anonymous": "Anònims"
+    },
+    "count_one": "{{count}} volum",
+    "count_other": "{{count}} volums",
+    "columns": {
+      "name": "Volum",
+      "driver": "Controlador",
+      "size": "Mida",
+      "containers": "Contenidors",
+      "actions": "Accions"
+    },
+    "anonymous": "Anònim",
+    "unused": "Sense ús",
+    "users_one": "{{count}} muntatge",
+    "users_other": "{{count}} muntatges",
+    "empty": "No hi ha volums",
+    "emptyBody": "Crea un volum per desar dades que sobrevisquin als contenidors.",
+    "noMatches": "Cap volum no coincideix amb la cerca.",
+    "loadError": "No s’ha pogut obtenir la llista de volums: {{message}}",
+    "createContainer": "Crear un contenidor amb {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "volDetail": {
+    "back": "Volums",
+    "tabs": {
+      "summary": "Resum",
+      "containers": "Contenidors",
+      "inspect": "Inspecció JSON"
+    },
+    "s": {
+      "general": "General",
+      "options": "Opcions del controlador",
+      "status": "Estat del controlador"
+    },
+    "f": {
+      "name": "Nom",
+      "driver": "Controlador",
+      "scope": "Àmbit",
+      "mountpoint": "Directori a l’equip",
+      "created": "Creat",
+      "size": "Mida"
+    },
+    "sizeNotMeasured": "Sense calcular",
+    "measure": "Calcular",
+    "noOptions": "Sense opcions.",
+    "noContainers": "Cap contenidor no munta aquest volum.",
+    "c": {
+      "destination": "Ruta al contenidor",
+      "access": "Accés"
+    },
+    "rw": "Lectura i escriptura",
+    "ro": "Només lectura",
+    "createContainer": "Crear un contenidor amb ell",
+    "inspectHint": "Resposta completa de Docker, com «docker volume inspect {{name}}».",
+    "notFound": "El volum {{name}} ja no existeix.",
+    "loadError": "No s’ha pogut inspeccionar el volum: {{message}}"
+  },
+  "volCreate": {
+    "title": "Crear un volum",
+    "g": {
+      "general": "General",
+      "options": "Opcions del controlador",
+      "optionsHint": "Per al controlador local equivalen a les de «mount»: type, device i o."
+    },
+    "f": {
+      "name": "Nom",
+      "kind": "Tipus"
+    },
+    "h": {
+      "name": "Opcional: sense nom, Docker crea un volum anònim. Lletres, xifres, «_», «.» o «-» (com a mínim 2).",
+      "preset": {
+        "plain": "Directori gestionat per Docker en aquest equip (el més habitual).",
+        "tmpfs": "En memòria: es perd en aturar l’últim contenidor que el fa servir.",
+        "nfs": "Carpeta compartida per NFS: ajusta l’adreça del servidor i la ruta.",
+        "bind": "Volum amb nom que apunta a una carpeta existent de l’equip.",
+        "other": "Controlador d’un connector instal·lat a Docker."
+      }
+    },
+    "ph": {
+      "name": "buit = anònim"
+    },
+    "preset": {
+      "plain": "Local",
+      "tmpfs": "tmpfs",
+      "nfs": "NFS",
+      "bind": "Carpeta",
+      "other": "Un altre controlador"
+    },
+    "readyAnonymous": "A punt per crear un volum anònim.",
+    "submit": "Crear el volum"
+  },
+  "volOps": {
+    "failed": "Docker ha rebutjat l’operació: {{message}}",
+    "removeTitle": "Eliminar el volum {{name}}",
+    "remove": "Eliminar el volum",
+    "removeBody": "S’eliminen el volum i totes les seves dades. No es pot desfer.",
+    "inUse_one": "El munta {{count}} contenidor: Docker no elimina un volum en ús, ni tan sols d’un contenidor aturat. Elimina abans el contenidor.",
+    "inUse_other": "El munten {{count}} contenidors: Docker no elimina un volum en ús, ni tan sols de contenidors aturats. Elimina abans els contenidors.",
+    "sure": "Entenc que se n’esborraran les dades",
+    "gone": "El volum {{name}} ja no existeix.",
+    "removed": "Volum {{name}} eliminat.",
+    "pruneTitle": "Netejar volums",
+    "prune": "Netejar volums",
+    "pruneAnonymous": "Només els volums anònims que no munta cap contenidor",
+    "pruneAll": "Tots els volums que no munta cap contenidor (també els que tenen nom)",
+    "legacy": "Aquesta versió de Docker (API {{api}}) elimina tots els volums sense ús, també els que tenen nom: no distingeix entre anònims i amb nom.",
+    "pruneEstimate_one": "Segons l’estat actual s’eliminarà {{count}} volum",
+    "pruneEstimate_other": "Segons l’estat actual s’eliminaran {{count}} volums",
+    "pruneEstimate_zero": "Segons l’estat actual no hi ha volums per eliminar",
+    "pruneBytes": "({{size}} segons l’últim càlcul)",
+    "pruneNote": "Un volum sense ús pot guardar dades importants (per exemple, d’una base de dades el contenidor de la qual vas eliminar).",
+    "pruneSure_one": "Entenc que s’esborraran les dades de {{count}} volum amb nom",
+    "pruneSure_other": "Entenc que s’esborraran les dades de {{count}} volums amb nom",
+    "pruned_one": "{{count}} volum eliminat; {{size}} recuperats.",
+    "pruned_other": "{{count}} volums eliminats; {{size}} recuperats.",
+    "pruned_zero": "No hi havia volums per eliminar."
+  },
+  "binds": {
+    "bindFolder": "Vincular una carpeta…",
+    "pickTitle": "Carpeta que veurà el contenidor",
+    "intro": "Carpetes d’aquest equip muntades dins de contenidors. Docker no permet afegir muntatges a un contenidor existent: per vincular una carpeta es crea un contenidor nou amb l’assistent.",
+    "search": "Cerca per ruta o contenidor",
+    "filter": {
+      "all": "Totes",
+      "writable": "Amb escriptura",
+      "attention": "Requereixen atenció ({{count}})"
+    },
+    "count_one": "{{count}} carpeta",
+    "count_other": "{{count}} carpetes",
+    "kind": {
+      "directory": "Carpeta",
+      "file": "Fitxer",
+      "socket": "Sòcol",
+      "other": "Altres",
+      "missing": "No existeix"
+    },
+    "writable": "Amb escriptura",
+    "readOnly": "Només lectura",
+    "permissions": "Permisos i propietari a l’equip",
+    "notReadable": "El teu usuari no la pot llegir",
+    "newContainer": "Contenidor nou amb ella",
+    "newContainerHint": "Obre l’assistent de contenidors amb aquesta carpeta ja vinculada",
+    "risk": {
+      "dockerSocket": "Sòcol de Docker: el contenidor pot controlar Docker i, a la pràctica, tot l’equip (excepte amb Docker rootless).",
+      "hostRoot": "L’arrel del sistema de fitxers de l’equip.",
+      "system": "Un directori del sistema."
+    },
+    "riskWritable": "Es munta amb escriptura: el contenidor el pot modificar.",
+    "missing": "No existeix en aquest equip. Si el contenidor es va crear amb «-v», Docker la tornarà a crear buida (com a root) en arrencar-lo.",
+    "attentionBanner_one": "{{count}} vinculació requereix atenció (sòcol de Docker, directori del sistema o carpeta inexistent).",
+    "attentionBanner_other": "{{count}} vinculacions requereixen atenció (sòcol de Docker, directoris del sistema o carpetes inexistents).",
+    "empty": "Cap contenidor no té carpetes vinculades",
+    "emptyBody": "Vincula una carpeta perquè un contenidor treballi amb fitxers d’aquest equip.",
+    "noMatches": "Cap carpeta no coincideix amb la cerca.",
+    "loadError": "No s’ha pogut obtenir la llista de contenidors: {{message}}"
+  },
+  "composeList": {
+    "add": "Obrir un projecte…",
+    "new": "Projecte nou",
+    "refresh": "Actualitzar",
+    "intro": "Projectes amb contenidors a Docker (es detecten per les seves etiquetes) i els que afegeixes a la llista. Totes les operacions s’executen amb el Docker Compose oficial i queden al tauler d’activitat amb l’ordre exacta.",
+    "filterLabel": "Filtrar els projectes",
+    "filter": {
+      "all": "Tots",
+      "running": "En marxa",
+      "stopped": "Aturats",
+      "notDeployed": "Sense desplegar"
+    },
+    "search": "Cerca per nom, carpeta o servei",
+    "count_one": "{{count}} projecte",
+    "count_other": "{{count}} projectes",
+    "loadError": "No s’ha pogut obtenir la llista de projectes: {{message}}",
+    "empty": "No hi ha projectes de Docker Compose",
+    "emptyBody": "Obre un projecte que ja tinguis (el seu fitxer compose.yaml) o crea’n un de nou. Els projectes desplegats des del terminal apareixen aquí automàticament.",
+    "c": {
+      "name": "Projecte",
+      "state": "Estat",
+      "location": "Carpeta",
+      "services": "Serveis",
+      "actions": "Accions"
+    },
+    "registered": "A la llista",
+    "missing": "Falten fitxers",
+    "noLocation": "Sense fitxers coneguts",
+    "state": {
+      "running": "En marxa · {{running}}/{{total}}",
+      "partial": "Parcial · {{running}}/{{total}}",
+      "stopped": "Aturat · 0/{{total}}",
+      "notDeployed": "Sense desplegar"
+    },
+    "stop": "Aturar {{name}}",
+    "start": "Iniciar {{name}}",
+    "open": "Obrir {{name}}",
+    "unavailable": "Docker Compose no està disponible"
+  },
+  "composeDetail": {
+    "back": "Projectes",
+    "refresh": "Actualitzar",
+    "tabs": {
+      "services": "Serveis",
+      "logs": "Registres",
+      "file": "Fitxer",
+      "config": "Configuració",
+      "output": "Sortida"
+    },
+    "c": {
+      "service": "Servei",
+      "image": "Imatge",
+      "state": "Estat",
+      "containers": "Contenidors",
+      "ports": "Ports",
+      "actions": "Accions"
+    },
+    "state": {
+      "running": "En marxa ({{running}}/{{total}})",
+      "partial": "Parcial ({{running}}/{{total}})",
+      "stopped": "Aturat",
+      "notCreated": "Sense crear"
+    },
+    "profile": "perfil {{name}}",
+    "orphan": "No és al fitxer",
+    "built": "Es construeix ({{context}})",
+    "builtFrom": "Es construeix des de {{context}}",
+    "noServices": "El projecte no té serveis.",
+    "loadingModel": "S’està llegint el fitxer amb Docker Compose…",
+    "upService": "Desplegar {{name}}",
+    "startService": "Iniciar {{name}}",
+    "stopService": "Aturar {{name}}",
+    "restartService": "Reiniciar {{name}}",
+    "logsService": "Registres de {{name}}",
+    "needsFiles": "Calen els fitxers del projecte",
+    "needsValid": "Corregeix primer el fitxer: Compose el rebutja",
+    "register": "Afegir a la llista",
+    "registerHint": "Conservar el projecte a la llista encara que se n’eliminin els contenidors",
+    "unregister": "Treure de la llista",
+    "unregisterHint": "Només el treu de la llista: no toca Docker ni els fitxers",
+    "gone": "El projecte «{{name}}» ja no té contenidors ni és a la llista.",
+    "createdBy": "Contenidors creats amb Docker Compose {{version}}",
+    "missingFiles": "No es troben aquests fitxers: {{files}}. Pots aturar, iniciar, veure els registres o eliminar el projecte; per desplegar-lo calen els fitxers.",
+    "noFiles": "Docker no indica els fitxers d’aquest projecte. Pots aturar-lo, iniciar-lo, veure’n els registres o eliminar-lo.",
+    "invalidConfig": "Docker Compose rebutja la configuració del projecte:",
+    "noConfig": "No hi ha configuració per mostrar (falten els fitxers).",
+    "configHint": "Configuració final tal com l’entén Docker Compose (fitxers combinats, variables substituïdes, tots els perfils).",
+    "secretsWarn": "La configuració resolta inclou els valors de les variables (per exemple, contrasenyes del fitxer .env). Només es mostra en aquesta finestra i no es desa al tauler d’activitat.",
+    "showResolved": "Mostrar la configuració resolta"
+  },
+  "composeOps": {
+    "verb": {
+      "up": "Desplegament",
+      "down": "Eliminació",
+      "start": "Inici",
+      "stop": "Aturada",
+      "restart": "Reinici",
+      "pull": "Baixada d’imatges",
+      "build": "Construcció"
+    },
+    "running": "{{verb}} en curs…",
+    "succeeded": {
+      "up": "Desplegament completat",
+      "down": "Eliminació completada",
+      "start": "Inici completat",
+      "stop": "Aturada completada",
+      "restart": "Reinici completat",
+      "pull": "Baixada d’imatges completada",
+      "build": "Construcció completada"
+    },
+    "stopped": {
+      "up": "Desplegament interromput per tu",
+      "down": "Eliminació interrompuda per tu",
+      "start": "Inici interromput per tu",
+      "stop": "Aturada interrompuda per tu",
+      "restart": "Reinici interromput per tu",
+      "pull": "Baixada d’imatges interrompuda per tu",
+      "build": "Construcció interrompuda per tu"
+    },
+    "failed": "{{verb}}: ha fallat (codi {{code}})",
+    "error": "{{verb}}: no s’ha pogut executar",
+    "stop": "Interrompre",
+    "dismiss": "Tancar",
+    "none": "Encara no s’ha executat cap operació en aquest projecte.",
+    "waiting": "S’està esperant la sortida de Docker Compose…",
+    "noOutput": "Docker Compose no ha mostrat cap sortida.",
+    "dropped_one": "S’ha descartat {{count}} línia antiga per no ocupar massa memòria.",
+    "dropped_other": "S’han descartat {{count}} línies antigues per no ocupar massa memòria.",
+    "stoppedNote": "S’ha interromput Docker Compose. El que ja hagués fet (contenidors creats, imatges baixades…) es manté.",
+    "command": "Ordre que s’executarà:",
+    "up": "Desplegar",
+    "upTitle": "Desplegar {{name}}",
+    "upBody": "Crea o actualitza els contenidors, les xarxes i els volums del projecte i els deixa en marxa (docker compose up --detach).",
+    "services": "Serveis",
+    "allServices": "Sense selecció es despleguen tots els serveis (excepte els de perfils no activats).",
+    "someServices": "Només els serveis triats i els que necessiten (depends_on).",
+    "profiles": "Perfils",
+    "profilesHint": "Els serveis amb perfil només es despleguen si n’actives el perfil o els tries a dalt.",
+    "pull": "Baixar les imatges",
+    "pullPolicy": {
+      "missing": "Si falten",
+      "always": "Sempre",
+      "never": "Mai"
+    },
+    "build": "Construir les imatges abans",
+    "buildHint": "Per als serveis amb build: (si no, només es construeixen si la imatge no existeix).",
+    "forceRecreate": "Tornar a crear els contenidors encara que no hagin canviat",
+    "removeOrphans": "Eliminar els contenidors orfes",
+    "removeOrphansHint": "De serveis que ja no són al fitxer.",
+    "down": "Eliminar",
+    "downTitle": "Eliminar {{name}}",
+    "downBody_one": "S’aturarà i s’eliminarà {{count}} contenidor del projecte i les seves xarxes (docker compose down). Els volums i les imatges es conserven tret que ho indiquis.",
+    "downBody_other": "S’aturaran i s’eliminaran els {{count}} contenidors del projecte i les seves xarxes (docker compose down). Els volums i les imatges es conserven tret que ho indiquis.",
+    "downVolumes": "Eliminar també els volums amb nom del projecte",
+    "downVolumesUnknown": "Els que declara el fitxer (o tenen l’etiqueta del projecte).",
+    "downVolumesWarn": "Les dades desades en aquests volums es perdran definitivament.",
+    "downImages": "Imatges",
+    "images": {
+      "none": "Conservar",
+      "local": "Les construïdes",
+      "all": "Totes"
+    },
+    "imagesHint": {
+      "local": "Elimina les imatges sense etiqueta pròpia (les que construeix Compose).",
+      "all": "Elimina totes les imatges que fan servir els serveis, també les baixades."
+    },
+    "downSure": "Entenc que s’eliminaran els contenidors i les xarxes del projecte",
+    "start": "Iniciar",
+    "stopAction": "Aturar",
+    "restart": "Reiniciar",
+    "pullAction": "Baixar les imatges",
+    "buildAction": "Construir"
+  },
+  "composeAdd": {
+    "title": "Obrir un projecte",
+    "body": "Tria el fitxer compose.yaml del projecte. Si fa servir diversos fitxers (per exemple, un de base i un altre amb canvis), afegeix-los en l’ordre en què es combinen.",
+    "pick": "Triar un fitxer…",
+    "pickMore": "Afegir un altre fitxer…",
+    "pickTitle": "Fitxer de Docker Compose",
+    "filter": "Fitxers YAML",
+    "removeFile": "Treure {{file}}",
+    "order": "Es combinen en aquest ordre: els últims canvien els primers.",
+    "name": "Nom del projecte (opcional)",
+    "namePh": "el que indiqui el fitxer o la carpeta",
+    "nameHint": "Si el deixes buit, es fa servir el que decideixi Docker Compose (name: del fitxer o el nom de la carpeta).",
+    "badName": "Només minúscules, xifres, - i _, començant per una lletra o una xifra.",
+    "submit": "Afegir",
+    "invalid": "Docker Compose rebutja els fitxers: {{message}}"
+  },
+  "composeFile": {
+    "files": "Fitxers del projecte",
+    "validate": "Validar",
+    "save": "Desar",
+    "revert": "Desfer els canvis",
+    "hint": "En desar, primer es valida el contingut amb Docker Compose (sense desar-lo). El fitxer no se sobreescriu si un altre programa l’ha canviat mentrestant.",
+    "unsaved": "Canvis sense desar",
+    "saved": "Desat",
+    "loadError": "No s’ha pogut llegir el fitxer: {{message}}",
+    "readOnly": "No tens permís per modificar aquest fitxer: es mostra en mode de lectura.",
+    "conflict": "El fitxer ha canviat al disc des que el vas obrir. No s’ha desat res per no perdre aquests canvis.",
+    "reload": "Tornar a carregar el fitxer (descarta els teus canvis)",
+    "saveInvalid": "Docker Compose rebutja aquest contingut. Pots continuar editant o desar-lo igualment.",
+    "saveAnyway": "Desar igualment",
+    "invalid": "Docker Compose rebutja el contingut:",
+    "valid_one": "Configuració vàlida: {{count}} servei.",
+    "valid_other": "Configuració vàlida: {{count}} serveis.",
+    "discard": "Tens canvis sense desar en aquest fitxer.",
+    "discardYes": "Descartar i canviar de fitxer",
+    "discardNo": "Continuar editant",
+    "editorLabel": "Contingut de {{file}}"
+  },
+  "composeLogs": {
+    "services": "Serveis",
+    "all": "Tots",
+    "tail": "Línies anteriors",
+    "tailN_one": "L’última",
+    "tailN_other": "Les últimes {{count}}",
+    "timestamps": "Marques de temps",
+    "pause": "Pausar",
+    "follow": "Seguir",
+    "clear": "Buidar",
+    "live": "En directe",
+    "opening": "S’està obrint…",
+    "paused": "En pausa: no es reben registres",
+    "ended": "Els contenidors han acabat",
+    "closed": "Tancat",
+    "empty": "Encara no hi ha registres."
+  },
+  "composeNew": {
+    "title": "Projecte nou",
+    "folder": "Carpeta del projecte",
+    "pickFolder": "Triar una carpeta…",
+    "changeFolder": "Canviar…",
+    "pickTitle": "Carpeta del projecte nou",
+    "nameHint": "Si escrius un nom, s’afegeix al fitxer (name:) perquè el terminal faci servir el mateix. Si no, Docker Compose fa servir el nom de la carpeta.",
+    "exists": "Aquesta carpeta ja té un fitxer de Docker Compose ({{file}}). No se sobreescriu.",
+    "addExisting": "Obrir aquest projecte",
+    "editorHint": "Es crearà compose.yaml a la carpeta. Es valida amb Docker Compose abans de crear-lo.",
+    "create": "Crear el projecte",
+    "needFolder": "Tria primer la carpeta del projecte.",
+    "editorLabel": "Contingut de compose.yaml"
+  },
+  "events": {
+    "tabsLabel": "Vista",
+    "tabs": {
+      "live": "En directe",
+      "journal": "Desats",
+      "docker": "Consultar a Docker",
+      "history": "Historial d’operacions"
+    },
+    "type": {
+      "container": "Contenidor",
+      "image": "Imatge",
+      "volume": "Volum",
+      "network": "Xarxa",
+      "daemon": "Docker",
+      "plugin": "Connector",
+      "builder": "Construcció",
+      "service": "Servei",
+      "node": "Node",
+      "secret": "Secret",
+      "config": "Configuració"
+    },
+    "allTypes": "Tots",
+    "filterType": "Tipus",
+    "search": "Cerca per nom, ID, acció o imatge",
+    "actions": "Accions",
+    "resource": "Recurs",
+    "resourcePh": "nom o ID",
+    "resourceNeedsType": "tria un tipus de recurs",
+    "pause": "Pausar",
+    "resume": "Reprendre",
+    "resumeN_one": "Reprendre ({{count}} de nou)",
+    "resumeN_other": "Reprendre ({{count}} de nous)",
+    "clearView": "Buidar la vista",
+    "clearViewHint": "Només buida la llista de la pantalla; els esdeveniments desats es conserven.",
+    "liveOn": "En directe: els canvis a Docker apareixen a l’instant i actualitzen tota l’aplicació",
+    "livePaused": "En pausa: els esdeveniments es continuen rebent i l’aplicació es continua actualitzant",
+    "liveOff": "Sense connexió amb Docker: no es reben esdeveniments",
+    "count_one": "{{count}} esdeveniment",
+    "count_other": "{{count}} esdeveniments",
+    "liveEmpty": "Encara no ha passat res a Docker en aquesta sessió. Crea, inicia o atura alguna cosa (també des del terminal) i apareixerà aquí.",
+    "noMatches": "Cap esdeveniment no coincideix amb els filtres.",
+    "details": "Detalls de l’esdeveniment",
+    "since": "Des de",
+    "until": "Fins a",
+    "refresh": "Actualitzar",
+    "journalIntro": "Esdeveniments que l’aplicació ha rebut mentre estava oberta i connectada, també en sessions anteriors (es conserven els 20 000 més recents). Si «Fins a» està buit, fins ara.",
+    "journalOff": "El desament està desactivat a Configuració › Activitat: els esdeveniments nous no es desen.",
+    "journalCount": "Es mostren {{shown}} de {{total}} que compleixen els filtres ({{stored}} desats).",
+    "journalClear": "Esborrar els esdeveniments desats",
+    "journalClearTitle": "Esborrar els esdeveniments desats",
+    "journalClearBody": "S’esborraran del disc els {{count}} esdeveniments desats. No afecta Docker ni l’historial d’operacions.",
+    "dockerIntro": "Demana a Docker els esdeveniments que conserva (docker events --since … --until …): inclou el que ha passat amb l’aplicació tancada, però Docker només guarda en memòria els últims 256 esdeveniments i els perd en reiniciar-se. El filtre s’aplica a Docker.",
+    "query": "Consultar",
+    "truncated": "Hi ha més de 5000 esdeveniments: es mostren els més recents.",
+    "dockerEmpty": "Docker no conserva esdeveniments en aquest interval amb aquests filtres."
+  },
+  "history": {
+    "intro": "Operacions que l’aplicació ha executat sobre Docker, també en sessions anteriors (es conserven les 10 000 més recents). Es desa què s’ha fet, quan i amb quin resultat; els cossos de les peticions, les ordres equivalents i les sortides no es desen perquè poden contenir contrasenyes o altres secrets.",
+    "off": "L’historial està desactivat a Configuració › Activitat: les operacions noves no es desen.",
+    "search": "Cerca per operació, recurs o error",
+    "previous": "Sessió anterior",
+    "count": "Es mostren {{shown}} de {{total}} que compleixen els filtres ({{stored}} desades).",
+    "empty": "Encara no hi ha operacions desades.",
+    "noMatches": "Cap operació no coincideix amb els filtres.",
+    "notKept": "Detalls",
+    "notKeptBody": "El cos de la petició, l’ordre equivalent i la sortida només són al tauler d’activitat durant la sessió en què es va executar.",
+    "clear": "Esborrar l’historial",
+    "clearTitle": "Esborrar l’historial d’operacions",
+    "clearBody": "S’esborraran del disc les {{count}} operacions desades. El tauler d’activitat d’aquesta sessió no canvia."
+  },
+  "updates": {
+    "title": "Actualitzacions",
+    "installed": "Versió instal·lada",
+    "installedPackage": "Paquet .deb instal·lat ({{version}})",
+    "installedLocal": "No instal·lada com a paquet (compilació local)",
+    "source": "On es publiquen les versions",
+    "sourceHint": "Repositori de GitHub («propietari/repositori») o adreça https:// d’un fitxer JSON amb «version». L’aplicació només consulta i avisa: no baixa ni instal·la mai res.",
+    "sourcePlaceholder": "propietari/repositori o https://…/latest.json",
+    "checkNow": "Comprovar ara",
+    "checking": "S’està comprovant…",
+    "onStart": "Comprovar en iniciar l’aplicació",
+    "onStartHint": "Una consulta a la font indicada cada vegada que s’obre l’aplicació. Sense connexió no passa res: s’anota aquí.",
+    "onStartNoSource": "Indica primer on es publiquen les versions.",
+    "newer": "Hi ha una versió nova: {{latest}} (tens la {{current}}).",
+    "published": "publicada el {{date}}",
+    "upToDate": "Tens la versió més recent ({{current}}; la publicada és la {{latest}}).",
+    "openPage": "Obrir la pàgina de la versió",
+    "notes": "Novetats",
+    "checkedAt": "S’ha consultat {{url}} el {{time}}.",
+    "lastFailed": "L’última comprovació ha fallat: {{message}}",
+    "howTo": "Per actualitzar, baixa el paquet nou i instal·la’l amb «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb». La teva configuració i el teu historial es conserven.",
+    "banner": "Hi ha una versió nova de Docker Control Center: {{latest}}.",
+    "bannerOpen": "Veure-ho a Configuració"
+  },
+  "system": {
+    "title": "Sistema",
+    "hint": "Versions i dades de l’equip. «Copiar» genera un informe en text per comunicar un problema (sense projectes, variables ni credencials).",
+    "app": "Aplicació",
+    "host": "Equip",
+    "docker": "Docker",
+    "appVersion": "Versió",
+    "package": "Paquet .deb",
+    "notInstalled": "no instal·lat (compilació local)",
+    "executable": "Executable",
+    "webkit": "WebKitGTK",
+    "configPath": "Configuració",
+    "stateDir": "Historial i esdeveniments",
+    "os": "Sistema operatiu",
+    "kernel": "Nucli",
+    "arch": "Arquitectura",
+    "glibc": "glibc",
+    "desktop": "Escriptori",
+    "engine": "Docker Engine",
+    "dockerOs": "Sistema de Docker",
+    "storage": "Emmagatzematge",
+    "cgroup": "cgroups",
+    "rootDir": "Carpeta de dades",
+    "resources": "Recursos",
+    "rootless": "Rootless",
+    "notConnected": "sense connexió",
+    "compose": {
+      "label": "Docker Compose",
+      "notInstalled": "no instal·lat",
+      "pluginUnusable": "instal·lat però no funciona",
+      "legacy": "versió 1 (no compatible)",
+      "unrecognized": "no reconegut",
+      "error": "no s’ha pogut comprovar"
+    }
+  },
+  "components": {
+    "title": "Desinstal·lació i components",
+    "rowHint": "Què ha instal·lat l’aplicació, què es pot treure i què es conserva. No canvia res sense la teva confirmació.",
+    "intro": "Analitza els paquets instal·lats amb dpkg i APT per mostrar què ha instal·lat Docker Control Center i què es pot treure amb seguretat. Analitzar només consulta i simula: no canvia res. Docker, les teves dades i la teva configuració es conserven sempre.",
+    "analyze": "Analitzar els components",
+    "reanalyze": "Tornar a analitzar",
+    "analyzeHint": "Executa dpkg-query, apt-mark, apt-cache i una simulació d’apt-get, sense privilegis. Queda al tauler d’activitat.",
+    "unsupported": "Aquest sistema no fa servir dpkg i APT: la desinstal·lació selectiva només està disponible a Debian, Ubuntu i derivades.",
+    "notPackaged": "Docker Control Center no està instal·lat com a paquet .deb (per exemple, s’executa compilat des del codi font): no hi ha res a desinstal·lar amb APT.",
+    "history": {
+      "notFound": "L’historial d’APT no mostra com es va instal·lar l’aplicació (per exemple, es va instal·lar amb dpkg -i o l’historial ja s’ha rotat). Per seguretat, no s’ofereix treure cap dependència: es conserven totes com a d’origen incert.",
+      "unreadable": "No es pot llegir l’historial d’APT (/var/log/apt/history.log). Per seguretat, no s’ofereix treure cap dependència."
+    },
+    "ownTitle": "Paquet de l’aplicació",
+    "removeApp": "Desinstal·lar Docker Control Center",
+    "removableTitle": "Dependències que es poden treure ({{count}})",
+    "noneRemovable": "Cap: totes les dependències les fan servir altres programes, ja estaven instal·lades o no es pot saber amb seguretat qui les va instal·lar.",
+    "removePackage": "Treure {{name}}",
+    "direct": "directa",
+    "presetApp": "Només Docker Control Center",
+    "presetAll": "Docker Control Center i les dependències que es poden treure",
+    "summary_one": "{{count}} paquet · s’alliberen {{size}}",
+    "summary_other": "{{count}} paquets · s’alliberen {{size}}",
+    "nothingSelected": "No hi ha res seleccionat",
+    "review": "Revisar i desinstal·lar…",
+    "keptTitle": "Es conserven",
+    "group": {
+      "shared_one": "Compartida amb altres programes ({{count}})",
+      "shared_other": "Compartides amb altres programes ({{count}})",
+      "manual_one": "Instal·lada de manera explícita ({{count}})",
+      "manual_other": "Instal·lades de manera explícita ({{count}})",
+      "preExisting_one": "Ja estava instal·lada abans ({{count}})",
+      "preExisting_other": "Ja estaven instal·lades abans ({{count}})",
+      "uncertain_one": "Origen incert ({{count}})",
+      "uncertain_other": "Origen incert ({{count}})",
+      "protected_one": "Component del sistema ({{count}})",
+      "protected_other": "Components del sistema ({{count}})"
+    },
+    "class": {
+      "own": "El paquet de l’aplicació. En treure’l no s’esborren la teva configuració ni les teves dades.",
+      "removable": "APT les va instal·lar automàticament juntament amb l’aplicació i cap altre paquet no les necessita.",
+      "shared": "Es van instal·lar amb l’aplicació, però altres paquets les necessiten: treure-les els trencaria.",
+      "manual": "Estan marcades com a instal·lades de manera explícita (per tu o per un altre programa): no es treuen.",
+      "preExisting": "Ja estaven instal·lades abans que l’aplicació: no es treuen.",
+      "uncertain": "No es pot saber amb seguretat qui les va instal·lar: es conserven.",
+      "protected": "Paquets essencials del sistema, de la gestió de paquets o de Docker: no es treuen mai."
+    },
+    "usedBy_one": "La fa servir: {{list}}",
+    "usedBy_other": "La fan servir {{count}} paquets: {{list}}",
+    "externalTitle": "Eines externes",
+    "externalHint": "L’aplicació les fa servir, però no són seves: es conserven sempre, encara que desinstal·lis l’aplicació.",
+    "external": {
+      "engine": "Docker Engine",
+      "cli": "Docker CLI",
+      "compose": "Docker Compose"
+    },
+    "notFound": "no s’ha trobat",
+    "alwaysKept": "Es conserva",
+    "dataTitle": "Dades que no s’esborren",
+    "dataHint": "La teva configuració i les teves dades es conserven. Tampoc no es toca res de Docker: imatges, contenidors, xarxes, volums i projectes Compose. Si vols esborrar aquestes carpetes, fes-ho a mà.",
+    "data": {
+      "config": "Configuració",
+      "state": "Historial i esdeveniments",
+      "webData": "Dades de la finestra",
+      "webCache": "Memòria cau de la finestra"
+    },
+    "absent": "no existeix",
+    "fullSimulation": "Simulació d’APT de la desinstal·lació completa",
+    "fullSimulationHint": "El que APT trauria si desinstal·lessis l’aplicació amb --auto-remove. Pot incloure paquets que ja eren prescindibles abans; aquí només s’ofereixen els que es van instal·lar amb l’aplicació.",
+    "confirmTitle": "Vols desinstal·lar?",
+    "confirmBody_one": "Es traurà {{count}} paquet i s’alliberaran {{size}}:",
+    "confirmBody_other": "Es trauran {{count}} paquets i s’alliberaran {{size}}:",
+    "extra": "APT també trauria: {{list}}. No es pot continuar; revisa la selecció.",
+    "command": "Ordre que s’executarà",
+    "elevationHint": "El sistema et demanarà la contrasenya d’administrador (pkexec) només per a aquesta ordre. Si cancel·les, no es treu res.",
+    "noElevation": "pkexec no està instal·lat: l’aplicació no pot demanar permisos. Executa tu aquesta ordre en un terminal.",
+    "simulation": "Simulació d’APT (sense canvis)",
+    "keptNote": "Es conserven Docker Engine, Docker CLI, Docker Compose, les teves dades i la teva configuració. No es fa servir purge.",
+    "selfNote": "Es desinstal·la la mateixa aplicació: tanca-la en acabar.",
+    "confirm": "Desinstal·lar",
+    "removing": "S’està desinstal·lant amb APT…",
+    "done_one": "S’ha desinstal·lat {{count}} paquet.",
+    "done_other": "S’han desinstal·lat {{count}} paquets.",
+    "doneSelf": "Docker Control Center ja no està instal·lat: tanca l’aplicació.",
+    "stillInstalled": "Continuen instal·lats: {{list}}."
+  },
+  "help": {
+    "title": "Ajuda i documentació",
+    "rowHint": "Guia d’ús de totes les funcions, sense sortir de l’aplicació.",
+    "toc": "Índex de l’ajuda",
+    "search": "Cercar a l’ajuda",
+    "results_one": "{{count}} secció conté el text cercat",
+    "results_other": "{{count}} seccions contenen el text cercat",
+    "noResults": "Cap secció no conté aquest text.",
+    "github": "Visitar el meu perfil de GitHub"
+  },
+  "errorCodes": {
+    "engine_notConnected": "No hi ha connexió amb Docker Engine.",
+    "engine_timeout": "Docker no ha respost a temps.",
+    "engine_notConfirmed": "L’operació necessita una confirmació explícita.",
+    "engine_composeUnavailable": "Docker Compose no està disponible.",
+    "ipc_unavailable": "La interfície s’està executant fora de l’aplicació d’escriptori.",
+    "updates_noSource": "No hi ha cap font d’actualitzacions configurada.",
+    "updates_invalidSource": "Font no vàlida: indica «propietari/repositori» de GitHub o una adreça https://",
+    "updates_insecureSource": "Només s’admeten adreces https:// (o http:// cap a aquesta mateixa màquina).",
+    "packages_cancelled": "S’ha cancel·lat l’autenticació: no s’ha desinstal·lat res.",
+    "packages_denied": "No s’han concedit permisos d’administrador: no s’ha desinstal·lat res.",
+    "packages_busy": "Ja hi ha una desinstal·lació en curs.",
+    "packages_notInstalled": "L’aplicació no està instal·lada com a paquet .deb: no hi ha res a desinstal·lar amb APT."
+  },
+  "commit": {
+    "action": "Crear una imatge a partir d’aquest contenidor",
+    "short": "Crear una imatge",
+    "title": "Crear una imatge a partir de {{name}}",
+    "intro": "Es crea una imatge nova amb l’estat actual del sistema de fitxers del contenidor (docker commit). El contenidor no es modifica.",
+    "repository": "Repositori",
+    "repositoryHint": "Per exemple: la-meva-aplicacio o registre.local:5000/equip/app",
+    "tag": "Etiqueta",
+    "tagHint": "Buida = latest",
+    "author": "Autor (opcional)",
+    "authorPh": "Nom <correu@exemple.com>",
+    "message": "Missatge (opcional)",
+    "messagePh": "Què conté aquesta imatge",
+    "preview": "Nom complet:",
+    "refPlaceholder": "REPOSITORI:ETIQUETA",
+    "notIncludedTitle": "La imatge no inclou els volums ni les carpetes muntades",
+    "notIncluded": "Només es desa la capa d’escriptura del contenidor (els fitxers que ha canviat fora dels seus muntatges). Les dades d’aquests muntatges no entren a la imatge:",
+    "excludedList": "Muntatges que no entren a la imatge",
+    "noMounts": "Aquest contenidor no té muntatges: es desa tot el seu sistema de fitxers.",
+    "mountKind": {
+      "volume": "volum",
+      "bind": "carpeta",
+      "tmpfs": "tmpfs"
+    },
+    "running": "El contenidor està en execució. Els seus processos no s’aturen.",
+    "pause": "Posar en pausa el contenidor mentre es crea la imatge (recomanat)",
+    "pauseHint": "Docker el congela uns segons perquè la imatge sigui coherent i després el reprèn. Durant aquest temps no atén peticions.",
+    "noPauseHint": "No s’interromp, però la imatge podria incloure fitxers a mig escriure.",
+    "exists": "Ja existeix una imatge anomenada {{reference}} ({{id}}).",
+    "replace": "Fer servir aquest nom per a la imatge nova",
+    "replaceHint": "La imatge anterior no s’elimina: es queda sense aquest nom (sense etiqueta) i els seus contenidors continuen funcionant.",
+    "create": "Crear la imatge",
+    "creating": "S’està creant la imatge…",
+    "fixFirst": "Corregeix les dades marcades",
+    "failed": "No s’ha pogut crear la imatge: {{message}}",
+    "loadError": "No s’ha pogut llegir el contenidor: {{message}}",
+    "doneTitle": "Imatge creada",
+    "done": "S’ha creat la imatge {{reference}} ({{id}}).",
+    "replaced": "La imatge anterior ({{id}}) es conserva sense etiqueta.",
+    "originalUntouched": "El contenidor {{name}} continua com estava.",
+    "openImage": "Veure la imatge"
+  },
+  "edit": {
+    "action": "Editar la configuració",
+    "title": "Editar la configuració de {{name}}",
+    "back": "Tornar al contenidor",
+    "loadError": "No s’ha pogut llegir la configuració del contenidor: {{message}}",
+    "sections": "Seccions de la configuració",
+    "tabs": {
+      "general": "General",
+      "network": "Xarxa",
+      "storage": "Emmagatzematge",
+      "env": "Variables",
+      "ports": "Ports",
+      "resources": "Recursos",
+      "advanced": "Avançat"
+    },
+    "tabHasErrors": "En aquesta secció hi ha dades per corregir",
+    "kind": {
+      "direct": "Canvi directe",
+      "recreate": "Cal recrear-lo"
+    },
+    "g": {
+      "identity": "Identificació i reinici",
+      "lifecycle": "Estat",
+      "backups": "Còpies de seguretat",
+      "networks": "Xarxes connectades",
+      "connect": "Connectar a una altra xarxa",
+      "mounts": "Volums i carpetes",
+      "env": "Variables d’entorn",
+      "ports": "Ports publicats",
+      "resources": "Límits de CPU i memòria",
+      "advanced": "Configuració d’execució"
+    },
+    "f": {
+      "name": "Nom",
+      "restart": "Política de reinici",
+      "description": "Descripció",
+      "network": "Xarxa"
+    },
+    "h": {
+      "description": "Nota interna; es desa a l’etiqueta dcc.description del contenidor.",
+      "lifecycle": "Aquestes accions s’apliquen a l’instant.",
+      "backups": "Contenidors originals que es van conservar en recrear aquest. Estan aturats i comparteixen els mateixos volums.",
+      "networks": "Connectar i desconnectar xarxes s’aplica a l’instant, sense recrear el contenidor.",
+      "connect": "Tria una xarxa existent; al pas següent pots indicar àlies o una IP fixa.",
+      "mounts": "Rutes de l’equip o volums i la ruta dins del contenidor.",
+      "env": "Variables pròpies del contenidor. Les de la imatge s’hereten igualment.",
+      "ports": "Correspondència entre els ports de l’equip i els del contenidor.",
+      "resources": "Docker actualitza aquests límits sense reiniciar el contenidor.",
+      "cpus": "Nuclis, p. ex. 0.5. L’equip en té {{max}}.",
+      "limitRemoval": "Treure un límit (deixar el camp buit) no es pot fer amb docker update: cal recrear el contenidor.",
+      "advanced": "Docker no permet canviar aquestes opcions en un contenidor que ja existeix.",
+      "duplicateInstead": "Per canviar-les, crea un contenidor nou a partir d’aquest:"
+    },
+    "recreateNote": {
+      "mounts": "Canviar els muntatges requereix recrear el contenidor. Els volums i les carpetes no s’esborren mai: un muntatge que treguis només deixa d’estar connectat.",
+      "ports": "Canviar els ports requereix recrear el contenidor. Abans d’aplicar es comprova que no els faci servir un altre contenidor."
+    },
+    "anonymousVolumes": "Volums anònims que es tornaran a muntar amb el mateix contingut: {{names}}",
+    "otherMounts": "Altres muntatges (es conserven, no s’editen aquí):",
+    "secretsWarning": "Els valors de les variables es poden veure amb docker inspect i des de dins del contenidor. A l’aplicació s’amaguen les que semblen secretes (contrasenyes, testimonis, claus) i no es desen mai al tauler d’activitat.",
+    "imageEnvHint": "Vénen de la imatge i s’hereten; si aquí en defineixes una amb el mateix nom, la teva té prioritat.",
+    "portsNotApplicable": "Amb el mode de xarxa «{{mode}}», Docker no publica ports.",
+    "hostLimits": "Equip: {{cpus}} CPU i {{memory}} de memòria.",
+    "networkModeSpecial": "Aquest contenidor fa servir el mode de xarxa «{{mode}}»: Docker no permet connectar-lo a xarxes ni desconnectar-lo.",
+    "noNetworks": "No està connectat a cap xarxa.",
+    "net": {
+      "name": "Xarxa",
+      "ip": "Adreça IP",
+      "mac": "MAC",
+      "aliases": "Àlies",
+      "noIp": "Sense IP (aturat)",
+      "fixed": "IP fixa: {{ip}}"
+    },
+    "aliasesRestriction": "Docker no permet canviar els àlies ni la IP d’una connexió existent: desconnecta la xarxa i torna-la a connectar amb els valors nous. A la xarxa bridge predeterminada no hi ha àlies.",
+    "pickNetwork": "Tria una xarxa…",
+    "noOtherNetworks": "No hi ha més xarxes disponibles",
+    "noChanges": "Sense canvis pendents.",
+    "pendingDirect_one": "{{count}} canvi pendent. S’aplica directament, sense recrear el contenidor.",
+    "pendingDirect_other": "{{count}} canvis pendents. S’apliquen directament, sense recrear el contenidor.",
+    "pendingRecreate_one": "{{count}} canvi pendent. Cal recrear el contenidor.",
+    "pendingRecreate_other": "{{count}} canvis pendents. Algun requereix recrear el contenidor.",
+    "discard": "Descartar els canvis",
+    "review": "Revisar els canvis",
+    "fixFirst": "Corregeix les dades marcades abans de continuar",
+    "restore": "Restaurar",
+    "restoreTitle": "Vols restaurar {{name}}?",
+    "restoreBody": "La còpia torna a dir-se {{original}} i s’inicia. El contenidor que ara té aquest nom s’atura i s’aparta amb un altre nom.",
+    "restoreSafe": "No s’elimina cap contenidor, volum ni imatge. Si la còpia no arrenca, tot torna a com estava.",
+    "removeBackup": "Eliminar la còpia",
+    "removeBackupTitle": "Vols eliminar la còpia {{name}}?",
+    "removeBackupBody": "Només s’elimina el contenidor de la còpia (i el que hagués escrit fora dels seus muntatges). Els seus volums no es toquen: els fa servir el contenidor actual.",
+    "failed": "No s’ha pogut aplicar: {{message}}",
+    "rolledBack": "S’ha tornat al contenidor original, amb el seu nom i el seu estat.",
+    "rollbackFailed": "No s’ha pogut tornar del tot a l’estat anterior. Revisa els passos de sota.",
+    "rollbackFailedHelp": "Les teves dades continuen allà: no s’ha eliminat cap volum, carpeta ni imatge, i el contenidor original existeix (amb el seu nom o amb el de la còpia). El pots restaurar des de la secció General.",
+    "nothingChanged": "El contenidor no s’ha modificat.",
+    "comparing": "S’està comparant amb la configuració actual…",
+    "planError": "No s’han pogut comparar els canvis: {{message}}",
+    "backToEdit": "Tornar a editar",
+    "reviewTitle": "Revisar els canvis",
+    "needsRecreate": "Cal recrear el contenidor",
+    "directOnly": "Canvis directes, sense recrear",
+    "hasErrors": "Cal corregir algunes dades abans d’aplicar:",
+    "comparison": "Comparació de la configuració",
+    "col": {
+      "setting": "Paràmetre",
+      "current": "Actual",
+      "new": "Nou",
+      "kind": "Com s’aplica"
+    },
+    "field": {
+      "name": "Nom",
+      "description": "Descripció",
+      "restart": "Política de reinici",
+      "cpus": "CPU",
+      "memory": "Memòria",
+      "memoryReservation": "Memòria reservada",
+      "env": "Variables d’entorn",
+      "ports": "Ports",
+      "mounts": "Muntatges"
+    },
+    "reason": {
+      "labelsImmutable": "Les etiquetes no es poden canviar en un contenidor existent.",
+      "limitRemoval": "Docker no permet treure un límit amb docker update."
+    },
+    "restartValue": {
+      "no": "No reiniciar",
+      "always": "Sempre",
+      "unless-stopped": "Tret que s’hagi aturat a mà",
+      "on-failure": "Si falla {{n}}"
+    },
+    "op": {
+      "added": "Nou",
+      "removed": "Es treu",
+      "modified": "Canvia"
+    },
+    "none": "(sense valor)",
+    "kept": "Es mantenen:",
+    "keptRest": "La resta de la configuració (imatge, ordre, usuari, xarxes, muntatges que no canvien i altres opcions) es conserva tal qual.",
+    "recreateTitle": "Recreació segura",
+    "plan": {
+      "stop": "S’atura el contenidor actual.",
+      "backup": "Se li canvia el nom a {{backup}} i es conserva com a còpia de seguretat.",
+      "create": "Es crea un contenidor nou amb el nom original, la imatge {{image}} i la configuració completa amb els teus canvis.",
+      "startVerify": "S’inicia i es comprova que continua en execució durant uns segons.",
+      "verifyStopped": "Es comprova que Docker l’ha creat correctament. Queda aturat, com l’original.",
+      "rollback": "Si alguna cosa falla, s’elimina el contenidor nou i l’original recupera el seu nom i el seu estat."
+    },
+    "dataPromise": "No s’elimina cap volum, carpeta ni imatge. Els volums i les carpetes es tornen a muntar al contenidor nou amb el mateix contingut.",
+    "interruption": "El servei s’interromprà durant la recreació (normalment uns segons).",
+    "blocker": {
+      "state": "El contenidor està en estat «{{status}}». Atura’l o reprèn-lo abans de recrear-lo.",
+      "autoRemove": "El contenidor es va crear amb «eliminar en aturar-se» (--rm): en aturar-lo, Docker l’esborraria i no es podria conservar com a còpia. No es pot recrear de manera segura.",
+      "composeManaged": "El contenidor pertany al projecte Compose «{{project}}». Canvia’l al fitxer Compose i torna a desplegar: si es recreés aquí, Compose el tornaria a substituir.",
+      "swarmManaged": "El contenidor el gestiona un servei de Swarm. Canvia el servei en lloc del contenidor.",
+      "imageMissing": "La imatge {{image}} ja no és disponible en aquest equip: sense ella no es pot crear el contenidor nou. Baixa-la primer.",
+      "configUnreadable": "No s’ha pogut llegir la configuració completa del contenidor ({{detail}}), així que no es pot conservar amb seguretat."
+    },
+    "risksTitle": "Abans de continuar, confirma que entens aquests riscos:",
+    "risk": {
+      "writableLayer": "El contenidor té {{size}} escrits fora dels seus volums. Aquests fitxers no passen al contenidor nou (es queden a la còpia).",
+      "writableLayerUnknown": "No s’ha pogut saber si el contenidor té fitxers escrits fora dels seus volums. Si en té, no passen al contenidor nou (es queden a la còpia).",
+      "dependents": "Aquests contenidors fan servir la xarxa d’aquest ({{containers}}) i deixaran d’estar-hi connectats fins que els recreïs.",
+      "mountDetached": "Deixen d’estar muntats: {{mounts}}. El seu contingut no s’esborra.",
+      "imageTagMoved": "L’etiqueta {{image}} apunta ara a una altra imatge. El contenidor nou farà servir la mateixa imatge que l’original (pel seu ID), no la nova."
+    },
+    "riskHint": {
+      "writableLayer": "Si els necessites, crea abans una imatge a partir d’aquest contenidor o desa’ls en un volum."
+    },
+    "notice": {
+      "macUnknown": "El contenidor està aturat i Docker no en mostra l’adreça MAC: el contenidor nou en rebrà una de nova. Si vas fixar una MAC, inicia’l abans de recrear-lo per poder-la conservar.",
+      "macLegacy": "Aquesta versió de Docker no permet conservar l’adreça MAC en recrear: el contenidor nou en rebrà una de nova."
+    },
+    "keepMac": "Conservar les adreces MAC actuals",
+    "keepMacHint": "Marca-ho si vas fixar una MAC (--mac-address). Docker no indica si una MAC és fixa o assignada automàticament.",
+    "finalConfig": "Veure la configuració final del contenidor nou",
+    "confirmRecreate": "He revisat els canvis i vull recrear {{name}}",
+    "operations": "Operacions previstes",
+    "applying": "S’està aplicant…",
+    "recreating": "S’està recreant el contenidor…",
+    "blockedHint": "La recreació no es pot fer de manera segura (vegeu els motius)",
+    "confirmHint": "Confirma els riscos i la recreació per continuar",
+    "recreate": "Recrear el contenidor",
+    "apply": "Aplicar els canvis",
+    "doneDirect": "Canvis aplicats a {{name}} i comprovats.",
+    "doneRecreated": "{{name}} s’ha recreat amb els canvis i funciona correctament.",
+    "backupKept": "El contenidor original es conserva aturat com a {{backup}}. El pots restaurar o eliminar des de la secció General.",
+    "stepsTitle": "Passos fets",
+    "stepOk": "Correcte",
+    "stepFailed": "Error",
+    "step": {
+      "update": "Actualitzar recursos i reinici (docker update)",
+      "rename": "Canviar el nom",
+      "verify": "Comprovar el resultat",
+      "stop": "Aturar el contenidor",
+      "prepare": "Preparar la configuració del contenidor nou",
+      "backup": "Apartar l’original com a còpia",
+      "create": "Crear el contenidor nou",
+      "connect": "Connectar una xarxa addicional",
+      "disconnect": "Desconnectar una xarxa que l’original ja no tenia",
+      "start": "Iniciar el contenidor",
+      "rollbackRemove": "Desfer: eliminar el contenidor nou (sense els seus volums)",
+      "rollbackRename": "Desfer: tornar el nom original",
+      "rollbackStart": "Desfer: tornar a iniciar l’original",
+      "rollbackStop": "Desfer: aturar la còpia"
+    },
+    "openContainer": "Obrir el contenidor"
+  }
+}

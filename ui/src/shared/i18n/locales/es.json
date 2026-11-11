@@ -107,11 +107,13 @@
     "resetFilters": "Quitar filtros",
     "via": {
       "api": "API",
-      "cli": "CLI"
+      "cli": "CLI",
+      "app": "APP"
     },
     "viaLong": {
       "api": "Docker Engine API",
-      "cli": "Proceso CLI"
+      "cli": "Proceso CLI",
+      "app": "Operación de la aplicación"
     },
     "executed": "Operación ejecutada",
     "executedCommand": "Comando ejecutado",
@@ -149,7 +151,8 @@
       "bind": "Directorios vinculados",
       "compose": "Compose"
     },
-    "loadError": "No se pudo cargar el historial de actividad: {{message}}"
+    "loadError": "No se pudo cargar el historial de actividad: {{message}}",
+    "executedApp": "Operación de la aplicación"
   },
   "settings": {
     "appearance": "Apariencia",
@@ -160,12 +163,6 @@
       "dark": "Oscuro"
     },
     "language": "Idioma",
-    "languageNames": {
-      "es": "Español",
-      "en": "English",
-      "fr": "Français",
-      "it": "Italiano"
-    },
     "activityPanel": "Panel de actividad",
     "openOnError": "Abrir el panel cuando una operación falle",
     "openOnErrorHint": "Muestra el error sin que tengas que buscarlo.",
@@ -186,7 +183,13 @@
     "resetConfirmBody": "Tema, idioma, panel de actividad, historial y actualizaciones vuelven a sus valores iniciales. La conexión con Docker, los proyectos Compose y el historial ya guardado no cambian.",
     "maintenance": "Mantenimiento y ayuda",
     "open": "Abrir",
-    "back": "Configuración"
+    "back": "Configuración",
+    "accent": "Color principal",
+    "accentHint": "Se aplica al momento en botones, selección, indicadores y navegación.",
+    "accentOptions": {
+      "teal": "Verde azulado",
+      "purple": "Morado"
+    }
   },
   "common": {
     "dismiss": "Cerrar aviso",
@@ -195,7 +198,8 @@
     "retry": "Reintentar",
     "yes": "Sí",
     "no": "No",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "close": "Cerrar"
   },
   "ops": {
     "system": {
@@ -219,7 +223,12 @@
       "exec": "Sesión de terminal",
       "exec_create": "Preparar terminal",
       "exec_inspect": "Comprobar fin de la terminal",
-      "exec_cleanup": "Terminar procesos de la terminal"
+      "exec_cleanup": "Terminar procesos de la terminal",
+      "rename": "Renombrar contenedor",
+      "update": "Actualizar recursos o reinicio",
+      "recreate": "Recrear contenedor",
+      "restoreBackup": "Restaurar copia del contenedor",
+      "commit": "Crear imagen desde contenedor"
     },
     "image": {
       "list": "Listar imágenes",
@@ -272,6 +281,10 @@
       "query": "Consultar paquetes instalados",
       "simulate": "Simular con APT",
       "remove": "Desinstalar paquetes"
+    },
+    "ui": {
+      "language": "Cambiar idioma",
+      "accent": "Cambiar color principal"
     }
   },
   "conn": {
@@ -469,7 +482,8 @@
     "confirmRemove": "Eliminar contenedor",
     "dismiss": "Cerrar",
     "create": "Crear contenedor",
-    "openDetail": "Abrir {{name}}"
+    "openDetail": "Abrir {{name}}",
+    "moreActions": "Más acciones de {{name}}"
   },
   "images": {
     "refresh": "Actualizar",
@@ -875,7 +889,9 @@
     "name": {
       "invalid": "Nombre no válido: usa letras, números, «_», «.» o «-», y empieza por letra o número.",
       "required": "El nombre es obligatorio.",
-      "reserved": "{{value}} es una red predefinida de Docker."
+      "reserved": "{{value}} es una red predefinida de Docker.",
+      "backupReserved": "Ese nombre está reservado para las copias de seguridad («-dcc-backup-», «-dcc-replaced-»).",
+      "inUse": "Ya hay otro contenedor con ese nombre."
     },
     "image": {
       "required": "Indica una imagen.",
@@ -913,7 +929,8 @@
     "port": {
       "invalid": "Puerto no válido (1–65535).",
       "duplicate": "El puerto {{port}} del equipo está repetido.",
-      "privileged": "El puerto {{port}} es privilegiado: con Docker rootless puede fallar."
+      "privileged": "El puerto {{port}} es privilegiado: con Docker rootless puede fallar.",
+      "inUseByContainer": "El puerto {{port}} ya lo publica el contenedor {{container}}, que está en ejecución."
     },
     "ip": {
       "invalid": "IP no válida: {{ip}}"
@@ -923,7 +940,8 @@
       "targetDuplicate": "Ya hay un montaje en {{target}}."
     },
     "volume": {
-      "invalid": "Nombre de volumen no válido."
+      "invalid": "Nombre de volumen no válido.",
+      "nameRequired": "Un volumen nuevo necesita nombre: uno anónimo no se podría volver a montar en una recreación posterior."
     },
     "bind": {
       "required": "Indica la carpeta del equipo.",
@@ -1019,6 +1037,20 @@
     "volumeOpt": {
       "unknownLocal": "El driver local solo usa type, device y o: «{{key}}» se enviará igualmente.",
       "deviceWithoutType": "Con «device» suele hacer falta «type» (p. ej. none con o=bind, nfs o tmpfs)."
+    },
+    "description": {
+      "tooLong": "Como máximo {{max}} caracteres.",
+      "invalid": "No puede contener caracteres de control."
+    },
+    "edit": {
+      "numberInvalid": "Escribe un número mayor que cero o deja el campo vacío."
+    },
+    "commit": {
+      "repositoryRequired": "Indica el nombre del repositorio.",
+      "repositoryInvalid": "Repositorio no válido: minúsculas, números y separadores «.», «_», «-» y «/» (p. ej. mi-aplicacion o registro.local:5000/equipo/app).",
+      "tagInvalid": "Etiqueta no válida: letras, números, «_», «.» y «-», hasta 128 caracteres, sin empezar por «.» ni «-».",
+      "tooLong": "Como máximo {{max}} caracteres.",
+      "controlChars": "No puede contener saltos de línea ni otros caracteres de control."
     }
   },
   "dupNotes": {
@@ -1427,7 +1459,8 @@
     "forceHint": "Solo si Docker no puede desconectarlo normalmente (--force).",
     "disconnected": "{{container}} desconectado de {{network}}.",
     "checking": "Consultando a Docker el estado actual…",
-    "gone": "La red {{name}} ya no existe."
+    "gone": "La red {{name}} ya no existe.",
+    "lastNetwork": "Es la única red de este contenedor: al desconectarla se quedará sin conexión de red hasta que lo conectes a otra."
   },
   "volumes": {
     "create": "Crear volumen",
@@ -2080,5 +2113,255 @@
     "packages_denied": "No se concedieron permisos de administrador: no se ha desinstalado nada.",
     "packages_busy": "Ya hay una desinstalación en curso.",
     "packages_notInstalled": "La aplicación no está instalada como paquete .deb: no hay nada que desinstalar con APT."
+  },
+  "commit": {
+    "action": "Crear imagen a partir de este contenedor",
+    "short": "Crear imagen",
+    "title": "Crear imagen a partir de {{name}}",
+    "intro": "Se crea una imagen nueva con el estado actual del sistema de archivos del contenedor (docker commit). El contenedor no se modifica.",
+    "repository": "Repositorio",
+    "repositoryHint": "Por ejemplo: mi-aplicacion o registro.local:5000/equipo/app",
+    "tag": "Etiqueta",
+    "tagHint": "Vacía = latest",
+    "author": "Autor (opcional)",
+    "authorPh": "Nombre <correo@ejemplo.com>",
+    "message": "Mensaje (opcional)",
+    "messagePh": "Qué contiene esta imagen",
+    "preview": "Nombre completo:",
+    "refPlaceholder": "REPOSITORIO:ETIQUETA",
+    "notIncludedTitle": "La imagen no incluye los volúmenes ni las carpetas montadas",
+    "notIncluded": "Solo se guarda la capa de escritura del contenedor (los archivos que ha cambiado fuera de sus montajes). Los datos de estos montajes no entran en la imagen:",
+    "excludedList": "Montajes que no entran en la imagen",
+    "noMounts": "Este contenedor no tiene montajes: se guarda todo su sistema de archivos.",
+    "mountKind": {
+      "volume": "volumen",
+      "bind": "carpeta",
+      "tmpfs": "tmpfs"
+    },
+    "running": "El contenedor está en ejecución. Sus procesos no se detienen.",
+    "pause": "Pausar el contenedor mientras se crea la imagen (recomendado)",
+    "pauseHint": "Docker lo congela unos segundos para que la imagen sea coherente y después lo reanuda. Durante ese tiempo no atiende peticiones.",
+    "noPauseHint": "No se interrumpe, pero la imagen podría incluir archivos a medio escribir.",
+    "exists": "Ya existe una imagen llamada {{reference}} ({{id}}).",
+    "replace": "Usar este nombre para la imagen nueva",
+    "replaceHint": "La imagen anterior no se elimina: se queda sin este nombre (sin etiqueta) y sus contenedores siguen funcionando.",
+    "create": "Crear imagen",
+    "creating": "Creando imagen…",
+    "fixFirst": "Corrige los datos marcados",
+    "failed": "No se pudo crear la imagen: {{message}}",
+    "loadError": "No se pudo leer el contenedor: {{message}}",
+    "doneTitle": "Imagen creada",
+    "done": "Se ha creado la imagen {{reference}} ({{id}}).",
+    "replaced": "La imagen anterior ({{id}}) se conserva sin etiqueta.",
+    "originalUntouched": "El contenedor {{name}} sigue como estaba.",
+    "openImage": "Ver la imagen"
+  },
+  "edit": {
+    "action": "Editar configuración",
+    "title": "Editar configuración de {{name}}",
+    "back": "Volver al contenedor",
+    "loadError": "No se pudo leer la configuración del contenedor: {{message}}",
+    "sections": "Secciones de la configuración",
+    "tabs": {
+      "general": "General",
+      "network": "Red",
+      "storage": "Almacenamiento",
+      "env": "Variables",
+      "ports": "Puertos",
+      "resources": "Recursos",
+      "advanced": "Avanzado"
+    },
+    "tabHasErrors": "Hay datos que corregir en esta sección",
+    "kind": {
+      "direct": "Cambio directo",
+      "recreate": "Requiere recrear"
+    },
+    "g": {
+      "identity": "Identificación y reinicio",
+      "lifecycle": "Estado",
+      "backups": "Copias de seguridad",
+      "networks": "Redes conectadas",
+      "connect": "Conectar a otra red",
+      "mounts": "Volúmenes y carpetas",
+      "env": "Variables de entorno",
+      "ports": "Puertos publicados",
+      "resources": "Límites de CPU y memoria",
+      "advanced": "Configuración de ejecución"
+    },
+    "f": {
+      "name": "Nombre",
+      "restart": "Política de reinicio",
+      "description": "Descripción",
+      "network": "Red"
+    },
+    "h": {
+      "description": "Nota interna; se guarda en la etiqueta dcc.description del contenedor.",
+      "lifecycle": "Estas acciones se aplican al momento.",
+      "backups": "Contenedores originales que se conservaron al recrear este. Están detenidos y comparten los mismos volúmenes.",
+      "networks": "Conectar y desconectar redes se aplica al momento, sin recrear el contenedor.",
+      "connect": "Elige una red existente; en el siguiente paso puedes indicar alias o una IP fija.",
+      "mounts": "Rutas del equipo o volúmenes y la ruta dentro del contenedor.",
+      "env": "Variables propias del contenedor. Las de la imagen se heredan igualmente.",
+      "ports": "Correspondencia entre puertos del equipo y del contenedor.",
+      "resources": "Docker actualiza estos límites sin reiniciar el contenedor.",
+      "cpus": "Núcleos, p. ej. 0.5. El equipo tiene {{max}}.",
+      "limitRemoval": "Quitar un límite (dejar el campo vacío) no se puede hacer con docker update: requiere recrear el contenedor.",
+      "advanced": "Docker no permite cambiar estas opciones en un contenedor que ya existe.",
+      "duplicateInstead": "Para cambiarlas, crea un contenedor nuevo a partir de este:"
+    },
+    "recreateNote": {
+      "mounts": "Cambiar los montajes requiere recrear el contenedor. Los volúmenes y las carpetas no se borran nunca: un montaje que quites solo deja de estar conectado.",
+      "ports": "Cambiar los puertos requiere recrear el contenedor. Antes de aplicar se comprueba que no los use otro contenedor."
+    },
+    "anonymousVolumes": "Volúmenes anónimos que se volverán a montar con el mismo contenido: {{names}}",
+    "otherMounts": "Otros montajes (se conservan, no se editan aquí):",
+    "secretsWarning": "Los valores de las variables se pueden ver con docker inspect y desde dentro del contenedor. En la aplicación se ocultan las que parecen secretas (contraseñas, tokens, claves) y nunca se guardan en el panel de actividad.",
+    "imageEnvHint": "Vienen de la imagen y se heredan; si defines aquí una con el mismo nombre, la tuya tiene prioridad.",
+    "portsNotApplicable": "Con el modo de red «{{mode}}» Docker no publica puertos.",
+    "hostLimits": "Equipo: {{cpus}} CPU y {{memory}} de memoria.",
+    "networkModeSpecial": "Este contenedor usa el modo de red «{{mode}}»: Docker no permite conectarlo ni desconectarlo de redes.",
+    "noNetworks": "No está conectado a ninguna red.",
+    "net": {
+      "name": "Red",
+      "ip": "Dirección IP",
+      "mac": "MAC",
+      "aliases": "Alias",
+      "noIp": "Sin IP (detenido)",
+      "fixed": "IP fija: {{ip}}"
+    },
+    "aliasesRestriction": "Docker no permite cambiar los alias ni la IP de una conexión existente: desconecta la red y vuelve a conectarla con los nuevos valores. En la red bridge predeterminada no hay alias.",
+    "pickNetwork": "Elige una red…",
+    "noOtherNetworks": "No hay más redes disponibles",
+    "noChanges": "Sin cambios pendientes.",
+    "pendingDirect_one": "{{count}} cambio pendiente. Se aplica directamente, sin recrear el contenedor.",
+    "pendingDirect_other": "{{count}} cambios pendientes. Se aplican directamente, sin recrear el contenedor.",
+    "pendingRecreate_one": "{{count}} cambio pendiente. Requiere recrear el contenedor.",
+    "pendingRecreate_other": "{{count}} cambios pendientes. Alguno requiere recrear el contenedor.",
+    "discard": "Descartar cambios",
+    "review": "Revisar cambios",
+    "fixFirst": "Corrige los datos marcados antes de continuar",
+    "restore": "Restaurar",
+    "restoreTitle": "¿Restaurar {{name}}?",
+    "restoreBody": "La copia vuelve a llamarse {{original}} y se inicia. El contenedor que tiene ahora ese nombre se detiene y se aparta con otro nombre.",
+    "restoreSafe": "No se elimina ningún contenedor, volumen ni imagen. Si la copia no arranca, todo vuelve a como estaba.",
+    "removeBackup": "Eliminar copia",
+    "removeBackupTitle": "¿Eliminar la copia {{name}}?",
+    "removeBackupBody": "Se elimina solo el contenedor de la copia (y lo que hubiera escrito fuera de sus montajes). Sus volúmenes no se tocan: los usa el contenedor actual.",
+    "failed": "No se pudo aplicar: {{message}}",
+    "rolledBack": "Se ha vuelto al contenedor original, con su nombre y su estado.",
+    "rollbackFailed": "No se pudo volver del todo al estado anterior. Revisa los pasos de abajo.",
+    "rollbackFailedHelp": "Tus datos siguen ahí: no se ha eliminado ningún volumen, carpeta ni imagen, y el contenedor original existe (con su nombre o con el de la copia). Puedes restaurarlo desde la sección General.",
+    "nothingChanged": "El contenedor no se ha modificado.",
+    "comparing": "Comparando con la configuración actual…",
+    "planError": "No se pudieron comparar los cambios: {{message}}",
+    "backToEdit": "Volver a editar",
+    "reviewTitle": "Revisar los cambios",
+    "needsRecreate": "Requiere recrear el contenedor",
+    "directOnly": "Cambios directos, sin recrear",
+    "hasErrors": "Hay que corregir algunos datos antes de aplicar:",
+    "comparison": "Comparación de la configuración",
+    "col": {
+      "setting": "Ajuste",
+      "current": "Actual",
+      "new": "Nuevo",
+      "kind": "Cómo se aplica"
+    },
+    "field": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "restart": "Política de reinicio",
+      "cpus": "CPU",
+      "memory": "Memoria",
+      "memoryReservation": "Memoria reservada",
+      "env": "Variables de entorno",
+      "ports": "Puertos",
+      "mounts": "Montajes"
+    },
+    "reason": {
+      "labelsImmutable": "Las etiquetas no se pueden cambiar en un contenedor existente.",
+      "limitRemoval": "Docker no permite quitar un límite con docker update."
+    },
+    "restartValue": {
+      "no": "No reiniciar",
+      "always": "Siempre",
+      "unless-stopped": "Salvo si se detuvo a mano",
+      "on-failure": "Si falla {{n}}"
+    },
+    "op": {
+      "added": "Nuevo",
+      "removed": "Se quita",
+      "modified": "Cambia"
+    },
+    "none": "(sin valor)",
+    "kept": "Se mantienen:",
+    "keptRest": "El resto de la configuración (imagen, comando, usuario, redes, montajes que no cambian y demás opciones) se conserva tal cual.",
+    "recreateTitle": "Recreación segura",
+    "plan": {
+      "stop": "Se detiene el contenedor actual.",
+      "backup": "Se le cambia el nombre a {{backup}} y se conserva como copia de seguridad.",
+      "create": "Se crea un contenedor nuevo con el nombre original, la imagen {{image}} y la configuración completa con tus cambios.",
+      "startVerify": "Se inicia y se comprueba que sigue en ejecución durante unos segundos.",
+      "verifyStopped": "Se comprueba que Docker lo ha creado correctamente. Queda detenido, como el original.",
+      "rollback": "Si algo falla, se elimina el contenedor nuevo y el original recupera su nombre y su estado."
+    },
+    "dataPromise": "No se elimina ningún volumen, carpeta ni imagen. Los volúmenes y las carpetas se vuelven a montar en el contenedor nuevo con el mismo contenido.",
+    "interruption": "El servicio se interrumpirá durante la recreación (normalmente unos segundos).",
+    "blocker": {
+      "state": "El contenedor está en estado «{{status}}». Detenlo o reanúdalo antes de recrearlo.",
+      "autoRemove": "El contenedor se creó con «eliminar al detenerse» (--rm): al detenerlo Docker lo borraría y no podría conservarse como copia. No se puede recrear de forma segura.",
+      "composeManaged": "El contenedor pertenece al proyecto Compose «{{project}}». Cámbialo en el archivo Compose y vuelve a desplegar: si se recreara aquí, Compose lo volvería a sustituir.",
+      "swarmManaged": "El contenedor lo gestiona un servicio de Swarm. Cambia el servicio en lugar del contenedor.",
+      "imageMissing": "La imagen {{image}} ya no está disponible en este equipo: sin ella no se puede crear el contenedor nuevo. Descárgala primero.",
+      "configUnreadable": "No se pudo leer la configuración completa del contenedor ({{detail}}), así que no se puede conservar con seguridad."
+    },
+    "risksTitle": "Antes de continuar, confirma que entiendes estos riesgos:",
+    "risk": {
+      "writableLayer": "El contenedor tiene {{size}} escritos fuera de sus volúmenes. Esos archivos no pasan al contenedor nuevo (se quedan en la copia).",
+      "writableLayerUnknown": "No se pudo saber si el contenedor tiene archivos escritos fuera de sus volúmenes. Si los tiene, no pasan al contenedor nuevo (se quedan en la copia).",
+      "dependents": "Estos contenedores usan la red de este ({{containers}}) y dejarán de estar conectados a él hasta que los recrees.",
+      "mountDetached": "Dejan de estar montados: {{mounts}}. Su contenido no se borra.",
+      "imageTagMoved": "La etiqueta {{image}} apunta ahora a otra imagen. El contenedor nuevo usará la misma imagen que el original (por su ID), no la nueva."
+    },
+    "riskHint": {
+      "writableLayer": "Si los necesitas, crea antes una imagen a partir de este contenedor o guárdalos en un volumen."
+    },
+    "notice": {
+      "macUnknown": "El contenedor está detenido y Docker no muestra su dirección MAC: el contenedor nuevo recibirá una nueva. Si fijaste una MAC, inícialo antes de recrearlo para poder conservarla.",
+      "macLegacy": "Esta versión de Docker no permite conservar la dirección MAC al recrear: el contenedor nuevo recibirá una nueva."
+    },
+    "keepMac": "Conservar las direcciones MAC actuales",
+    "keepMacHint": "Márcalo si fijaste una MAC (--mac-address). Docker no indica si una MAC es fija o asignada automáticamente.",
+    "finalConfig": "Ver la configuración final del contenedor nuevo",
+    "confirmRecreate": "He revisado los cambios y quiero recrear {{name}}",
+    "operations": "Operaciones previstas",
+    "applying": "Aplicando…",
+    "recreating": "Recreando el contenedor…",
+    "blockedHint": "La recreación no se puede hacer de forma segura (ver los motivos)",
+    "confirmHint": "Confirma los riesgos y la recreación para continuar",
+    "recreate": "Recrear contenedor",
+    "apply": "Aplicar cambios",
+    "doneDirect": "Cambios aplicados a {{name}} y comprobados.",
+    "doneRecreated": "{{name}} se ha recreado con los cambios y funciona correctamente.",
+    "backupKept": "El contenedor original se conserva detenido como {{backup}}. Puedes restaurarlo o eliminarlo desde la sección General.",
+    "stepsTitle": "Pasos realizados",
+    "stepOk": "Correcto",
+    "stepFailed": "Error",
+    "step": {
+      "update": "Actualizar recursos y reinicio (docker update)",
+      "rename": "Cambiar el nombre",
+      "verify": "Comprobar el resultado",
+      "stop": "Detener el contenedor",
+      "prepare": "Preparar la configuración del contenedor nuevo",
+      "backup": "Apartar el original como copia",
+      "create": "Crear el contenedor nuevo",
+      "connect": "Conectar una red adicional",
+      "disconnect": "Desconectar una red que el original ya no tenía",
+      "start": "Iniciar el contenedor",
+      "rollbackRemove": "Deshacer: eliminar el contenedor nuevo (sin sus volúmenes)",
+      "rollbackRename": "Deshacer: devolver el nombre original",
+      "rollbackStart": "Deshacer: iniciar de nuevo el original",
+      "rollbackStop": "Deshacer: detener la copia"
+    },
+    "openContainer": "Abrir el contenedor"
   }
 }

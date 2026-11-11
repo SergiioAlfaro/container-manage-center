@@ -1,0 +1,2367 @@
+{
+  "app": {
+    "name": "Docker Control Center",
+    "startupWarning": "Aviso ao iniciar"
+  },
+  "nav": {
+    "label": "Navegación principal",
+    "collapse": "Contraer a barra lateral",
+    "expand": "Expandir a barra lateral",
+    "groups": {
+      "resources": "Recursos",
+      "orchestration": "Orquestración",
+      "tools": "Ferramentas",
+      "monitoring": "Supervisión"
+    }
+  },
+  "sections": {
+    "dashboard": {
+      "title": "Panel",
+      "description": "Estado xeral de Docker Engine e dos teus recursos."
+    },
+    "containers": {
+      "title": "Contedores",
+      "description": "Crea, inicia, detén e inspecciona contedores."
+    },
+    "images": {
+      "title": "Imaxes",
+      "description": "Descarga, constrúe, etiqueta e elimina imaxes."
+    },
+    "networks": {
+      "title": "Redes",
+      "description": "Xestiona redes e conecta contedores entre si.",
+      "planned": [
+        "Redes bridge, host, none, overlay e macvlan",
+        "Subredes, pasarelas e rangos de enderezos",
+        "Conexión e desconexión de contedores"
+      ],
+      "phase": 5
+    },
+    "volumes": {
+      "title": "Volumes",
+      "description": "Almacenamento xestionado por Docker.",
+      "planned": [
+        "Listaxe, creación e inspección de volumes",
+        "Contedores que usan cada volume",
+        "Aviso antes de eliminar volumes en uso"
+      ],
+      "phase": 6
+    },
+    "binds": {
+      "title": "Directorios vinculados",
+      "description": "Cartafoles do teu sistema montados dentro de contedores (bind mounts).",
+      "planned": [
+        "Rutas de orixe e destino de cada vinculación",
+        "Contedores que usan cada directorio",
+        "Montaxes de só lectura ou de lectura e escritura",
+        "Selección de cartafoles co explorador de ficheiros"
+      ],
+      "phase": 6
+    },
+    "compose": {
+      "title": "Docker Compose",
+      "description": "Proxectos multicontedor definidos en YAML.",
+      "planned": [
+        "Importación e creación de proxectos",
+        "Editor YAML con validación previa",
+        "Inicio, parada, reconstrución e rexistros por servizo"
+      ],
+      "phase": 7
+    },
+    "terminals": {
+      "title": "Terminais",
+      "description": "Varios terminais á vez en contedores en execución."
+    },
+    "events": {
+      "title": "Eventos e rexistros",
+      "description": "Eventos de Docker en tempo real e historial de operacións."
+    },
+    "settings": {
+      "title": "Configuración",
+      "description": "Preferencias da aplicación."
+    }
+  },
+  "pending": {
+    "phase": "Dispoñible a partir da fase {{phase}}",
+    "intro": "Este apartado aínda non está conectado a Docker. Cando se implemente, permitirá:"
+  },
+  "activity": {
+    "title": "Actividade",
+    "subtitle": "Operacións executadas sobre Docker",
+    "open": "Abrir o panel de actividade",
+    "close": "Pechar o panel de actividade",
+    "shortcut": "Ctrl+Maiús+A",
+    "running": "{{count}} en curso",
+    "failed_one": "{{count}} erro",
+    "failed_other": "{{count}} erros",
+    "search": "Buscar ordes, recursos ou operacións",
+    "filterCategory": "Área",
+    "filterStatus": "Estado",
+    "all": "Todas",
+    "allStatus": "Todos",
+    "clear": "Limpar o historial",
+    "clearHint": "Baleira o historial visual. As operacións en curso mantéñense.",
+    "emptyTitle": "Aínda non hai operacións",
+    "emptyBody": "Cada acción que a aplicación realice sobre Docker aparecerá aquí coa súa orde equivalente, o seu estado e o seu resultado.",
+    "noMatches": "Ningunha operación coincide cos filtros.",
+    "resetFilters": "Quitar os filtros",
+    "via": {
+      "api": "API",
+      "cli": "CLI",
+      "app": "APP"
+    },
+    "viaLong": {
+      "api": "Docker Engine API",
+      "cli": "Proceso CLI",
+      "app": "Operación da aplicación"
+    },
+    "executed": "Operación executada",
+    "executedCommand": "Orde executada",
+    "equivalent": "Orde equivalente",
+    "equivalentNote": "Tradución orientativa. A operación realizouse mediante a Docker Engine API, non executando esta orde.",
+    "noEquivalent": "Esta operación non ten unha orde docker equivalente exacta.",
+    "endpoint": "Socket",
+    "requestBody": "Corpo da petición",
+    "stdout": "Saída estándar",
+    "stderr": "Saída de erro",
+    "error": "Erro",
+    "summary": "Resultado",
+    "httpStatus": "Código HTTP",
+    "exitCode": "Código de saída",
+    "started": "Inicio",
+    "finished": "Fin",
+    "duration": "Duración",
+    "truncated": "Saída recortada: móstranse os primeiros {{shown}} de {{total}} bytes.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "Non se puido copiar",
+    "details": "Detalles",
+    "status": {
+      "running": "En curso",
+      "succeeded": "Correcto",
+      "failed": "Erro",
+      "cancelled": "Interrompida"
+    },
+    "category": {
+      "system": "Sistema",
+      "container": "Contedores",
+      "image": "Imaxes",
+      "network": "Redes",
+      "volume": "Volumes",
+      "bind": "Directorios vinculados",
+      "compose": "Compose"
+    },
+    "loadError": "Non se puido cargar o historial de actividade: {{message}}",
+    "executedApp": "Operación da aplicación"
+  },
+  "settings": {
+    "appearance": "Aparencia",
+    "theme": "Tema",
+    "themeOptions": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Escuro"
+    },
+    "language": "Idioma",
+    "activityPanel": "Panel de actividade",
+    "openOnError": "Abrir o panel cando falle unha operación",
+    "openOnErrorHint": "Mostra o erro sen que teñas que buscalo.",
+    "maxRecords": "Operacións conservadas",
+    "maxRecordsHint": "Entre {{min}} e {{max}}. As máis antigas descártanse.",
+    "saveError": "Non se puido gardar a configuración: {{message}}",
+    "saved": "Gardado",
+    "shortcuts": "Atallos de teclado",
+    "shortcutSidebar": "Contraer ou expandir a barra lateral",
+    "shortcutActivity": "Abrir ou pechar o panel de actividade",
+    "keepHistory": "Gardar o historial entre sesións",
+    "keepHistoryHint": "Garda no disco as operacións (sen corpos, ordes nin saídas, que poden conter segredos) e os eventos de Docker, para consultalos en Eventos e rexistros.",
+    "reset": "Restablecer",
+    "resetLabel": "Restablecer as preferencias",
+    "resetHint": "Volve aos valores iniciais de aparencia, panel de actividade e actualizacións. Non cambia a conexión con Docker nin a lista de proxectos Compose.",
+    "resetButton": "Restablecer",
+    "resetConfirmTitle": "Queres restablecer as preferencias?",
+    "resetConfirmBody": "O tema, o idioma, o panel de actividade, o historial e as actualizacións volven aos seus valores iniciais. A conexión con Docker, os proxectos Compose e o historial xa gardado non cambian.",
+    "maintenance": "Mantemento e axuda",
+    "open": "Abrir",
+    "back": "Configuración",
+    "accent": "Cor principal",
+    "accentHint": "Aplícase ao momento nos botóns, na selección, nos indicadores e na navegación.",
+    "accentOptions": {
+      "teal": "Verde azulado",
+      "purple": "Morado"
+    }
+  },
+  "common": {
+    "dismiss": "Pechar o aviso",
+    "unknown": "Descoñecido",
+    "loading": "Cargando…",
+    "retry": "Tentar de novo",
+    "yes": "Si",
+    "no": "Non",
+    "cancel": "Cancelar",
+    "close": "Pechar"
+  },
+  "ops": {
+    "system": {
+      "ping": "Comprobar a conexión",
+      "version": "Consultar a versión",
+      "info": "Consultar a información do sistema"
+    },
+    "container": {
+      "list": "Listar contedores",
+      "start": "Iniciar o contedor",
+      "stop": "Deter o contedor",
+      "restart": "Reiniciar o contedor",
+      "pause": "Pausar o contedor",
+      "unpause": "Retomar o contedor",
+      "remove": "Eliminar o contedor",
+      "state": "Comprobar o estado do contedor",
+      "create": "Crear un contedor",
+      "inspect": "Inspeccionar o contedor",
+      "logs": "Seguir os rexistros",
+      "stats": "Seguir as estatísticas",
+      "exec": "Sesión de terminal",
+      "exec_create": "Preparar o terminal",
+      "exec_inspect": "Comprobar o final do terminal",
+      "exec_cleanup": "Rematar os procesos do terminal",
+      "rename": "Cambiar o nome do contedor",
+      "update": "Actualizar recursos ou reinicio",
+      "recreate": "Recrear o contedor",
+      "restoreBackup": "Restaurar a copia do contedor",
+      "commit": "Crear unha imaxe desde un contedor"
+    },
+    "image": {
+      "list": "Listar imaxes",
+      "inspect": "Inspeccionar a imaxe",
+      "pull": "Descargar a imaxe",
+      "build": "Construír a imaxe",
+      "history": "Consultar as capas",
+      "tag": "Etiquetar a imaxe",
+      "remove": "Eliminar a imaxe",
+      "prune": "Limpar imaxes",
+      "search": "Buscar imaxes"
+    },
+    "compose": {
+      "version": "Consultar a versión de Compose",
+      "config": "Ler a configuración de Compose",
+      "up": "Despregar o proxecto",
+      "down": "Eliminar o proxecto",
+      "start": "Iniciar o proxecto",
+      "stop": "Deter o proxecto",
+      "restart": "Reiniciar o proxecto",
+      "pull": "Descargar as imaxes do proxecto",
+      "build": "Construír as imaxes do proxecto",
+      "logs": "Rexistros do proxecto"
+    },
+    "network": {
+      "list": "Listar redes",
+      "inspect": "Inspeccionar a rede",
+      "create": "Crear unha rede",
+      "remove": "Eliminar a rede",
+      "prune": "Limpar redes",
+      "connect": "Conectar un contedor á rede",
+      "disconnect": "Desconectar un contedor da rede"
+    },
+    "volume": {
+      "list": "Listar volumes",
+      "inspect": "Inspeccionar o volume",
+      "usage": "Medir volumes",
+      "create": "Crear un volume",
+      "remove": "Eliminar o volume",
+      "prune": "Limpar volumes"
+    },
+    "registry": {
+      "credentials": "Obter as credenciais do rexistro"
+    },
+    "events": {
+      "watch": "Subscrición aos eventos de Docker",
+      "query": "Consultar eventos de Docker"
+    },
+    "packages": {
+      "query": "Consultar os paquetes instalados",
+      "simulate": "Simular con APT",
+      "remove": "Desinstalar paquetes"
+    },
+    "ui": {
+      "language": "Cambiar o idioma",
+      "accent": "Cambiar a cor principal"
+    }
+  },
+  "conn": {
+    "connecting": "Conectando con Docker…",
+    "connected": "Docker {{version}}",
+    "disconnected": "Sen conexión con Docker",
+    "rootless": "rootless",
+    "source": {
+      "custom": "Socket personalizado",
+      "dockerHost": "Variable DOCKER_HOST",
+      "context": "Contexto «{{name}}»",
+      "rootless": "Docker rootless do usuario",
+      "system": "Socket do sistema"
+    },
+    "reconnect": "Volver conectar",
+    "reconnecting": "Conectando…",
+    "configure": "Configurar a conexión",
+    "openDashboard": "Ver o diagnóstico",
+    "notConnectedTitle": "Este apartado necesita conexión con Docker",
+    "notConnectedBody": "Non hai conexión con Docker Engine. O panel explica a causa e como resolvela.",
+    "autoRetry": "A aplicación téntao de novo automaticamente cada poucos segundos.",
+    "badgeTitle": "Conectado a {{path}}"
+  },
+  "diag": {
+    "title": "Diagnóstico da conexión",
+    "steps": "Como resolvelo",
+    "candidates": "Sockets comprobados",
+    "candidatesHint": "Na orde na que se buscan.",
+    "installation": "Instalación detectada",
+    "cli": "CLI de Docker",
+    "daemon": "Daemon (dockerd)",
+    "rootlessTools": "Ferramentas rootless",
+    "notFound": "Non se atopou",
+    "yes": "Si",
+    "no": "Non",
+    "user": "Usuario",
+    "probe": {
+      "reachable": "Responde",
+      "missing": "Non existe",
+      "notASocket": "Non é un socket",
+      "permissionDenied": "Permiso denegado",
+      "refused": "Ninguén escoita",
+      "errorLabel": "Erro"
+    },
+    "rootGroupWarning": "Pertencer ao grupo {{group}} equivale a ter privilexios de administración neste equipo. A alternativa máis segura é Docker en modo rootless.",
+    "noAutoFix": "Docker Control Center non cambia permisos nin grupos do sistema: estes pasos debes executalos ti nun terminal.",
+    "problems": {
+      "noSocket": {
+        "title": "Non se atopa Docker Engine",
+        "body": "Non existe ningún socket de Docker nas localizacións habituais."
+      },
+      "notInstalled": {
+        "title": "Docker non parece estar instalado",
+        "body": "Non se atopou ningún socket, nin o CLI nin o daemon de Docker."
+      },
+      "daemonNotRunning": {
+        "title": "Docker Engine está detido",
+        "body": "O socket {{path}} existe, pero ningún proceso responde nel."
+      },
+      "permissionDenied": {
+        "title": "Sen permiso para usar o socket de Docker",
+        "body": "O teu usuario ({{user}}) non pode abrir {{path}}. Pertence a {{owner}}:{{group}} con permisos {{mode}}."
+      },
+      "unsupportedHost": {
+        "title": "Conexión de Docker non compatible",
+        "body": "DOCKER_HOST ou o contexto activo apuntan a {{host}}. Esta versión só admite sockets Unix locais."
+      },
+      "invalidPath": {
+        "title": "A ruta configurada non é válida",
+        "body": "«{{path}}»: {{reason}}."
+      },
+      "notASocket": {
+        "title": "A ruta non é un socket",
+        "body": "{{path}} existe, pero non é un socket Unix."
+      },
+      "notDocker": {
+        "title": "O socket non responde como Docker",
+        "body": "{{path}} acepta conexións, pero non responde como a API de Docker Engine: {{message}}"
+      },
+      "timeout": {
+        "title": "Docker non responde a tempo",
+        "body": "{{path}} non respondeu en 5 segundos. Pode que o daemon estea bloqueado ou moi cargado."
+      },
+      "apiTooOld": {
+        "title": "Versión de Docker demasiado antiga",
+        "body": "Docker Engine ofrece a API {{api}} e precísase a {{min}} ou superior (Docker 20.10 ou posterior)."
+      },
+      "other": {
+        "title": "Erro ao conectar con Docker",
+        "body": "{{message}}"
+      }
+    },
+    "stepsText": {
+      "install": "Instala Docker Engine. Cos paquetes de Debian ou Ubuntu:",
+      "installOfficial": "Ou segue a guía oficial de instalación para Debian/Ubuntu en docs.docker.com/engine/install.",
+      "startSystem": "Inicia o servizo de Docker e actívao ao arrancar o equipo:",
+      "startRootless": "Se usas Docker rootless, inicia o servizo do teu usuario:",
+      "checkStatus": "Se non arranca, revisa o seu estado e as últimas mensaxes:",
+      "addGroup": "Engade o teu usuario ao grupo {{group}}:",
+      "relogin": "Despois, pecha a sesión e volve entrar para que se active o grupo.",
+      "alreadyInGroup": "Xa pertences ao grupo {{group}}, pero a túa sesión actual aínda non o ten activo. Pecha a sesión e volve entrar, ou reinicia o equipo.",
+      "ownerUnexpected": "O socket non pertence ao grupo docker. Revisa a opción SocketGroup do servizo docker.socket.",
+      "rootlessAlternative": "Alternativa sen privilexios: Docker en modo rootless (docs.docker.com/engine/security/rootless).",
+      "unsetHost": "Para usar o socket local, quita DOCKER_HOST do teu ambiente ou volve ao contexto predeterminado:",
+      "customPath": "Ou indica un socket Unix concreto en Configuración, sección Conexión con Docker.",
+      "fixPath": "Corrixe a ruta en Configuración, sección Conexión con Docker. Debe ser absoluta, por exemplo /var/run/docker.sock.",
+      "checkPath": "Comproba que a ruta corresponde ao socket de Docker e non a outro servizo.",
+      "upgrade": "Actualiza Docker Engine á versión 20.10 ou posterior.",
+      "restart": "Reinicia o servizo de Docker:",
+      "retry": "Cando o teñas resolto, preme «Volver conectar». A aplicación tamén o tenta de novo soa."
+    }
+  },
+  "dashboard": {
+    "refresh": "Actualizar",
+    "engine": "Docker Engine",
+    "containers": "Contedores",
+    "images": "Imaxes",
+    "running": "En execución",
+    "paused": "En pausa",
+    "stopped": "Detidos",
+    "viewContainers": "Ver os contedores",
+    "viewImages": "Ver as imaxes",
+    "host": "Equipo",
+    "hostName": "Nome",
+    "os": "Sistema operativo",
+    "kernel": "Núcleo",
+    "arch": "Arquitectura",
+    "cpus": "CPU",
+    "memory": "Memoria",
+    "runtime": "Almacenamento e execución",
+    "storageDriver": "Almacenamento",
+    "rootDir": "Directorio de datos",
+    "cgroup": "cgroups",
+    "logging": "Rexistros",
+    "api": "API",
+    "minApi": "API mínima",
+    "go": "Go",
+    "commit": "Commit",
+    "warnings": "Avisos do daemon",
+    "swarm": "Swarm activo",
+    "connection": "Conexión",
+    "socket": "Socket",
+    "source": "Orixe",
+    "loadError": "Non se puido obter a información de Docker: {{message}}",
+    "imagesHint": "imaxes locais"
+  },
+  "containers": {
+    "refresh": "Actualizar",
+    "search": "Buscar por nome, imaxe ou ID",
+    "filter": {
+      "all": "Todos",
+      "running": "En execución",
+      "stopped": "Detidos"
+    },
+    "count_one": "{{count}} contedor",
+    "count_other": "{{count}} contedores",
+    "columns": {
+      "name": "Nome",
+      "image": "Imaxe",
+      "status": "Estado",
+      "ports": "Portos",
+      "created": "Creado",
+      "actions": "Accións"
+    },
+    "state": {
+      "created": "Creado",
+      "running": "En execución",
+      "paused": "En pausa",
+      "restarting": "Reiniciando",
+      "exited": "Detido",
+      "removing": "Eliminando",
+      "dead": "Morto"
+    },
+    "action": {
+      "start": "Iniciar",
+      "stop": "Deter",
+      "restart": "Reiniciar",
+      "pause": "Pausar",
+      "unpause": "Retomar",
+      "remove": "Eliminar"
+    },
+    "actionOn": "{{action}} {{name}}",
+    "failed": "{{action}} {{name}}: {{message}}",
+    "empty": "Non hai contedores",
+    "emptyBody": "Os contedores que existan en Docker aparecerán aquí. Usa «Crear contedor» para crear un a partir dunha imaxe local.",
+    "noMatches": "Ningún contedor coincide coa busca.",
+    "loadError": "Non se puido obter a lista de contedores: {{message}}",
+    "removeTitle": "Eliminar {{name}}",
+    "removeBody": "Eliminarase o contedor e a súa capa de escritura. Non se pode desfacer.",
+    "removeRunning": "O contedor está {{state}}. Para eliminalo hai que detelo á forza.",
+    "removeForce": "Detelo á forza e eliminalo",
+    "removeVolumes": "Eliminar tamén os seus volumes anónimos",
+    "removeVolumesHint": "Os volumes con nome e os directorios vinculados non se tocan.",
+    "cancel": "Cancelar",
+    "confirmRemove": "Eliminar o contedor",
+    "dismiss": "Pechar",
+    "create": "Crear contedor",
+    "openDetail": "Abrir {{name}}",
+    "moreActions": "Máis accións de {{name}}"
+  },
+  "images": {
+    "refresh": "Actualizar",
+    "search": "Buscar por etiqueta ou ID",
+    "filter": {
+      "all": "Todas",
+      "used": "En uso",
+      "unused": "Sen uso",
+      "dangling": "Sen etiqueta"
+    },
+    "count_one": "{{count}} imaxe",
+    "count_other": "{{count}} imaxes",
+    "columns": {
+      "tags": "Imaxe",
+      "id": "ID",
+      "size": "Tamaño",
+      "created": "Creada",
+      "usage": "Uso",
+      "actions": "Accións"
+    },
+    "dangling": "Sen etiqueta",
+    "usedBy_one": "{{count}} contedor",
+    "usedBy_other": "{{count}} contedores",
+    "unused": "Sen uso",
+    "empty": "Non hai imaxes locais",
+    "emptyBody": "Descarga unha imaxe dun rexistro ou constrúe unha a partir dun Dockerfile.",
+    "noMatches": "Ningunha imaxe coincide coa busca.",
+    "loadError": "Non se puido obter a lista de imaxes: {{message}}",
+    "pull": "Descargar imaxe",
+    "searchHub": "Buscar en Docker Hub",
+    "build": "Construír imaxe",
+    "prune": "Limpar",
+    "buildRunning": "Hai unha construción en curso.",
+    "buildShow": "Ver o progreso",
+    "open": "Abrir {{name}}",
+    "createContainer": "Crear un contedor con {{name}}",
+    "tagAction": "Etiquetar {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "settingsDocker": {
+    "title": "Conexión con Docker",
+    "mode": "Modo de conexión",
+    "modeAuto": "Automático",
+    "modeCustom": "Socket personalizado",
+    "autoHint": "Busca DOCKER_HOST, o contexto activo de Docker, o socket rootless do teu usuario e o socket do sistema, nesa orde.",
+    "customHint": "Ruta absoluta dun socket Unix, por exemplo /run/user/1000/docker.sock.",
+    "socketPath": "Ruta do socket",
+    "pathRequired": "Indica a ruta do socket.",
+    "test": "Probar a conexión",
+    "testing": "Probando…",
+    "save": "Gardar e conectar",
+    "testOk": "Conexión correcta: Docker {{version}} en {{path}}",
+    "testFailed": "Non se puido conectar: {{reason}}",
+    "current": "Conexión actual",
+    "none": "Sen conexión",
+    "rootless": "Modo rootless",
+    "versions": "Versións",
+    "engineVersion": "Docker Engine",
+    "apiVersion": "API",
+    "compose": "Docker Compose",
+    "composeCheck": "Comprobar",
+    "composeChecking": "Comprobando…",
+    "composeNotChecked": "Sen comprobar",
+    "composeError": "Erro: {{message}}",
+    "composeHint": "Obtense executando «docker compose version». Precísase para o apartado Docker Compose (fase 7); o resto da aplicación funciona sen el.",
+    "security": "O acceso ao socket de Docker equivale a privilexios de administración. A aplicación nunca cambia permisos nin grupos do sistema.",
+    "composePlugin": "{{version}} (complemento «docker compose»)",
+    "composeStandalone": "{{version}} (binario «docker-compose»)",
+    "composeNotInstalled": "Non instalado",
+    "composeUnusable": "O complemento está en {{path}}, pero o CLI de Docker non o usa",
+    "composeLegacy": "Só Compose v1 {{version}}, non admitido",
+    "composeUnrecognized": "Resposta non recoñecida: {{output}}",
+    "composeInstall": "Instala Docker Compose v2 (Debian 12 só ofrece a v1, non admitida: usa o repositorio oficial de Docker):",
+    "composeInstallOn": {
+      "debian13": "Debian 13:",
+      "ubuntu": "Ubuntu 22.04 ou posterior:",
+      "dockerRepo": "Co repositorio oficial de Docker:"
+    }
+  },
+  "crash": {
+    "title": "A interface atopou un erro",
+    "body": "Docker non se viu afectado. Podes recargar a xanela; se o erro se repite, copia este texto para notificalo.",
+    "reload": "Recargar a xanela"
+  },
+  "restart": {
+    "no": "Non reiniciar",
+    "always": "Sempre",
+    "unlessStopped": "Agás se se detivo a man",
+    "onFailure": "Se falla"
+  },
+  "detail": {
+    "back": "Contedores",
+    "duplicate": "Duplicar",
+    "duplicateFailed": "Non se puido ler a configuración para duplicala: {{message}}",
+    "loadError": "Non se puido inspeccionar o contedor: {{message}}",
+    "notFound": "O contedor {{name}} xa non existe en Docker.",
+    "tabs": {
+      "summary": "Resumo",
+      "logs": "Rexistros",
+      "terminal": "Terminal",
+      "stats": "Estatísticas",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "Xeral",
+      "process": "Proceso",
+      "ports": "Portos publicados",
+      "restartResources": "Reinicio e recursos",
+      "env": "Variables de ambiente",
+      "networks": "Redes",
+      "mounts": "Almacenamento",
+      "labels": "Etiquetas"
+    },
+    "f": {
+      "id": "ID",
+      "image": "Imaxe",
+      "created": "Creado",
+      "started": "Iniciado",
+      "finished": "Rematado",
+      "exitCode": "Código de saída",
+      "oom": "Rematado por falta de memoria",
+      "error": "Erro",
+      "health": "Saúde",
+      "pid": "PID",
+      "restartCount": "Reinicios",
+      "compose": "Proxecto Compose",
+      "entrypoint": "Punto de entrada",
+      "command": "Orde",
+      "workingDir": "Directorio de traballo",
+      "user": "Usuario",
+      "hostname": "Nome de host",
+      "tty": "TTY",
+      "stdin": "STDIN aberto",
+      "restart": "Política de reinicio",
+      "cpus": "CPU",
+      "memory": "Memoria",
+      "memoryReservation": "Reserva de memoria",
+      "flags": "Opcións",
+      "network": "Rede",
+      "gateway": "Pasarela"
+    },
+    "imageDefault": "o da imaxe",
+    "maxRetries_one": "máx. {{count}} intento",
+    "maxRetries_other": "máx. {{count}} intentos",
+    "unlimited": "sen límite",
+    "noPorts": "Non publica portos no equipo.",
+    "exposedOnly": "Expostos sen publicar: {{ports}}",
+    "noEnv": "Sen variables.",
+    "revealSecrets_one": "Amosar {{count}} valor oculto",
+    "revealSecrets_other": "Amosar {{count}} valores ocultos",
+    "hideSecrets": "Ocultar os valores sensibles",
+    "hidden": "oculto",
+    "reveal": "Amosar o valor",
+    "hide": "Ocultar o valor",
+    "networkMode": "Modo de rede: {{mode}}",
+    "noNetworks": "Sen redes.",
+    "noMounts": "Sen montaxes.",
+    "readOnly": "só lectura",
+    "noLabels": "Sen etiquetas.",
+    "inspectHint": "Saída completa de docker inspect {{name}}, tal como a devolve Docker."
+  },
+  "logs": {
+    "tail": "Últimas",
+    "all": "Todas",
+    "lastN_one": "{{count}} liña",
+    "lastN_other": "{{count}} liñas",
+    "filter": "Filtrar as liñas",
+    "timestamps": "Marcas de tempo",
+    "follow": "Seguir ao final",
+    "stop": "Deixar de seguir",
+    "reopen": "Volver abrir",
+    "live": "Recibindo rexistros en directo",
+    "count_one": "{{count}} liña",
+    "count_other": "{{count}} liñas",
+    "dropped": "Só se amosan as últimas {{max}} liñas; as anteriores descartáronse.",
+    "opening": "Abrindo os rexistros…",
+    "empty": "Aínda non hai saída.",
+    "noMatches": "Ningunha liña coincide co filtro."
+  },
+  "terminal": {
+    "shell": "Shell",
+    "auto": "Automática",
+    "open": "Abrir terminal",
+    "reopen": "Abrir outra sesión",
+    "close": "Pechar a sesión",
+    "hint": "Executa unha shell con docker exec -it. Ao pechar a sesión remata a shell.",
+    "live": "Sesión aberta",
+    "notRunning": "O contedor non está en execución: inícialo para abrir un terminal."
+  },
+  "terminals": {
+    "new": "Novo terminal",
+    "newTitle": "Novo terminal",
+    "openSession": "Abrir terminal",
+    "closeAll": "Pechalos todos",
+    "closeAllTitle": "Queres pechar todos os terminais?",
+    "closeAllBody_one": "Pecharase {{count}} sesión: remata a súa shell e os procesos que deixou dentro do contedor. O contedor segue en execución.",
+    "closeAllBody_other": "Pecharanse {{count}} sesións: rematan as súas shells e os procesos que deixaron dentro dos contedores. Os contedores seguen en execución.",
+    "count_one": "{{count}} sesión · {{live}} conectada",
+    "count_other": "{{count}} sesións · {{live}} conectadas",
+    "hint": "Cada terminal é un docker exec -it independente. Seguen abertos ao cambiar de apartado e péchanse ao saír da aplicación.",
+    "emptyTitle": "Non hai terminais abertos",
+    "emptyHint": "Abre un terminal en calquera contedor en execución. Podes ter varios á vez, no mesmo contedor ou noutros.",
+    "full": "Chegaches ao máximo de {{max}} terminais abertos: pecha algún para abrir outro.",
+    "containerField": "Contedor en execución",
+    "noRunning": "Non hai contedores en execución: inicia un para abrir un terminal.",
+    "sessionName": "Nome da sesión",
+    "nameHint": "Opcional. Se o deixas baleiro, úsase o nome do contedor. Podes cambialo despois.",
+    "nameProblem": {
+      "empty": "O nome non pode estar baleiro.",
+      "long": "Usa como máximo {{max}} caracteres.",
+      "control": "O nome non pode conter caracteres de control."
+    },
+    "paneLabel": "Terminal {{name}} en {{container}}",
+    "container": "Contedor {{name}}",
+    "state": {
+      "opening": "Conectando…",
+      "open": "Conectado",
+      "ended": "Rematado",
+      "error": "Erro"
+    },
+    "after": {
+      "stopped": "Contedor detido",
+      "removed": "Contedor eliminado"
+    },
+    "rename": "Cambiar o nome da sesión",
+    "reopen": "Volver abrir a sesión",
+    "reopenGone": "Non se pode volver abrir: o contedor eliminouse",
+    "maximize": "Maximizar",
+    "restore": "Restaurar a grade",
+    "close": "Pechar a sesión",
+    "splitColumns": "Redimensionar as columnas",
+    "splitRows": "Redimensionar as filas"
+  },
+  "stats": {
+    "stop": "Deixar de recibir",
+    "reopen": "Volver abrir",
+    "live": "Recibindo estatísticas",
+    "samples_one": "{{count}} mostra",
+    "samples_other": "{{count}} mostras",
+    "notRunning": "O contedor non está en execución: non hai estatísticas que amosar.",
+    "cpu": "CPU",
+    "cpuSub_one": "{{count}} CPU dispoñible",
+    "cpuSub_other": "{{count}} CPU dispoñibles",
+    "cpuTrend": "Evolución do uso de CPU",
+    "memory": "Memoria",
+    "memorySub": "de {{limit}} · {{pct}}",
+    "memoryTrend": "Evolución do uso de memoria",
+    "pids": "Procesos",
+    "net": "Rede (recibido / enviado)",
+    "block": "Disco",
+    "read": "lido",
+    "written": "escrito",
+    "formulaHint": "Valores calculados como docker stats: a CPU é a porcentaxe sobre unha CPU e a memoria desconta a caché de páxinas."
+  },
+  "stream": {
+    "opening": "Abrindo…",
+    "openFailed": "Non se puido abrir: {{message}}",
+    "failed": "O fluxo rematou cun erro: {{message}}",
+    "idle": "Pechado."
+  },
+  "create": {
+    "title": "Crear contedor",
+    "titleDuplicate": "Duplicar {{name}}",
+    "notesTitle": "Algúns axustes do orixinal non se trasladan:",
+    "tabs": {
+      "general": "Xeral",
+      "env": "Ambiente",
+      "network": "Rede",
+      "storage": "Almacenamento",
+      "resources": "Recursos",
+      "advanced": "Avanzado"
+    },
+    "f": {
+      "name": "Nome",
+      "image": "Imaxe",
+      "command": "Orde",
+      "entrypoint": "Punto de entrada",
+      "workingDir": "Directorio de traballo",
+      "network": "Rede",
+      "hostname": "Nome de host",
+      "hostIp": "IP do equipo",
+      "hostPort": "Porto do equipo",
+      "containerPort": "Porto do contedor",
+      "protocol": "Protocolo",
+      "publishAll": "Publicar todos os portos expostos en portos libres",
+      "mountKind": "Tipo de montaxe",
+      "readOnly": "Só lectura",
+      "volumeName": "Volume",
+      "hostPath": "Cartafol do equipo",
+      "target": "Ruta no contedor",
+      "cpus": "CPU",
+      "memory": "Límite de memoria",
+      "memoryReservation": "Reserva de memoria",
+      "unit": "Unidade",
+      "restart": "Política",
+      "maxRetries": "Intentos máximos",
+      "user": "Usuario",
+      "tty": "Asignar unha TTY",
+      "interactive": "Manter STDIN aberto",
+      "init": "Usar un proceso init",
+      "readOnlyRootfs": "Sistema de ficheiros raíz de só lectura",
+      "autoRemove": "Eliminar ao rematar",
+      "privileged": "Modo privilexiado",
+      "capAdd": "Engadir capacidades",
+      "capDrop": "Quitar capacidades",
+      "key": "Clave {{n}}",
+      "value": "Valor {{n}}"
+    },
+    "h": {
+      "name": "Opcional: se o deixas baleiro, Docker xera un.",
+      "image": "Debe existir neste equipo (as descargas chegan na fase 4).",
+      "imageLocal": "Imaxe local: {{ref}}",
+      "imageReading": "Lendo a configuración da imaxe…",
+      "argv": "Divídese en argumentos con comiñas como na shell, pero non se executa ningunha shell.",
+      "fromImage": "Baleiro = o da imaxe: {{value}}",
+      "entrypointMulti": "Docker só admite un executable en --entrypoint: os demais elementos envíanse ao comezo da orde.",
+      "network": "As redes xestiónanse na fase 5.",
+      "publishAll": "Equivale a --publish-all.",
+      "volumeName": "Baleiro = volume anónimo. Se non existe, Docker créao.",
+      "cpus": "Por exemplo 0.5 ou 2.",
+      "maxRetries": "0 = sen límite.",
+      "user": "Nome ou UID[:GID]. Baleiro = o da imaxe."
+    },
+    "ph": {
+      "name": "servidor-web",
+      "hostname": "o ID curto",
+      "allIps": "todas",
+      "anyPort": "un libre",
+      "anonymous": "anónimo",
+      "unlimited": "sen límite"
+    },
+    "g": {
+      "process": "Proceso",
+      "processHint": "O que se executa ao iniciar o contedor.",
+      "env": "Variables de ambiente",
+      "envHint": "Os valores de claves como PASSWORD ou TOKEN ocúltanse na pantalla, pero envíanse a Docker tal cal e calquera con acceso a Docker pode velos.",
+      "labels": "Etiquetas",
+      "ports": "Portos",
+      "portsHint": "Publica portos do contedor neste equipo.",
+      "hosts": "Entradas de /etc/hosts",
+      "hostsHint": "Nome de host e IP (ou host-gateway).",
+      "mounts": "Montaxes",
+      "mountsHint": "Volumes de Docker ou cartafoles deste equipo (bind mounts).",
+      "limits": "Límites",
+      "limitsHint": "Baleiro = sen límite.",
+      "restart": "Reinicio",
+      "restartHint": "Que fai Docker cando remata o proceso principal.",
+      "options": "Opcións",
+      "caps": "Capacidades do núcleo",
+      "capsHint": "Separadas por comas, p. ex. NET_ADMIN ou ALL."
+    },
+    "add": {
+      "env": "Engadir variable",
+      "label": "Engadir etiqueta",
+      "port": "Engadir porto",
+      "host": "Engadir entrada",
+      "mount": "Engadir montaxe"
+    },
+    "remove": {
+      "row": "Quitar a fila {{n}}",
+      "port": "Quitar o porto {{n}}",
+      "mount": "Quitar a montaxe {{n}}"
+    },
+    "empty": {
+      "env": "Sen variables adicionais.",
+      "labels": "Sen etiquetas.",
+      "ports": "Non se publica ningún porto.",
+      "hosts": "Sen entradas.",
+      "mounts": "Sen montaxes."
+    },
+    "mountKind": {
+      "volume": "Volume",
+      "bind": "Cartafol do equipo"
+    },
+    "defaultNetwork": "Predeterminada (bridge)",
+    "addExposed": "Publicar os expostos ({{ports}})",
+    "imageEnv_one": "A imaxe xa define {{count}} variable",
+    "imageEnv_other": "A imaxe xa define {{count}} variables",
+    "imageVolumes": "A imaxe declara volumes en {{paths}}. Se non montas nada aí, Docker crea volumes anónimos.",
+    "imageNotLocal": "A imaxe {{ref}} non está neste equipo. Docker non a descargará ao crear o contedor; descárgaa antes (fase 4) ou escolle unha local.",
+    "imageDefaultsError": "Non se puido ler a configuración da imaxe: {{message}}",
+    "listError": "Non se puido obter a lista: {{message}}",
+    "pickFolder": "Escoller cartafol",
+    "argsParsed": "Argumentos resultantes",
+    "equivalent": "Equivalente",
+    "apiBody": "API",
+    "equivalentHint": "Orde equivalente do CLI de Docker. A aplicación non a executa: envía a petición á API e rexístraa no panel de actividade.",
+    "bodyHint": "Corpo de POST /containers/create que se enviará a Docker.",
+    "previewing": "Comprobando…",
+    "review": "Revisión",
+    "noIssues": "Sen problemas.",
+    "blocked_one": "Corrixe {{count}} erro para continuar.",
+    "blocked_other": "Corrixe {{count}} erros para continuar.",
+    "create": "Crear",
+    "createStart": "Crear e iniciar",
+    "failed": "Non se puido crear o contedor: {{message}}",
+    "startFailed": "O contedor creouse, pero non se puido iniciar: {{message}}",
+    "dockerWarning": "Aviso de Docker: {{message}}",
+    "secretsHidden_one": "{{count}} valor sensible aparece como ******** aquí e no panel de actividade; a Docker envíase completo.",
+    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí e no panel de actividade; a Docker envíanse completos."
+  },
+  "issues": {
+    "name": {
+      "invalid": "Nome non válido: usa letras, números, «_», «.» ou «-», e comeza por letra ou número.",
+      "required": "O nome é obrigatorio.",
+      "reserved": "{{value}} é unha rede predefinida de Docker.",
+      "backupReserved": "Ese nome está reservado para as copias de seguridade («-dcc-backup-», «-dcc-replaced-»).",
+      "inUse": "Xa hai outro contedor con ese nome."
+    },
+    "image": {
+      "required": "Indica unha imaxe.",
+      "invalid": "Referencia de imaxe non válida."
+    },
+    "argv": {
+      "nul": "Non pode conter o carácter nulo.",
+      "unclosedQuote": "Hai unha comiña sen pechar.",
+      "trailingEscape": "Remata nunha barra invertida sen carácter detrás."
+    },
+    "path": {
+      "notAbsolute": "Debe ser unha ruta absoluta (comezar por /)."
+    },
+    "user": {
+      "invalid": "O usuario non pode conter espazos."
+    },
+    "hostname": {
+      "invalid": "Nome de host non válido (letras, números, «-» e «.», máximo 63)."
+    },
+    "env": {
+      "keyRequired": "Falta o nome da variable.",
+      "keyInvalid": "Nome de variable non válido: {{key}}",
+      "duplicate": "{{key}} está repetida; usarase o último valor."
+    },
+    "label": {
+      "keyInvalid": "Clave de etiqueta non válida.",
+      "duplicate": "Etiqueta repetida: {{key}}"
+    },
+    "network": {
+      "invalid": "Nome de rede non válido."
+    },
+    "ports": {
+      "ignoredWithNetwork": "Coa rede «{{network}}» Docker ignora os portos publicados."
+    },
+    "port": {
+      "invalid": "Porto non válido (1–65535).",
+      "duplicate": "O porto {{port}} do equipo está repetido.",
+      "privileged": "O porto {{port}} é privilexiado: con Docker rootless pode fallar.",
+      "inUseByContainer": "O porto {{port}} xa o publica o contedor {{container}}, que está en execución."
+    },
+    "ip": {
+      "invalid": "IP non válida: {{ip}}"
+    },
+    "mount": {
+      "targetInvalid": "A ruta no contedor debe ser absoluta e distinta de /.",
+      "targetDuplicate": "Xa hai unha montaxe en {{target}}."
+    },
+    "volume": {
+      "invalid": "Nome de volume non válido.",
+      "nameRequired": "Un volume novo necesita nome: un anónimo non se podería volver montar nunha recreación posterior."
+    },
+    "bind": {
+      "required": "Indica o cartafol do equipo.",
+      "missing": "O cartafol {{path}} non existe neste equipo.",
+      "sensitive": "Montar {{path}} con escritura dálle ao contedor control sobre o sistema. Márcao como só lectura se non o necesitas."
+    },
+    "cpus": {
+      "range": "Indica un número de CPU entre 0,01 e 1024."
+    },
+    "memory": {
+      "min": "Docker esixe polo menos 6 MiB.",
+      "invalid": "Indica unha cantidade numérica.",
+      "reservationAboveLimit": "A reserva non pode superar o límite."
+    },
+    "autoRemove": {
+      "restart": "«Eliminar ao rematar» non é compatible cunha política de reinicio."
+    },
+    "privileged": "O modo privilexiado dálle ao contedor acceso case completo ao equipo.",
+    "cap": {
+      "invalid": "Capacidade non válida: {{cap}}"
+    },
+    "host": {
+      "invalid": "Nome de host non válido."
+    },
+    "ref": {
+      "empty": "Indica unha imaxe.",
+      "tooLong": "A referencia é demasiado longa.",
+      "invalidRegistry": "O nome do rexistro non é válido.",
+      "invalidRepository": "Nome non válido: só minúsculas, números e os separadores . _ -",
+      "invalidTag": "Etiqueta non válida: letras, números, _ . - (máximo 128, sen comezar por . ou -).",
+      "invalidDigest": "Digest non válido (sha256:<64 caracteres hexadecimais>)."
+    },
+    "context": {
+      "required": "Indica o cartafol de contexto.",
+      "missing": "O cartafol {{path}} non existe.",
+      "notDir": "{{path}} non é un cartafol.",
+      "huge": "Usar {{path}} como contexto enviaría unha cantidade enorme de ficheiros."
+    },
+    "dockerfile": {
+      "invalid": "Ruta non válida: debe ser relativa e estar dentro do contexto.",
+      "missing": "Non existe {{path}} no cartafol de contexto."
+    },
+    "tags": {
+      "none": "Sen nome, a imaxe quedará como <none>."
+    },
+    "tag": {
+      "invalid": "Etiqueta non válida: {{tag}}",
+      "duplicate": "Etiqueta repetida: {{tag}}"
+    },
+    "arg": {
+      "keyInvalid": "Nome non válido: {{key}}",
+      "duplicate": "Repetido: {{key}}",
+      "secret": "{{key}} parece un segredo: os argumentos quedan no historial da imaxe."
+    },
+    "target": {
+      "invalid": "Nome de etapa non válido."
+    },
+    "driver": {
+      "invalid": "Nome de controlador non válido.",
+      "singleton": "Só pode haber unha rede co controlador {{value}} (a predefinida).",
+      "swarm": "As redes overlay requiren Docker Swarm: sen el, Docker rexeitará a creación.",
+      "noParent": "Sen a opción «parent», a rede non terá saída por ningunha interface física."
+    },
+    "subnet": {
+      "required": "Indica a subrede para usar pasarela ou rango.",
+      "invalid": "Subrede non válida: usa notación CIDR (p. ex. 172.30.0.0/24).",
+      "hostBits": "{{value}} non é un enderezo de rede; debería ser {{fixed}}.",
+      "family": "{{value}} non é desta familia de enderezos."
+    },
+    "gateway": {
+      "invalid": "Enderezo non válido.",
+      "outside": "{{value}} non está dentro de {{subnet}}.",
+      "family": "{{value}} non é desta familia de enderezos."
+    },
+    "ipRange": {
+      "invalid": "Rango non válido: usa notación CIDR.",
+      "outside": "{{value}} non está dentro de {{subnet}}.",
+      "hostBits": "{{value}} non é un enderezo de rede; debería ser {{fixed}}.",
+      "family": "{{value}} non é desta familia de enderezos."
+    },
+    "ipv6": {
+      "disabled": "Activa IPv6 para usar unha subrede IPv6."
+    },
+    "option": {
+      "keyInvalid": "Nome de opción non válido: {{key}}",
+      "duplicate": "Opción repetida: {{key}}"
+    },
+    "volumeName": {
+      "short": "O nome debe ter polo menos dous caracteres.",
+      "invalid": "Nome non válido: usa letras, números, «_», «.» ou «-», e comeza por letra ou número.",
+      "exists": "Xa existe un volume chamado {{value}}. Docker devolvería o existente sen aplicar estes cambios."
+    },
+    "volumeOpt": {
+      "unknownLocal": "O controlador local só usa type, device e o: «{{key}}» enviarase igualmente.",
+      "deviceWithoutType": "Con «device» adoita facer falta «type» (p. ex. none con o=bind, nfs ou tmpfs)."
+    },
+    "description": {
+      "tooLong": "Como máximo {{max}} caracteres.",
+      "invalid": "Non pode conter caracteres de control."
+    },
+    "edit": {
+      "numberInvalid": "Escribe un número maior ca cero ou deixa o campo baleiro."
+    },
+    "commit": {
+      "repositoryRequired": "Indica o nome do repositorio.",
+      "repositoryInvalid": "Repositorio non válido: minúsculas, números e separadores «.», «_», «-» e «/» (p. ex. a-miña-aplicacion ou rexistro.local:5000/equipo/app).",
+      "tagInvalid": "Etiqueta non válida: letras, números, «_», «.» e «-», ata 128 caracteres, sen comezar por «.» nin «-».",
+      "tooLong": "Como máximo {{max}} caracteres.",
+      "controlChars": "Non pode conter saltos de liña nin outros caracteres de control."
+    }
+  },
+  "dupNotes": {
+    "composeLabels": "Quitáronse as etiquetas de Compose: o duplicado non pertencerá ao proxecto.",
+    "portsConflict": "Os mesmos portos do equipo xa os usa o orixinal; cámbiaos ou detén o orixinal antes de iniciar.",
+    "mountTypeUnsupported": "Hai montaxes dun tipo que o asistente non admite (tmpfs, npipe…).",
+    "namedVolumesShared": "Os volumes con nome compártense co orixinal, non se copian.",
+    "extraNetworks": "Só se conecta á primeira rede; as demais non se trasladan.",
+    "devices": "Os dispositivos (--device) non se trasladan.",
+    "dns": "A configuración DNS non se traslada.",
+    "securityOpt": "As opcións de seguridade (--security-opt) non se trasladan.",
+    "tmpfs": "As montaxes tmpfs non se trasladan.",
+    "volumesFrom": "--volumes-from non se traslada.",
+    "ulimits": "Os ulimits non se trasladan.",
+    "cpuset": "A asignación de CPU concretas (--cpuset-cpus) non se traslada.",
+    "pidsLimit": "O límite de procesos non se traslada.",
+    "logConfig": "A configuración dos rexistros non se traslada.",
+    "healthcheck": "A comprobación de saúde personalizada non se traslada.",
+    "stopSignal": "O sinal de parada personalizado non se traslada.",
+    "imageMissing": "A imaxe orixinal xa non está neste equipo: non se puideron separar os seus valores predeterminados."
+  },
+  "pull": {
+    "title": "Descargar imaxe",
+    "start": "Descargar",
+    "reference": "Imaxe",
+    "referenceHint": "Nome con etiqueta opcional: nginx:1.27, usuario/app, rexistro.exemplo.com:5000/app:v2. Sen etiqueta úsase latest.",
+    "resolved": "Descargarase {{name}} coa etiqueta {{tag}}.",
+    "auth": "Credenciais",
+    "authDocker": "As de Docker",
+    "authAnonymous": "Ningunha",
+    "authManual": "Usuario e contrasinal",
+    "authHint": {
+      "dockerConfig": "Como docker pull: usa as credenciais gardadas con docker login (ou o seu credential helper), se as hai para ese rexistro.",
+      "anonymous": "Descarga anónima, sen credenciais.",
+      "manual": "Só para esta descarga: non se gardan en ningún sitio nin aparecen no panel de actividade."
+    },
+    "username": "Usuario",
+    "password": "Contrasinal ou token",
+    "equivalent": "Equivale a",
+    "panel": "Descargas",
+    "clear": "Quitar as rematadas",
+    "cancel": "Cancelar",
+    "progress": "Progreso de {{ref}}",
+    "layers_one": "{{count}} capa",
+    "layers_other": "{{count}} capas",
+    "status": {
+      "starting": "Iniciando…",
+      "running": "Descargando",
+      "done": "Descargada",
+      "failed": "Erro",
+      "cancelled": "Cancelada"
+    }
+  },
+  "search": {
+    "title": "Buscar en Docker Hub",
+    "term": "Termo de busca",
+    "placeholder": "nginx, postgres, python…",
+    "officialOnly": "Só imaxes oficiais",
+    "limit": "Resultados",
+    "submit": "Buscar",
+    "hint": "A busca faina Docker Engine en Docker Hub (docker search); precisa que Docker teña acceso a Internet.",
+    "failed": "A busca fallou: {{message}}",
+    "failedHint": "Se Docker non ten acceso a Internet ou a Docker Hub, a busca non é posible.",
+    "none": "Sen resultados.",
+    "name": "Nome",
+    "description": "Descrición",
+    "stars": "Estrelas",
+    "official": "Oficial",
+    "pull": "Descargar",
+    "pullName": "Descargar {{name}}"
+  },
+  "imageDetail": {
+    "back": "Imaxes",
+    "createContainer": "Crear contedor",
+    "pullAgain": "Descargar de novo",
+    "notFound": "A imaxe {{name}} xa non existe en Docker.",
+    "loadError": "Non se puido inspeccionar a imaxe: {{message}}",
+    "tabs": {
+      "summary": "Resumo",
+      "layers": "Capas",
+      "containers": "Contedores",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "Xeral",
+      "config": "Configuración de execución",
+      "labels": "Metadatos (LABEL)"
+    },
+    "f": {
+      "id": "ID",
+      "tags": "Etiquetas",
+      "digests": "Digests",
+      "created": "Creada",
+      "size": "Tamaño",
+      "platform": "Plataforma",
+      "layers": "Capas",
+      "author": "Autor",
+      "ports": "Portos expostos",
+      "volumes": "Volumes",
+      "stopSignal": "Sinal de parada",
+      "healthcheck": "Comprobación de saúde"
+    },
+    "localOnly": "ningún (imaxe construída ou importada neste equipo)",
+    "layersSummary_one": "{{count}} entrada no historial, {{data}} con datos, {{size}} en total.",
+    "layersSummary_other": "{{count}} entradas no historial, {{data}} con datos, {{size}} en total.",
+    "layersError": "Non se puido obter o historial: {{message}}",
+    "instruction": "Instrución",
+    "noContainers": "Ningún contedor usa esta imaxe.",
+    "inspectHint": "Saída completa de docker image inspect {{name}}, tal como a devolve Docker."
+  },
+  "imageOps": {
+    "tagTitle": "Etiquetar imaxe",
+    "tag": "Etiquetar",
+    "tagSource": "Imaxe de orixe:",
+    "repository": "Repositorio",
+    "repositoryHint": "Por exemplo aminhaapp, usuario/aminhaapp ou rexistro.exemplo.com:5000/aminhaapp.",
+    "tagName": "Etiqueta",
+    "tagged": "Etiquetada como {{target}}.",
+    "failed": "Docker rexeitou a operación: {{message}}",
+    "removeTitle": "Eliminar {{name}}",
+    "removeWhat": "Que eliminar",
+    "onlyTag": "Só a etiqueta",
+    "wholeImage_one": "A imaxe completa",
+    "wholeImage_other": "A imaxe completa (as súas {{count}} etiquetas)",
+    "removeTag": "Quitar a etiqueta",
+    "removeImage": "Eliminar a imaxe",
+    "removeTagBody": "Quítase esta etiqueta. Se é a única, Docker elimina tamén a imaxe e as súas capas sen uso.",
+    "removeImageBody": "Elimínanse a imaxe e as súas capas que non use outra imaxe. Non se pode desfacer: habería que descargala ou construíla de novo.",
+    "inUse_one": "Úsaa {{count}} contedor:",
+    "inUse_other": "Úsana {{count}} contedores:",
+    "runningRefuses": "Docker non elimina unha imaxe que usa un contedor en execución, nin forzando: detéñeo e elimínao antes.",
+    "stoppedNeedForce": "Para eliminala hai que forzar; os contedores seguirán existindo, pero sen a súa imaxe non poderás recrealos.",
+    "force": "Forzar a eliminación",
+    "forceMulti": "Necesario para eliminar unha imaxe con varias etiquetas (--force).",
+    "forceUsed": "Necesario porque a usan contedores detidos (--force).",
+    "removed": "{{untagged}} etiquetas quitadas e {{deleted}} capas ou imaxes eliminadas.",
+    "pruneTitle": "Limpar imaxes",
+    "prune": "Limpar",
+    "pruneDangling": "Só as imaxes sen etiqueta que non usa ningún contedor",
+    "pruneAll": "Todas as imaxes que non usa ningún contedor, tamén as etiquetadas",
+    "pruneEstimate_one": "Segundo a lista actual eliminaríase {{count}} imaxe ({{size}}).",
+    "pruneEstimate_other": "Segundo a lista actual eliminaríanse {{count}} imaxes ({{size}}).",
+    "pruneNote": "A decisión final é de Docker, que tamén elimina a caché de construción asociada. Non se pode desfacer.",
+    "pruneSure": "Entendo que terei que volver descargar ou construír esas imaxes",
+    "pruned": "Limpeza rematada: {{count}} elementos eliminados, {{size}} recuperados.",
+    "pruneWhilePulling_one": "Hai {{count}} descarga en curso. Agarda a que remate: co almacén de imaxes de containerd, Docker fai fallar as descargas en curso ao limpar.",
+    "pruneWhilePulling_other": "Hai {{count}} descargas en curso. Agarda a que rematen: co almacén de imaxes de containerd, Docker fai fallar as descargas en curso ao limpar."
+  },
+  "build": {
+    "title": "Construír imaxe",
+    "g": {
+      "context": "Contexto",
+      "contextHint": "Cartafol cuxo contido se envía a Docker (respectando .dockerignore) e Dockerfile dentro del.",
+      "tags": "Nomes da imaxe",
+      "tagsHint": "repositorio:etiqueta da imaxe resultante (docker build --tag). Sen nome, a imaxe queda como <none>.",
+      "args": "Argumentos de construción",
+      "argsHint": "Valores para as instrucións ARG (--build-arg). Quedan no historial da imaxe: non os uses para segredos.",
+      "labels": "Metadatos (LABEL)",
+      "options": "Opcións"
+    },
+    "f": {
+      "context": "Cartafol de contexto",
+      "dockerfile": "Dockerfile",
+      "target": "Etapa final",
+      "builder": "Construtor",
+      "noCache": "Non usar a caché",
+      "pull": "Buscar versións novas das imaxes base"
+    },
+    "h": {
+      "dockerfile": "Ruta relativa ao cartafol de contexto.",
+      "target": "Só en Dockerfiles multietapa (--target).",
+      "buildKit": "O construtor actual de Docker (o que usa docker build).",
+      "classic": "O construtor anterior, obsoleto; equivale a DOCKER_BUILDKIT=0 docker build."
+    },
+    "ph": {
+      "target": "a última",
+      "context": "/home/usuario/proxecto"
+    },
+    "classic": "Clásico",
+    "pickContext": "Escoller o cartafol de contexto",
+    "pickDockerfile": "Escoller o Dockerfile",
+    "outsideContext": "O Dockerfile debe estar dentro do cartafol de contexto.",
+    "addTag": "Engadir nome",
+    "removeTag": "Quitar o nome {{n}}",
+    "tagN": "Nome {{n}}",
+    "noTags": "Sen nomes.",
+    "addArg": "Engadir argumento",
+    "noArgs": "Sen argumentos.",
+    "secretsHidden_one": "{{count}} valor sensible aparece como ******** aquí e no panel de actividade.",
+    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí e no panel de actividade.",
+    "context": "Contexto que se enviará",
+    "contextPending": "Escolle un cartafol cun Dockerfile.",
+    "contextSummary": "{{files}} ficheiros en {{dirs}} cartafoles, {{size}} en total.",
+    "excluded_one": ".dockerignore exclúe {{count}} entrada.",
+    "excluded_other": ".dockerignore exclúe {{count}} entradas.",
+    "noDockerignore": "Sen .dockerignore: envíase todo.",
+    "patterns_one": "{{count}} patrón de .dockerignore",
+    "patterns_other": "{{count}} patróns de .dockerignore",
+    "badIgnore": "Liñas de .dockerignore non válidas: {{lines}}",
+    "special_one": "{{count}} ficheiro especial (socket, dispositivo ou FIFO) non se envía.",
+    "special_other": "{{count}} ficheiros especiais (sockets, dispositivos ou FIFO) non se envían.",
+    "unreadable": "Non se poden ler: {{files}}. A construción fallaría.",
+    "bigContext": "O contexto é grande: considera excluír cartafoles con .dockerignore.",
+    "largest": "Ficheiros máis grandes",
+    "start": "Construír",
+    "cancel": "Cancelar",
+    "edit": "Volver ao formulario",
+    "viewImage": "Ver a imaxe",
+    "steps": "Pasos",
+    "sending": "Enviando o contexto…",
+    "waiting": "Agardando a saída de Docker…",
+    "cached": "caché",
+    "dropped": "Descartáronse {{count}} liñas antigas.",
+    "failed": "A construción fallou: {{message}}",
+    "status": {
+      "starting": "Enviando o contexto a Docker…",
+      "running": "Construíndo…",
+      "done": "Imaxe construída",
+      "failed": "A construción fallou",
+      "cancelled": "Construción cancelada"
+    }
+  },
+  "networks": {
+    "create": "Crear rede",
+    "prune": "Limpar",
+    "refresh": "Actualizar",
+    "search": "Buscar por nome, ID, subrede ou contedor",
+    "filterLabel": "Filtro",
+    "filter": {
+      "all": "Todas",
+      "inUse": "En uso",
+      "unused": "Sen uso",
+      "custom": "Creadas polo usuario"
+    },
+    "count_one": "{{count}} rede",
+    "count_other": "{{count}} redes",
+    "columns": {
+      "name": "Rede",
+      "id": "ID",
+      "driver": "Controlador",
+      "subnet": "Subrede",
+      "containers": "Contedores",
+      "actions": "Accións"
+    },
+    "badge": {
+      "predefined": "Predefinida",
+      "internal": "Interna",
+      "attachable": "Conectable",
+      "compose": "Compose: {{project}}"
+    },
+    "noContainers": "Sen contedores",
+    "members_one": "{{count}} contedor ({{running}} en marcha)",
+    "members_other": "{{count}} contedores ({{running}} en marcha)",
+    "empty": "Non hai redes.",
+    "noMatches": "Ningunha rede coincide coa busca.",
+    "loadError": "Non se puido obter a lista de redes: {{message}}",
+    "open": "Abrir {{name}}",
+    "connectAction": "Conectar un contedor a {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "netDetail": {
+    "back": "Redes",
+    "tabs": {
+      "summary": "Resumo",
+      "containers": "Contedores",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "Xeral",
+      "ipam": "Enderezos (IPAM)",
+      "options": "Opcións do controlador",
+      "labels": "Metadatos (labels)"
+    },
+    "f": {
+      "id": "ID",
+      "driver": "Controlador",
+      "scope": "Ámbito",
+      "created": "Creada",
+      "internal": "Interna (sen saída ao exterior)",
+      "attachable": "Conectable manualmente",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "compose": "Proxecto Compose",
+      "subnet": "Subrede",
+      "gateway": "Pasarela",
+      "ipRange": "Rango asignable",
+      "aux": "Enderezos reservados"
+    },
+    "ipamDriver": "Controlador de IPAM: {{driver}}",
+    "noPools": "Docker non asignou subredes a esta rede.",
+    "wholeSubnet": "Toda a subrede",
+    "noOptions": "Sen opcións.",
+    "membersHint": "Contedores que teñen esta rede configurada, en marcha ou non. Os enderezos só existen mentres o contedor está en marcha.",
+    "noMembers": "Ningún contedor usa esta rede.",
+    "c": {
+      "name": "Contedor",
+      "state": "Estado",
+      "ip": "Enderezo IP",
+      "mac": "MAC"
+    },
+    "ipWhenRunning": "Asígnase ao arrancar",
+    "inspectHint": "Resposta completa de Docker, como «docker network inspect {{name}}».",
+    "notFound": "A rede {{name}} xa non existe.",
+    "loadError": "Non se puido inspeccionar a rede: {{message}}"
+  },
+  "netCreate": {
+    "title": "Crear rede",
+    "g": {
+      "general": "Xeral",
+      "ipv4": "Enderezos IPv4",
+      "ipv4Hint": "Opcional: sen subrede, Docker escolle unha libre.",
+      "ipv6": "IPv6",
+      "options": "Opcións do controlador",
+      "optionsHint": "Envíanse tal cal ao controlador (--opt).",
+      "labels": "Metadatos (labels)"
+    },
+    "f": {
+      "name": "Nome",
+      "driver": "Controlador",
+      "driverName": "Nome do controlador",
+      "internal": "Rede interna",
+      "attachable": "Conectable manualmente",
+      "subnet": "Subrede",
+      "gateway": "Pasarela",
+      "ipRange": "Rango asignable",
+      "ipv6": "Activar IPv6"
+    },
+    "h": {
+      "name": "Letras, números, «_», «.» ou «-».",
+      "driver": {
+        "bridge": "Rede privada neste equipo; os contedores comunícanse entre si polo nome.",
+        "macvlan": "Cada contedor obtén a súa propia MAC na rede física. Indica a interface na opción «parent».",
+        "ipvlan": "Comparte a MAC da interface física. Indica a interface na opción «parent».",
+        "overlay": "Rede entre varios equipos: require Docker Swarm.",
+        "other": "Controlador dun complemento instalado en Docker."
+      },
+      "internal": "Sen acceso ao exterior (--internal).",
+      "attachable": "Para redes overlay: permite conectar contedores soltos (--attachable).",
+      "subnet": "En notación CIDR, p. ex. 172.30.0.0/24.",
+      "gateway": "Debe estar dentro da subrede.",
+      "ipRange": "Parte da subrede que Docker asigna automaticamente.",
+      "ipv6": "Require que o núcleo e Docker teñan IPv6 (--ipv6)."
+    },
+    "otherDriver": "Outro",
+    "addOption": "Engadir opción",
+    "noOptions": "Sen opcións.",
+    "body": "Corpo da petición",
+    "ready": "Lista para crear.",
+    "submit": "Crear rede"
+  },
+  "netOps": {
+    "failed": "Docker rexeitou a operación: {{message}}",
+    "removeTitle": "Eliminar a rede {{name}}",
+    "remove": "Eliminar a rede",
+    "removeBody": "Elimínase a rede. Non se pode desfacer.",
+    "predefined": "Docker crea as redes bridge, host e none, e non permite eliminalas.",
+    "runningBlocks_one": "Hai {{count}} contedor en marcha conectado: Docker non eliminará a rede ata que o desconectes ou o deteñas.",
+    "runningBlocks_other": "Hai {{count}} contedores en marcha conectados: Docker non eliminará a rede ata que os desconectes ou os deteñas.",
+    "stoppedBreak_one": "{{count}} contedor detido ten configurada esta rede. Docker eliminaraa igualmente e ese contedor non poderá arrancar ata que o desconectes ou volvas crear a rede:",
+    "stoppedBreak_other": "{{count}} contedores detidos teñen configurada esta rede. Docker eliminaraa igualmente e eses contedores non poderán arrancar ata que os desconectes ou volvas crear a rede:",
+    "stoppedSure": "Entendo que eses contedores non poderán arrancar",
+    "removed": "Rede {{name}} eliminada.",
+    "pruneTitle": "Limpar redes",
+    "prune": "Limpar redes",
+    "pruneBody": "Elimínanse as redes creadas polo usuario que non teñen contedores en marcha. As predefinidas non se tocan.",
+    "pruneEstimate_one": "Segundo a lista actual eliminarase {{count}} rede:",
+    "pruneEstimate_other": "Segundo a lista actual eliminaranse {{count}} redes:",
+    "pruneEstimate_zero": "Segundo a lista actual non hai redes que eliminar.",
+    "usedByStopped": "úsana contedores detidos: {{names}}",
+    "pruneStoppedWarn_one": "{{count}} desas redes está configurada en contedores detidos: Docker elimínaa igualmente e eses contedores non poderán arrancar.",
+    "pruneStoppedWarn_other": "{{count}} desas redes están configuradas en contedores detidos: Docker elimínaas igualmente e eses contedores non poderán arrancar.",
+    "pruned_one": "{{count}} rede eliminada: {{names}}",
+    "pruned_other": "{{count}} redes eliminadas: {{names}}",
+    "pruned_zero": "Non había redes que eliminar.",
+    "connectTitle": "Conectar un contedor a {{name}}",
+    "connect": "Conectar",
+    "connectShort": "Conectar contedor",
+    "container": "Contedor",
+    "containerHint": "Pódese conectar en marcha ou detido.",
+    "noContainers": "Non hai contedores.",
+    "block": {
+      "already": "Xa está conectado a esta rede.",
+      "host": "Os contedores en modo host non se poden conectar a outras redes, nin outros á rede host.",
+      "none": "Un contedor sen rede (none) non se pode conectar a outras redes, nin outros á rede none."
+    },
+    "blockShort": {
+      "already": "xa conectado",
+      "host": "modo host",
+      "none": "sen rede"
+    },
+    "aliases": "Alias nesta rede",
+    "aliasesHint": "Nomes adicionais cos que o atopan outros contedores da rede, separados por espazos.",
+    "noAliases": "A rede predefinida bridge non admite alias.",
+    "ipv4": "IPv4 fixa",
+    "ipv6": "IPv6 fixa",
+    "auto": "Automática",
+    "ipHint": "Dentro de {{subnets}}. Docker só admite IP fixa se a subrede se indicou ao crear a rede.",
+    "ipAuto": "Docker só admite IP fixa se a subrede se indicou ao crear a rede.",
+    "connected": "{{container}} conectado a {{network}}.",
+    "disconnectTitle": "Desconectar {{container}} de {{network}}",
+    "disconnect": "Desconectar",
+    "disconnectAction": "Desconectar {{container}}",
+    "disconnectRunning": "O contedor está en marcha: perde ao instante a conexión por esta rede.",
+    "disconnectStopped": "O contedor deixa de ter configurada esta rede.",
+    "force": "Forzar",
+    "forceHint": "Só se Docker non pode desconectalo normalmente (--force).",
+    "disconnected": "{{container}} desconectado de {{network}}.",
+    "checking": "Consultando a Docker o estado actual…",
+    "gone": "A rede {{name}} xa non existe.",
+    "lastNetwork": "É a única rede deste contedor: ao desconectala quedará sen conexión de rede ata que o conectes a outra."
+  },
+  "volumes": {
+    "create": "Crear volume",
+    "prune": "Limpar",
+    "refresh": "Actualizar",
+    "sizes": "Calcular os tamaños",
+    "sizesAgain": "Volver calcular",
+    "sizesNote": "Tamaños calculados por Docker («docker system df -v»); poden tardar con volumes grandes.",
+    "sizesError": "Non se puideron calcular os tamaños: {{message}}",
+    "sizeUnknown": "Non dispoñible",
+    "search": "Buscar por nome, controlador, contedor ou metadato",
+    "filterLabel": "Filtro",
+    "filter": {
+      "all": "Todos",
+      "inUse": "En uso",
+      "unused": "Sen uso",
+      "anonymous": "Anónimos"
+    },
+    "count_one": "{{count}} volume",
+    "count_other": "{{count}} volumes",
+    "columns": {
+      "name": "Volume",
+      "driver": "Controlador",
+      "size": "Tamaño",
+      "containers": "Contedores",
+      "actions": "Accións"
+    },
+    "anonymous": "Anónimo",
+    "unused": "Sen uso",
+    "users_one": "{{count}} montaxe",
+    "users_other": "{{count}} montaxes",
+    "empty": "Non hai volumes",
+    "emptyBody": "Crea un volume para gardar datos que sobrevivan aos contedores.",
+    "noMatches": "Ningún volume coincide coa busca.",
+    "loadError": "Non se puido obter a lista de volumes: {{message}}",
+    "createContainer": "Crear un contedor con {{name}}",
+    "removeAction": "Eliminar {{name}}"
+  },
+  "volDetail": {
+    "back": "Volumes",
+    "tabs": {
+      "summary": "Resumo",
+      "containers": "Contedores",
+      "inspect": "Inspección JSON"
+    },
+    "s": {
+      "general": "Xeral",
+      "options": "Opcións do controlador",
+      "status": "Estado do controlador"
+    },
+    "f": {
+      "name": "Nome",
+      "driver": "Controlador",
+      "scope": "Ámbito",
+      "mountpoint": "Directorio no equipo",
+      "created": "Creado",
+      "size": "Tamaño"
+    },
+    "sizeNotMeasured": "Sen calcular",
+    "measure": "Calcular",
+    "noOptions": "Sen opcións.",
+    "noContainers": "Ningún contedor monta este volume.",
+    "c": {
+      "destination": "Ruta no contedor",
+      "access": "Acceso"
+    },
+    "rw": "Lectura e escritura",
+    "ro": "Só lectura",
+    "createContainer": "Crear un contedor con el",
+    "inspectHint": "Resposta completa de Docker, como «docker volume inspect {{name}}».",
+    "notFound": "O volume {{name}} xa non existe.",
+    "loadError": "Non se puido inspeccionar o volume: {{message}}"
+  },
+  "volCreate": {
+    "title": "Crear volume",
+    "g": {
+      "general": "Xeral",
+      "options": "Opcións do controlador",
+      "optionsHint": "Para o controlador local equivalen ás de «mount»: type, device e o."
+    },
+    "f": {
+      "name": "Nome",
+      "kind": "Tipo"
+    },
+    "h": {
+      "name": "Opcional: sen nome, Docker crea un volume anónimo. Letras, números, «_», «.» ou «-» (polo menos 2).",
+      "preset": {
+        "plain": "Directorio xestionado por Docker neste equipo (o habitual).",
+        "tmpfs": "En memoria: pérdese ao deter o último contedor que o usa.",
+        "nfs": "Cartafol compartido por NFS: axusta o enderezo do servidor e a ruta.",
+        "bind": "Volume con nome que apunta a un cartafol existente do equipo.",
+        "other": "Controlador dun complemento instalado en Docker."
+      }
+    },
+    "ph": {
+      "name": "baleiro = anónimo"
+    },
+    "preset": {
+      "plain": "Local",
+      "tmpfs": "tmpfs",
+      "nfs": "NFS",
+      "bind": "Cartafol",
+      "other": "Outro controlador"
+    },
+    "readyAnonymous": "Listo para crear un volume anónimo.",
+    "submit": "Crear volume"
+  },
+  "volOps": {
+    "failed": "Docker rexeitou a operación: {{message}}",
+    "removeTitle": "Eliminar o volume {{name}}",
+    "remove": "Eliminar o volume",
+    "removeBody": "Elimínanse o volume e todos os seus datos. Non se pode desfacer.",
+    "inUse_one": "Móntao {{count}} contedor: Docker non elimina un volume en uso, nin sequera dun contedor detido. Elimina antes o contedor.",
+    "inUse_other": "Móntano {{count}} contedores: Docker non elimina un volume en uso, nin sequera de contedores detidos. Elimina antes os contedores.",
+    "sure": "Entendo que se borrarán os seus datos",
+    "gone": "O volume {{name}} xa non existe.",
+    "removed": "Volume {{name}} eliminado.",
+    "pruneTitle": "Limpar volumes",
+    "prune": "Limpar volumes",
+    "pruneAnonymous": "Só os volumes anónimos que non monta ningún contedor",
+    "pruneAll": "Todos os volumes que non monta ningún contedor (tamén os que teñen nome)",
+    "legacy": "Esta versión de Docker (API {{api}}) elimina todos os volumes sen uso, tamén os que teñen nome: non distingue entre anónimos e con nome.",
+    "pruneEstimate_one": "Segundo o estado actual eliminarase {{count}} volume",
+    "pruneEstimate_other": "Segundo o estado actual eliminaranse {{count}} volumes",
+    "pruneEstimate_zero": "Segundo o estado actual non hai volumes que eliminar",
+    "pruneBytes": "({{size}} segundo o último cálculo)",
+    "pruneNote": "Un volume sen uso pode gardar datos importantes (por exemplo, dunha base de datos cuxo contedor eliminaches).",
+    "pruneSure_one": "Entendo que se borrarán os datos de {{count}} volume con nome",
+    "pruneSure_other": "Entendo que se borrarán os datos de {{count}} volumes con nome",
+    "pruned_one": "{{count}} volume eliminado; {{size}} recuperados.",
+    "pruned_other": "{{count}} volumes eliminados; {{size}} recuperados.",
+    "pruned_zero": "Non había volumes que eliminar."
+  },
+  "binds": {
+    "bindFolder": "Vincular un cartafol…",
+    "pickTitle": "Cartafol que verá o contedor",
+    "intro": "Cartafoles deste equipo montados dentro de contedores. Docker non permite engadir montaxes a un contedor existente: para vincular un cartafol créase un contedor novo co asistente.",
+    "search": "Buscar por ruta ou contedor",
+    "filter": {
+      "all": "Todos",
+      "writable": "Con escritura",
+      "attention": "Requiren atención ({{count}})"
+    },
+    "count_one": "{{count}} cartafol",
+    "count_other": "{{count}} cartafoles",
+    "kind": {
+      "directory": "Cartafol",
+      "file": "Ficheiro",
+      "socket": "Socket",
+      "other": "Outro",
+      "missing": "Non existe"
+    },
+    "writable": "Con escritura",
+    "readOnly": "Só lectura",
+    "permissions": "Permisos e propietario no equipo",
+    "notReadable": "O teu usuario non pode lelo",
+    "newContainer": "Novo contedor con el",
+    "newContainerHint": "Abre o asistente de contedores con este cartafol xa vinculado",
+    "risk": {
+      "dockerSocket": "Socket de Docker: o contedor pode controlar Docker e, na práctica, todo o equipo (agás con Docker rootless).",
+      "hostRoot": "A raíz do sistema de ficheiros do equipo.",
+      "system": "Un directorio do sistema."
+    },
+    "riskWritable": "Móntase con escritura: o contedor pode modificalo.",
+    "missing": "Non existe neste equipo. Se o contedor se creou con «-v», Docker volverá crealo baleiro (como root) ao arrancalo.",
+    "attentionBanner_one": "{{count}} vinculación require atención (socket de Docker, directorio do sistema ou cartafol inexistente).",
+    "attentionBanner_other": "{{count}} vinculacións requiren atención (socket de Docker, directorios do sistema ou cartafoles inexistentes).",
+    "empty": "Ningún contedor ten cartafoles vinculados",
+    "emptyBody": "Vincula un cartafol para que un contedor traballe con ficheiros deste equipo.",
+    "noMatches": "Ningún cartafol coincide coa busca.",
+    "loadError": "Non se puido obter a lista de contedores: {{message}}"
+  },
+  "composeList": {
+    "add": "Abrir proxecto…",
+    "new": "Novo proxecto",
+    "refresh": "Actualizar",
+    "intro": "Proxectos con contedores en Docker (detéctanse polas súas etiquetas) e os que engades á lista. Todas as operacións execútanse co Docker Compose oficial e quedan no panel de actividade coa orde exacta.",
+    "filterLabel": "Filtrar proxectos",
+    "filter": {
+      "all": "Todos",
+      "running": "En marcha",
+      "stopped": "Detidos",
+      "notDeployed": "Sen despregar"
+    },
+    "search": "Buscar por nome, cartafol ou servizo",
+    "count_one": "{{count}} proxecto",
+    "count_other": "{{count}} proxectos",
+    "loadError": "Non se puido obter a lista de proxectos: {{message}}",
+    "empty": "Non hai proxectos de Docker Compose",
+    "emptyBody": "Abre un proxecto que xa teñas (o seu ficheiro compose.yaml) ou crea un novo. Os proxectos despregados desde o terminal aparecen aquí automaticamente.",
+    "c": {
+      "name": "Proxecto",
+      "state": "Estado",
+      "location": "Cartafol",
+      "services": "Servizos",
+      "actions": "Accións"
+    },
+    "registered": "Na lista",
+    "missing": "Faltan ficheiros",
+    "noLocation": "Sen ficheiros coñecidos",
+    "state": {
+      "running": "En marcha · {{running}}/{{total}}",
+      "partial": "Parcial · {{running}}/{{total}}",
+      "stopped": "Detido · 0/{{total}}",
+      "notDeployed": "Sen despregar"
+    },
+    "stop": "Deter {{name}}",
+    "start": "Iniciar {{name}}",
+    "open": "Abrir {{name}}",
+    "unavailable": "Docker Compose non está dispoñible"
+  },
+  "composeDetail": {
+    "back": "Proxectos",
+    "refresh": "Actualizar",
+    "tabs": {
+      "services": "Servizos",
+      "logs": "Rexistros",
+      "file": "Ficheiro",
+      "config": "Configuración",
+      "output": "Saída"
+    },
+    "c": {
+      "service": "Servizo",
+      "image": "Imaxe",
+      "state": "Estado",
+      "containers": "Contedores",
+      "ports": "Portos",
+      "actions": "Accións"
+    },
+    "state": {
+      "running": "En marcha ({{running}}/{{total}})",
+      "partial": "Parcial ({{running}}/{{total}})",
+      "stopped": "Detido",
+      "notCreated": "Sen crear"
+    },
+    "profile": "perfil {{name}}",
+    "orphan": "Non está no ficheiro",
+    "built": "Constrúese ({{context}})",
+    "builtFrom": "Constrúese desde {{context}}",
+    "noServices": "O proxecto non ten servizos.",
+    "loadingModel": "Lendo o ficheiro con Docker Compose…",
+    "upService": "Despregar {{name}}",
+    "startService": "Iniciar {{name}}",
+    "stopService": "Deter {{name}}",
+    "restartService": "Reiniciar {{name}}",
+    "logsService": "Rexistros de {{name}}",
+    "needsFiles": "Precísanse os ficheiros do proxecto",
+    "needsValid": "Corrixe primeiro o ficheiro: Compose rexéitao",
+    "register": "Engadir á lista",
+    "registerHint": "Conservar o proxecto na lista aínda que se eliminen os seus contedores",
+    "unregister": "Quitar da lista",
+    "unregisterHint": "Só o quita da lista: non toca Docker nin os ficheiros",
+    "gone": "O proxecto «{{name}}» xa non ten contedores nin está na lista.",
+    "createdBy": "Contedores creados con Docker Compose {{version}}",
+    "missingFiles": "Non se atopan estes ficheiros: {{files}}. Podes deter, iniciar, ver os rexistros ou eliminar o proxecto; para despregalo precísanse os ficheiros.",
+    "noFiles": "Docker non indica os ficheiros deste proxecto. Podes detelo, inicialo, ver os seus rexistros ou eliminalo.",
+    "invalidConfig": "Docker Compose rexeita a configuración do proxecto:",
+    "noConfig": "Non hai configuración que amosar (faltan os ficheiros).",
+    "configHint": "Configuración final tal como a entende Docker Compose (ficheiros combinados, variables substituídas, todos os perfís).",
+    "secretsWarn": "A configuración resolta inclúe os valores das variables (por exemplo, contrasinais do ficheiro .env). Só se amosa nesta xanela e non se garda no panel de actividade.",
+    "showResolved": "Amosar a configuración resolta"
+  },
+  "composeOps": {
+    "verb": {
+      "up": "Despregamento",
+      "down": "Eliminación",
+      "start": "Inicio",
+      "stop": "Detención",
+      "restart": "Reinicio",
+      "pull": "Descarga de imaxes",
+      "build": "Construción"
+    },
+    "running": "{{verb}} en curso…",
+    "succeeded": {
+      "up": "Despregamento completado",
+      "down": "Eliminación completada",
+      "start": "Inicio completado",
+      "stop": "Detención completada",
+      "restart": "Reinicio completado",
+      "pull": "Descarga de imaxes completada",
+      "build": "Construción completada"
+    },
+    "stopped": {
+      "up": "Despregamento interrompido por ti",
+      "down": "Eliminación interrompida por ti",
+      "start": "Inicio interrompido por ti",
+      "stop": "Detención interrompida por ti",
+      "restart": "Reinicio interrompido por ti",
+      "pull": "Descarga de imaxes interrompida por ti",
+      "build": "Construción interrompida por ti"
+    },
+    "failed": "{{verb}}: fallou (código {{code}})",
+    "error": "{{verb}}: non se puido executar",
+    "stop": "Interromper",
+    "dismiss": "Pechar",
+    "none": "Aínda non se executou ningunha operación neste proxecto.",
+    "waiting": "Agardando a saída de Docker Compose…",
+    "noOutput": "Docker Compose non amosou saída.",
+    "dropped_one": "Descartouse {{count}} liña antiga para non ocupar demasiada memoria.",
+    "dropped_other": "Descartáronse {{count}} liñas antigas para non ocupar demasiada memoria.",
+    "stoppedNote": "Interrompeuse Docker Compose. O que xa fixera (contedores creados, imaxes descargadas…) mantense.",
+    "command": "Orde que se executará:",
+    "up": "Despregar",
+    "upTitle": "Despregar {{name}}",
+    "upBody": "Crea ou actualiza os contedores, redes e volumes do proxecto e déixaos en marcha (docker compose up --detach).",
+    "services": "Servizos",
+    "allServices": "Sen selección desprégense todos os servizos (agás os de perfís non activados).",
+    "someServices": "Só os servizos escollidos e os que necesitan (depends_on).",
+    "profiles": "Perfís",
+    "profilesHint": "Os servizos con perfil só se despregan se activas o seu perfil ou os escolles arriba.",
+    "pull": "Descargar imaxes",
+    "pullPolicy": {
+      "missing": "Se faltan",
+      "always": "Sempre",
+      "never": "Nunca"
+    },
+    "build": "Construír as imaxes antes",
+    "buildHint": "Para os servizos con build: (se non, só se constrúen se a imaxe non existe).",
+    "forceRecreate": "Volver crear os contedores aínda que non cambiasen",
+    "removeOrphans": "Eliminar contedores orfos",
+    "removeOrphansHint": "De servizos que xa non están no ficheiro.",
+    "down": "Eliminar",
+    "downTitle": "Eliminar {{name}}",
+    "downBody_one": "Deterase e eliminarase {{count}} contedor do proxecto e as súas redes (docker compose down). Os volumes e as imaxes consérvanse salvo que o indiques.",
+    "downBody_other": "Deteranse e eliminaranse os {{count}} contedores do proxecto e as súas redes (docker compose down). Os volumes e as imaxes consérvanse salvo que o indiques.",
+    "downVolumes": "Eliminar tamén os volumes con nome do proxecto",
+    "downVolumesUnknown": "Os que declara o ficheiro (ou teñen a etiqueta do proxecto).",
+    "downVolumesWarn": "Os datos gardados neses volumes perderanse definitivamente.",
+    "downImages": "Imaxes",
+    "images": {
+      "none": "Conservar",
+      "local": "As construídas",
+      "all": "Todas"
+    },
+    "imagesHint": {
+      "local": "Elimina as imaxes sen etiqueta propia (as que constrúe Compose).",
+      "all": "Elimina todas as imaxes que usan os servizos, tamén as descargadas."
+    },
+    "downSure": "Entendo que se eliminarán os contedores e redes do proxecto",
+    "start": "Iniciar",
+    "stopAction": "Deter",
+    "restart": "Reiniciar",
+    "pullAction": "Descargar imaxes",
+    "buildAction": "Construír"
+  },
+  "composeAdd": {
+    "title": "Abrir proxecto",
+    "body": "Escolle o ficheiro compose.yaml do proxecto. Se usa varios ficheiros (por exemplo, un base e outro con cambios), engádeos na orde na que se combinan.",
+    "pick": "Escoller ficheiro…",
+    "pickMore": "Engadir outro ficheiro…",
+    "pickTitle": "Ficheiro de Docker Compose",
+    "filter": "Ficheiros YAML",
+    "removeFile": "Quitar {{file}}",
+    "order": "Combínanse nesta orde: os últimos cambian os primeiros.",
+    "name": "Nome do proxecto (opcional)",
+    "namePh": "o que indique o ficheiro ou o cartafol",
+    "nameHint": "Se o deixas baleiro, úsase o que decida Docker Compose (name: do ficheiro ou o nome do cartafol).",
+    "badName": "Só minúsculas, números, - e _, comezando por letra ou número.",
+    "submit": "Engadir",
+    "invalid": "Docker Compose rexeita os ficheiros: {{message}}"
+  },
+  "composeFile": {
+    "files": "Ficheiros do proxecto",
+    "validate": "Validar",
+    "save": "Gardar",
+    "revert": "Desfacer os cambios",
+    "hint": "Ao gardar, primeiro valídase o contido con Docker Compose (sen gardalo). O ficheiro non se sobrescribe se outro programa o cambiou mentres tanto.",
+    "unsaved": "Cambios sen gardar",
+    "saved": "Gardado",
+    "loadError": "Non se puido ler o ficheiro: {{message}}",
+    "readOnly": "Non tes permiso para modificar este ficheiro: amósase en modo de lectura.",
+    "conflict": "O ficheiro cambiou no disco desde que o abriches. Non se gardou nada para non perder eses cambios.",
+    "reload": "Recargar o ficheiro (descarta os teus cambios)",
+    "saveInvalid": "Docker Compose rexeita este contido. Podes seguir editando ou gardalo igualmente.",
+    "saveAnyway": "Gardar igualmente",
+    "invalid": "Docker Compose rexeita o contido:",
+    "valid_one": "Configuración válida: {{count}} servizo.",
+    "valid_other": "Configuración válida: {{count}} servizos.",
+    "discard": "Tes cambios sen gardar neste ficheiro.",
+    "discardYes": "Descartar e cambiar de ficheiro",
+    "discardNo": "Seguir editando",
+    "editorLabel": "Contido de {{file}}"
+  },
+  "composeLogs": {
+    "services": "Servizos",
+    "all": "Todos",
+    "tail": "Liñas anteriores",
+    "tailN_one": "Última {{count}}",
+    "tailN_other": "Últimas {{count}}",
+    "timestamps": "Marcas de tempo",
+    "pause": "Pausar",
+    "follow": "Seguir",
+    "clear": "Baleirar",
+    "live": "En directo",
+    "opening": "Abrindo…",
+    "paused": "En pausa: non se reciben rexistros",
+    "ended": "Os contedores remataron",
+    "closed": "Pechado",
+    "empty": "Aínda non hai rexistros."
+  },
+  "composeNew": {
+    "title": "Novo proxecto",
+    "folder": "Cartafol do proxecto",
+    "pickFolder": "Escoller cartafol…",
+    "changeFolder": "Cambiar…",
+    "pickTitle": "Cartafol do novo proxecto",
+    "nameHint": "Se escribes un nome, engádese ao ficheiro (name:) para que o terminal use o mesmo. Se non, Docker Compose usa o nome do cartafol.",
+    "exists": "Este cartafol xa ten un ficheiro de Docker Compose ({{file}}). Non se sobrescribe.",
+    "addExisting": "Abrir ese proxecto",
+    "editorHint": "Crearase compose.yaml no cartafol. Valídase con Docker Compose antes de crealo.",
+    "create": "Crear proxecto",
+    "needFolder": "Escolle primeiro o cartafol do proxecto.",
+    "editorLabel": "Contido de compose.yaml"
+  },
+  "events": {
+    "tabsLabel": "Vista",
+    "tabs": {
+      "live": "En directo",
+      "journal": "Gardados",
+      "docker": "Consultar a Docker",
+      "history": "Historial de operacións"
+    },
+    "type": {
+      "container": "Contedor",
+      "image": "Imaxe",
+      "volume": "Volume",
+      "network": "Rede",
+      "daemon": "Docker",
+      "plugin": "Complemento",
+      "builder": "Construción",
+      "service": "Servizo",
+      "node": "Nodo",
+      "secret": "Segredo",
+      "config": "Configuración"
+    },
+    "allTypes": "Todos",
+    "filterType": "Tipo",
+    "search": "Buscar por nome, ID, acción ou imaxe",
+    "actions": "Accións",
+    "resource": "Recurso",
+    "resourcePh": "nome ou ID",
+    "resourceNeedsType": "escolle un tipo de recurso",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "resumeN_one": "Retomar ({{count}} novo)",
+    "resumeN_other": "Retomar ({{count}} novos)",
+    "clearView": "Baleirar a vista",
+    "clearViewHint": "Só baleira a lista na pantalla; os eventos gardados consérvanse.",
+    "liveOn": "En directo: os cambios en Docker aparecen ao instante e actualizan toda a aplicación",
+    "livePaused": "En pausa: os eventos seguen recibíndose e a aplicación segue actualizándose",
+    "liveOff": "Sen conexión con Docker: non se reciben eventos",
+    "count_one": "{{count}} evento",
+    "count_other": "{{count}} eventos",
+    "liveEmpty": "Aínda non ocorreu nada en Docker nesta sesión. Crea, inicia ou detén algo (tamén desde o terminal) e aparecerá aquí.",
+    "noMatches": "Ningún evento coincide cos filtros.",
+    "details": "Detalles do evento",
+    "since": "Desde",
+    "until": "Ata",
+    "refresh": "Actualizar",
+    "journalIntro": "Eventos que a aplicación recibiu mentres estaba aberta e conectada, tamén en sesións anteriores (consérvanse os 20 000 máis recentes). Se «Ata» está baleiro, ata agora.",
+    "journalOff": "O gardado está desactivado en Configuración › Actividade: os eventos novos non se gardan.",
+    "journalCount": "Móstranse {{shown}} de {{total}} que cumpren os filtros ({{stored}} gardados).",
+    "journalClear": "Borrar os eventos gardados",
+    "journalClearTitle": "Borrar os eventos gardados",
+    "journalClearBody": "Borraranse do disco os {{count}} eventos gardados. Non afecta a Docker nin ao historial de operacións.",
+    "dockerIntro": "Pídelle a Docker os eventos que conserva (docker events --since … --until …): inclúe o ocorrido coa aplicación pechada, pero Docker só garda en memoria os últimos 256 eventos e pérdeos ao reiniciarse. O filtro aplícase en Docker.",
+    "query": "Consultar",
+    "truncated": "Hai máis de 5000 eventos: móstranse os máis recentes.",
+    "dockerEmpty": "Docker non conserva eventos nese intervalo con eses filtros."
+  },
+  "history": {
+    "intro": "Operacións que a aplicación executou sobre Docker, tamén en sesións anteriores (consérvanse as 10 000 máis recentes). Gárdase que se fixo, cando e con que resultado; os corpos das peticións, as ordes equivalentes e as saídas non se gardan porque poden conter contrasinais ou outros segredos.",
+    "off": "O historial está desactivado en Configuración › Actividade: as operacións novas non se gardan.",
+    "search": "Buscar por operación, recurso ou erro",
+    "previous": "Sesión anterior",
+    "count": "Móstranse {{shown}} de {{total}} que cumpren os filtros ({{stored}} gardadas).",
+    "empty": "Aínda non hai operacións gardadas.",
+    "noMatches": "Ningunha operación coincide cos filtros.",
+    "notKept": "Detalles",
+    "notKeptBody": "O corpo da petición, a orde equivalente e a saída só están no panel de actividade durante a sesión na que se executou.",
+    "clear": "Borrar o historial",
+    "clearTitle": "Borrar o historial de operacións",
+    "clearBody": "Borraranse do disco as {{count}} operacións gardadas. O panel de actividade desta sesión non cambia."
+  },
+  "updates": {
+    "title": "Actualizacións",
+    "installed": "Versión instalada",
+    "installedPackage": "Paquete .deb instalado ({{version}})",
+    "installedLocal": "Sen instalar como paquete (compilación local)",
+    "source": "Onde se publican as versións",
+    "sourceHint": "Repositorio de GitHub («propietario/repositorio») ou enderezo https:// dun ficheiro JSON con «version». A aplicación só consulta e avisa: nunca descarga nin instala nada.",
+    "sourcePlaceholder": "propietario/repositorio ou https://…/latest.json",
+    "checkNow": "Comprobar agora",
+    "checking": "Comprobando…",
+    "onStart": "Comprobar ao iniciar a aplicación",
+    "onStartHint": "Unha consulta á fonte indicada cada vez que se abre a aplicación. Sen conexión non pasa nada: anótase aquí.",
+    "onStartNoSource": "Indica primeiro onde se publican as versións.",
+    "newer": "Hai unha versión nova: {{latest}} (tes a {{current}}).",
+    "published": "publicada o {{date}}",
+    "upToDate": "Tes a versión máis recente ({{current}}; a publicada é a {{latest}}).",
+    "openPage": "Abrir a páxina da versión",
+    "notes": "Novidades",
+    "checkedAt": "Consultouse {{url}} o {{time}}.",
+    "lastFailed": "A última comprobación fallou: {{message}}",
+    "howTo": "Para actualizar, descarga o paquete novo e instálao con «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb». A túa configuración e o teu historial consérvanse.",
+    "banner": "Hai unha versión nova de Docker Control Center: {{latest}}.",
+    "bannerOpen": "Ver en Configuración"
+  },
+  "system": {
+    "title": "Sistema",
+    "hint": "Versións e datos do equipo. «Copiar» xera un informe en texto para comunicar un problema (sen proxectos, variables nin credenciais).",
+    "app": "Aplicación",
+    "host": "Equipo",
+    "docker": "Docker",
+    "appVersion": "Versión",
+    "package": "Paquete .deb",
+    "notInstalled": "non instalado (compilación local)",
+    "executable": "Executable",
+    "webkit": "WebKitGTK",
+    "configPath": "Configuración",
+    "stateDir": "Historial e eventos",
+    "os": "Sistema operativo",
+    "kernel": "Núcleo",
+    "arch": "Arquitectura",
+    "glibc": "glibc",
+    "desktop": "Escritorio",
+    "engine": "Docker Engine",
+    "dockerOs": "Sistema de Docker",
+    "storage": "Almacenamento",
+    "cgroup": "cgroups",
+    "rootDir": "Cartafol de datos",
+    "resources": "Recursos",
+    "rootless": "Rootless",
+    "notConnected": "sen conexión",
+    "compose": {
+      "label": "Docker Compose",
+      "notInstalled": "non instalado",
+      "pluginUnusable": "instalado pero non funciona",
+      "legacy": "versión 1 (non compatible)",
+      "unrecognized": "non recoñecido",
+      "error": "non se puido comprobar"
+    }
+  },
+  "components": {
+    "title": "Desinstalación e compoñentes",
+    "rowHint": "Que instalou a aplicación, que se pode quitar e que se conserva. Nada cambia sen a túa confirmación.",
+    "intro": "Analiza os paquetes instalados con dpkg e APT para amosar que instalou Docker Control Center e que se pode quitar con seguridade. Analizar só consulta e simula: non cambia nada. Docker, os teus datos e a túa configuración consérvanse sempre.",
+    "analyze": "Analizar os compoñentes",
+    "reanalyze": "Volver analizar",
+    "analyzeHint": "Executa dpkg-query, apt-mark, apt-cache e unha simulación de apt-get, sen privilexios. Queda no panel de actividade.",
+    "unsupported": "Este sistema non usa dpkg e APT: a desinstalación selectiva só está dispoñible en Debian, Ubuntu e derivadas.",
+    "notPackaged": "Docker Control Center non está instalado como paquete .deb (por exemplo, execútase compilado desde o código fonte): non hai nada que desinstalar con APT.",
+    "history": {
+      "notFound": "O historial de APT non amosa como se instalou a aplicación (por exemplo, instalouse con dpkg -i ou o historial xa se rotou). Por seguridade, non se ofrece quitar ningunha dependencia: consérvanse todas como de orixe incerta.",
+      "unreadable": "Non se pode ler o historial de APT (/var/log/apt/history.log). Por seguridade, non se ofrece quitar ningunha dependencia."
+    },
+    "ownTitle": "Paquete da aplicación",
+    "removeApp": "Desinstalar Docker Control Center",
+    "removableTitle": "Dependencias que se poden quitar ({{count}})",
+    "noneRemovable": "Ningunha: todas as dependencias as usan outros programas, xa estaban instaladas ou non se pode saber con seguridade quen as instalou.",
+    "removePackage": "Quitar {{name}}",
+    "direct": "directa",
+    "presetApp": "Só Docker Control Center",
+    "presetAll": "Docker Control Center e as dependencias que se poden quitar",
+    "summary_one": "{{count}} paquete · libéranse {{size}}",
+    "summary_other": "{{count}} paquetes · libéranse {{size}}",
+    "nothingSelected": "Non hai nada seleccionado",
+    "review": "Revisar e desinstalar…",
+    "keptTitle": "Consérvanse",
+    "group": {
+      "shared_one": "Compartida con outros programas ({{count}})",
+      "shared_other": "Compartidas con outros programas ({{count}})",
+      "manual_one": "Instalada de forma explícita ({{count}})",
+      "manual_other": "Instaladas de forma explícita ({{count}})",
+      "preExisting_one": "Xa estaba instalada antes ({{count}})",
+      "preExisting_other": "Xa estaban instaladas antes ({{count}})",
+      "uncertain_one": "Orixe incerta ({{count}})",
+      "uncertain_other": "Orixe incerta ({{count}})",
+      "protected_one": "Compoñente do sistema ({{count}})",
+      "protected_other": "Compoñentes do sistema ({{count}})"
+    },
+    "class": {
+      "own": "O paquete da aplicación. Ao quitalo non se borran a túa configuración nin os teus datos.",
+      "removable": "APT instalounas automaticamente xunto coa aplicación e ningún outro paquete as necesita.",
+      "shared": "Instaláronse coa aplicación, pero outros paquetes necesítanas: quitalas rompería eses paquetes.",
+      "manual": "Están marcadas como instaladas de forma explícita (por ti ou por outro programa): non se quitan.",
+      "preExisting": "Xa estaban instaladas antes ca aplicación: non se quitan.",
+      "uncertain": "Non se pode saber con seguridade quen as instalou: consérvanse.",
+      "protected": "Paquetes esenciais do sistema, da xestión de paquetes ou de Docker: non se quitan nunca."
+    },
+    "usedBy_one": "Úsaa: {{list}}",
+    "usedBy_other": "Úsana {{count}} paquetes: {{list}}",
+    "externalTitle": "Ferramentas externas",
+    "externalHint": "A aplicación úsaas, pero non son súas: consérvanse sempre, aínda que desinstales a aplicación.",
+    "external": {
+      "engine": "Docker Engine",
+      "cli": "Docker CLI",
+      "compose": "Docker Compose"
+    },
+    "notFound": "non se atopou",
+    "alwaysKept": "Consérvase",
+    "dataTitle": "Datos que non se borran",
+    "dataHint": "A túa configuración e os teus datos consérvanse. Tampouco se toca nada de Docker: imaxes, contedores, redes, volumes e proxectos Compose. Se queres borrar estes cartafoles, faino a man.",
+    "data": {
+      "config": "Configuración",
+      "state": "Historial e eventos",
+      "webData": "Datos da xanela",
+      "webCache": "Caché da xanela"
+    },
+    "absent": "non existe",
+    "fullSimulation": "Simulación de APT da desinstalación completa",
+    "fullSimulationHint": "O que APT quitaría se desinstalases a aplicación con --auto-remove. Pode incluír paquetes que xa eran prescindibles antes; aquí só se ofrecen os que se instalaron coa aplicación.",
+    "confirmTitle": "Desinstalar?",
+    "confirmBody_one": "Quitarase {{count}} paquete e liberaranse {{size}}:",
+    "confirmBody_other": "Quitaranse {{count}} paquetes e liberaranse {{size}}:",
+    "extra": "APT quitaría tamén: {{list}}. Non se pode continuar; revisa a selección.",
+    "command": "Orde que se executará",
+    "elevationHint": "O sistema pedirache o contrasinal de administración (pkexec) só para esta orde. Se cancelas, non se quita nada.",
+    "noElevation": "pkexec non está instalado: a aplicación non pode pedir permisos. Executa ti esta orde nun terminal.",
+    "simulation": "Simulación de APT (sen cambios)",
+    "keptNote": "Consérvanse Docker Engine, Docker CLI, Docker Compose, os teus datos e a túa configuración. Non se usa purge.",
+    "selfNote": "Desinstálase a propia aplicación: péchaa ao rematar.",
+    "confirm": "Desinstalar",
+    "removing": "Desinstalando con APT…",
+    "done_one": "Desinstalouse {{count}} paquete.",
+    "done_other": "Desinstaláronse {{count}} paquetes.",
+    "doneSelf": "Docker Control Center xa non está instalado: pecha a aplicación.",
+    "stillInstalled": "Seguen instalados: {{list}}."
+  },
+  "help": {
+    "title": "Axuda e documentación",
+    "rowHint": "Guía de uso de todas as funcións, sen saír da aplicación.",
+    "toc": "Índice da axuda",
+    "search": "Buscar na axuda",
+    "results_one": "{{count}} sección contén o texto buscado",
+    "results_other": "{{count}} seccións conteñen o texto buscado",
+    "noResults": "Ningunha sección contén ese texto.",
+    "github": "Visitar o meu perfil de GitHub"
+  },
+  "errorCodes": {
+    "engine_notConnected": "Non hai conexión con Docker Engine.",
+    "engine_timeout": "Docker non respondeu a tempo.",
+    "engine_notConfirmed": "A operación necesita unha confirmación explícita.",
+    "engine_composeUnavailable": "Docker Compose non está dispoñible.",
+    "ipc_unavailable": "A interface estase executando fóra da aplicación de escritorio.",
+    "updates_noSource": "Non hai ningunha fonte de actualizacións configurada.",
+    "updates_invalidSource": "Fonte non válida: indica «propietario/repositorio» de GitHub ou un enderezo https://",
+    "updates_insecureSource": "Só se admiten enderezos https:// (ou http:// cara a esta mesma máquina).",
+    "packages_cancelled": "Cancelouse a autenticación: non se desinstalou nada.",
+    "packages_denied": "Non se concederon permisos de administración: non se desinstalou nada.",
+    "packages_busy": "Xa hai unha desinstalación en curso.",
+    "packages_notInstalled": "A aplicación non está instalada como paquete .deb: non hai nada que desinstalar con APT."
+  },
+  "commit": {
+    "action": "Crear unha imaxe a partir deste contedor",
+    "short": "Crear imaxe",
+    "title": "Crear unha imaxe a partir de {{name}}",
+    "intro": "Créase unha imaxe nova co estado actual do sistema de ficheiros do contedor (docker commit). O contedor non se modifica.",
+    "repository": "Repositorio",
+    "repositoryHint": "Por exemplo: a-miña-aplicacion ou rexistro.local:5000/equipo/app",
+    "tag": "Etiqueta",
+    "tagHint": "Baleira = latest",
+    "author": "Autor (opcional)",
+    "authorPh": "Nome <correo@exemplo.com>",
+    "message": "Mensaxe (opcional)",
+    "messagePh": "Que contén esta imaxe",
+    "preview": "Nome completo:",
+    "refPlaceholder": "REPOSITORIO:ETIQUETA",
+    "notIncludedTitle": "A imaxe non inclúe os volumes nin os cartafoles montados",
+    "notIncluded": "Só se garda a capa de escritura do contedor (os ficheiros que cambiou fóra das súas montaxes). Os datos destas montaxes non entran na imaxe:",
+    "excludedList": "Montaxes que non entran na imaxe",
+    "noMounts": "Este contedor non ten montaxes: gárdase todo o seu sistema de ficheiros.",
+    "mountKind": {
+      "volume": "volume",
+      "bind": "cartafol",
+      "tmpfs": "tmpfs"
+    },
+    "running": "O contedor está en execución. Os seus procesos non se deteñen.",
+    "pause": "Pausar o contedor mentres se crea a imaxe (recomendado)",
+    "pauseHint": "Docker conxélao uns segundos para que a imaxe sexa coherente e despois retómao. Durante ese tempo non atende peticións.",
+    "noPauseHint": "Non se interrompe, pero a imaxe podería incluír ficheiros a medio escribir.",
+    "exists": "Xa existe unha imaxe chamada {{reference}} ({{id}}).",
+    "replace": "Usar este nome para a imaxe nova",
+    "replaceHint": "A imaxe anterior non se elimina: queda sen este nome (sen etiqueta) e os seus contedores seguen funcionando.",
+    "create": "Crear imaxe",
+    "creating": "Creando a imaxe…",
+    "fixFirst": "Corrixe os datos marcados",
+    "failed": "Non se puido crear a imaxe: {{message}}",
+    "loadError": "Non se puido ler o contedor: {{message}}",
+    "doneTitle": "Imaxe creada",
+    "done": "Creouse a imaxe {{reference}} ({{id}}).",
+    "replaced": "A imaxe anterior ({{id}}) consérvase sen etiqueta.",
+    "originalUntouched": "O contedor {{name}} segue como estaba.",
+    "openImage": "Ver a imaxe"
+  },
+  "edit": {
+    "action": "Editar a configuración",
+    "title": "Editar a configuración de {{name}}",
+    "back": "Volver ao contedor",
+    "loadError": "Non se puido ler a configuración do contedor: {{message}}",
+    "sections": "Seccións da configuración",
+    "tabs": {
+      "general": "Xeral",
+      "network": "Rede",
+      "storage": "Almacenamento",
+      "env": "Variables",
+      "ports": "Portos",
+      "resources": "Recursos",
+      "advanced": "Avanzado"
+    },
+    "tabHasErrors": "Nesta sección hai datos que corrixir",
+    "kind": {
+      "direct": "Cambio directo",
+      "recreate": "Require recrealo"
+    },
+    "g": {
+      "identity": "Identificación e reinicio",
+      "lifecycle": "Estado",
+      "backups": "Copias de seguridade",
+      "networks": "Redes conectadas",
+      "connect": "Conectar a outra rede",
+      "mounts": "Volumes e cartafoles",
+      "env": "Variables de ambiente",
+      "ports": "Portos publicados",
+      "resources": "Límites de CPU e memoria",
+      "advanced": "Configuración de execución"
+    },
+    "f": {
+      "name": "Nome",
+      "restart": "Política de reinicio",
+      "description": "Descrición",
+      "network": "Rede"
+    },
+    "h": {
+      "description": "Nota interna; gárdase na etiqueta dcc.description do contedor.",
+      "lifecycle": "Estas accións aplícanse ao momento.",
+      "backups": "Contedores orixinais que se conservaron ao recrear este. Están detidos e comparten os mesmos volumes.",
+      "networks": "Conectar e desconectar redes aplícase ao momento, sen recrear o contedor.",
+      "connect": "Escolle unha rede existente; no seguinte paso podes indicar alias ou unha IP fixa.",
+      "mounts": "Rutas do equipo ou volumes e a ruta dentro do contedor.",
+      "env": "Variables propias do contedor. As da imaxe hérdanse igualmente.",
+      "ports": "Correspondencia entre os portos do equipo e os do contedor.",
+      "resources": "Docker actualiza estes límites sen reiniciar o contedor.",
+      "cpus": "Núcleos, p. ex. 0.5. O equipo ten {{max}}.",
+      "limitRemoval": "Quitar un límite (deixar o campo baleiro) non se pode facer con docker update: require recrear o contedor.",
+      "advanced": "Docker non permite cambiar estas opcións nun contedor que xa existe.",
+      "duplicateInstead": "Para cambialas, crea un contedor novo a partir deste:"
+    },
+    "recreateNote": {
+      "mounts": "Cambiar as montaxes require recrear o contedor. Os volumes e os cartafoles non se borran nunca: unha montaxe que quites só deixa de estar conectada.",
+      "ports": "Cambiar os portos require recrear o contedor. Antes de aplicar compróbase que non os use outro contedor."
+    },
+    "anonymousVolumes": "Volumes anónimos que se volverán montar co mesmo contido: {{names}}",
+    "otherMounts": "Outras montaxes (consérvanse, non se editan aquí):",
+    "secretsWarning": "Os valores das variables pódense ver con docker inspect e desde dentro do contedor. Na aplicación ocúltanse as que parecen secretas (contrasinais, tokens, claves) e nunca se gardan no panel de actividade.",
+    "imageEnvHint": "Veñen da imaxe e hérdanse; se defines aquí unha co mesmo nome, a túa ten prioridade.",
+    "portsNotApplicable": "Co modo de rede «{{mode}}» Docker non publica portos.",
+    "hostLimits": "Equipo: {{cpus}} CPU e {{memory}} de memoria.",
+    "networkModeSpecial": "Este contedor usa o modo de rede «{{mode}}»: Docker non permite conectalo a redes nin desconectalo.",
+    "noNetworks": "Non está conectado a ningunha rede.",
+    "net": {
+      "name": "Rede",
+      "ip": "Enderezo IP",
+      "mac": "MAC",
+      "aliases": "Alias",
+      "noIp": "Sen IP (detido)",
+      "fixed": "IP fixa: {{ip}}"
+    },
+    "aliasesRestriction": "Docker non permite cambiar os alias nin a IP dunha conexión existente: desconecta a rede e volve conectala cos novos valores. Na rede bridge predeterminada non hai alias.",
+    "pickNetwork": "Escolle unha rede…",
+    "noOtherNetworks": "Non hai máis redes dispoñibles",
+    "noChanges": "Sen cambios pendentes.",
+    "pendingDirect_one": "{{count}} cambio pendente. Aplícase directamente, sen recrear o contedor.",
+    "pendingDirect_other": "{{count}} cambios pendentes. Aplícanse directamente, sen recrear o contedor.",
+    "pendingRecreate_one": "{{count}} cambio pendente. Require recrear o contedor.",
+    "pendingRecreate_other": "{{count}} cambios pendentes. Algún require recrear o contedor.",
+    "discard": "Descartar os cambios",
+    "review": "Revisar os cambios",
+    "fixFirst": "Corrixe os datos marcados antes de continuar",
+    "restore": "Restaurar",
+    "restoreTitle": "Restaurar {{name}}?",
+    "restoreBody": "A copia volve chamarse {{original}} e iníciase. O contedor que ten agora ese nome detense e apártase con outro nome.",
+    "restoreSafe": "Non se elimina ningún contedor, volume nin imaxe. Se a copia non arranca, todo volve a estar como antes.",
+    "removeBackup": "Eliminar a copia",
+    "removeBackupTitle": "Eliminar a copia {{name}}?",
+    "removeBackupBody": "Elimínase só o contedor da copia (e o que escribise fóra das súas montaxes). Os seus volumes non se tocan: úsaos o contedor actual.",
+    "failed": "Non se puido aplicar: {{message}}",
+    "rolledBack": "Volveuse ao contedor orixinal, co seu nome e o seu estado.",
+    "rollbackFailed": "Non se puido volver de todo ao estado anterior. Revisa os pasos de abaixo.",
+    "rollbackFailedHelp": "Os teus datos seguen aí: non se eliminou ningún volume, cartafol nin imaxe, e o contedor orixinal existe (co seu nome ou co da copia). Podes restauralo desde a sección Xeral.",
+    "nothingChanged": "O contedor non se modificou.",
+    "comparing": "Comparando coa configuración actual…",
+    "planError": "Non se puideron comparar os cambios: {{message}}",
+    "backToEdit": "Volver editar",
+    "reviewTitle": "Revisar os cambios",
+    "needsRecreate": "Require recrear o contedor",
+    "directOnly": "Cambios directos, sen recrear",
+    "hasErrors": "Hai que corrixir algúns datos antes de aplicar:",
+    "comparison": "Comparación da configuración",
+    "col": {
+      "setting": "Axuste",
+      "current": "Actual",
+      "new": "Novo",
+      "kind": "Como se aplica"
+    },
+    "field": {
+      "name": "Nome",
+      "description": "Descrición",
+      "restart": "Política de reinicio",
+      "cpus": "CPU",
+      "memory": "Memoria",
+      "memoryReservation": "Memoria reservada",
+      "env": "Variables de ambiente",
+      "ports": "Portos",
+      "mounts": "Montaxes"
+    },
+    "reason": {
+      "labelsImmutable": "As etiquetas non se poden cambiar nun contedor existente.",
+      "limitRemoval": "Docker non permite quitar un límite con docker update."
+    },
+    "restartValue": {
+      "no": "Non reiniciar",
+      "always": "Sempre",
+      "unless-stopped": "Agás se se detivo a man",
+      "on-failure": "Se falla {{n}}"
+    },
+    "op": {
+      "added": "Novo",
+      "removed": "Quítase",
+      "modified": "Cambia"
+    },
+    "none": "(sen valor)",
+    "kept": "Mantéñense:",
+    "keptRest": "O resto da configuración (imaxe, orde, usuario, redes, montaxes que non cambian e demais opcións) consérvase tal cal.",
+    "recreateTitle": "Recreación segura",
+    "plan": {
+      "stop": "Detense o contedor actual.",
+      "backup": "Cámbiaselle o nome a {{backup}} e consérvase como copia de seguridade.",
+      "create": "Créase un contedor novo co nome orixinal, a imaxe {{image}} e a configuración completa cos teus cambios.",
+      "startVerify": "Iníciase e compróbase que segue en execución durante uns segundos.",
+      "verifyStopped": "Compróbase que Docker o creou correctamente. Queda detido, coma o orixinal.",
+      "rollback": "Se algo falla, elimínase o contedor novo e o orixinal recupera o seu nome e o seu estado."
+    },
+    "dataPromise": "Non se elimina ningún volume, cartafol nin imaxe. Os volumes e os cartafoles vólvense montar no contedor novo co mesmo contido.",
+    "interruption": "O servizo interromperase durante a recreación (normalmente uns segundos).",
+    "blocker": {
+      "state": "O contedor está no estado «{{status}}». Detéñeo ou retómao antes de recrealo.",
+      "autoRemove": "O contedor creouse con «eliminar ao deterse» (--rm): ao detelo, Docker borraríao e non se podería conservar como copia. Non se pode recrear de forma segura.",
+      "composeManaged": "O contedor pertence ao proxecto Compose «{{project}}». Cámbiao no ficheiro Compose e volve despregar: se se recrease aquí, Compose volvería substituílo.",
+      "swarmManaged": "O contedor xestiónao un servizo de Swarm. Cambia o servizo en lugar do contedor.",
+      "imageMissing": "A imaxe {{image}} xa non está dispoñible neste equipo: sen ela non se pode crear o contedor novo. Descárgaa primeiro.",
+      "configUnreadable": "Non se puido ler a configuración completa do contedor ({{detail}}), así que non se pode conservar con seguridade."
+    },
+    "risksTitle": "Antes de continuar, confirma que entendes estes riscos:",
+    "risk": {
+      "writableLayer": "O contedor ten {{size}} escritos fóra dos seus volumes. Eses ficheiros non pasan ao contedor novo (quedan na copia).",
+      "writableLayerUnknown": "Non se puido saber se o contedor ten ficheiros escritos fóra dos seus volumes. Se os ten, non pasan ao contedor novo (quedan na copia).",
+      "dependents": "Estes contedores usan a rede deste ({{containers}}) e deixarán de estar conectados a el ata que os recrees.",
+      "mountDetached": "Deixan de estar montados: {{mounts}}. O seu contido non se borra.",
+      "imageTagMoved": "A etiqueta {{image}} apunta agora a outra imaxe. O contedor novo usará a mesma imaxe ca o orixinal (polo seu ID), non a nova."
+    },
+    "riskHint": {
+      "writableLayer": "Se os necesitas, crea antes unha imaxe a partir deste contedor ou gárdaos nun volume."
+    },
+    "notice": {
+      "macUnknown": "O contedor está detido e Docker non amosa o seu enderezo MAC: o contedor novo recibirá un novo. Se fixaches unha MAC, inícialo antes de recrealo para poder conservala.",
+      "macLegacy": "Esta versión de Docker non permite conservar o enderezo MAC ao recrear: o contedor novo recibirá un novo."
+    },
+    "keepMac": "Conservar os enderezos MAC actuais",
+    "keepMacHint": "Márcao se fixaches unha MAC (--mac-address). Docker non indica se unha MAC é fixa ou asignada automaticamente.",
+    "finalConfig": "Ver a configuración final do contedor novo",
+    "confirmRecreate": "Revisei os cambios e quero recrear {{name}}",
+    "operations": "Operacións previstas",
+    "applying": "Aplicando…",
+    "recreating": "Recreando o contedor…",
+    "blockedHint": "A recreación non se pode facer de forma segura (ver os motivos)",
+    "confirmHint": "Confirma os riscos e a recreación para continuar",
+    "recreate": "Recrear o contedor",
+    "apply": "Aplicar os cambios",
+    "doneDirect": "Cambios aplicados a {{name}} e comprobados.",
+    "doneRecreated": "{{name}} recreouse cos cambios e funciona correctamente.",
+    "backupKept": "O contedor orixinal consérvase detido como {{backup}}. Podes restauralo ou eliminalo desde a sección Xeral.",
+    "stepsTitle": "Pasos realizados",
+    "stepOk": "Correcto",
+    "stepFailed": "Erro",
+    "step": {
+      "update": "Actualizar recursos e reinicio (docker update)",
+      "rename": "Cambiar o nome",
+      "verify": "Comprobar o resultado",
+      "stop": "Deter o contedor",
+      "prepare": "Preparar a configuración do contedor novo",
+      "backup": "Apartar o orixinal como copia",
+      "create": "Crear o contedor novo",
+      "connect": "Conectar unha rede adicional",
+      "disconnect": "Desconectar unha rede que o orixinal xa non tiña",
+      "start": "Iniciar o contedor",
+      "rollbackRemove": "Desfacer: eliminar o contedor novo (sen os seus volumes)",
+      "rollbackRename": "Desfacer: devolver o nome orixinal",
+      "rollbackStart": "Desfacer: iniciar de novo o orixinal",
+      "rollbackStop": "Desfacer: deter a copia"
+    },
+    "openContainer": "Abrir o contedor"
+  }
+}

@@ -35,7 +35,7 @@ To update, install the new package the same way: your settings and your history 
 
 You do not need to configure anything to get started: the Docker connection is automatic. In **Settings** you can choose:
 
-- The **theme** (System, Light or Dark) and the **language**.
+- The **theme** (System, Light or Dark), the **primary color** (teal or purple) and the **language**.
 - Whether the activity panel opens by itself when an operation fails and how many operations it keeps.
 - Whether the history of operations and events is saved between sessions.
 - A specific Docker socket, if you do not want automatic detection.
@@ -77,7 +77,7 @@ When not connected, it shows the **diagnosis**: the specific cause, the steps to
 
 ## 8. Managing containers {#containers}
 
-The **Containers** section lists all containers, like `docker ps -a`: status, name and short ID, Compose project, image, Docker status, published ports and age. You can filter by **All / Running / Stopped** and search by name, image, ID or project.
+The **Containers** section lists all containers, like `docker ps -a`: status, name and short ID, Compose project, image, Docker status, published ports and age. You can filter by **All / Running / Stopped** and search by name, image, ID or project. Each row’s **⋯** menu (or a right-click) offers **Edit configuration** and **Create image from this container**.
 
 | Status | Available actions |
 |---|---|
@@ -102,7 +102,45 @@ Clicking a container's name opens its **detail**: Summary, Logs, Terminal, Stati
 
 **Remove** asks for confirmation. A running or paused container is only removed if you tick **Stop it by force and remove it**. Optionally its anonymous volumes are removed; named volumes and bound folders are not touched. It cannot be undone.
 
-## 10. Logs, statistics and terminals {#logs-stats-terminal}
+## 10. Editing a container's configuration {#container-edit}
+
+**Edit configuration** is in each container's **⋯** menu (also by right-clicking the row) and in the detail header. The configuration is organised in tabs: **General**, **Network**, **Storage**, **Variables**, **Ports**, **Resources** and **Advanced**. Each change shows how it is applied:
+
+| Change | How it is applied |
+|---|---|
+| Name | Direct (`docker rename`) |
+| Restart policy, CPU, memory and memory reservation | Direct (`docker update`), without restarting the container |
+| Connecting or disconnecting networks | Direct and immediate (`docker network connect` / `disconnect`) |
+| Environment variables, ports, volumes and folders, description | Requires **recreating** the container |
+| Removing a CPU or memory limit | Requires recreation (`docker update` cannot remove it) |
+| Image, command, user, working directory and the other **Advanced** options | Read-only: Docker does not allow changing them. Use **Duplicate** |
+
+- **Network**: shows the networks, IP, MAC and aliases. Docker does not allow changing the aliases or the IP of an existing connection: disconnect and connect again. If it is the container's only network, you are warned before disconnecting it.
+- **Variables**: values that look secret are hidden on screen and never stored in the activity panel.
+- **Description**: stored in the container's `dcc.description` label.
+
+**Review changes** compares the current configuration with the new one: what changes (before and after, item by item), what is kept and what requires recreation. Nothing is applied until you confirm.
+
+**Safe recreation.** When a change requires recreating, the wizard:
+
+1. Checks the image, name and port conflicts with other containers, and the reasons that prevent a safe recreation: Compose or Swarm containers, created with `--rm`, paused or restarting. In those cases it does not let you continue.
+2. Shows the risks you must accept one by one: files written outside volumes (they are not carried over to the new container), mounts that are no longer mounted, containers that use this container's network…
+3. On confirmation: stops the container if it is running, renames it to `<name>-dcc-backup-<date>` (backup), creates the new one with **all** the original configuration plus your changes, connects its networks and, if it was running, starts it and checks it keeps running for a few seconds.
+4. If anything fails, it deletes the new container (without touching its volumes), gives the original its name back and starts it again.
+
+**Volumes, folders and images are never deleted.** Anonymous volumes are mounted again with their contents. The backup stays stopped in **General › Backups**, where you can **Restore** it (the current container is set aside, not deleted) or **Delete** it once you no longer need it. All operations are recorded in the activity panel, without sensitive values.
+
+## 11. Creating an image from a container {#container-commit}
+
+**Create image from this container** (list **⋯** menu and detail header) is the equivalent of `docker commit`: it saves the current state of the container's file system as a new image.
+
+- Enter the **repository** and **tag** (empty = `latest`); optionally, **author** and **message**. The full name is shown and validated before creating.
+- **It does not include volumes or mounted folders**: only the container's writable layer. The dialog lists the mounts left out.
+- If the container is running, by default it is **paused** for a few seconds while the image is created, so that it is consistent; you can untick this. It is never stopped.
+- If an image with that name already exists, you are warned and must explicitly accept it: the previous one is not deleted, it just becomes untagged.
+- The original container is not modified. When finished, **View image** opens its detail in Images.
+
+## 12. Logs, statistics and terminals {#logs-stats-terminal}
 
 In a container's detail:
 
@@ -112,7 +150,7 @@ In a container's detail:
 
 They are real operations that appear in the activity panel while open and are closed when you leave the detail. To work with several terminals at once, use the **Terminals** section.
 
-## 11. Managing images {#images}
+## 13. Managing images {#images}
 
 The **Images** section lists local images, like `docker image ls`: tags, short ID, size, age and which containers use them. Filters **All / In use / Unused / Untagged** and search by tag or ID.
 
@@ -121,7 +159,7 @@ The **Images** section lists local images, like `docker image ls`: tags, short I
 - **Remove**: if the image has several tags you can remove just one; the whole image requires forcing. Docker does not remove images of running containers.
 - **Prune** removes untagged images not used by any container or, with additional confirmation, all unused ones.
 
-## 12. Pulling and building images {#pull-build}
+## 14. Pulling and building images {#pull-build}
 
 **Pull image** asks for the reference (`nginx:1.27`, `user/app`, `registry.example.com:5000/app:v2`; without a tag `latest` is used). Credentials:
 
@@ -135,7 +173,7 @@ The **Downloads** panel shows the overall and per-layer progress; you can switch
 
 **Build image** opens a wizard: context (the folder sent, respecting `.dockerignore`) and Dockerfile, names (`--tag`), arguments (`--build-arg`), metadata (`--label`), target stage, no cache, pull newer base images and builder (**BuildKit** or **classic**). You see the steps with their status and the output like `docker build --progress=plain`; it can be cancelled.
 
-## 13. Docker networks {#networks}
+## 15. Docker networks {#networks}
 
 The **Networks** section lists networks, like `docker network ls`, with driver, subnets and containers. The **bridge**, **host** and **none** networks are predefined and cannot be removed.
 
@@ -143,7 +181,7 @@ The **Networks** section lists networks, like `docker network ls`, with driver, 
 - **Connect** a container (running or stopped), with optional aliases and fixed IP. **Disconnect** asks for confirmation.
 - **Remove** and **Prune** warn if stopped containers have the network configured and will not be able to start afterwards.
 
-## 14. Volumes {#volumes}
+## 16. Volumes {#volumes}
 
 The **Volumes** section lists volumes, like `docker volume ls`, with their driver and the containers that mount them. Anonymous ones are marked as such. **Calculate sizes** asks Docker for the space of each one (like `docker system df -v`); it is not done automatically because it can take time.
 
@@ -152,13 +190,13 @@ The **Volumes** section lists volumes, like `docker volume ls`, with their drive
 - **Remove**: Docker does not remove a volume mounted by any container, even a stopped one.
 - **Prune**: removes unused anonymous volumes or, with confirmation, all unused volumes.
 
-## 15. Bound directories (Bind Mounts) {#binds}
+## 17. Bound directories (Bind Mounts) {#binds}
 
 This section shows the folders and files of your computer mounted inside containers, grouped by path: type, permissions and owner, whether they exist, which containers mount them, where and with what access. Those that need attention are flagged: the **Docker socket** (gives the container control of Docker), the root or system directories and paths that no longer exist.
 
 Docker does not allow adding a folder to an existing container. **Bind a folder…** opens the folder picker and then the container wizard with that folder mounted at `/mnt/<name>`.
 
-## 16. Docker Compose {#compose}
+## 18. Docker Compose {#compose}
 
 The **Docker Compose** section needs Compose v2 or later; if it is not installed, it explains how to install it. All operations run the official Docker Compose and appear in the activity panel with the exact command.
 
@@ -168,7 +206,7 @@ The list shows the projects with containers in Docker (also those deployed from 
 - **New project**: choose a folder, write the content (starting from a template) and **Create project**: it is validated with Docker Compose before `compose.yaml` is created.
 - **Remove from the list** only removes it from the list; it does not touch Docker or the files.
 
-## 17. Managing Compose projects and profiles {#compose-projects}
+## 19. Managing Compose projects and profiles {#compose-projects}
 
 In a project's detail:
 
@@ -180,7 +218,7 @@ In a project's detail:
 - **File**: edit the files; **Validate** checks them with Docker Compose without saving, and **Save** validates first and does not overwrite if another program changed them.
 - **Configuration**: the final configuration according to Docker Compose. It may contain secrets, so it is hidden until you ask for it and is not saved in the activity panel.
 
-## 18. Simultaneous terminals {#terminals}
+## 20. Simultaneous terminals {#terminals}
 
 The **Terminals** section lets you open and view several real terminals (`docker exec -it`) at the same time in running containers, in the same container or in different ones.
 
@@ -195,17 +233,17 @@ The **Terminals** section lets you open and view several real terminals (`docker
 
 The activity panel records the opening, closing and errors of each session, but not what is typed or the terminal output.
 
-## 19. Activity panel and operation log {#activity}
+## 21. Activity panel and operation log {#activity}
 
-Every operation appears in the **activity panel**: time, **API** badge (request to Docker Engine through the socket) or **CLI** badge (process, like `docker compose` or `apt-get`), type, resource, duration and status. The main line is the equivalent command, which you can copy. Expanding an entry shows the operation actually run, the result, the error and its HTTP code if it failed, and the output of processes.
+Every operation appears in the **activity panel**: time, **API** badge (request to Docker Engine through the socket), **CLI** badge (process, like `docker compose` or `apt-get`) or **APP** badge (an operation of the application itself, such as a language or color change, or the summary of a recreation whose steps appear separately), type, resource, duration and status. The main line is the equivalent command, which you can copy. Expanding an entry shows the operation actually run, the result, the error and its HTTP code if it failed, and the output of processes.
 
 The **Events and logs** section shows Docker events live, the saved ones, a query to Docker for a period (`docker events --since … --until …`; Docker only keeps the last 256) and the **operation history** of this and other sessions.
 
 The history saves what was done, when and with what result, but never the request bodies, the command or the outputs, because they may contain passwords. It is in `~/.local/state/docker-control-center/`, readable only by your user.
 
-## 20. Settings, themes and languages {#settings}
+## 22. Settings, themes and languages {#settings}
 
-- **Appearance**: theme (System, Light, Dark) and language: **Español** (default), **English**, **Français** and **Italiano**. The chosen language is saved and kept when you reopen the application.
+- **Appearance**: theme (System, Light, Dark), **primary color** (teal or **purple**; applied immediately to buttons, selection, indicators and navigation) and language, in this order: **English**, **Español** (default), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** and **Português**. Each language appears under its own name. The language and color are saved, kept when you reopen the application, and their changes are recorded in the activity panel.
 - **Activity panel**: open it on errors, operations kept (50–10,000) and **Keep the history between sessions**.
 - **Docker connection** and the **Docker Compose** check.
 - **Updates**: where versions are published and **Check now**. The application never downloads or installs anything.
@@ -221,7 +259,7 @@ The history saves what was done, when and with what result, but never the reques
 
 Messages generated by Docker itself (for example, a Docker Engine error) and the output of programs are shown as they arrive, untranslated. The technical summaries that the application engine writes in the activity panel (for example, how a terminal ended) and error messages with specific details are generated in Spanish in every language.
 
-## 21. Uninstall and dependency management {#uninstall}
+## 23. Uninstall and dependency management {#uninstall}
 
 **Settings › Uninstall and components** shows what the application installed and lets you remove it without using the terminal. **Analyze** queries dpkg and APT without changing anything:
 
@@ -242,7 +280,7 @@ When you confirm, the system asks for your administrator password (pkexec) **onl
 
 If `pkexec` is not installed, the application cannot request permissions: the dialog shows the equivalent `sudo` command so you can run it yourself in a terminal.
 
-## 22. Security and credential handling {#security}
+## 24. Security and credential handling {#security}
 
 - The application **does not run as root**, never asks for sudo to work and does not change socket permissions or groups.
 - External commands run **without a shell** and with separate arguments: what you type is never interpreted as commands.
@@ -253,7 +291,7 @@ If `pkexec` is not installed, the application cannot request permissions: the di
 - The window blocks external connections. The application's only own connection is the update check, disabled while you do not set a source. The GitHub button in the Help can only open that address, in your browser.
 - Mounting the Docker socket into a container or belonging to the `docker` group gives full control of the computer: the application flags it.
 
-## 23. Troubleshooting common problems {#troubleshooting}
+## 25. Troubleshooting common problems {#troubleshooting}
 
 | Cause shown | What to do |
 |---|---|
@@ -268,10 +306,11 @@ If `pkexec` is not installed, the application cannot request permissions: the di
 - **Docker Compose does not appear**: install it (Debian 13: `sudo apt install docker-compose`; Ubuntu: `sudo apt install docker-compose-v2`; Docker repository: `docker-compose-plugin`) and click **Check** in Settings.
 - **A pull or search fails**: Docker Engine needs Internet access; the error message is Docker's.
 - **A terminal does not open**: the container must be running and have a shell (`sh` or `bash`).
+- **Recreating a container is not allowed**: the reason is shown in the review (Compose container, created with `--rm`, paused, image no longer present…).
 - **The uninstall does not offer a dependency**: another program uses it, it was already installed or it cannot be determined safely; the reason appears next to it.
 - **To report a problem**: Settings › System › **Copy** generates a report without sensitive data.
 
-## 24. Frequently asked questions {#faq}
+## 26. Frequently asked questions {#faq}
 
 **Does the application run `docker` commands?** No: it uses the Docker Engine API. The command you see in the activity panel is the equivalent, so you can reproduce it. Docker Compose is run with its official program.
 
@@ -280,6 +319,8 @@ If `pkexec` is not installed, the application cannot request permissions: the di
 **Does it work without the Internet?** Yes. Only Docker operations against remote registries need network access.
 
 **What happens to my containers if I close the application?** They keep running: Docker manages them. Closing ends the open terminals and stops following logs and statistics.
+
+**Can I lose data when editing a container?** No volume, folder or image is deleted, and the original is kept as a backup. Only files written outside volumes stay in the backup, and the review warns you beforehand.
 
 **Do I lose my data when uninstalling?** No. Your settings, your history and everything in Docker are kept.
 

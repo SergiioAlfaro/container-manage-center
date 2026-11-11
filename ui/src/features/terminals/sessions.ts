@@ -5,7 +5,8 @@ import { api } from "@/shared/ipc/client";
 import type { ContainerAfter } from "@/shared/ipc/bindings/ContainerAfter";
 import type { ShellChoice } from "@/shared/ipc/bindings/ShellChoice";
 import type { TerminalEvent } from "@/shared/ipc/bindings/TerminalEvent";
-import { decodeBase64, TERMINAL_THEME } from "@/features/containers/detail/TerminalPanel";
+import { decodeBase64 } from "@/features/containers/detail/TerminalPanel";
+import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
 
 /**
  * Sesiones del apartado «Terminales» (0.9.1, D-064).
@@ -150,7 +151,8 @@ export function openSession(o: { containerId: string; containerName: string; she
   if (st.sessions.length >= MAX_SESSIONS) return null;
   const key = ++nextKey;
   const name = o.name && nameProblem(o.name) === null ? o.name.trim() : defaultName(o.containerName, st.sessions);
-  const term = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: TERMINAL_THEME, scrollback: 5000, convertEol: false });
+  const term = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false });
+  const untrack = trackTerminal(term);
   const fit = new FitAddon();
   term.loadAddon(fit);
   const host = document.createElement("div");
@@ -165,6 +167,7 @@ export function openSession(o: { containerId: string; containerName: string; she
   rt.dispose = () => {
     d1.dispose();
     d2.dispose();
+    untrack();
     term.dispose();
     host.remove();
   };

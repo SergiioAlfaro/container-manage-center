@@ -9,9 +9,10 @@ import { renderWithQuery } from "@/test/render";
 import i18n from "@/shared/i18n";
 import { HELP_DOCS, HELP_SECTION_IDS, HelpView } from "./HelpView";
 import { parseHelp } from "./markdown";
+import { LANGUAGES } from "@/shared/i18n";
 
 describe("Ayuda: documento", () => {
-  it.each(Object.keys(HELP_DOCS))("%s: tiene las 24 secciones exigidas, en orden y con contenido", (lang) => {
+  it.each(Object.keys(HELP_DOCS))("%s: tiene las 26 secciones exigidas, en orden y con contenido", (lang) => {
     const s = parseHelp(HELP_DOCS[lang]!);
     expect(s.map((x) => x.id)).toEqual([...HELP_SECTION_IDS]);
     s.forEach((x, i) => {
@@ -22,12 +23,19 @@ describe("Ayuda: documento", () => {
 
   it("cada idioma tiene su propia traducción (no una copia del español)", () => {
     const es = parseHelp(HELP_DOCS.es!);
-    for (const lang of ["en", "fr", "it"]) {
+    for (const lang of Object.keys(HELP_DOCS).filter((l) => l !== "es")) {
       const other = parseHelp(HELP_DOCS[lang]!);
       // Se compara el texto completo de cada sección (un título como «Docker Compose» puede coincidir).
       const same = other.filter((s, i) => JSON.stringify(s) === JSON.stringify(es[i]));
       expect(same.map((s) => s.id), lang).toEqual([]);
     }
+  });
+
+  it("hay ayuda para cada idioma de la interfaz, con las secciones nuevas de 0.9.2", () => {
+    expect(Object.keys(HELP_DOCS).sort()).toEqual([...LANGUAGES].sort());
+    const es = parseHelp(HELP_DOCS.es!);
+    expect(es.find((x) => x.id === "container-edit")?.title).toBe("10. Editar la configuración de un contenedor");
+    expect(es.find((x) => x.id === "container-commit")?.title).toBe("11. Crear una imagen a partir de un contenedor");
   });
 
   it("el Markdown se convierte en elementos, sin HTML", () => {
@@ -52,15 +60,15 @@ describe("Ayuda: navegación", () => {
   it("muestra el índice y la primera sección; el índice y Siguiente/Anterior navegan", async () => {
     renderWithQuery(<HelpView />);
     const toc = screen.getByRole("navigation", { name: "Índice de la ayuda" });
-    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(24);
+    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(26);
     expect(screen.getByRole("heading", { level: 2, name: "1. Qué es Docker Control Center" })).toBeInTheDocument();
-    await userEvent.click(within(toc).getByRole("button", { name: "18. Terminales simultáneas" }));
-    expect(screen.getByRole("heading", { level: 2, name: "18. Terminales simultáneas" })).toBeInTheDocument();
-    expect(within(toc).getByRole("button", { name: "18. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
-    await userEvent.click(within(screen.getByTestId("help-content")).getByRole("button", { name: /19\. Panel de actividad/ }));
-    expect(screen.getByRole("heading", { level: 2, name: /^19\. Panel de actividad/ })).toBeInTheDocument();
+    await userEvent.click(within(toc).getByRole("button", { name: "20. Terminales simultáneas" }));
+    expect(screen.getByRole("heading", { level: 2, name: "20. Terminales simultáneas" })).toBeInTheDocument();
+    expect(within(toc).getByRole("button", { name: "20. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
+    await userEvent.click(within(screen.getByTestId("help-content")).getByRole("button", { name: /21\. Panel de actividad/ }));
+    expect(screen.getByRole("heading", { level: 2, name: /^21\. Panel de actividad/ })).toBeInTheDocument();
     // Las tablas y el código se muestran como tales.
-    await userEvent.click(within(toc).getByRole("button", { name: "21. Desinstalación y gestión de dependencias" }));
+    await userEvent.click(within(toc).getByRole("button", { name: "23. Desinstalación y gestión de dependencias" }));
     expect(screen.getByText(/pkexec \/usr\/bin\/apt-get remove -y --no-auto-remove/).tagName).toBe("PRE");
   });
 
@@ -68,8 +76,8 @@ describe("Ayuda: navegación", () => {
     renderWithQuery(<HelpView />);
     await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en la ayuda" }), "pkexec");
     const content = screen.getByTestId("help-content");
-    expect(within(content).getByRole("heading", { name: "21. Desinstalación y gestión de dependencias" })).toBeInTheDocument();
-    expect(within(content).queryByRole("heading", { name: "13. Redes Docker" })).not.toBeInTheDocument();
+    expect(within(content).getByRole("heading", { name: "23. Desinstalación y gestión de dependencias" })).toBeInTheDocument();
+    expect(within(content).queryByRole("heading", { name: "15. Redes Docker" })).not.toBeInTheDocument();
     await userEvent.clear(screen.getByRole("searchbox"));
     await userEvent.type(screen.getByRole("searchbox"), "zzzz-nada");
     expect(screen.getByText("Ninguna sección contiene ese texto.")).toBeInTheDocument();
@@ -88,6 +96,10 @@ describe("Ayuda: navegación", () => {
     ["en", "1. What is Docker Control Center", "Visit my GitHub profile"],
     ["fr", "1. Qu’est-ce que Docker Control Center", "Visiter mon profil GitHub"],
     ["it", "1. Che cos’è Docker Control Center", "Visita il mio profilo GitHub"],
+    ["ca", "1. Què és Docker Control Center", "Visitar el meu perfil de GitHub"],
+    ["gl", "1. Que é Docker Control Center", "Visitar o meu perfil de GitHub"],
+    ["eu", "1. Zer da Docker Control Center", "Bisitatu nire GitHub profila"],
+    ["pt", "1. O que é o Docker Control Center", "Visitar o meu perfil do GitHub"],
   ])("en %s muestra el documento de su idioma", async (lang, title, github) => {
     await act(() => i18n.changeLanguage(lang));
     renderWithQuery(<HelpView />);

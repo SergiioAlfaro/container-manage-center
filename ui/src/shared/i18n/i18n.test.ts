@@ -3,14 +3,18 @@ import es from "./locales/es.json";
 import en from "./locales/en.json";
 import fr from "./locales/fr.json";
 import it_ from "./locales/it.json";
-import i18n, { LANGUAGES } from "./index";
+import ca from "./locales/ca.json";
+import gl from "./locales/gl.json";
+import eu from "./locales/eu.json";
+import pt from "./locales/pt.json";
+import i18n, { LANGUAGES, LANGUAGE_NAMES } from "./index";
 
 function keys(obj: unknown, prefix = ""): string[] {
   if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return [prefix];
   return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) => keys(v, prefix ? `${prefix}.${k}` : k));
 }
 const get = (o: unknown, k: string) => k.split(".").reduce<unknown>((x, p) => (x as Record<string, unknown>)?.[p], o);
-const ALL = { es, en, fr, it: it_ } as const;
+const ALL = { es, en, ca, gl, eu, fr, it: it_, pt } as const;
 
 /**
  * Textos que pueden coincidir con el inglés porque son iguales en ese idioma:
@@ -24,22 +28,32 @@ const TECHNICAL = [
   "rootless", "Rootless", "{{message}}", "Docker Engine", "cgroups", "Go", "Commit", "{{action}} {{name}}", "{{action}} {{name}}: {{message}}",
   "ID", "PID", "TTY", "CPU", "Shell", "nginx, postgres, python…", "Dockerfile", "cache", "IPv4", "IPv6", "MAC", "tmpfs", "NFS", "Docker",
   "Config", "WebKitGTK", "glibc", "Docker CLI", "Docker Compose", "Debian 13:", "Compose: {{project}}",
+  // 0.9.2: distintivo de operaciones de la propia aplicación y nombre de la API.
+  "APP", "Docker Engine API", "Digests",
 ];
-const SAME_WORDS: Record<"fr" | "it", string[]> = {
+const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   fr: [
     "Orchestration", "Images", "Image", "Volumes", "Volume", "Ports", "Actions", "Options", "{{count}} image", "{{count}} images", "{{count}} volume",
     "{{count}} volumes", "Versions", "Version", "Terminal", "Description", "Digests", "Instruction", "Type", "Local", "Services", "Service",
-    "Configuration", "Pause", "Secret", "Application", "Architecture",
+    "Configuration", "Pause", "Secret", "Application", "Architecture", "Variables", "volume",
   ],
   it: [
     "Dashboard", "Area", "No", "Host", "Kernel", "{{count}} container", "Entrypoint", "Gateway", "Container {{name}}", "Container", "Volume",
-    "{{count}} volume", "Repository", "Tag", "Driver", "Local", "File", "Output", "Plugin", "Computer", "Desktop",
+    "{{count}} volume", "Repository", "Tag", "Driver", "Local", "File", "Output", "Plugin", "Computer", "Desktop", "volume", "REPOSITORY:TAG",
   ],
+  ca: [
+    "Context", "Equivalent", "Error", "Error: {{message}}", "Executable", "General", "Local", "No", "Node", "Ports", "Protocol", "Secret",
+    "Terminal", "Terminals", "Variables", "Versions", "{{count}} error", "{{count}} errors",
+  ],
+  gl: ["Daemon (dockerd)", "Executable", "Local", "Terminal", "Variables", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes"],
+  eu: [],
+  pt: ["Aliases", "Ctrl+Shift+A", "Daemon (dockerd)", "Gateway", "Local", "Terminal", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes"],
 };
 
 describe("traducciones", () => {
-  it("los cuatro idiomas están en el selector y en i18n", () => {
-    expect(LANGUAGES).toEqual(["es", "en", "fr", "it"]);
+  it("los ocho idiomas están en el selector, en el orden pedido, y en i18n", () => {
+    expect(LANGUAGES).toEqual(["en", "es", "ca", "gl", "eu", "fr", "it", "pt"]);
+    expect(LANGUAGES.map((l) => LANGUAGE_NAMES[l])).toEqual(["English", "Español", "Català", "Galego", "Euskara", "Français", "Italiano", "Português"]);
     for (const l of LANGUAGES) expect(i18n.hasResourceBundle(l, "translation"), l).toBe(true);
   });
 
@@ -66,8 +80,8 @@ describe("traducciones", () => {
     }
   });
 
-  it("francés e italiano no dejan textos sin traducir (iguales al inglés)", () => {
-    for (const [l, d] of [["fr", fr], ["it", it_]] as const) {
+  it("ningún idioma deja textos sin traducir (iguales al inglés)", () => {
+    for (const [l, d] of [["fr", fr], ["it", it_], ["ca", ca], ["gl", gl], ["eu", eu], ["pt", pt]] as const) {
       const allowed = new Set([...TECHNICAL, ...SAME_WORDS[l]]);
       const untranslated = keys(en).filter((k) => {
         const v = get(d, k);
@@ -78,17 +92,28 @@ describe("traducciones", () => {
   });
 
   it("al cambiar de idioma, los textos de la interfaz cambian", async () => {
-    const sample = ["sections.containers.title", "terminals.new", "components.title", "help.github", "common.cancel", "errorCodes.engine_notConnected"];
+    // Textos distintos en los ocho idiomas.
+    const distinct = ["sections.containers.title", "components.title", "help.github", "errorCodes.engine_notConnected", "edit.action", "commit.action"];
+    // Textos que coinciden legítimamente entre lenguas cercanas («Cancelar» en es/gl/pt,
+    // «Novo terminal» en gl/pt…): cambian, pero no son únicos por idioma.
+    const shared = ["terminals.new", "common.cancel", "settings.accent"];
     const seen = new Map<string, Set<string>>();
+    const fingerprints = new Set<string>();
     for (const l of LANGUAGES) {
       await i18n.changeLanguage(l);
-      for (const k of sample) {
+      const all: string[] = [];
+      for (const k of [...distinct, ...shared]) {
         const v = i18n.t(k);
         expect(v, `${l}:${k}`).not.toBe(k);
+        expect(v, `${l}:${k}`).toBe(get(ALL[l], k));
         seen.set(k, (seen.get(k) ?? new Set()).add(v));
+        all.push(v);
       }
+      fingerprints.add(all.join("|"));
     }
     await i18n.changeLanguage("es");
-    for (const [k, s] of seen) expect(s.size, k).toBe(4);
+    for (const k of distinct) expect(seen.get(k)!.size, k).toBe(LANGUAGES.length);
+    for (const k of shared) expect(seen.get(k)!.size, k).toBeGreaterThanOrEqual(6);
+    expect(fingerprints.size).toBe(LANGUAGES.length);
   });
 });

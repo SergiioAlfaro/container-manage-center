@@ -6,9 +6,11 @@ import type { AppInfo } from "@/shared/ipc/bindings/AppInfo";
 import type { Theme } from "@/shared/ipc/bindings/Theme";
 import type { SectionId } from "./sections";
 
+import { refreshTerminalThemes } from "@/shared/ui/terminalTheme";
+
 export const DEFAULT_CONFIG: AppConfig = {
   version: 1,
-  ui: { theme: "system", language: "es", sidebarCollapsed: false },
+  ui: { theme: "system", language: "es", accent: "teal", sidebarCollapsed: false },
   activity: { panelOpen: false, openOnError: true, maxRecords: 500, keepHistory: true },
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
@@ -55,6 +57,8 @@ export function resolveTheme(theme: Theme): "light" | "dark" {
 
 export function applyAppearance(config: AppConfig) {
   document.documentElement.dataset.theme = resolveTheme(config.ui.theme);
+  document.documentElement.dataset.accent = config.ui.accent;
+  refreshTerminalThemes();
   setLanguage(config.ui.language);
 }
 

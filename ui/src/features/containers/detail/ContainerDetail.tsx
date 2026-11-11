@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Copy, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, PackagePlus, PencilLine, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/shared/ipc/client";
 import type { ContainerAction } from "@/shared/ipc/bindings/ContainerAction";
@@ -10,6 +10,7 @@ import { Button, CopyButton, cx } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
 import { ICONS, RemoveDialog, STATE_DOT, allowedActions } from "../containerUi";
 import { useContainersNav, type DetailTab } from "../store";
+import { CommitDialog } from "../edit/CommitDialog";
 import { LogsPanel } from "./LogsPanel";
 import { StatsPanel } from "./StatsPanel";
 import { SummaryPanel } from "./SummaryPanel";
@@ -36,6 +37,7 @@ export function ContainerDetail({ id, name, tab }: { id: string; name: string; t
   const [failure, setFailure] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [committing, setCommitting] = useState(false);
 
   const q = useQuery({ queryKey: detailKey(id), queryFn: () => api.containerInspect(id, name) });
   const d = q.data;
@@ -121,6 +123,14 @@ export function ContainerDetail({ id, name, tab }: { id: string; name: string; t
                     </Button>
                   );
                 })}
+                <Button size="sm" onClick={() => nav.showEdit(id, display)}>
+                  <PencilLine size={14} />
+                  {t("edit.action")}
+                </Button>
+                <Button size="sm" onClick={() => setCommitting(true)} title={t("commit.action")}>
+                  <PackagePlus size={14} />
+                  {t("commit.short")}
+                </Button>
                 <Button size="sm" onClick={() => duplicate.mutate()} disabled={duplicate.isPending}>
                   {duplicate.isPending ? <Spinner size={14} /> : <Copy size={14} />}
                   {t("detail.duplicate")}
@@ -207,6 +217,7 @@ export function ContainerDetail({ id, name, tab }: { id: string; name: string; t
         </div>
       ) : null}
 
+      {committing && <CommitDialog id={id} name={display} onClose={() => setCommitting(false)} />}
       {removing && d && (
         <RemoveDialog
           c={{ id: d.id, name: d.name, image: d.image, state: status ?? "" }}

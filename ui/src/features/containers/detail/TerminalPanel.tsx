@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
+import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
 import "@xterm/xterm/css/xterm.css";
 import { Power, TerminalSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -20,15 +21,6 @@ export function decodeBase64(data: string): Uint8Array {
   return out;
 }
 
-/** Colores de la terminal (también los usa el apartado «Terminales»). */
-export const TERMINAL_THEME = {
-  background: "#0b1219",
-  foreground: "#d5dee7",
-  cursor: "#25b0b3",
-  selectionBackground: "#25b0b355",
-  black: "#1d2e40",
-  brightBlack: "#6f8399",
-};
 
 /**
  * Terminal interactiva: `docker exec -it` real. La sesión se abre solo cuando
@@ -46,7 +38,8 @@ export function TerminalPanel({ id, name, running }: { id: string; name: string;
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const tm = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: TERMINAL_THEME, scrollback: 5000, convertEol: false });
+    const tm = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false });
+    const untrack = trackTerminal(tm);
     const fa = new FitAddon();
     tm.loadAddon(fa);
     tm.open(el);
@@ -67,6 +60,7 @@ export function TerminalPanel({ id, name, running }: { id: string; name: string;
     ro.observe(el);
     return () => {
       ro.disconnect();
+      untrack();
       tm.dispose();
       term.current = null;
       fit.current = null;
