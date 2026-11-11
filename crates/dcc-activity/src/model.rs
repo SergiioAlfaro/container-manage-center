@@ -40,6 +40,13 @@ pub enum Transport {
     },
     /// Proceso lanzado sin shell; `args` son los argumentos exactos, uno por elemento.
     Cli { program: String, args: Vec<String> },
+    /// Operación de la propia aplicación (0.9.2): un cambio de preferencias o
+    /// una operación compuesta cuyos pasos reales (peticiones a la API) se
+    /// registran aparte. No hay petición ni proceso que mostrar.
+    App {
+        /// Descripción breve y estable de lo que hace la aplicación.
+        action: String,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]

@@ -131,6 +131,7 @@ async fn main() {
                 dcc_activity::Transport::Cli { program, args } => {
                     dcc_activity::quote::render_argv(program, args)
                 }
+                dcc_activity::Transport::App { action } => action.clone(),
             };
             println!(
                 "  {:?}  {t}{}",

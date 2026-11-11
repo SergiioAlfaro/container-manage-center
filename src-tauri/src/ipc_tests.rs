@@ -251,6 +251,18 @@ fn removal_requires_explicit_confirmation() {
 }
 
 #[test]
+fn backup_restore_requires_explicit_confirmation() {
+    let h = harness();
+    let err = invoke(
+        &h,
+        "container_restore_backup",
+        json!({ "id": "web-dcc-backup-20261111-000000", "start": true, "confirmed": false }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "engine.notConfirmed");
+}
+
+#[test]
 fn engine_test_reports_invalid_path_without_saving() {
     let h = harness();
     let before = h.store.load().unwrap().config.docker;
@@ -462,6 +474,24 @@ fn phase3_commands_fail_cleanly_without_connection() {
         ("image_defaults", json!({ "image": "nginx" })),
         ("networks_brief", json!({})),
         ("volumes_brief", json!({})),
+        // 0.9.2
+        ("container_edit_config", json!({ "id": "web" })),
+        (
+            "container_edit_plan",
+            json!({ "id": "web", "request": { "name": "web" } }),
+        ),
+        (
+            "container_edit_apply",
+            json!({ "id": "web", "request": { "name": "x" }, "options": { "confirmRecreate": true } }),
+        ),
+        (
+            "container_commit_preview",
+            json!({ "id": "web", "request": { "repository": "a" } }),
+        ),
+        (
+            "container_commit",
+            json!({ "id": "web", "request": { "repository": "a", "tag": "1" } }),
+        ),
     ] {
         let err = invoke(&h, cmd, args).unwrap_err();
         assert_eq!(err["code"], "engine.notConnected", "{cmd}: {err}");

@@ -29,6 +29,61 @@ pub enum Language {
     Fr,
     /// Italiano (0.9.1).
     It,
+    /// Catalán (0.9.2).
+    Ca,
+    /// Gallego (0.9.2).
+    Gl,
+    /// Euskera (0.9.2).
+    Eu,
+    /// Portugués (0.9.2).
+    Pt,
+}
+
+impl Language {
+    /// Orden del selector de idioma (0.9.2): inglés primero.
+    pub const ORDER: [Language; 8] = [
+        Language::En,
+        Language::Es,
+        Language::Ca,
+        Language::Gl,
+        Language::Eu,
+        Language::Fr,
+        Language::It,
+        Language::Pt,
+    ];
+
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::Es => "es",
+            Self::En => "en",
+            Self::Fr => "fr",
+            Self::It => "it",
+            Self::Ca => "ca",
+            Self::Gl => "gl",
+            Self::Eu => "eu",
+            Self::Pt => "pt",
+        }
+    }
+}
+
+/// Color principal de la interfaz (0.9.2, D-072).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum Accent {
+    /// Verde azulado, el color original de la aplicación.
+    #[default]
+    Teal,
+    Purple,
+}
+
+impl Accent {
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::Teal => "teal",
+            Self::Purple => "purple",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -37,6 +92,8 @@ pub enum Language {
 pub struct UiConfig {
     pub theme: Theme,
     pub language: Language,
+    /// Color principal (0.9.2).
+    pub accent: Accent,
     pub sidebar_collapsed: bool,
 }
 
@@ -45,6 +102,7 @@ impl Default for UiConfig {
         Self {
             theme: Theme::System,
             language: Language::Es,
+            accent: Accent::Teal,
             sidebar_collapsed: false,
         }
     }

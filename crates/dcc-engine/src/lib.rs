@@ -16,6 +16,8 @@ pub mod client;
 pub mod compose;
 pub mod containers;
 pub mod details;
+pub mod edit;
+pub mod edit_ops;
 pub mod endpoint;
 mod error;
 pub mod events;

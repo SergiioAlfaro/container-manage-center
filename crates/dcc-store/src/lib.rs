@@ -16,8 +16,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub use config::{
-    ActivityConfig, AppConfig, ComposeSettings, DockerConfig, DockerMode, Language, SavedProject,
-    Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
+    Accent, ActivityConfig, AppConfig, ComposeSettings, DockerConfig, DockerMode, Language,
+    SavedProject, Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
 };
 
 pub const APP_DIR: &str = "docker-control-center";
@@ -167,18 +167,43 @@ mod tests {
     #[test]
     fn french_and_italian_are_saved_and_loaded() {
         let (_d, s) = store();
-        for lang in [Language::Fr, Language::It] {
+        // 0.9.2: los ocho idiomas, con su código en el archivo.
+        for lang in Language::ORDER {
             let mut c = AppConfig::default();
             c.ui.language = lang;
             s.save(&c).unwrap();
             assert_eq!(s.load().unwrap().config.ui.language, lang);
+            assert!(fs::read_to_string(s.path())
+                .unwrap()
+                .contains(&format!("language = \"{}\"", lang.code())));
         }
-        // En el archivo, con el código del idioma.
-        assert!(fs::read_to_string(s.path())
-            .unwrap()
-            .contains("language = \"it\""));
         fs::write(s.path(), "version = 1\n[ui]\nlanguage = \"fr\"\n").unwrap();
         assert_eq!(s.load().unwrap().config.ui.language, Language::Fr);
+    }
+
+    #[test]
+    fn language_order_and_accent_roundtrip() {
+        let codes: Vec<&str> = Language::ORDER.iter().map(|l| l.code()).collect();
+        assert_eq!(codes, ["en", "es", "ca", "gl", "eu", "fr", "it", "pt"]);
+        let (_d, s) = store();
+        s.save(&AppConfig::default()).unwrap();
+        // Un archivo anterior a la 0.9.2 (sin `accent`) usa el color original.
+        fs::write(s.path(), "version = 1\n[ui]\nlanguage = \"gl\"\n").unwrap();
+        let c = s.load().unwrap().config;
+        assert_eq!((c.ui.language, c.ui.accent), (Language::Gl, Accent::Teal));
+        let mut c = AppConfig::default();
+        c.ui.accent = Accent::Purple;
+        s.save(&c).unwrap();
+        assert!(fs::read_to_string(s.path())
+            .unwrap()
+            .contains("accent = \"purple\""));
+        assert_eq!(s.load().unwrap().config.ui.accent, Accent::Purple);
+        // Un valor desconocido no se acepta como otro color.
+        fs::write(s.path(), "version = 1\n[ui]\naccent = \"pink\"\n").unwrap();
+        assert!(s
+            .load()
+            .map(|l| l.config.ui.accent != Accent::Purple)
+            .unwrap_or(true));
     }
 
     #[test]

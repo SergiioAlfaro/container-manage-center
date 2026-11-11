@@ -221,7 +221,7 @@ impl Engine {
         self.container_state(id, display).await
     }
 
-    async fn run_action(
+    pub(crate) async fn run_action(
         &self,
         id: &str,
         display: Option<&str>,

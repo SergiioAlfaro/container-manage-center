@@ -11,4 +11,8 @@ path: string,
 /**
  * Socket usado (p. ej. `/var/run/docker.sock`).
  */
-endpoint: string, } | { "via": "cli", program: string, args: Array<string>, };
+endpoint: string, } | { "via": "cli", program: string, args: Array<string>, } | { "via": "app", 
+/**
+ * Descripción breve y estable de lo que hace la aplicación.
+ */
+action: string, };

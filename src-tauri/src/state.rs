@@ -35,6 +35,25 @@ pub fn connection_mode(c: &DockerConfig) -> ConnectionMode {
     }
 }
 
+/// Registra en el panel de actividad un cambio de preferencia ya guardado.
+/// No hay petición a Docker: el transporte es la propia aplicación.
+pub fn record_preference(log: &ActivityLog, kind: &str, action: &str, before: &str, after: &str) {
+    let h = log.begin(dcc_activity::OperationSpec {
+        category: dcc_activity::Category::System,
+        kind: kind.to_owned(),
+        target: Some(after.to_owned()),
+        transport: dcc_activity::Transport::App {
+            action: action.to_owned(),
+        },
+        request_body: None,
+        equivalent_command: None,
+    });
+    h.succeed(dcc_activity::Outcome {
+        summary: Some(format!("{before} → {after}")),
+        ..Default::default()
+    });
+}
+
 impl AppState {
     pub fn new(store: ConfigStore) -> Self {
         let (config, warning) = match store.load() {
@@ -86,6 +105,25 @@ impl AppState {
         self.activity
             .set_capacity(new.activity.max_records as usize);
         let docker_changed = connection_mode(&cur.docker) != connection_mode(&new.docker);
+        // Cambios de preferencias que se registran en el panel de actividad (0.9.2).
+        if cur.ui.language != new.ui.language {
+            record_preference(
+                &self.activity,
+                "ui.language",
+                "Cambio del idioma de la interfaz",
+                cur.ui.language.code(),
+                new.ui.language.code(),
+            );
+        }
+        if cur.ui.accent != new.ui.accent {
+            record_preference(
+                &self.activity,
+                "ui.accent",
+                "Cambio del color principal",
+                cur.ui.accent.code(),
+                new.ui.accent.code(),
+            );
+        }
         *cur = new.clone();
         Ok((new, docker_changed))
     }
@@ -121,6 +159,35 @@ mod tests {
         assert!(!docker_changed);
         assert_eq!(state.activity.capacity(), 75);
         assert_eq!(store.load().unwrap().config, saved);
+    }
+
+    #[test]
+    fn language_and_accent_changes_are_recorded_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(ConfigStore::at(dir.path().join("config.toml")));
+        let mut c = state.config();
+        c.ui.language = dcc_store::Language::Eu;
+        c.ui.accent = dcc_store::Accent::Purple;
+        state.replace_config(c.clone()).unwrap();
+        // Guardar lo mismo otra vez no añade registros.
+        state.replace_config(c).unwrap();
+        let recs = state.activity.snapshot();
+        let got: Vec<(String, Option<String>)> = recs
+            .iter()
+            .map(|r| (r.kind.clone(), r.summary.clone()))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("ui.accent".to_string(), Some("teal → purple".to_string())),
+                ("ui.language".to_string(), Some("es → eu".to_string())),
+            ]
+        );
+        assert!(recs.iter().all(
+            |r| matches!(r.transport, dcc_activity::Transport::App { .. })
+                && r.status == dcc_activity::OpStatus::Succeeded
+                && r.duration_ms.is_some()
+        ));
     }
 
     #[test]

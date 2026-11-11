@@ -4,6 +4,8 @@
 use base64::Engine as _;
 use dcc_engine::catalog::{ImageDefaults, NetworkBrief, VolumeBrief};
 use dcc_engine::details::ContainerDetails;
+use dcc_engine::edit::{EditOutcome, EditPlan, EditRequest, EditableConfig};
+use dcc_engine::edit_ops::{ApplyOptions, CommitPreview, CommitRequest, CommitResult};
 use dcc_engine::spec::{ContainerSpec, DuplicateSpec, SpecIssue};
 use dcc_engine::streams::{LogLine, ShellChoice, StatsSample, StreamEnd, TerminalInput};
 use dcc_engine::{ContainerAction, ContainerState, EngineError};
@@ -354,4 +356,88 @@ pub async fn terminal_resize(
 #[tauri::command]
 pub fn stream_close(state: State<'_, AppState>, stream: u64) -> bool {
     state.streams.close(stream)
+}
+
+// ------------------------------------------------------------------ 0.9.2
+
+/// Configuración editable de un contenedor (pantalla «Editar configuración»).
+#[tauri::command]
+pub async fn container_edit_config(
+    state: State<'_, AppState>,
+    id: String,
+) -> CmdResult<EditableConfig> {
+    Ok(state
+        .engine
+        .with_engine(|e| async move { e.edit_config(&id).await })
+        .await?)
+}
+
+/// Comparación y clasificación de los cambios. No modifica nada.
+#[tauri::command]
+pub async fn container_edit_plan(
+    state: State<'_, AppState>,
+    id: String,
+    request: EditRequest,
+) -> CmdResult<EditPlan> {
+    Ok(state
+        .engine
+        .with_engine(|e| async move { e.edit_plan(&id, &request).await })
+        .await?)
+}
+
+/// Aplica los cambios: directos o con recreación segura (con confirmación).
+#[tauri::command]
+pub async fn container_edit_apply(
+    state: State<'_, AppState>,
+    id: String,
+    request: EditRequest,
+    options: ApplyOptions,
+) -> CmdResult<EditOutcome> {
+    Ok(state
+        .engine
+        .with_engine(|e| async move { e.edit_apply(&id, &request, &options).await })
+        .await?)
+}
+
+/// Vuelve a poner en servicio la copia que dejó una recreación.
+#[tauri::command]
+pub async fn container_restore_backup(
+    state: State<'_, AppState>,
+    id: String,
+    start: bool,
+    confirmed: bool,
+) -> CmdResult<EditOutcome> {
+    if !confirmed {
+        return Err(EngineError::NotConfirmed.into());
+    }
+    Ok(state
+        .engine
+        .with_engine(|e| async move { e.restore_backup(&id, start, confirmed).await })
+        .await?)
+}
+
+/// Comprobaciones previas a «Crear imagen a partir de este contenedor».
+#[tauri::command]
+pub async fn container_commit_preview(
+    state: State<'_, AppState>,
+    id: String,
+    request: CommitRequest,
+) -> CmdResult<CommitPreview> {
+    Ok(state
+        .engine
+        .with_engine(|e| async move { e.commit_preview(&id, &request).await })
+        .await?)
+}
+
+/// `docker commit` mediante la API.
+#[tauri::command]
+pub async fn container_commit(
+    state: State<'_, AppState>,
+    id: String,
+    request: CommitRequest,
+) -> CmdResult<CommitResult> {
+    Ok(state
+        .engine
+        .with_engine(|e| async move { e.commit_image(&id, &request).await })
+        .await?)
 }

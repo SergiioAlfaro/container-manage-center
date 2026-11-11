@@ -119,7 +119,7 @@ pub fn recorded(log: &ActivityLog) -> Vec<(String, String)> {
         .into_iter()
         .filter_map(|r| match r.transport {
             Transport::Api { method, path, .. } => Some((method, path)),
-            Transport::Cli { .. } => None,
+            Transport::Cli { .. } | Transport::App { .. } => None,
         })
         .collect();
     v.reverse(); // snapshot es del más reciente al más antiguo
