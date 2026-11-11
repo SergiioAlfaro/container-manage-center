@@ -1547,6 +1547,14 @@ fn live_compose_via_ipc() {
                     && r["status"] == "succeeded"
             })
     });
+    // El registro se cierra al terminar el proceso, pero la operación sigue
+    // (con el proyecto bloqueado) mientras compose_settle confirma el estado;
+    // la ventana espera el evento End. Aquí: hasta que la tarea termina de
+    // verdad. Sin esto, con un daemon lento, «down» llegaba con el proyecto
+    // aún ocupado (engine.busy), como pasó una vez en la verificación de 0.9.2.
+    wait_long("fin real de la operación", 60, || {
+        h.app.state::<AppState>().streams.running() == 0
+    });
 
     // Eliminar sin confirmar: error inmediato, nada ejecutado.
     let downs = || {

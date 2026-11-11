@@ -784,10 +784,81 @@ Ninguno abierto.
 
 ---
 
+## Actualización 0.9.2 · Idiomas, color principal, imagen desde contenedor y edición de contenedores
+
+### Objetivos
+Cuatro bloques antes de la Fase 10, sin rehacer lo validado (fases 1–9 y 0.9.1):
+1. Catalán, gallego, euskera y portugués, en el orden pedido y con toda la interfaz y la ayuda traducidas.
+2. Color principal morado integrado en el sistema de temas.
+3. «Crear imagen a partir de este contenedor».
+4. «Editar configuración» con cambios directos y recreación segura.
+
+### Funcionalidades implementadas
+- **Editar configuración** (D-070, D-071):
+  - Siete pestañas; cada cambio se clasifica como directo, que exige recrear o de solo lectura.
+  - Revisión con la comparación actual/nuevo/se mantiene.
+  - Recreación segura: bloqueos, riesgos que se aceptan uno a uno, confirmación, copia `-dcc-backup-`, comprobación del contenedor nuevo y vuelta atrás.
+  - Copias que se restauran o eliminan; MAC solo si se pide.
+- **Crear imagen** (D-069):
+  - Repositorio, etiqueta, autor y mensaje validados en Rust, y nombre completo.
+  - Montajes excluidos.
+  - Aviso de que las variables de entorno sí quedan en la imagen.
+  - Pausa opcional; confirmación si el nombre existe.
+  - Abre la imagen en Imágenes.
+- **Color principal** (D-072):
+  - Morado mediante `data-accent`, que solo cambia los tokens del acento, en claro y oscuro, al momento, también en las terminales abiertas. Se guarda.
+  - `--beacon-nav` para la barra lateral.
+  - Verde azulado claro ajustado a AA (4,43 → 4,61:1).
+- **Idiomas** (D-073):
+  - ca, gl, eu y pt-PT (unas 1900 cadenas cada uno).
+  - Selector desplegable en el orden English, Español, Català, Galego, Euskara, Français, Italiano, Português, con endónimos.
+  - Ayuda de 26 secciones en los ocho idiomas.
+- **Panel de actividad** (D-074): distintivo APP; registra idioma, color, rename, update, recreación, restauración y commit, sin valores sensibles.
+- **Teclado** (D-074): menú de acciones accesible (botón ⋯ y botón derecho) y grupos de opciones con flechas.
+
+### Cambios en componentes compartidos (y por qué)
+- **`Transport::App`** en el registro de actividad: para operaciones que no son peticiones a Docker ni procesos. El historial, el panel y el diagnóstico lo admiten.
+- **`Language` y `UiConfig`**: cuatro idiomas más y el campo `accent` (por defecto `teal`). Una configuración antigua sigue cargando igual.
+- **`Segmented`**: flechas para elegir opción. No cambia el orden de tabulación ni el aspecto.
+- **Barra lateral**: usa `--beacon-nav`. El icono activo tenía un contraste de 1,9–2,6:1 (defecto demostrado).
+- **Verde azulado claro**: `#0e858a` → `#0d8287`, para cumplir AA con texto blanco. No se aprecia a simple vista.
+- **`CreateWizard`**: los editores de puertos, montajes, memoria y clave/valor se movieron sin cambios a `create/editors.tsx` para compartirlos con la edición. Sus 45 pruebas siguen pasando.
+- **`Dialog`**: opción `wide`. **`DisconnectDialog`**: aviso opcional de «última red».
+- **Selector de idioma**: pasa de botones a lista desplegable (ocho opciones no caben). Las pruebas que lo usaban se adaptaron a la lista, sin quitar aserciones.
+
+{{PRUEBAS}}
+
+### Errores encontrados y corregidos durante el desarrollo
+- **Menú de acciones recortado** (aplicación real): dentro de la tabla con desplazamiento, el menú quedaba cortado y movía la tabla. Ahora se pinta en un portal con posición fija, se abre hacia arriba si no cabe y se cierra al desplazar.
+- **Copia invisible al recrear y renombrar a la vez** (aplicación real): la copia llevaba el nombre antiguo y no aparecía entre las del contenedor nuevo. Ahora lleva el nombre nuevo. La prueba real nueva falla sin la corrección y pasa con ella.
+- **Cabecera de la edición tras recrear**: seguía mostrando el nombre y el ID antiguos (ahora de la copia). Ahora muestra el contenedor nuevo.
+- **Texto del paso «se crea un contenedor nuevo con el nombre original»**: era falso al renombrar. Ahora muestra el nombre real, en los ocho idiomas.
+- **Variables de entorno en la imagen**: al revisar la imagen creada en la aplicación real se vio que `docker commit` guarda también las variables secretas. El diálogo y la ayuda lo advierten ahora.
+- **Docker 26 y 24 sin `ExposedPorts`**: los puertos no se publicaban en la prueba de vuelta atrás. Se corrigió el contenedor de prueba, sin cambiar la aserción.
+- **Nombre de copia repetido en el mismo segundo**: `backup_name` avanza la marca de tiempo hasta encontrar un nombre libre.
+- **MAC en Docker 26 y 24** (D-071): Docker 24 no admite fijar la MAC del endpoint. La opción se rechaza ahí y se avisa.
+- **Carrera en la prueba IPC de Compose** (`live_compose_via_ipc`, existente desde la Fase 6): falló una vez en Docker 29 con `engine.busy`.
+  - Causa: la prueba esperaba solo a que el registro del despliegue terminara, pero el proyecto sigue bloqueado unos instantes mientras se confirma el estado de sus contenedores.
+  - La aplicación es correcta: la ventana espera al evento de fin.
+  - Se reprodujo de forma determinista añadiendo un retardo temporal: la prueba original falla en la misma línea y con el mismo error, y la corregida, que espera a que la tarea termine de verdad, pasa. El retardo se retiró.
+- **Disco lleno** en una pasada de regresión (Docker 26 y 24 no pudieron enlazar): era del entorno, no del código. Se liberó espacio y se repitió todo.
+
+### Limitaciones y observaciones
+- **Traducciones**: completas y comprobadas por pruebas (claves, variables, nada vacío ni igual al inglés salvo excepciones explícitas), pero sin revisión de un hablante nativo. Es recomendable, sobre todo para el euskera, antes de distribuir.
+- **Textos del backend** (sin cambios, D-067): los resúmenes del panel de actividad y los errores con datos concretos siguen en español en todos los idiomas.
+- **Puerto ocupado por un programa ajeno a Docker**: no se puede detectar antes de iniciar. La recreación vuelve al original automáticamente (probado con Docker real).
+- **Descripción emergente nativa** (WebKitGTK): si el puntero se queda quieto sobre el botón ⋯ antes de pulsarlo, la descripción puede seguir visible sobre el menú hasta que se mueve el ratón. Es cosmético.
+- **Sin probar aquí**: GNOME/Wayland real, un usuario no root, Docker 26.1.5 exacto y una revisión nativa de los idiomas.
+
+### Errores conocidos
+Ninguno abierto.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-update-0.9.1.sh --deb --net` en Debian 13 y envía `verify-update-0.9.1-report.txt`. Si el veredicto es «parte automática superada», instala el paquete 0.9.1 y realiza M1–M12.
-2. Corregir lo que surja y marcar la 0.9.1 como validada.
-3. Fase 10: pruebas finales y distribución (necesita decidir nombre, licencia y dónde se publica).
+1. El propietario ejecuta `bash scripts/verify-update-0.9.2.sh --deb --net` en Debian 13 y envía `verify-update-0.9.2-report.txt`. Si el veredicto es «parte automática superada», instala el paquete 0.9.2 y realiza M1–M10.
+2. Corregir lo que surja y marcar la 0.9.2 como validada.
+3. Fase 10: pruebas finales y distribución (necesita decidir nombre, licencia y dónde se publica). **No se ha iniciado.**
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

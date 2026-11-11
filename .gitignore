@@ -3,5 +3,6 @@
 /node_modules/
 /src-tauri/gen/
 /verify-phase-*-report.txt
+/verify-update-*-report.txt
 *.log
 .DS_Store
