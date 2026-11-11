@@ -112,14 +112,17 @@ cleanup_test_resources() {
 lab_get() { node -e 'const l=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));let v=l;for(const k of process.argv[2].split("."))v=v?.[k];if(v===undefined)process.exit(1);process.stdout.write(String(v))' "$SSH_LAB" "$1"; }
 lab_count() { node -e 'const l=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(String(l.servers.length))' "$SSH_LAB"; }
 # Orden docker fija en un servidor del laboratorio, con su clave, su huella
-# ya confirmada (StrictHostKeyChecking=yes) y sin tocar ~/.ssh. Ningún
-# argumento procede de una entrada del usuario.
+# ya confirmada (StrictHostKeyChecking=yes) y sin tocar ~/.ssh. ssh une los
+# argumentos en una línea que interpreta la shell del servidor: cada uno se
+# entrecomilla aparte (comillas simples POSIX), nunca se concatenan sin más.
+sq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 lab_docker() {
-  local i="$1"; shift
+  local i="$1" a cmd="docker"; shift
+  for a in "$@"; do cmd="$cmd $(sq "$a")"; done
   ssh -F /dev/null -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
       -o UserKnownHostsFile="$(lab_get knownHosts)" -o ConnectTimeout=10 \
       -i "$(lab_get key)" -p "$(lab_get servers.$i.port)" \
-      -- "$(lab_get servers.$i.user)@$(lab_get servers.$i.host)" docker "$@"
+      -- "$(lab_get servers.$i.user)@$(lab_get servers.$i.host)" "$cmd"
 }
 LAB_LEFT=""
 cleanup_lab_resources() {

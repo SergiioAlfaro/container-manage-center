@@ -159,7 +159,7 @@ cargo run -q -p dcc-engine --bin dcc-diagnose -- --compose  # incluye Docker Com
 | Docker Engine está detenido | El socket existe pero nadie responde | Igual que arriba; revisa `systemctl status docker` |
 | Sin permiso para usar el socket | Tu usuario no puede abrirlo | Grupo `docker` y volver a iniciar sesión, o Docker rootless |
 | …ya perteneces al grupo… | La sesión actual no tiene el grupo activo | Cerrar sesión y volver a entrar |
-| Conexión de Docker no compatible | `DOCKER_HOST`/contexto con `tcp://` o `ssh://` | `unset DOCKER_HOST; docker context use default` o socket personalizado |
+| Conexión de Docker no compatible | `DOCKER_HOST`/contexto con `tcp://` o `ssh://` | `unset DOCKER_HOST; docker context use default` o socket personalizado. Para un Docker remoto por SSH, añádelo en **Servidores** (0.10.0) |
 | La ruta no es un socket / no responde como Docker | La ruta configurada apunta a otra cosa | Corregir la ruta en Configuración |
 | Docker no responde a tiempo | Sin respuesta en 5 s | `sudo systemctl restart docker` |
 | Versión de Docker demasiado antigua | API < 1.41 | Actualizar a Docker 20.10 o posterior |

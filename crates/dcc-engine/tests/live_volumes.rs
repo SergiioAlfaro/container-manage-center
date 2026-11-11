@@ -534,11 +534,18 @@ async fn binds_report_host_state_users_and_risks() {
         binds.iter().find(|x| x.source == src_s).unwrap().host.kind,
         PathKind::Missing
     );
-    // Solo la lista de contenedores habla con Docker.
-    assert!(log
-        .snapshot()
-        .iter()
-        .all(|r| r.kind == "container.list" || r.kind.starts_with("system.")));
+    // Solo la lista de contenedores habla con Docker. En un servidor remoto
+    // (0.10.0, D-080) las carpetas se comprueban además en el servidor con
+    // `stat`/`find` por SSH (`bind.inspect`), que no son peticiones a Docker.
+    let remote = ssh_target().is_some();
+    let over_ssh = |r: &dcc_activity::OperationRecord| {
+        r.kind == "bind.inspect"
+            && matches!(&r.transport, dcc_activity::Transport::Cli { program, .. } if program == "ssh")
+    };
+    assert!(log.snapshot().iter().all(|r| r.kind == "container.list"
+        || r.kind.starts_with("system.")
+        || (remote && over_ssh(r))));
+    assert_eq!(log.snapshot().iter().any(over_ssh), remote);
     assert_eq!(recorded(&log), proxy.requests());
 }
 
