@@ -725,7 +725,15 @@
     "close": "Pechar a sesión",
     "splitColumns": "Redimensionar as columnas",
     "splitRows": "Redimensionar as filas",
-    "server": "Servidor {{name}}"
+    "server": "Servidor {{name}}",
+    "sessionKind": "Tipo de sesión",
+    "kind": {
+      "container": "Contedor",
+      "server": "Servidor (shell SSH)"
+    },
+    "serverShell": "Shell SSH do servidor",
+    "serverShellHint": "Ábrese a shell de {{user}} en {{server}}: o que escribas execútase no servidor, non dentro dun contedor.",
+    "serverPaneLabel": "Terminal {{name}}: shell SSH de {{server}}"
   },
   "stats": {
     "stop": "Deixar de recibir",
@@ -815,7 +823,8 @@
       "volumeName": "Baleiro = volume anónimo. Se non existe, Docker créao.",
       "cpus": "Por exemplo 0.5 ou 2.",
       "maxRetries": "0 = sen límite.",
-      "user": "Nome ou UID[:GID]. Baleiro = o da imaxe."
+      "user": "Nome ou UID[:GID]. Baleiro = o da imaxe.",
+      "image_remote": "Debe existir no servidor."
     },
     "ph": {
       "name": "servidor-web",
@@ -843,7 +852,9 @@
       "restartHint": "Que fai Docker cando remata o proceso principal.",
       "options": "Opcións",
       "caps": "Capacidades do núcleo",
-      "capsHint": "Separadas por comas, p. ex. NET_ADMIN ou ALL."
+      "capsHint": "Separadas por comas, p. ex. NET_ADMIN ou ALL.",
+      "mountsHint_remote": "Volumes de Docker ou cartafoles do servidor (bind mounts).",
+      "portsHint_remote": "Publica portos do contedor no servidor."
     },
     "add": {
       "env": "Engadir variable",
@@ -893,7 +904,8 @@
     "startFailed": "O contedor creouse, pero non se puido iniciar: {{message}}",
     "dockerWarning": "Aviso de Docker: {{message}}",
     "secretsHidden_one": "{{count}} valor sensible aparece como ******** aquí e no panel de actividade; a Docker envíase completo.",
-    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí e no panel de actividade; a Docker envíanse completos."
+    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí e no panel de actividade; a Docker envíanse completos.",
+    "imageNotLocal_remote": "A imaxe {{ref}} non está no servidor. Docker non a descargará ao crear o contedor; descárgaa antes neste servidor ou escolle unha que xa teña."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Indica o cartafol do equipo.",
       "missing": "O cartafol {{path}} non existe neste equipo.",
-      "sensitive": "Montar {{path}} con escritura dálle ao contedor control sobre o sistema. Márcao como só lectura se non o necesitas."
+      "sensitive": "Montar {{path}} con escritura dálle ao contedor control sobre o sistema. Márcao como só lectura se non o necesitas.",
+      "missing_remote": "O cartafol {{path}} non existe no servidor."
     },
     "cpus": {
       "range": "Indica un número de CPU entre 0,01 e 1024."
@@ -1641,7 +1654,10 @@
     "empty": "Ningún contedor ten cartafoles vinculados",
     "emptyBody": "Vincula un cartafol para que un contedor traballe con ficheiros deste equipo.",
     "noMatches": "Ningún cartafol coincide coa busca.",
-    "loadError": "Non se puido obter a lista de contedores: {{message}}"
+    "loadError": "Non se puido obter a lista de contedores: {{message}}",
+    "missing_remote": "Non existe no servidor. Se o contedor se creou con «-v», Docker volverá crealo baleiro (como root) ao arrancalo.",
+    "intro_remote": "Cartafoles do servidor montados dentro de contedores. Docker non permite engadir montaxes a un contedor existente: para vincular un cartafol créase un contedor novo co asistente.",
+    "emptyBody_remote": "Vincula un cartafol do servidor para que un contedor traballe cos seus ficheiros."
   },
   "composeList": {
     "add": "Abrir proxecto…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Comproba a ruta do socket de Docker no perfil.",
       "upgradeDocker": "Actualiza Docker Engine no servidor á versión 20.10 ou posterior."
     },
-    "target": "Servidor"
+    "target": "Servidor",
+    "paths": {
+      "serverPath": "Ruta no servidor",
+      "add": "Engadir ruta",
+      "use": "Usar",
+      "absolute": "Escribe unha ruta absoluta do servidor (comeza por /).",
+      "hint": "Ruta do servidor {{name}}: non se usan ficheiros deste equipo.",
+      "composeFile": "Ficheiro Compose no servidor",
+      "folder": "Cartafol no servidor",
+      "bindLabel": "Cartafol do servidor",
+      "bindHint": "Ruta no servidor; o cartafol debe existir alí (a aplicación non o crea).",
+      "buildContext": "O contexto de construción é un cartafol deste equipo: Docker empaquétao e envíao ao servidor {{name}}, que constrúe a imaxe alí."
+    },
+    "write": {
+      "titleSave": "Gardar o ficheiro no servidor?",
+      "titleCreate": "Crear o ficheiro no servidor?",
+      "body": "Escribirase nesta ruta do servidor (antes compróbase que o ficheiro non cambiou):",
+      "confirmSave": "Gardar no servidor",
+      "confirmCreate": "Crear no servidor"
+    }
   }
 }

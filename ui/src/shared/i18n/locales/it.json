@@ -725,7 +725,15 @@
     "close": "Chiudi sessione",
     "splitColumns": "Ridimensiona colonne",
     "splitRows": "Ridimensiona righe",
-    "server": "Server {{name}}"
+    "server": "Server {{name}}",
+    "sessionKind": "Tipo di sessione",
+    "kind": {
+      "container": "Container",
+      "server": "Server (shell SSH)"
+    },
+    "serverShell": "Shell SSH del server",
+    "serverShellHint": "Apre la shell di {{user}} su {{server}}: ciò che scrivi viene eseguito sul server, non dentro un container.",
+    "serverPaneLabel": "Terminale {{name}}: shell SSH di {{server}}"
   },
   "stats": {
     "stop": "Interrompi ricezione",
@@ -815,7 +823,8 @@
       "volumeName": "Vuoto = volume anonimo. Docker lo crea se non esiste.",
       "cpus": "Ad esempio 0.5 o 2.",
       "maxRetries": "0 = nessun limite.",
-      "user": "Nome o UID[:GID]. Vuoto = predefinito dell’immagine."
+      "user": "Nome o UID[:GID]. Vuoto = predefinito dell’immagine.",
+      "image_remote": "Deve esistere sul server."
     },
     "ph": {
       "name": "server-web",
@@ -843,7 +852,9 @@
       "restartHint": "Che cosa fa Docker quando il processo principale termina.",
       "options": "Opzioni",
       "caps": "Capability del kernel",
-      "capsHint": "Separate da virgole, ad es. NET_ADMIN o ALL."
+      "capsHint": "Separate da virgole, ad es. NET_ADMIN o ALL.",
+      "mountsHint_remote": "Volumi Docker o cartelle del server (bind mount).",
+      "portsHint_remote": "Pubblica porte del container sul server."
     },
     "add": {
       "env": "Aggiungi variabile",
@@ -893,7 +904,8 @@
     "startFailed": "Il container è stato creato ma non è stato possibile avviarlo: {{message}}",
     "dockerWarning": "Avviso di Docker: {{message}}",
     "secretsHidden_one": "{{count}} valore sensibile è mostrato come ******** qui e nel pannello attività; Docker lo riceve per intero.",
-    "secretsHidden_other": "{{count}} valori sensibili sono mostrati come ******** qui e nel pannello attività; Docker li riceve per intero."
+    "secretsHidden_other": "{{count}} valori sensibili sono mostrati come ******** qui e nel pannello attività; Docker li riceve per intero.",
+    "imageNotLocal_remote": "L'immagine {{ref}} non è sul server. Docker non la scaricherà alla creazione del container; scaricala prima su questo server o scegline una che ha già."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Indica la cartella dell’host.",
       "missing": "La cartella {{path}} non esiste su questo computer.",
-      "sensitive": "Montare {{path}} in scrittura dà al container il controllo del sistema. Impostala in sola lettura se non serve scrivere."
+      "sensitive": "Montare {{path}} in scrittura dà al container il controllo del sistema. Impostala in sola lettura se non serve scrivere.",
+      "missing_remote": "La cartella {{path}} non esiste sul server."
     },
     "cpus": {
       "range": "Indica un numero di CPU tra 0.01 e 1024."
@@ -1641,7 +1654,10 @@
     "empty": "Nessun container ha cartelle collegate",
     "emptyBody": "Collega una cartella perché un container possa lavorare con file di questa macchina.",
     "noMatches": "Nessuna cartella corrisponde alla ricerca.",
-    "loadError": "Impossibile ottenere l’elenco dei container: {{message}}"
+    "loadError": "Impossibile ottenere l’elenco dei container: {{message}}",
+    "missing_remote": "Non esiste sul server. Se il container è stato creato con «-v», Docker la ricreerà vuota (come root) all'avvio.",
+    "intro_remote": "Cartelle del server montate dentro i container. Docker non permette di aggiungere montaggi a un container esistente: per collegare una cartella si crea un nuovo container con la procedura guidata.",
+    "emptyBody_remote": "Collega una cartella del server perché un container lavori con i suoi file."
   },
   "composeList": {
     "add": "Apri progetto…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Controlla il percorso del socket Docker nel profilo.",
       "upgradeDocker": "Aggiorna Docker Engine sul server alla versione 20.10 o successiva."
     },
-    "target": "Server"
+    "target": "Server",
+    "paths": {
+      "serverPath": "Percorso sul server",
+      "add": "Aggiungi percorso",
+      "use": "Usa",
+      "absolute": "Inserisci un percorso assoluto del server (inizia con /).",
+      "hint": "Percorso sul server {{name}}: non vengono usati file di questo computer.",
+      "composeFile": "File Compose sul server",
+      "folder": "Cartella sul server",
+      "bindLabel": "Cartella del server",
+      "bindHint": "Percorso sul server; la cartella deve esistere lì (l'applicazione non la crea).",
+      "buildContext": "Il contesto di build è una cartella di questo computer: Docker la impacchetta e la invia al server {{name}}, che costruisce lì l'immagine."
+    },
+    "write": {
+      "titleSave": "Salvare il file sul server?",
+      "titleCreate": "Creare il file sul server?",
+      "body": "Verrà scritto in questo percorso del server (prima si verifica che il file non sia cambiato):",
+      "confirmSave": "Salva sul server",
+      "confirmCreate": "Crea sul server"
+    }
   }
 }

@@ -725,7 +725,15 @@
     "close": "Tancar la sessió",
     "splitColumns": "Redimensionar les columnes",
     "splitRows": "Redimensionar les files",
-    "server": "Servidor {{name}}"
+    "server": "Servidor {{name}}",
+    "sessionKind": "Tipus de sessió",
+    "kind": {
+      "container": "Contenidor",
+      "server": "Servidor (shell SSH)"
+    },
+    "serverShell": "Shell SSH del servidor",
+    "serverShellHint": "S'obre la shell de {{user}} a {{server}}: el que escriguis s'executa al servidor, no dins d'un contenidor.",
+    "serverPaneLabel": "Terminal {{name}}: shell SSH de {{server}}"
   },
   "stats": {
     "stop": "Deixar de rebre",
@@ -815,7 +823,8 @@
       "volumeName": "Buit = volum anònim. Si no existeix, Docker el crea.",
       "cpus": "Per exemple 0.5 o 2.",
       "maxRetries": "0 = sense límit.",
-      "user": "Nom o UID[:GID]. Buit = el de la imatge."
+      "user": "Nom o UID[:GID]. Buit = el de la imatge.",
+      "image_remote": "Ha d'existir al servidor."
     },
     "ph": {
       "name": "servidor-web",
@@ -843,7 +852,9 @@
       "restartHint": "Què fa Docker quan el procés principal acaba.",
       "options": "Opcions",
       "caps": "Capacitats del nucli",
-      "capsHint": "Separades per comes, p. ex. NET_ADMIN o ALL."
+      "capsHint": "Separades per comes, p. ex. NET_ADMIN o ALL.",
+      "mountsHint_remote": "Volums de Docker o carpetes del servidor (bind mounts).",
+      "portsHint_remote": "Publica ports del contenidor al servidor."
     },
     "add": {
       "env": "Afegir una variable",
@@ -893,7 +904,8 @@
     "startFailed": "El contenidor s’ha creat, però no s’ha pogut iniciar: {{message}}",
     "dockerWarning": "Avís de Docker: {{message}}",
     "secretsHidden_one": "{{count}} valor sensible apareix com a ******** aquí i al tauler d’activitat; a Docker s’envia complet.",
-    "secretsHidden_other": "{{count}} valors sensibles apareixen com a ******** aquí i al tauler d’activitat; a Docker s’envien complets."
+    "secretsHidden_other": "{{count}} valors sensibles apareixen com a ******** aquí i al tauler d’activitat; a Docker s’envien complets.",
+    "imageNotLocal_remote": "La imatge {{ref}} no és al servidor. Docker no la baixarà en crear el contenidor; baixa-la abans en aquest servidor o tria'n una que ja tingui."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Indica la carpeta de l’equip.",
       "missing": "La carpeta {{path}} no existeix en aquest equip.",
-      "sensitive": "Muntar {{path}} amb escriptura dona al contenidor control sobre el sistema. Marca’l com a només lectura si no ho necessites."
+      "sensitive": "Muntar {{path}} amb escriptura dona al contenidor control sobre el sistema. Marca’l com a només lectura si no ho necessites.",
+      "missing_remote": "La carpeta {{path}} no existeix al servidor."
     },
     "cpus": {
       "range": "Indica un nombre de CPU entre 0,01 i 1024."
@@ -1641,7 +1654,10 @@
     "empty": "Cap contenidor no té carpetes vinculades",
     "emptyBody": "Vincula una carpeta perquè un contenidor treballi amb fitxers d’aquest equip.",
     "noMatches": "Cap carpeta no coincideix amb la cerca.",
-    "loadError": "No s’ha pogut obtenir la llista de contenidors: {{message}}"
+    "loadError": "No s’ha pogut obtenir la llista de contenidors: {{message}}",
+    "missing_remote": "No existeix al servidor. Si el contenidor es va crear amb «-v», Docker la tornarà a crear buida (com a root) en iniciar-lo.",
+    "intro_remote": "Carpetes del servidor muntades dins de contenidors. Docker no permet afegir muntatges a un contenidor existent: per vincular una carpeta es crea un contenidor nou amb l'assistent.",
+    "emptyBody_remote": "Vincula una carpeta del servidor perquè un contenidor treballi amb els seus fitxers."
   },
   "composeList": {
     "add": "Obrir un projecte…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Comprova el camí del sòcol de Docker al perfil.",
       "upgradeDocker": "Actualitza Docker Engine al servidor a la versió 20.10 o posterior."
     },
-    "target": "Servidor"
+    "target": "Servidor",
+    "paths": {
+      "serverPath": "Camí al servidor",
+      "add": "Afegeix el camí",
+      "use": "Fes-la servir",
+      "absolute": "Escriu un camí absolut del servidor (comença per /).",
+      "hint": "Camí del servidor {{name}}: no es fan servir fitxers d'aquest equip.",
+      "composeFile": "Fitxer Compose al servidor",
+      "folder": "Carpeta al servidor",
+      "bindLabel": "Carpeta del servidor",
+      "bindHint": "Camí al servidor; la carpeta hi ha d'existir (l'aplicació no la crea).",
+      "buildContext": "El context de construcció és una carpeta d'aquest equip: Docker l'empaqueta i l'envia al servidor {{name}}, que hi construeix la imatge."
+    },
+    "write": {
+      "titleSave": "Vols desar el fitxer al servidor?",
+      "titleCreate": "Vols crear el fitxer al servidor?",
+      "body": "S'escriurà en aquest camí del servidor (abans es comprova que el fitxer no ha canviat):",
+      "confirmSave": "Desa al servidor",
+      "confirmCreate": "Crea al servidor"
+    }
   }
 }

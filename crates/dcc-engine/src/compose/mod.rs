@@ -21,6 +21,7 @@ use crate::cli::{self, CliOutput, CliRequest};
 pub mod file;
 pub mod ops;
 pub mod project;
+pub mod remote_file;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -137,6 +138,91 @@ pub fn plugin_dirs() -> Vec<PathBuf> {
     v
 }
 
+/// Variables del proceso remoto según a qué Docker del servidor se conecta
+/// el perfil (0.10.0): las mismas que usaría el CLI con `--host`/`--context`.
+pub fn remote_env(target: &crate::ssh::RemoteDocker) -> Vec<(String, String)> {
+    match target {
+        crate::ssh::RemoteDocker::Default => vec![],
+        crate::ssh::RemoteDocker::Socket { path } => {
+            vec![("DOCKER_HOST".into(), format!("unix://{path}"))]
+        }
+        crate::ssh::RemoteDocker::Context { name } => vec![("DOCKER_CONTEXT".into(), name.clone())],
+    }
+}
+
+/// Detecta Compose **en el servidor** por su sesión SSH (0.10.0, D-080):
+/// `docker compose version` y, si no, `docker-compose version`. Nada se
+/// instala ni se cambia; cada ejecución queda registrada.
+pub async fn detect_remote(
+    log: &ActivityLog,
+    session: std::sync::Arc<crate::ssh::SshSession>,
+) -> ComposeStatus {
+    let env = remote_env(&session.profile().docker);
+    let req = |program: &str, args: &[&str]| {
+        let mut r = request(program, args, &env);
+        r.timeout = Duration::from_secs(30);
+        r.remote = Some(cli::RemoteExec {
+            session: session.clone(),
+            tty: false,
+        });
+        r
+    };
+    match cli::run(log, req("docker", &["compose", "version"])).await {
+        Ok(out) => match parse_version(&out) {
+            VersionOutput::V2(version) => {
+                return ComposeStatus::Available {
+                    version,
+                    kind: ComposeKind::Plugin,
+                    program: "docker".into(),
+                }
+            }
+            VersionOutput::V1(version) => {
+                return ComposeStatus::Legacy {
+                    version,
+                    program: "docker".into(),
+                }
+            }
+            VersionOutput::Other(output) if out.success() => {
+                return ComposeStatus::Unrecognized {
+                    program: "docker".into(),
+                    output,
+                }
+            }
+            _ => {}
+        },
+        Err(e) => {
+            return ComposeStatus::Error {
+                message: e.to_string(),
+            }
+        }
+    }
+    match cli::run(log, req("docker-compose", &["version"])).await {
+        // 127: el shell del servidor no encuentra el programa.
+        Ok(out) if out.exit_code == Some(127) => ComposeStatus::NotInstalled {
+            cli_path: None,
+            searched: vec!["docker compose".into(), "docker-compose".into()],
+        },
+        Ok(out) => match parse_version(&out) {
+            VersionOutput::V2(version) => ComposeStatus::Available {
+                version,
+                kind: ComposeKind::Standalone,
+                program: "docker-compose".into(),
+            },
+            VersionOutput::V1(version) => ComposeStatus::Legacy {
+                version,
+                program: "docker-compose".into(),
+            },
+            _ => ComposeStatus::Unrecognized {
+                program: "docker-compose".into(),
+                output: format!("{}{}", out.stdout, out.stderr).trim().to_owned(),
+            },
+        },
+        Err(e) => ComposeStatus::Error {
+            message: e.to_string(),
+        },
+    }
+}
+
 fn request(program: &str, args: &[&str], env: &[(String, String)]) -> CliRequest {
     CliRequest {
         category: Category::Compose,
@@ -147,6 +233,7 @@ fn request(program: &str, args: &[&str], env: &[(String, String)]) -> CliRequest
         env: env.to_vec(),
         cwd: None,
         timeout: Duration::from_secs(15),
+        remote: None,
     }
 }
 

@@ -6,7 +6,7 @@ import type { ShellChoice } from "@/shared/ipc/bindings/ShellChoice";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
 import { Banner, Dialog, Spinner } from "@/shared/ui/feedback";
-import { defaultName, MAX_NAME, nameProblem, openSession } from "./sessions";
+import { defaultName, MAX_NAME, nameProblem, openSession, type SessionKind } from "./sessions";
 
 const fieldClass =
   "h-8 w-full rounded-md border border-line bg-surface px-2 text-[13px] text-ink outline-none transition-colors placeholder:text-ink-3 hover:border-line-strong focus:border-beacon aria-[invalid=true]:border-err";
@@ -22,16 +22,26 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
   const [container, setContainer] = useState("");
   const [shell, setShell] = useState<ShellChoice>("auto");
   const [name, setName] = useState("");
+  // En un servidor remoto se puede abrir también la shell SSH del servidor (0.10.0).
+  const remote = !!view?.remote;
+  const [kind, setKind] = useState<SessionKind>("container");
+  const serverShell = remote && kind === "server";
   useEffect(() => {
     if (!container && running[0]) setContainer(running[0].id);
   }, [container, running]);
 
   const chosen = running.find((c) => c.id === container) ?? null;
   const problem = name.trim() === "" ? null : nameProblem(name);
-  const placeholder = chosen ? defaultName(chosen.name) : "";
+  const placeholder = serverShell ? defaultName(`SSH ${view?.name ?? ""}`) : chosen ? defaultName(chosen.name) : "";
 
   const submit = () => {
-    if (!chosen || problem) return;
+    if (problem) return;
+    if (serverShell) {
+      openSession({ kind: "server", server: api.server, serverName: view?.name ?? "", remote: true, containerId: "", containerName: "", shell: "auto", name: name.trim() || undefined });
+      onClose();
+      return;
+    }
+    if (!chosen) return;
     openSession({ server: api.server, serverName: view?.remote ? view.name : "", remote: !!view?.remote, containerId: chosen.id, containerName: chosen.name, shell, name: name.trim() || undefined });
     onClose();
   };
@@ -43,7 +53,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
       footer={
         <>
           <Button onClick={onClose}>{t("common.cancel")}</Button>
-          <Button variant="primary" type="submit" form="new-terminal" disabled={!chosen || problem !== null}>
+          <Button variant="primary" type="submit" form="new-terminal" disabled={(!serverShell && !chosen) || problem !== null}>
             {t("terminals.openSession")}
           </Button>
         </>
@@ -57,14 +67,29 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
           submit();
         }}
       >
-        {list.isPending && (
+        {remote && (
+          <div className="space-y-1">
+            <span className="block text-[12.5px] font-medium text-ink-2">{t("terminals.sessionKind")}</span>
+            <Segmented<SessionKind>
+              label={t("terminals.sessionKind")}
+              value={kind}
+              onChange={setKind}
+              options={[
+                { value: "container", label: t("terminals.kind.container") },
+                { value: "server", label: t("terminals.kind.server") },
+              ]}
+            />
+          </div>
+        )}
+        {serverShell && <Banner tone="warn">{t("terminals.serverShellHint", { user: view?.config?.user ?? "", server: view?.name ?? "" })}</Banner>}
+        {!serverShell && list.isPending && (
           <p role="status" className="flex items-center gap-2 text-ink-3">
             <Spinner size={14} /> {t("common.loading")}
           </p>
         )}
-        {list.error && <Banner tone="error">{(list.error as { message: string }).message}</Banner>}
-        {list.isSuccess && running.length === 0 && <Banner tone="info">{t("terminals.noRunning")}</Banner>}
-        {running.length > 0 && (
+        {!serverShell && list.error && <Banner tone="error">{(list.error as { message: string }).message}</Banner>}
+        {!serverShell && list.isSuccess && running.length === 0 && <Banner tone="info">{t("terminals.noRunning")}</Banner>}
+        {!serverShell && running.length > 0 && (
           <div className="space-y-1">
             <label htmlFor={ids.container} className="text-[12.5px] font-medium text-ink-2">
               {t("terminals.containerField")}
@@ -78,7 +103,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
             </select>
           </div>
         )}
-        <div className="space-y-1">
+        {!serverShell && <div className="space-y-1">
           <span className="block text-[12.5px] font-medium text-ink-2">{t("terminal.shell")}</span>
           <Segmented<ShellChoice>
             label={t("terminal.shell")}
@@ -90,7 +115,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
               { value: "sh", label: "sh" },
             ]}
           />
-        </div>
+        </div>}
         <div className="space-y-1">
           <label htmlFor={ids.name} className="text-[12.5px] font-medium text-ink-2">
             {t("terminals.sessionName")}

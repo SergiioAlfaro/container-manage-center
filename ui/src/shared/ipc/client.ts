@@ -176,6 +176,16 @@ export const LOCAL_SERVER = "local";
 export function dockerApi(server: string) {
   const call = <T,>(cmd: string, args: Record<string, unknown> = {}) => callIpc<T>(cmd, { ...args, server });
   return {
+    /** Valida la especificación; las carpetas se comprueban donde está Docker (0.10.0). */
+    containerPreview: (spec: ContainerSpec) => call<SpecPreview>("container_preview", { spec }),
+    /** Terminal SSH del propio servidor (solo servidores remotos). */
+    serverShellOpen: (cols: number, rows: number, onEvent: (e: TerminalEvent) => void) => call<number>("server_shell_open", { cols, rows, onEvent: channel(onEvent) }),
+    // Archivos y lista de proyectos Compose: también del servidor (0.10.0).
+    composeUnregister: (name: string) => call<boolean>("compose_unregister", { name }),
+    composeFileRead: (path: string) => call<ComposeFile>("compose_file_read", { path }),
+    composeFileSave: (path: string, content: string, version: string) => call<ComposeFile>("compose_file_save", { path, content, version }),
+    composeFileCreate: (dir: string, content: string) => call<ComposeFile>("compose_file_create", { dir, content }),
+    composeFindFile: (dir: string) => call<string | null>("compose_find_file", { dir }),
   engineState: () => call<ConnectionState>("engine_state"),
     engineReconnect: () => call<ConnectionState>("engine_reconnect"),
     engineOverview: () => call<SystemOverview>("engine_overview"),
@@ -302,8 +312,6 @@ const appApi = {
   activityClear: () => call<void>("activity_clear"),
 
   engineTest: (docker: DockerConfig) => call<ConnectionTest>("engine_test", { docker }),
-  /** Valida y traduce la especificación sin hablar con Docker. */
-  containerPreview: (spec: ContainerSpec) => call<SpecPreview>("container_preview", { spec }),
   terminalInput: (stream: number, data: string) => call<void>("terminal_input", { stream, data }),
   terminalResize: (stream: number, cols: number, rows: number) => call<void>("terminal_resize", { stream, cols, rows }),
   streamClose: (stream: number) => call<boolean>("stream_close", { stream }),
@@ -316,11 +324,6 @@ const appApi = {
   networkPreview: (spec: NetworkSpec) => call<NetworkPreview>("network_preview", { spec }),
   /** Valida el volumen y muestra la petición exacta sin hablar con Docker. */
   volumePreview: (spec: VolumeSpec) => call<VolumePreview>("volume_preview", { spec }),
-  composeUnregister: (name: string) => call<boolean>("compose_unregister", { name }),
-  composeFileRead: (path: string) => call<ComposeFile>("compose_file_read", { path }),
-  composeFileSave: (path: string, content: string, version: string) => call<ComposeFile>("compose_file_save", { path, content, version }),
-  composeFileCreate: (dir: string, content: string) => call<ComposeFile>("compose_file_create", { dir, content }),
-  composeFindFile: (dir: string) => call<string | null>("compose_find_file", { dir }),
 
   // Fase 8: eventos de Docker e historial de operaciones.
   eventsRecent: (filter: Partial<EventFilter> = {}) => call<EventPage>("events_recent", { filter }),

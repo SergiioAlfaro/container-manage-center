@@ -397,10 +397,20 @@ impl EngineManager {
     /// oficial sin shell (D-005, D-032).
     pub async fn compose_status(&self) -> crate::compose::ComposeStatus {
         if self.is_remote() {
-            // El CLI local no debe hablar con un servidor remoto por su cuenta
-            // (sin las opciones de seguridad de la aplicación). Compose remoto
-            // se ejecuta en el propio servidor (D-080).
-            return crate::compose::ComposeStatus::remote_pending();
+            // El CLI local no habla con un servidor remoto por su cuenta (sin
+            // las opciones de seguridad de la aplicación): Compose se ejecuta
+            // en el propio servidor por la sesión SSH verificada (D-080).
+            let Ok(e) = self.engine().await else {
+                return crate::compose::ComposeStatus::Error {
+                    message: "sin conexión con el servidor".into(),
+                };
+            };
+            let Some(session) = e.ssh_session().cloned() else {
+                return crate::compose::ComposeStatus::remote_pending();
+            };
+            let status = crate::compose::detect_remote(&self.inner.activity, session).await;
+            *self.inner.compose.lock() = crate::compose::project::ComposeCli::from_status(&status);
+            return status;
         }
         let mut env = Vec::new();
         if let Ok(e) = self.engine().await {
@@ -420,7 +430,8 @@ impl EngineManager {
     /// Cómo invocar Compose. Usa la última detección correcta o detecta ahora.
     pub async fn compose_cli(&self) -> Result<crate::compose::project::ComposeCli, EngineError> {
         if let Some(c) = self.inner.compose.lock().clone() {
-            if std::path::Path::new(&c.program).is_file() {
+            // En remoto el programa es del servidor (se comprobó al detectar).
+            if self.is_remote() || std::path::Path::new(&c.program).is_file() {
                 return Ok(c);
             }
         }

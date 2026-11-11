@@ -20,6 +20,7 @@ pub mod hostkey;
 pub mod problem;
 pub mod profile;
 pub mod session;
+pub mod shell;
 
 use std::path::PathBuf;
 use std::sync::Arc;

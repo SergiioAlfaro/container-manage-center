@@ -73,6 +73,9 @@ pub struct ServerConfig {
     pub remember_secret: bool,
     /// Datos de la última conexión correcta (los pone la aplicación, no la interfaz).
     pub last_seen: Option<ServerSeen>,
+    /// Proyectos Compose añadidos en este servidor, con rutas **del servidor**
+    /// (los cambia la aplicación al añadir o quitar, no la interfaz al guardar).
+    pub compose_projects: Vec<crate::SavedProject>,
 }
 
 /// Lo último que se supo de un servidor al conectar (para mostrarlo sin conexión).
@@ -106,6 +109,7 @@ impl Default for ServerConfig {
             auto_connect: false,
             remember_secret: false,
             last_seen: None,
+            compose_projects: Vec::new(),
         }
     }
 }

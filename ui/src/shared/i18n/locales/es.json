@@ -725,7 +725,15 @@
     "close": "Cerrar sesión",
     "splitColumns": "Redimensionar columnas",
     "splitRows": "Redimensionar filas",
-    "server": "Servidor {{name}}"
+    "server": "Servidor {{name}}",
+    "sessionKind": "Tipo de sesión",
+    "kind": {
+      "container": "Contenedor",
+      "server": "Servidor (shell SSH)"
+    },
+    "serverShell": "Shell SSH del servidor",
+    "serverShellHint": "Se abre la shell de {{user}} en {{server}}: lo que escribas se ejecuta en el servidor, no dentro de un contenedor.",
+    "serverPaneLabel": "Terminal {{name}}: shell SSH de {{server}}"
   },
   "stats": {
     "stop": "Dejar de recibir",
@@ -815,7 +823,8 @@
       "volumeName": "Vacío = volumen anónimo. Si no existe, Docker lo crea.",
       "cpus": "Por ejemplo 0.5 o 2.",
       "maxRetries": "0 = sin límite.",
-      "user": "Nombre o UID[:GID]. Vacío = el de la imagen."
+      "user": "Nombre o UID[:GID]. Vacío = el de la imagen.",
+      "image_remote": "Debe existir en el servidor."
     },
     "ph": {
       "name": "servidor-web",
@@ -843,7 +852,9 @@
       "restartHint": "Qué hace Docker cuando el proceso principal termina.",
       "options": "Opciones",
       "caps": "Capacidades del kernel",
-      "capsHint": "Separadas por comas, p. ej. NET_ADMIN o ALL."
+      "capsHint": "Separadas por comas, p. ej. NET_ADMIN o ALL.",
+      "mountsHint_remote": "Volúmenes de Docker o carpetas del servidor (bind mounts).",
+      "portsHint_remote": "Publica puertos del contenedor en el servidor."
     },
     "add": {
       "env": "Añadir variable",
@@ -893,7 +904,8 @@
     "startFailed": "El contenedor se creó, pero no pudo iniciarse: {{message}}",
     "dockerWarning": "Aviso de Docker: {{message}}",
     "secretsHidden_one": "{{count}} valor sensible aparece como ******** aquí y en el panel de actividad; a Docker se envía completo.",
-    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí y en el panel de actividad; a Docker se envían completos."
+    "secretsHidden_other": "{{count}} valores sensibles aparecen como ******** aquí y en el panel de actividad; a Docker se envían completos.",
+    "imageNotLocal_remote": "La imagen {{ref}} no está en el servidor. Docker no la descargará al crear el contenedor; descárgala antes en este servidor o elige una que ya tenga."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Indica la carpeta del equipo.",
       "missing": "La carpeta {{path}} no existe en este equipo.",
-      "sensitive": "Montar {{path}} con escritura da al contenedor control sobre el sistema. Márcalo como solo lectura si no lo necesitas."
+      "sensitive": "Montar {{path}} con escritura da al contenedor control sobre el sistema. Márcalo como solo lectura si no lo necesitas.",
+      "missing_remote": "La carpeta {{path}} no existe en el servidor."
     },
     "cpus": {
       "range": "Indica un número de CPU entre 0,01 y 1024."
@@ -1641,7 +1654,10 @@
     "empty": "Ningún contenedor tiene carpetas vinculadas",
     "emptyBody": "Vincula una carpeta para que un contenedor trabaje con archivos de este equipo.",
     "noMatches": "Ninguna carpeta coincide con la búsqueda.",
-    "loadError": "No se pudo obtener la lista de contenedores: {{message}}"
+    "loadError": "No se pudo obtener la lista de contenedores: {{message}}",
+    "missing_remote": "No existe en el servidor. Si el contenedor se creó con «-v», Docker volverá a crearla vacía (como root) al arrancarlo.",
+    "intro_remote": "Carpetas del servidor montadas dentro de contenedores. Docker no permite añadir montajes a un contenedor existente: para vincular una carpeta se crea un contenedor nuevo con el asistente.",
+    "emptyBody_remote": "Vincula una carpeta del servidor para que un contenedor trabaje con sus archivos."
   },
   "composeList": {
     "add": "Abrir proyecto…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Comprueba la ruta del socket de Docker en el perfil.",
       "upgradeDocker": "Actualiza Docker Engine en el servidor a la versión 20.10 o posterior."
     },
-    "target": "Servidor"
+    "target": "Servidor",
+    "paths": {
+      "serverPath": "Ruta en el servidor",
+      "add": "Añadir ruta",
+      "use": "Usar",
+      "absolute": "Escribe una ruta absoluta del servidor (empieza por /).",
+      "hint": "Ruta del servidor {{name}}: no se usan archivos de este equipo.",
+      "composeFile": "Archivo Compose en el servidor",
+      "folder": "Carpeta en el servidor",
+      "bindLabel": "Carpeta del servidor",
+      "bindHint": "Ruta en el servidor; la carpeta debe existir allí (la aplicación no la crea).",
+      "buildContext": "El contexto de construcción es una carpeta de este equipo: Docker la empaqueta y la envía al servidor {{name}}, que construye la imagen allí."
+    },
+    "write": {
+      "titleSave": "¿Guardar el archivo en el servidor?",
+      "titleCreate": "¿Crear el archivo en el servidor?",
+      "body": "Se escribirá en esta ruta del servidor (se comprueba antes que el archivo no ha cambiado):",
+      "confirmSave": "Guardar en el servidor",
+      "confirmCreate": "Crear en el servidor"
+    }
   }
 }

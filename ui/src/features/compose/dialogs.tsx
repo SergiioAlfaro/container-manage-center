@@ -13,6 +13,7 @@ import { Button, CopyButton, Segmented } from "@/shared/ui/controls";
 import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
 import { downAction, removableVolumes, upAction, validProjectName } from "./model";
 import { useRunCompose } from "./runs";
+import { ServerPathInput, useIsRemote } from "@/features/servers/paths";
 
 /** Comando exacto que se ejecutará, calculado por el backend. */
 function useCommand(project: ProjectRef, action: ComposeAction) {
@@ -205,6 +206,7 @@ export function AddProjectDialog({ onClose, onAdded }: { onClose: () => void; on
       }
     },
   });
+  const remote = useIsRemote();
   const pick = async () => {
     const picked = await api.pickComposeFiles(t("composeAdd.pickTitle"), t("composeAdd.filter"));
     if (picked.length > 0) setFiles((f) => [...f, ...picked.filter((p) => !f.includes(p))]);
@@ -225,10 +227,19 @@ export function AddProjectDialog({ onClose, onAdded }: { onClose: () => void; on
     >
       <p className="text-[13px] text-ink-2">{t("composeAdd.body")}</p>
       <div>
-        <Button onClick={() => void pick()}>
-          <FilePlus2 size={14} />
-          {files.length === 0 ? t("composeAdd.pick") : t("composeAdd.pickMore")}
-        </Button>
+        {remote ? (
+          <ServerPathInput
+            label={t("servers.paths.composeFile")}
+            placeholder="/srv/app/compose.yaml"
+            submitLabel={t("servers.paths.add")}
+            onSubmit={(p) => setFiles((f) => (f.includes(p) ? f : [...f, p]))}
+          />
+        ) : (
+          <Button onClick={() => void pick()}>
+            <FilePlus2 size={14} />
+            {files.length === 0 ? t("composeAdd.pick") : t("composeAdd.pickMore")}
+          </Button>
+        )}
         {files.length > 0 && (
           <ol className="mt-2 space-y-1">
             {files.map((f, i) => (

@@ -27,6 +27,88 @@ pub struct CliRequest {
     /// Directorio de trabajo del proceso (`None`: el de la aplicación).
     pub cwd: Option<std::path::PathBuf>,
     pub timeout: Duration,
+    /// Ejecutar en un servidor remoto por su sesión SSH (0.10.0, D-080):
+    /// `program` y `args` se ejecutan allí, con `env` como variables del
+    /// proceso remoto (por `env`, sin shell propio); `cwd` no se usa.
+    pub remote: Option<RemoteExec>,
+}
+
+/// Ejecución remota de una orden del CLI (0.10.0).
+#[derive(Clone)]
+pub struct RemoteExec {
+    pub session: std::sync::Arc<crate::ssh::SshSession>,
+    /// Con terminal remota: al cancelar (cerrar el canal) el servidor envía
+    /// SIGHUP al proceso, que termina; sin ella seguiría hasta escribir. Solo
+    /// para órdenes sin entrada estándar.
+    pub tty: bool,
+}
+
+impl std::fmt::Debug for RemoteExec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RemoteExec")
+            .field("server", &self.session.profile().id)
+            .field("tty", &self.tty)
+            .finish()
+    }
+}
+
+impl CliRequest {
+    /// Argumentos que se ejecutan en el servidor: `[env K=V…] programa args…`.
+    pub fn remote_argv(&self) -> Vec<String> {
+        let mut v = Vec::new();
+        if !self.env.is_empty() {
+            v.push("env".to_owned());
+            v.extend(self.env.iter().map(|(k, val)| format!("{k}={val}")));
+        }
+        v.push(self.program.clone());
+        v.extend(self.args.iter().cloned());
+        v
+    }
+
+    /// Lo que se registra en actividad: la orden local, o en remoto la orden
+    /// `ssh` equivalente (sin las opciones de seguridad internas).
+    fn transport(&self) -> Transport {
+        match &self.remote {
+            None => Transport::Cli {
+                program: self.program.clone(),
+                args: self.args.clone(),
+            },
+            Some(r) => {
+                let p = r.session.profile();
+                let mut args = Vec::new();
+                if p.port != 22 {
+                    args.push("-p".to_owned());
+                    args.push(p.port.to_string());
+                }
+                if !p.options.proxy_jump.is_empty() {
+                    args.push("-J".to_owned());
+                    args.push(p.options.proxy_jump.clone());
+                }
+                args.push(format!("{}@{}", p.user, p.host));
+                args.push("--".to_owned());
+                args.extend(self.remote_argv());
+                Transport::Cli {
+                    program: "ssh".into(),
+                    args,
+                }
+            }
+        }
+    }
+
+    fn command(&self) -> Command {
+        match &self.remote {
+            None => {
+                let mut cmd = Command::new(&self.program);
+                cmd.args(&self.args)
+                    .envs(self.env.iter().map(|(k, v)| (k.as_str(), v.as_str())));
+                if let Some(d) = &self.cwd {
+                    cmd.current_dir(d);
+                }
+                cmd
+            }
+            Some(r) => r.session.channel(&self.remote_argv(), r.tty),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -50,22 +132,13 @@ pub async fn run(log: &ActivityLog, req: CliRequest) -> Result<CliOutput, Engine
         category: req.category,
         kind: req.kind.clone(),
         target: req.target.clone(),
-        transport: Transport::Cli {
-            program: req.program.clone(),
-            args: req.args.clone(),
-        },
+        transport: req.transport(),
         request_body: None,
         equivalent_command: None,
     });
 
-    let mut cmd = Command::new(&req.program);
-    cmd.args(&req.args)
-        .envs(req.env.iter().map(|(k, v)| (k.as_str(), v.as_str())))
-        .stdin(std::process::Stdio::null())
-        .kill_on_drop(true);
-    if let Some(d) = &req.cwd {
-        cmd.current_dir(d);
-    }
+    let mut cmd = req.command();
+    cmd.stdin(std::process::Stdio::null()).kill_on_drop(true);
 
     let result = tokio::time::timeout(req.timeout, cmd.output()).await;
     match result {
@@ -258,29 +331,21 @@ where
         category: req.category,
         kind: req.kind.clone(),
         target: req.target.clone(),
-        transport: Transport::Cli {
-            program: req.program.clone(),
-            args: req.args.clone(),
-        },
+        transport: req.transport(),
         request_body: None,
         equivalent_command: None,
     });
 
-    let mut cmd = Command::new(&req.program);
-    cmd.args(&req.args)
-        .envs(req.env.iter().map(|(k, v)| (k.as_str(), v.as_str())))
-        .stdin(if opts.stdin.is_some() {
-            std::process::Stdio::piped()
-        } else {
-            std::process::Stdio::null()
-        })
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .process_group(0)
-        .kill_on_drop(true);
-    if let Some(d) = &req.cwd {
-        cmd.current_dir(d);
-    }
+    let mut cmd = req.command();
+    cmd.stdin(if opts.stdin.is_some() {
+        std::process::Stdio::piped()
+    } else {
+        std::process::Stdio::null()
+    })
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::piped())
+    .process_group(0)
+    .kill_on_drop(true);
     let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => {
@@ -468,6 +533,7 @@ mod tests {
             env: vec![],
             cwd: None,
             timeout: Duration::from_secs(5),
+            remote: None,
         }
     }
 

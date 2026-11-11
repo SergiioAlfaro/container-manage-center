@@ -537,3 +537,48 @@ pub fn spawn_auto_connect<R: Runtime>(app: AppHandle<R>) {
         });
     }
 }
+
+/// Terminal SSH del propio servidor (0.10.0): una shell en el servidor, otro
+/// tipo de sesión distinto de la terminal de un contenedor. Se cierra con
+/// `stream_close`; al desconectar o eliminar el servidor también se cierra.
+#[tauri::command]
+pub async fn server_shell_open(
+    state: State<'_, AppState>,
+    server: String,
+    cols: u16,
+    rows: u16,
+    on_event: tauri::ipc::Channel<crate::commands::containers::TerminalEvent>,
+) -> CmdResult<u64> {
+    use base64::Engine as _;
+    if server == LOCAL {
+        return Err(CommandError::new(
+            "server.shellLocal",
+            "la terminal SSH es solo para servidores remotos",
+        ));
+    }
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
+    let registry = state.streams.clone();
+    let (tx, rx) = tokio::sync::mpsc::channel(256);
+    let (sid, cancel) = registry.register(&server, Some(tx));
+    tauri::async_runtime::spawn(async move {
+        let ch = on_event.clone();
+        let b64 = base64::engine::general_purpose::STANDARD;
+        let r = dcc_engine::ssh::shell::run_server_shell(
+            &engine,
+            (cols, rows),
+            cancel,
+            rx,
+            move |bytes| {
+                ch.send(crate::commands::containers::TerminalEvent::Output {
+                    data: b64.encode(&bytes),
+                })
+                .is_ok()
+            },
+        )
+        .await;
+        let _ = on_event.send(crate::commands::containers::TerminalEvent::End { closed: r.into() });
+        registry.remove(sid);
+    });
+    Ok(sid)
+}

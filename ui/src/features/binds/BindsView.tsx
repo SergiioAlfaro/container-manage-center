@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ServerPathInput, useIsRemote, useRemoteContext } from "@/features/servers/paths";
 import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { Box, FolderPlus, RefreshCw, Search } from "lucide-react";
@@ -11,7 +12,7 @@ import { bindMount, createContainerWith, modeString } from "@/features/volumes/m
 import type { BindSummary } from "@/shared/ipc/bindings/BindSummary";
 import { keys } from "@/shared/query";
 import { Button, CopyButton, Segmented } from "@/shared/ui/controls";
-import { Banner, Spinner } from "@/shared/ui/feedback";
+import { Banner, Dialog, Spinner } from "@/shared/ui/feedback";
 
 export type BindFilter = "all" | "writable" | "attention";
 
@@ -33,6 +34,7 @@ function openContainer(id: string, name: string) {
 }
 
 function BindCard({ b }: { b: BindSummary }) {
+  const remoteCtx = useRemoteContext();
   const { t } = useTranslation();
   const kind = b.host.kind;
   return (
@@ -69,7 +71,7 @@ function BindCard({ b }: { b: BindSummary }) {
               {b.writable && b.risk !== "dockerSocket" && ` ${t("binds.riskWritable")}`}
             </Banner>
           )}
-          {kind === "missing" && <Banner tone="warn">{t("binds.missing")}</Banner>}
+          {kind === "missing" && <Banner tone="warn">{t("binds.missing", { context: remoteCtx })}</Banner>}
         </div>
       )}
       <table className="w-full table-fixed border-t border-line text-left text-[12.5px]">
@@ -101,6 +103,7 @@ function BindCard({ b }: { b: BindSummary }) {
 }
 
 function BindsList() {
+  const remoteCtx = useRemoteContext();
   const api = useApi();
   const { t } = useTranslation();
   const q = useQuery({ queryKey: keys.binds, queryFn: api.bindsList });
@@ -110,7 +113,14 @@ function BindsList() {
   const visible = useMemo(() => all.filter((b) => matchesBind(b, filter, query)), [all, filter, query]);
   const attention = all.filter(needsAttention).length;
 
+  const remote = useIsRemote();
+  const [askPath, setAskPath] = useState(false);
   const pickAndCreate = async () => {
+    // En un servidor remoto la carpeta es del servidor: se escribe su ruta.
+    if (remote) {
+      setAskPath(true);
+      return;
+    }
     const dir = await api.pickFolder(t("binds.pickTitle"));
     if (dir) createContainerWith(bindMount(dir));
   };
@@ -127,7 +137,20 @@ function BindsList() {
           {t("volumes.refresh")}
         </Button>
       </div>
-      <p className="mb-4 max-w-[760px] text-[12.5px] text-ink-3">{t("binds.intro")}</p>
+      <p className="mb-4 max-w-[760px] text-[12.5px] text-ink-3">{t("binds.intro", { context: remoteCtx })}</p>
+      {askPath && (
+        <Dialog title={t("binds.bindFolder")} onClose={() => setAskPath(false)} footer={<Button onClick={() => setAskPath(false)}>{t("common.cancel")}</Button>}>
+          <ServerPathInput
+            label={t("servers.paths.bindLabel")}
+            placeholder="/srv/datos"
+            submitLabel={t("servers.paths.use")}
+            onSubmit={(dir) => {
+              setAskPath(false);
+              createContainerWith(bindMount(dir));
+            }}
+          />
+        </Dialog>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Segmented<BindFilter>
@@ -170,7 +193,7 @@ function BindsList() {
       ) : all.length === 0 && !q.error ? (
         <div className="py-20 text-center">
           <h2 className="text-[15px] font-semibold">{t("binds.empty")}</h2>
-          <p className="mx-auto mt-1.5 max-w-[460px] text-[13px] text-ink-2">{t("binds.emptyBody")}</p>
+          <p className="mx-auto mt-1.5 max-w-[460px] text-[13px] text-ink-2">{t("binds.emptyBody", { context: remoteCtx })}</p>
         </div>
       ) : visible.length === 0 ? (
         <p className="py-10 text-center text-[13px] text-ink-2">{t("binds.noMatches")}</p>

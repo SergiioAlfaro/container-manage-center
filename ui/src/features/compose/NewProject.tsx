@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmServerWrite, ServerPathInput, useIsRemote } from "@/features/servers/paths";
 import { useApi } from "@/app/server";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, FilePlus2, FolderOpen, ShieldCheck } from "lucide-react";
@@ -29,9 +30,9 @@ export function NewProject() {
   const badName = trimmed !== "" && !validProjectName(trimmed);
   const effective = trimmed || (dir ? nameFromDir(dir) : "");
 
-  const pickDir = async () => {
-    const d = await api.pickFolder(t("composeNew.pickTitle"));
-    if (!d) return;
+  const remote = useIsRemote();
+  const [confirmCreate, setConfirmCreate] = useState(false);
+  const selectDir = async (d: string) => {
     setDir(d);
     setResult(null);
     setError(null);
@@ -62,8 +63,21 @@ export function NewProject() {
     }
   };
 
+  const pickDir = async () => {
+    const d = await api.pickFolder(t("composeNew.pickTitle"));
+    if (d) await selectDir(d);
+  };
+
+  /** En un servidor remoto se confirma antes de escribir (muestra el destino). */
   const create = async () => {
     if (!dir) return;
+    if (remote && !confirmCreate) {
+      const r = await validate();
+      if (!r || r.error) return;
+      setConfirmCreate(true);
+      return;
+    }
+    setConfirmCreate(false);
     const r = await validate();
     if (!r || r.error) return;
     setBusy("create");
@@ -116,10 +130,16 @@ export function NewProject() {
           <div>
             <p className="mb-1 text-[12.5px] font-medium text-ink-2">{t("composeNew.folder")}</p>
             <div className="flex items-center gap-2">
-              <Button onClick={() => void pickDir()}>
-                <FolderOpen size={14} />
-                {dir ? t("composeNew.changeFolder") : t("composeNew.pickFolder")}
-              </Button>
+              {remote ? (
+                <div className="w-[420px]">
+                  <ServerPathInput label={t("servers.paths.folder")} placeholder="/srv/app" submitLabel={t("servers.paths.use")} onSubmit={(d) => void selectDir(d)} />
+                </div>
+              ) : (
+                <Button onClick={() => void pickDir()}>
+                  <FolderOpen size={14} />
+                  {dir ? t("composeNew.changeFolder") : t("composeNew.pickFolder")}
+                </Button>
+              )}
               {dir && <span className="selectable font-mono text-[12.5px]">{dir}</span>}
             </div>
           </div>
@@ -169,6 +189,9 @@ export function NewProject() {
           }}
         />
       </div>
+      {confirmCreate && dir && (
+        <ConfirmServerWrite path={`${dir.replace(/\/+$/, "")}/compose.yaml`} create onConfirm={() => void create()} onClose={() => setConfirmCreate(false)} />
+      )}
     </div>
   );
 }

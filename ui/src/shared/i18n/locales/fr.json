@@ -725,7 +725,15 @@
     "close": "Fermer la session",
     "splitColumns": "Redimensionner les colonnes",
     "splitRows": "Redimensionner les rangées",
-    "server": "Serveur {{name}}"
+    "server": "Serveur {{name}}",
+    "sessionKind": "Type de session",
+    "kind": {
+      "container": "Conteneur",
+      "server": "Serveur (shell SSH)"
+    },
+    "serverShell": "Shell SSH du serveur",
+    "serverShellHint": "Ouvre le shell de {{user}} sur {{server}} : ce que vous tapez s'exécute sur le serveur, pas dans un conteneur.",
+    "serverPaneLabel": "Terminal {{name}} : shell SSH de {{server}}"
   },
   "stats": {
     "stop": "Arrêter la réception",
@@ -815,7 +823,8 @@
       "volumeName": "Vide = volume anonyme. Docker le crée s’il n’existe pas.",
       "cpus": "Par exemple 0.5 ou 2.",
       "maxRetries": "0 = sans limite.",
-      "user": "Nom ou UID[:GID]. Vide = valeur par défaut de l’image."
+      "user": "Nom ou UID[:GID]. Vide = valeur par défaut de l’image.",
+      "image_remote": "Elle doit exister sur le serveur."
     },
     "ph": {
       "name": "serveur-web",
@@ -843,7 +852,9 @@
       "restartHint": "Ce que fait Docker quand le processus principal se termine.",
       "options": "Options",
       "caps": "Capacités du noyau",
-      "capsHint": "Séparées par des virgules, par ex. NET_ADMIN ou ALL."
+      "capsHint": "Séparées par des virgules, par ex. NET_ADMIN ou ALL.",
+      "mountsHint_remote": "Volumes Docker ou dossiers du serveur (bind mounts).",
+      "portsHint_remote": "Publiez des ports du conteneur sur le serveur."
     },
     "add": {
       "env": "Ajouter une variable",
@@ -893,7 +904,8 @@
     "startFailed": "Le conteneur a été créé mais n’a pas pu démarrer : {{message}}",
     "dockerWarning": "Avertissement de Docker : {{message}}",
     "secretsHidden_one": "{{count}} valeur sensible est affichée comme ******** ici et dans le panneau d’activité ; Docker la reçoit en entier.",
-    "secretsHidden_other": "{{count}} valeurs sensibles sont affichées comme ******** ici et dans le panneau d’activité ; Docker les reçoit en entier."
+    "secretsHidden_other": "{{count}} valeurs sensibles sont affichées comme ******** ici et dans le panneau d’activité ; Docker les reçoit en entier.",
+    "imageNotLocal_remote": "L’image {{ref}} n’est pas sur le serveur. Docker ne la téléchargera pas à la création du conteneur ; téléchargez-la d’abord sur ce serveur ou choisissez-en une qu’il possède déjà."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Indiquez le dossier de l’hôte.",
       "missing": "Le dossier {{path}} n’existe pas sur cet ordinateur.",
-      "sensitive": "Monter {{path}} en écriture donne au conteneur le contrôle du système. Mettez-le en lecture seule si l’écriture n’est pas nécessaire."
+      "sensitive": "Monter {{path}} en écriture donne au conteneur le contrôle du système. Mettez-le en lecture seule si l’écriture n’est pas nécessaire.",
+      "missing_remote": "Le dossier {{path}} n’existe pas sur le serveur."
     },
     "cpus": {
       "range": "Indiquez un nombre de CPU entre 0.01 et 1024."
@@ -1641,7 +1654,10 @@
     "empty": "Aucun conteneur n’a de dossiers liés",
     "emptyBody": "Liez un dossier pour qu’un conteneur puisse travailler avec des fichiers de cette machine.",
     "noMatches": "Aucun dossier ne correspond à la recherche.",
-    "loadError": "Impossible d’obtenir la liste des conteneurs : {{message}}"
+    "loadError": "Impossible d’obtenir la liste des conteneurs : {{message}}",
+    "missing_remote": "Il n’existe pas sur le serveur. Si le conteneur a été créé avec « -v », Docker le recréera vide (en root) au démarrage.",
+    "intro_remote": "Dossiers du serveur montés dans des conteneurs. Docker ne permet pas d’ajouter des montages à un conteneur existant : pour lier un dossier, un nouveau conteneur est créé avec l’assistant.",
+    "emptyBody_remote": "Liez un dossier du serveur pour qu’un conteneur travaille avec ses fichiers."
   },
   "composeList": {
     "add": "Ouvrir un projet…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Vérifiez le chemin du socket Docker dans le profil.",
       "upgradeDocker": "Mettez à jour Docker Engine sur le serveur vers la version 20.10 ou ultérieure."
     },
-    "target": "Serveur"
+    "target": "Serveur",
+    "paths": {
+      "serverPath": "Chemin sur le serveur",
+      "add": "Ajouter le chemin",
+      "use": "Utiliser",
+      "absolute": "Saisissez un chemin absolu du serveur (commençant par /).",
+      "hint": "Chemin sur le serveur {{name}} : aucun fichier de cet ordinateur n'est utilisé.",
+      "composeFile": "Fichier Compose sur le serveur",
+      "folder": "Dossier sur le serveur",
+      "bindLabel": "Dossier du serveur",
+      "bindHint": "Chemin sur le serveur ; le dossier doit y exister (l'application ne le crée pas).",
+      "buildContext": "Le contexte de construction est un dossier de cet ordinateur : Docker l'empaquette et l'envoie au serveur {{name}}, qui construit l'image."
+    },
+    "write": {
+      "titleSave": "Enregistrer le fichier sur le serveur ?",
+      "titleCreate": "Créer le fichier sur le serveur ?",
+      "body": "Il sera écrit à ce chemin sur le serveur (on vérifie d'abord que le fichier n'a pas changé) :",
+      "confirmSave": "Enregistrer sur le serveur",
+      "confirmCreate": "Créer sur le serveur"
+    }
   }
 }

@@ -16,11 +16,16 @@ use ts_rs::TS;
 use crate::error::{CmdResult, CommandError};
 use crate::state::AppState;
 
-fn registered(state: &AppState) -> Vec<ProjectRef> {
-    state
-        .config()
-        .compose
-        .projects
+/// Proyectos añadidos **en ese servidor**: los del equipo local en su
+/// configuración; los de un servidor remoto en su perfil, con rutas del
+/// servidor (0.10.0). Nunca se mezclan.
+fn registered(state: &AppState, server: &str) -> CmdResult<Vec<ProjectRef>> {
+    let saved = if server == crate::servers::LOCAL {
+        state.config().compose.projects
+    } else {
+        state.servers.config(server)?.compose_projects
+    };
+    Ok(saved
         .into_iter()
         .map(|p| ProjectRef {
             name: p.name,
@@ -28,7 +33,20 @@ fn registered(state: &AppState) -> Vec<ProjectRef> {
             working_dir: None,
             env_files: vec![],
         })
-        .collect()
+        .collect())
+}
+
+/// Cambia la lista de proyectos de ese servidor.
+fn update_registered<T>(
+    state: &AppState,
+    server: &str,
+    f: impl FnOnce(&mut Vec<SavedProject>) -> CmdResult<T>,
+) -> CmdResult<T> {
+    if server == crate::servers::LOCAL {
+        Ok(state.update_compose(f)?.0)
+    } else {
+        state.servers.update_compose(server, f)
+    }
 }
 
 /// Proyectos con contenedores (por sus etiquetas) y los añadidos por el usuario.
@@ -38,7 +56,7 @@ pub async fn compose_projects(
     server: String,
 ) -> CmdResult<Vec<ComposeProject>> {
     let mgr = state.server(&server)?;
-    let reg = registered(&state);
+    let reg = registered(&state, &server)?;
     Ok(mgr
         .with_engine(|e| async move { e.compose_projects(&reg).await })
         .await?)
@@ -159,7 +177,10 @@ pub async fn compose_run_open(
 ) -> CmdResult<u64> {
     let mgr = state.server(&server)?;
     let engine = mgr.engine().await?;
-    engine.compose_check(&project, &action, confirmed)?;
+    // Comprobación previa (también de los archivos, donde esté el proyecto)
+    // para responder antes de abrir la salida en vivo.
+    let missing = engine.files_missing(&project.files).await?;
+    engine.compose_check(&project, &action, confirmed, &missing)?;
     let cli = mgr.compose_cli().await?;
     let registry = state.streams.clone();
     let manager = mgr.clone();
@@ -262,8 +283,7 @@ pub async fn compose_register(
         name: name.clone(),
         files: files.clone(),
     };
-    let st = state.inner();
-    let (_, _) = st.update_compose(|ps| {
+    update_registered(state.inner(), &server, |ps| {
         if ps.iter().any(|p| p.name == name) {
             return Err(CommandError::new(
                 "compose.duplicate",
@@ -285,21 +305,42 @@ pub async fn compose_register(
     })
 }
 
-/// Quita un proyecto de la lista. No toca Docker ni los archivos.
+/// Quita un proyecto de la lista de ese servidor. No toca Docker ni los archivos.
 #[tauri::command]
-pub fn compose_unregister(state: State<'_, AppState>, name: String) -> CmdResult<bool> {
-    let (removed, _) = state.update_compose(|ps| {
+pub fn compose_unregister(
+    state: State<'_, AppState>,
+    server: String,
+    name: String,
+) -> CmdResult<bool> {
+    state.server(&server)?;
+    update_registered(state.inner(), &server, |ps| {
         let before = ps.len();
         ps.retain(|p| p.name != name);
         Ok(ps.len() != before)
-    })?;
-    Ok(removed)
+    })
 }
 
 // ------------------------------------------------------------------ archivos
 
+/// Los archivos están en el servidor del proyecto: en el equipo local se leen
+/// del disco; en un servidor remoto, del servidor por su sesión SSH (0.10.0).
+async fn remote_engine(state: &AppState, server: &str) -> CmdResult<Option<dcc_engine::Engine>> {
+    let mgr = state.server(server)?;
+    if !mgr.is_remote() {
+        return Ok(None);
+    }
+    Ok(Some(mgr.engine().await?))
+}
+
 #[tauri::command]
-pub async fn compose_file_read(path: String) -> CmdResult<ComposeFile> {
+pub async fn compose_file_read(
+    state: State<'_, AppState>,
+    server: String,
+    path: String,
+) -> CmdResult<ComposeFile> {
+    if let Some(e) = remote_engine(&state, &server).await? {
+        return Ok(dcc_engine::compose::remote_file::read(&e, &path).await?);
+    }
     Ok(
         tauri::async_runtime::spawn_blocking(move || cfile::read(&path))
             .await
@@ -310,10 +351,15 @@ pub async fn compose_file_read(path: String) -> CmdResult<ComposeFile> {
 /// Guarda el archivo si no ha cambiado desde que se leyó (`version`).
 #[tauri::command]
 pub async fn compose_file_save(
+    state: State<'_, AppState>,
+    server: String,
     path: String,
     content: String,
     version: String,
 ) -> CmdResult<ComposeFile> {
+    if let Some(e) = remote_engine(&state, &server).await? {
+        return Ok(dcc_engine::compose::remote_file::save(&e, &path, &content, &version).await?);
+    }
     Ok(
         tauri::async_runtime::spawn_blocking(move || cfile::save(&path, &content, &version))
             .await
@@ -323,7 +369,15 @@ pub async fn compose_file_save(
 
 /// Crea `compose.yaml` en una carpeta que aún no tiene archivo Compose.
 #[tauri::command]
-pub async fn compose_file_create(dir: String, content: String) -> CmdResult<ComposeFile> {
+pub async fn compose_file_create(
+    state: State<'_, AppState>,
+    server: String,
+    dir: String,
+    content: String,
+) -> CmdResult<ComposeFile> {
+    if let Some(e) = remote_engine(&state, &server).await? {
+        return Ok(dcc_engine::compose::remote_file::create(&e, &dir, &content).await?);
+    }
     Ok(
         tauri::async_runtime::spawn_blocking(move || cfile::create(&dir, &content))
             .await
@@ -333,9 +387,16 @@ pub async fn compose_file_create(dir: String, content: String) -> CmdResult<Comp
 
 /// Archivo Compose estándar de una carpeta, si lo tiene.
 #[tauri::command]
-pub fn compose_find_file(dir: String) -> Option<String> {
+pub async fn compose_find_file(
+    state: State<'_, AppState>,
+    server: String,
+    dir: String,
+) -> CmdResult<Option<String>> {
     if !dir.starts_with('/') {
-        return None;
+        return Ok(None);
     }
-    cfile::existing_default(std::path::Path::new(&dir)).map(|p| p.display().to_string())
+    if let Some(e) = remote_engine(&state, &server).await? {
+        return Ok(dcc_engine::compose::remote_file::existing_default(&e, &dir).await?);
+    }
+    Ok(cfile::existing_default(std::path::Path::new(&dir)).map(|p| p.display().to_string()))
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRemoteContext } from "@/features/servers/paths";
 import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Play, Plus } from "lucide-react";
@@ -91,6 +92,7 @@ export function effectiveSpec(spec: ContainerSpec, t: Texts): { spec: ContainerS
 
 
 export function CreateWizard({ initial, notes, sourceName }: { initial: ContainerSpec | null; notes: string[]; sourceName: string | null }) {
+  const remoteCtx = useRemoteContext();
   const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -232,7 +234,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                     label={t("create.f.image")}
                     issues={of("image")}
                     hint={
-                      spec.image.trim() === "" ? t("create.h.image") : localImage ? (defaults.isFetching ? t("create.h.imageReading") : t("create.h.imageLocal", { ref })) : null
+                      spec.image.trim() === "" ? t("create.h.image", { context: remoteCtx }) : localImage ? (defaults.isFetching ? t("create.h.imageReading") : t("create.h.imageLocal", { ref })) : null
                     }
                   >
                     {(id, inv) => (
@@ -248,7 +250,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                   </Field>
                 </div>
                 {spec.image.trim() !== "" && !localImage && images.isSuccess && of("image").length === 0 && (
-                  <Banner tone="warn">{t("create.imageNotLocal", { ref })}</Banner>
+                  <Banner tone="warn">{t("create.imageNotLocal", { ref, context: remoteCtx })}</Banner>
                 )}
                 {defaults.error && <Banner tone="warn">{t("create.imageDefaultsError", { message: (defaults.error as { message: string }).message })}</Banner>}
                 <Group title={t("create.g.process")} description={t("create.g.processHint")}>
@@ -305,7 +307,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                 </div>
                 <Group
                   title={t("create.g.ports")}
-                  description={t("create.g.portsHint")}
+                  description={t("create.g.portsHint", { context: remoteCtx })}
                   action={
                     d && d.exposedPorts.length > 0 ? (
                       <Button
@@ -339,7 +341,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
             )}
 
             {tab === "storage" && (
-              <Group title={t("create.g.mounts")} description={t("create.g.mountsHint")}>
+              <Group title={t("create.g.mounts")} description={t("create.g.mountsHint", { context: remoteCtx })}>
                 {d && d.volumes.length > 0 && <Banner tone="info">{t("create.imageVolumes", { paths: d.volumes.join(", ") })}</Banner>}
                 {volumes.error && <Banner tone="warn">{t("create.listError", { message: (volumes.error as { message: string }).message })}</Banner>}
                 <datalist id="dcc-volumes">

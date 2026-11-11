@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ConfirmServerWrite, useIsRemote } from "@/features/servers/paths";
 import { useApi } from "@/app/server";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, RotateCcw, Save, ShieldCheck } from "lucide-react";
@@ -119,10 +120,25 @@ export function FileEditor({ project, onSaved }: { project: ProjectRef; onSaved:
     }
   };
 
-  const save = async (force: boolean) => {
+  const remote = useIsRemote();
+  const [confirmWrite, setConfirmWrite] = useState<boolean | null>(null);
+  const save = async (force: boolean, confirmed = false) => {
     if (!loaded) return;
     setOfferForce(false);
-    if (!force) {
+    // En un servidor remoto se confirma el destino antes de escribir (§5).
+    if (remote && !confirmed) {
+      if (!force) {
+        const r = await validate();
+        if (!r) return;
+        if (r.error) {
+          setOfferForce(true);
+          return;
+        }
+      }
+      setConfirmWrite(force);
+      return;
+    }
+    if (!force && !confirmed) {
       const r = await validate();
       if (!r) return;
       if (r.error) {
@@ -255,6 +271,9 @@ export function FileEditor({ project, onSaved }: { project: ProjectRef; onSaved:
             readOnly={readOnly}
           />
         )
+      )}
+      {confirmWrite !== null && loaded && (
+        <ConfirmServerWrite path={loaded.path} create={false} onConfirm={() => void save(confirmWrite, true)} onClose={() => setConfirmWrite(null)} />
       )}
     </div>
   );

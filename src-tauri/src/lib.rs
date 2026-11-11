@@ -115,6 +115,7 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::servers::server_forget_secret,
             commands::servers::server_diagnose,
             commands::servers::servers_overview,
+            commands::servers::server_shell_open,
             commands::engine::engine_state,
             commands::engine::engine_reconnect,
             commands::engine::engine_test,

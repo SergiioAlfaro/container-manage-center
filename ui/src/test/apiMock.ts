@@ -971,6 +971,7 @@ export const api = {
   logsOpen: vi.fn(async (_id: string, _n: string | null, _tail: number | null, h: (e: LogEvent) => void) => streams.add(h)),
   statsOpen: vi.fn(async (_id: string, _n: string | null, h: (e: StatsEvent) => void) => streams.add(h)),
   terminalOpen: vi.fn(async (_id: string, _n: string | null, _s: string, _c: number, _r: number, h: (e: TerminalEvent) => void) => streams.add(h)),
+  serverShellOpen: vi.fn(async (_c: number, _r: number, h: (e: TerminalEvent) => void) => streams.add(h)),
   terminalInput: vi.fn(async (_s: number, _d: string) => {}),
   terminalResize: vi.fn(async (_s: number, _c: number, _r: number) => {}),
   streamClose: vi.fn(async (s: number) => streams.close(s)),

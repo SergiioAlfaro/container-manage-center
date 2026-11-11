@@ -321,3 +321,127 @@ describe("Confirmaciones con el servidor de destino (§7)", () => {
     expect(screen.queryByTestId("dialog-server")).not.toBeInTheDocument();
   });
 });
+
+describe("Archivos del servidor remoto (§5)", () => {
+  it("añadir un proyecto Compose usa una ruta del servidor, nunca el selector de este equipo", async () => {
+    setServers();
+    setServerState(connected, PROD);
+    const { AddProjectDialog } = await import("@/features/compose/dialogs");
+    const user = userEvent.setup();
+    renderWithQuery(<AddProjectDialog onClose={() => {}} onAdded={() => {}} />, PROD);
+    expect(screen.queryByRole("button", { name: /Elegir archivos|Añadir archivos/ })).not.toBeInTheDocument();
+    const input = screen.getByRole("textbox", { name: "Archivo Compose en el servidor" });
+    await user.type(input, "relativo.yaml{Enter}");
+    expect(screen.getByText(/ruta absoluta del servidor/)).toBeInTheDocument();
+    await user.clear(input);
+    await user.type(input, "/srv/tienda/compose.yaml{Enter}");
+    await user.click(screen.getByRole("button", { name: "Añadir" }));
+    await waitFor(() => expect(api.composeRegister).toHaveBeenCalledWith(["/srv/tienda/compose.yaml"], null));
+    expect(api.pickComposeFiles).not.toHaveBeenCalled();
+    expect(boundServers.every((s) => s === PROD)).toBe(true);
+  });
+
+  it("guardar un archivo en el servidor confirma antes el destino", async () => {
+    setServers();
+    setServerState(connected, PROD);
+    const { FileEditor } = await import("@/features/compose/FileEditor");
+    const user = userEvent.setup();
+    const project = { name: "tienda", files: ["/srv/tienda/compose.yaml"], workingDir: null, envFiles: [] };
+    renderWithQuery(<FileEditor project={project} onSaved={() => {}} />, PROD);
+    const area = await screen.findByRole("textbox");
+    await user.type(area, "#");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Guardar el archivo en el servidor?" });
+    expect(within(dialog).getByTestId("write-destination")).toHaveTextContent("/srv/tienda/compose.yaml");
+    expect(within(dialog).getByTestId("dialog-server")).toHaveTextContent("Producción");
+    expect(api.composeFileSave).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole("button", { name: "Guardar en el servidor" }));
+    await waitFor(() => expect(api.composeFileSave).toHaveBeenCalledOnce());
+    expect(api.composeFileSave.mock.calls[0]![0]).toBe("/srv/tienda/compose.yaml");
+  });
+
+  it("en el equipo local el guardado no pide esa confirmación", async () => {
+    setServers();
+    const { FileEditor } = await import("@/features/compose/FileEditor");
+    const user = userEvent.setup();
+    const project = { name: "tienda", files: ["/home/u/tienda/compose.yaml"], workingDir: null, envFiles: [] };
+    renderWithQuery(<FileEditor project={project} onSaved={() => {}} />);
+    const area = await screen.findByRole("textbox");
+    await user.type(area, "#");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(api.composeFileSave).toHaveBeenCalledOnce());
+    expect(screen.queryByRole("dialog", { name: "¿Guardar el archivo en el servidor?" })).not.toBeInTheDocument();
+  });
+
+  it("vincular una carpeta en un servidor remoto pide la ruta del servidor", async () => {
+    setServers();
+    setServerState(connected, PROD);
+    const { BindsView } = await import("@/features/binds/BindsView");
+    const user = userEvent.setup();
+    renderWithQuery(<BindsView />, PROD);
+    await user.click(await screen.findByRole("button", { name: "Vincular una carpeta…" }));
+    expect(api.pickFolder).not.toHaveBeenCalled();
+    expect(screen.getByRole("textbox", { name: "Carpeta del servidor" })).toBeInTheDocument();
+  });
+});
+
+describe("Terminal SSH del servidor (§6)", () => {
+  it("es un tipo de sesión aparte, solo en servidores remotos, y va a ese servidor", async () => {
+    setServers();
+    setServerState(connected, PROD);
+    const { NewTerminalDialog } = await import("@/features/terminals/NewTerminalDialog");
+    const { useTerminals, closeAllSessions } = await import("@/features/terminals/sessions");
+    const user = userEvent.setup();
+    renderWithQuery(<NewTerminalDialog onClose={() => {}} />, PROD);
+    await user.click(screen.getByRole("radio", { name: "Servidor (shell SSH)" }));
+    expect(screen.getByText(/se ejecuta en el servidor, no dentro de un contenedor/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Contenedor")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Abrir terminal" }));
+    await waitFor(() => expect(api.serverShellOpen).toHaveBeenCalledOnce());
+    expect(api.terminalOpen).not.toHaveBeenCalled();
+    expect(dockerApi).toHaveBeenLastCalledWith(PROD);
+    const s = useTerminals.getState().sessions.at(-1)!;
+    expect(s).toMatchObject({ kind: "server", server: PROD, serverName: "Producción", remote: true, name: "SSH Producción" });
+    closeAllSessions();
+  });
+
+  it("en el equipo local no se ofrece", async () => {
+    setServers();
+    const { NewTerminalDialog } = await import("@/features/terminals/NewTerminalDialog");
+    renderWithQuery(<NewTerminalDialog onClose={() => {}} />);
+    expect(screen.queryByRole("radio", { name: "Servidor (shell SSH)" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Textos del equipo de Docker en un servidor remoto", () => {
+  it("en remoto hablan del servidor; en local no cambian", async () => {
+    setServers();
+    setServerState(connected, PROD);
+    const { BindsView } = await import("@/features/binds/BindsView");
+    const { useIssueText } = await import("@/features/containers/create/fields");
+    const issue = { severity: "error" as const, field: "mounts.0.source", code: "bind.missing", params: { path: "/srv/x" } };
+    let text = "";
+    function Probe() {
+      text = useIssueText()(issue);
+      return null;
+    }
+    const r = renderWithQuery(
+      <>
+        <BindsView />
+        <Probe />
+      </>,
+      PROD,
+    );
+    expect(await screen.findByText(/^Carpetas del servidor montadas/)).toBeInTheDocument();
+    expect(text).toBe("La carpeta /srv/x no existe en el servidor.");
+    r.unmount();
+    renderWithQuery(
+      <>
+        <BindsView />
+        <Probe />
+      </>,
+    );
+    expect(await screen.findByText(/^Carpetas de este equipo montadas/)).toBeInTheDocument();
+    expect(text).toBe("La carpeta /srv/x no existe en este equipo.");
+  });
+});

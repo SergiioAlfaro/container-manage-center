@@ -2649,3 +2649,29 @@ fn live_three_remote_servers_through_ipc() {
         wait_for("sin procesos ssh", || ssh_processes_for(&s.user) == 0);
     }
 }
+
+/// La terminal SSH del servidor no existe para el equipo local ni para un
+/// servidor desconocido, y no abre ningún flujo.
+#[test]
+fn server_shell_is_only_for_known_remote_servers() {
+    let h = harness();
+    let ch = || tauri::ipc::Channel::<crate::commands::containers::TerminalEvent>::new(|_| Ok(()));
+    let st = || h.app.state::<AppState>();
+    let local = tauri::async_runtime::block_on(crate::commands::servers::server_shell_open(
+        st(),
+        "local".into(),
+        80,
+        24,
+        ch(),
+    ));
+    assert_eq!(local.unwrap_err().code, "server.shellLocal");
+    let unknown = tauri::async_runtime::block_on(crate::commands::servers::server_shell_open(
+        st(),
+        "srv-0123abcd".into(),
+        80,
+        24,
+        ch(),
+    ));
+    assert_eq!(unknown.unwrap_err().code, "server.unknown");
+    assert_eq!(st().streams.running(), 0);
+}

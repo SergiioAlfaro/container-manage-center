@@ -4,6 +4,7 @@
  * pantallas se comporten igual.
  */
 import { useEffect, useState } from "react";
+import { useIsRemote } from "@/features/servers/paths";
 import { Eye, EyeOff, FolderOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/shared/ipc/client";
@@ -63,6 +64,8 @@ export function PortsEditor({ ports, onChange, issues }: { ports: PortSpec[]; on
 
 /** Volúmenes y carpetas. Las sugerencias de volúmenes vienen de un `<datalist id="dcc-volumes">`. */
 export function MountsEditor({ mounts, onChange, issues }: { mounts: MountSpec[]; onChange: (v: MountSpec[]) => void; issues: SpecIssue[] }) {
+  // En un servidor remoto la carpeta es del servidor: no hay selector local (0.10.0).
+  const remote = useIsRemote();
   const { t } = useTranslation();
   const of = (f: string) => issuesFor(issues, f);
   return (
@@ -88,14 +91,18 @@ export function MountsEditor({ mounts, onChange, issues }: { mounts: MountSpec[]
             <Checkbox checked={m.readOnly} onChange={(v) => setM({ ...m, readOnly: v })} label={t("create.f.readOnly")} />
           </div>
           <div className="grid gap-2 md:grid-cols-2">
-            <Field label={m.kind === "volume" ? t("create.f.volumeName") : t("create.f.hostPath")} issues={of(`mounts.${i}.source`)} hint={m.kind === "volume" ? t("create.h.volumeName") : undefined}>
+            <Field
+              label={m.kind === "volume" ? t("create.f.volumeName") : remote ? t("servers.paths.bindLabel") : t("create.f.hostPath")}
+              issues={of(`mounts.${i}.source`)}
+              hint={m.kind === "volume" ? t("create.h.volumeName") : remote ? t("servers.paths.bindHint") : undefined}
+            >
               {(id, inv) =>
                 m.kind === "volume" ? (
                   <TextInput id={id} invalid={inv} list="dcc-volumes" value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder={t("create.ph.anonymous")} />
                 ) : (
                   <div className="flex gap-1.5">
-                    <TextInput id={id} invalid={inv} value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder="/home/usuario/datos" />
-                    <Button
+                    <TextInput id={id} invalid={inv} value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder={remote ? "/srv/datos" : "/home/usuario/datos"} />
+                    {!remote && <Button
                       size="sm"
                       className="h-8 shrink-0"
                       aria-label={t("create.pickFolder")}
@@ -106,7 +113,7 @@ export function MountsEditor({ mounts, onChange, issues }: { mounts: MountSpec[]
                       }}
                     >
                       <FolderOpen size={14} />
-                    </Button>
+                    </Button>}
                   </div>
                 )
               }

@@ -302,7 +302,23 @@ impl Engine {
             .unwrap_or_default();
         let auto_remove = host.auto_remove.unwrap_or(false);
         let status = edit::status_of(c);
-        let mut issues = edit::validate(&current, &desired, &changes, auto_remove, true);
+        // Carpetas: en este equipo o, con un servidor remoto, en el servidor.
+        let remote = self.ssh_session().is_some();
+        let mut issues = edit::validate(&current, &desired, &changes, auto_remove, !remote);
+        if remote && changes.iter().any(|x| x.field == "mounts") {
+            let new_binds: Vec<(usize, String)> = desired
+                .mounts
+                .iter()
+                .enumerate()
+                .filter(|(_, m)| {
+                    m.kind == crate::spec::MountKind::Bind
+                        && m.source.trim().starts_with('/')
+                        && !current.mounts.contains(m)
+                })
+                .map(|(i, m)| (i, m.source.trim().to_owned()))
+                .collect();
+            issues.extend(self.missing_bind_issues(&new_binds).await?);
+        }
         let changed = |f: &str| changes.iter().any(|x| x.field == f);
 
         if changed("name")

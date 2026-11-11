@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerView } from "@/app/server";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Box, CheckCircle2, CircleAlert, CircleSlash, FileCode2, FolderOpen, Hammer, Loader2, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -54,6 +55,8 @@ function KvList({ rows, onChange, field, issues, addLabel, empty, keyPh, valuePh
 
 function BuildForm({ initial }: { initial: BuildSpec }) {
   const { t, i18n } = useTranslation();
+  const view = useServerView();
+  const remote = !!view?.remote;
   const qc = useQueryClient();
   const nav = useImagesNav();
   const start = useBuild((s) => s.start);
@@ -106,6 +109,11 @@ function BuildForm({ initial }: { initial: BuildSpec }) {
     <div className="grid flex-1 gap-6 px-8 py-5 xl:grid-cols-[minmax(0,1fr)_400px]">
       <div className="min-w-0 space-y-6">
         <Group title={t("build.g.context")} description={t("build.g.contextHint")}>
+          {remote && (
+            <div className="md:col-span-2">
+              <Banner tone="info">{t("servers.paths.buildContext", { name: view?.name ?? "" })}</Banner>
+            </div>
+          )}
           <Field label={t("build.f.context")} issues={of("context")}>
             {(id, inv) => (
               <div className="flex gap-1.5">

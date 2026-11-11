@@ -1,5 +1,6 @@
 /** Piezas de formulario del asistente de creación. */
 import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { useServerView } from "@/app/server";
 import { AlertTriangle, CircleAlert, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SpecIssue } from "@/shared/ipc/bindings/SpecIssue";
@@ -11,7 +12,9 @@ export const inputClass =
 /** Texto traducido de un problema de validación. */
 export function useIssueText() {
   const { t } = useTranslation();
-  return (i: SpecIssue) => t(`issues.${i.code}`, { ...i.params, defaultValue: i.code });
+  // En un servidor remoto, las rutas son del servidor (variantes «_remote»).
+  const context = useServerView()?.remote ? "remote" : undefined;
+  return (i: SpecIssue) => t(`issues.${i.code}`, { ...i.params, context, defaultValue: i.code });
 }
 
 export function IssueList({ issues }: { issues: SpecIssue[] }) {

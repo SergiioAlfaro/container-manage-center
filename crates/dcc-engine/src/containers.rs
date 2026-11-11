@@ -412,7 +412,8 @@ impl Engine {
         &self,
         spec: &crate::spec::ContainerSpec,
     ) -> Result<CreatedContainer, EngineError> {
-        let issues = spec.validate(true);
+        // Las carpetas se comprueban donde está Docker (0.10.0).
+        let issues = self.spec_issues(spec).await?;
         if crate::spec::ContainerSpec::has_errors(&issues) {
             return Err(EngineError::InvalidSpec { issues });
         }

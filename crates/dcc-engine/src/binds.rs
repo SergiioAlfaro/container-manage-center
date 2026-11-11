@@ -189,11 +189,183 @@ impl Engine {
             }
         };
         let list = containers.to_vec();
-        tokio::task::spawn_blocking(move || binds_from(&list, host_path_info))
-            .await
-            .map_err(|e| EngineError::Other {
-                message: e.to_string(),
+        if self.ssh_session().is_none() {
+            return tokio::task::spawn_blocking(move || binds_from(&list, host_path_info))
+                .await
+                .map_err(|e| EngineError::Other {
+                    message: e.to_string(),
+                });
+        }
+        // Servidor remoto: las rutas son del servidor y se consultan allí.
+        let mut paths: Vec<String> = list
+            .iter()
+            .flat_map(|c| c.mount_points.iter().filter(|m| m.kind == "bind"))
+            .map(|m| m.source.clone())
+            .collect();
+        paths.sort();
+        paths.dedup();
+        let info = self.host_paths(&paths).await?;
+        Ok(binds_from(&list, |p| {
+            info.get(p).cloned().unwrap_or(HostPathInfo {
+                kind: PathKind::Missing,
+                uid: None,
+                mode: None,
+                readable: false,
             })
+        }))
+    }
+
+    /// Estado de unas rutas **del equipo donde está Docker**: este equipo o,
+    /// con un servidor remoto, el servidor (0.10.0). En remoto son dos
+    /// órdenes de solo lectura (`stat` y `find -readable`) por la sesión SSH,
+    /// registradas en actividad; las rutas van entrecomilladas una a una.
+    pub async fn host_paths(
+        &self,
+        paths: &[String],
+    ) -> Result<std::collections::HashMap<String, HostPathInfo>, EngineError> {
+        let mut out = std::collections::HashMap::new();
+        let Some(session) = self.ssh_session().cloned() else {
+            for p in paths {
+                out.insert(p.clone(), host_path_info(p));
+            }
+            return Ok(out);
+        };
+        let paths: Vec<String> = paths
+            .iter()
+            .filter(|p| p.starts_with('/') && !p.contains('\0'))
+            .cloned()
+            .collect();
+        if paths.is_empty() {
+            return Ok(out);
+        }
+        // `before` + rutas + `after`, cada una como argumento separado.
+        let run = |program: &str, before: Vec<String>, after: Vec<String>, kind: &str| {
+            let mut args = before;
+            args.extend(paths.iter().cloned());
+            args.extend(after);
+            crate::cli::run(
+                self.activity(),
+                crate::cli::CliRequest {
+                    category: dcc_activity::Category::Bind,
+                    kind: kind.into(),
+                    target: paths.first().cloned(),
+                    program: program.into(),
+                    args,
+                    env: vec![],
+                    cwd: None,
+                    timeout: std::time::Duration::from_secs(30),
+                    remote: Some(crate::cli::RemoteExec {
+                        session: session.clone(),
+                        tty: false,
+                    }),
+                },
+            )
+        };
+        let stat = run(
+            "env",
+            ["LC_ALL=C", "stat", "-L", "--printf", "%F|%u|%a|%n\\0", "--"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+            vec![],
+            "bind.inspect",
+        )
+        .await?;
+        // `find … -maxdepth 0 -readable`: las que puede leer el usuario SSH.
+        let readable_out = run(
+            "find",
+            vec![],
+            ["-maxdepth", "0", "-readable", "-print0"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+            "bind.inspect",
+        )
+        .await;
+        let readable: std::collections::HashSet<String> = match readable_out {
+            Ok(o) => o.stdout.split('\0').map(str::to_owned).collect(),
+            Err(_) => Default::default(),
+        };
+        for entry in stat.stdout.split('\0').filter(|e| !e.is_empty()) {
+            let mut it = entry.splitn(4, '|');
+            let (Some(kind), Some(uid), Some(mode), Some(name)) =
+                (it.next(), it.next(), it.next(), it.next())
+            else {
+                continue;
+            };
+            let kind = match kind {
+                "directory" => PathKind::Directory,
+                "regular file" | "regular empty file" => PathKind::File,
+                "socket" => PathKind::Socket,
+                _ => PathKind::Other,
+            };
+            out.insert(
+                name.to_owned(),
+                HostPathInfo {
+                    readable: matches!(kind, PathKind::Directory | PathKind::File)
+                        && readable.contains(name),
+                    kind,
+                    uid: uid.parse().ok(),
+                    mode: u32::from_str_radix(mode, 8).ok(),
+                },
+            );
+        }
+        for p in &paths {
+            out.entry(p.clone()).or_insert(HostPathInfo {
+                kind: PathKind::Missing,
+                uid: None,
+                mode: None,
+                readable: false,
+            });
+        }
+        Ok(out)
+    }
+
+    /// Problemas de una especificación de contenedor comprobando las carpetas
+    /// de los bind mounts **donde está Docker** (este equipo o el servidor).
+    pub async fn spec_issues(
+        &self,
+        spec: &crate::spec::ContainerSpec,
+    ) -> Result<Vec<crate::spec::SpecIssue>, EngineError> {
+        if self.ssh_session().is_none() {
+            return Ok(spec.validate(true));
+        }
+        let mut issues = spec.validate(false);
+        let binds: Vec<(usize, String)> = spec
+            .mounts
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| {
+                m.kind == crate::spec::MountKind::Bind && m.source.trim().starts_with('/')
+            })
+            .map(|(i, m)| (i, m.source.trim().to_owned()))
+            .collect();
+        issues.extend(self.missing_bind_issues(&binds).await?);
+        Ok(issues)
+    }
+
+    /// `bind.missing` para las carpetas que no existen en el servidor remoto.
+    pub(crate) async fn missing_bind_issues(
+        &self,
+        binds: &[(usize, String)],
+    ) -> Result<Vec<crate::spec::SpecIssue>, EngineError> {
+        if binds.is_empty() {
+            return Ok(vec![]);
+        }
+        let paths: Vec<String> = binds.iter().map(|(_, p)| p.clone()).collect();
+        let info = self.host_paths(&paths).await?;
+        Ok(binds
+            .iter()
+            .filter(|(_, p)| info.get(p).map_or(true, |i| i.kind == PathKind::Missing))
+            .map(|(i, p)| {
+                crate::spec::issue(
+                    crate::spec::Severity::Error,
+                    format!("mounts.{i}.source"),
+                    "bind.missing",
+                    &[("path", p.clone())],
+                )
+            })
+            .collect())
     }
 }
 

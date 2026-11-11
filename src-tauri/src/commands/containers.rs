@@ -36,18 +36,34 @@ pub struct SpecPreview {
     pub secrets_hidden: u32,
 }
 
-/// Valida y traduce la especificación sin hablar con Docker (D-034).
+/// Valida y traduce la especificación sin cambiar nada (D-034). Las carpetas
+/// de los bind mounts se comprueban donde está Docker: en este equipo o, con
+/// un servidor remoto conectado, en el servidor (0.10.0).
 #[tauri::command]
-pub fn container_preview(spec: ContainerSpec) -> SpecPreview {
+pub async fn container_preview(
+    state: State<'_, AppState>,
+    server: String,
+    spec: ContainerSpec,
+) -> CmdResult<SpecPreview> {
+    let mgr = state.server(&server)?;
+    let issues = if mgr.is_remote() {
+        match mgr.engine().await {
+            Ok(e) => e.spec_issues(&spec).await?,
+            // Sin conexión no se puede comprobar el servidor: se valida el resto.
+            Err(_) => spec.validate(false),
+        }
+    } else {
+        spec.validate(true)
+    };
     let (shown, hidden) = spec.redacted();
     let (_, body) = shown.to_create_body();
-    SpecPreview {
-        issues: spec.validate(true),
+    Ok(SpecPreview {
+        issues,
         run_command: shown.cli_command(true),
         create_command: shown.cli_command(false),
         body: serde_json::to_string_pretty(&body).unwrap_or_default(),
         secrets_hidden: hidden as u32,
-    }
+    })
 }
 
 #[derive(Debug, Clone, Serialize, TS)]

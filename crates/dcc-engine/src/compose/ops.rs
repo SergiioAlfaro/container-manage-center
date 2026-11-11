@@ -11,8 +11,8 @@ use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 use super::project::{
-    action_args, config_args, logs_args, parse_model, projects_from, valid_service_name,
-    ComposeAction, ComposeCli, ComposeProject, ProjectModel, ProjectRef,
+    action_args, action_args_with, config_args, logs_args_with, parse_model, projects_from_with,
+    valid_service_name, ComposeAction, ComposeCli, ComposeProject, ProjectModel, ProjectRef,
 };
 use crate::cli::{run_streaming, CliRequest, OutputLine, StreamOptions, StreamedRun};
 use crate::client::Engine;
@@ -89,6 +89,9 @@ fn summary_for(action: &ComposeAction, project: &str) -> String {
 }
 
 impl Engine {
+    /// Orden de Compose: local (con `DOCKER_HOST` del motor) o, en un servidor
+    /// remoto, ejecutada allí por la sesión SSH (D-080). `tty`: solo para
+    /// órdenes largas sin entrada estándar (acciones y registros).
     fn compose_request(
         &self,
         cli: &ComposeCli,
@@ -96,7 +99,21 @@ impl Engine {
         target: &str,
         args: Vec<String>,
         timeout: Duration,
+        tty: bool,
     ) -> Result<CliRequest, EngineError> {
+        if let Some(session) = self.ssh_session().cloned() {
+            return Ok(CliRequest {
+                category: Category::Compose,
+                kind,
+                target: Some(target.to_owned()),
+                program: cli.program.clone(),
+                args,
+                env: super::remote_env(&session.profile().docker),
+                cwd: None,
+                timeout,
+                remote: Some(crate::cli::RemoteExec { session, tty }),
+            });
+        }
         Ok(CliRequest {
             category: Category::Compose,
             kind,
@@ -106,7 +123,73 @@ impl Engine {
             env: vec![("DOCKER_HOST".into(), self.endpoint().host_uri())],
             cwd: Some(neutral_dir()?),
             timeout,
+            remote: None,
         })
+    }
+
+    /// Archivos que no existen (o no son archivos normales) **donde está el
+    /// proyecto**: en este equipo o, con un servidor remoto, en el servidor
+    /// (0.10.0: nunca se supone que un archivo local existe allí). En remoto
+    /// es una sola orden `stat` de solo lectura, registrada en actividad.
+    pub async fn files_missing(&self, files: &[String]) -> Result<Vec<String>, EngineError> {
+        if files.is_empty() {
+            return Ok(vec![]);
+        }
+        let Some(session) = self.ssh_session().cloned() else {
+            return Ok(files
+                .iter()
+                .filter(|f| !std::path::Path::new(f).is_file())
+                .cloned()
+                .collect());
+        };
+        let mut args: Vec<String> = vec![
+            "LC_ALL=C".into(),
+            "stat".into(),
+            "-L".into(),
+            "--printf".into(),
+            "%F|%n\\0".into(),
+            "--".into(),
+        ];
+        args.extend(files.iter().cloned());
+        let out = crate::cli::run(
+            self.activity(),
+            CliRequest {
+                category: Category::Compose,
+                kind: "compose.files".into(),
+                target: files.first().cloned(),
+                program: "env".into(),
+                args,
+                env: vec![],
+                cwd: None,
+                timeout: Duration::from_secs(30),
+                remote: Some(crate::cli::RemoteExec {
+                    session,
+                    tty: false,
+                }),
+            },
+        )
+        .await?;
+        // Código 1 si falta alguno: la salida sigue listando los que existen.
+        if !matches!(out.exit_code, Some(0) | Some(1)) {
+            return Err(EngineError::Process {
+                message: format!(
+                    "no se pudieron comprobar los archivos en el servidor: {}",
+                    out.stderr.trim()
+                ),
+            });
+        }
+        let present: std::collections::HashSet<&str> = out
+            .stdout
+            .split('\0')
+            .filter_map(|e| e.split_once('|'))
+            .filter(|(kind, _)| *kind == "regular file" || *kind == "regular empty file")
+            .map(|(_, name)| name)
+            .collect();
+        Ok(files
+            .iter()
+            .filter(|f| !present.contains(f.as_str()))
+            .cloned()
+            .collect())
     }
 
     /// Proyectos: los que tienen contenedores (por sus etiquetas, con la lista
@@ -117,11 +200,32 @@ impl Engine {
     ) -> Result<Vec<ComposeProject>, EngineError> {
         let containers = self.list_containers().await?;
         let reg = registered.to_vec();
-        tokio::task::spawn_blocking(move || projects_from(&containers, &reg))
-            .await
-            .map_err(|e| EngineError::Other {
-                message: e.to_string(),
-            })
+        let mut projects = tokio::task::spawn_blocking(move || {
+            projects_from_with(&containers, &reg, |_| Vec::new())
+        })
+        .await
+        .map_err(|e| EngineError::Other {
+            message: e.to_string(),
+        })?;
+        // Archivos de todos los proyectos (añadidos y desplegados, cuyos
+        // archivos vienen de las etiquetas), comprobados de una vez donde están.
+        let mut all: Vec<String> = projects
+            .iter()
+            .flat_map(|p| p.reference.files.iter().cloned())
+            .collect();
+        all.sort();
+        all.dedup();
+        let missing = self.files_missing(&all).await?;
+        for p in &mut projects {
+            p.missing_files = p
+                .reference
+                .files
+                .iter()
+                .filter(|f| missing.contains(f))
+                .cloned()
+                .collect();
+        }
+        Ok(projects)
     }
 
     /// `docker compose config --format json` con todos los perfiles. Con
@@ -147,8 +251,9 @@ impl Engine {
                 });
             }
         }
-        let missing: Vec<_> = project
-            .missing_files()
+        let missing: Vec<_> = self
+            .files_missing(&project.files)
+            .await?
             .into_iter()
             .filter(|f| stdin_index.map(|i| &project.files[i] != f).unwrap_or(true))
             .collect();
@@ -181,7 +286,7 @@ impl Engine {
             env_files: vec![],
         };
         probe.validate()?;
-        let missing = probe.missing_files();
+        let missing = self.files_missing(&probe.files).await?;
         if !missing.is_empty() {
             return Err(EngineError::InvalidInput {
                 message: format!("no existe: {}", missing.join(", ")),
@@ -209,8 +314,14 @@ impl Engine {
         stdin: Option<String>,
     ) -> Result<ComposeConfig, EngineError> {
         let command = dcc_activity::quote::render_argv(&cli.program, &args);
-        let req =
-            self.compose_request(cli, "compose.config".into(), target, args, CONFIG_TIMEOUT)?;
+        let req = self.compose_request(
+            cli,
+            "compose.config".into(),
+            target,
+            args,
+            CONFIG_TIMEOUT,
+            false,
+        )?;
         let mut opts = StreamOptions::new(CancellationToken::new());
         opts.stdin = stdin.map(String::into_bytes);
         opts.collect_stdout = true;
@@ -265,10 +376,18 @@ impl Engine {
     where
         F: FnMut(Vec<OutputLine>) -> bool,
     {
-        self.compose_check(project, action, confirmed)?;
+        let missing = self.files_missing(&project.files).await?;
+        self.compose_check(project, action, confirmed, &missing)?;
         let _guard = self.locks().acquire(&format!("compose:{}", project.name))?;
-        let args = action_args(cli, project, action);
-        let req = self.compose_request(cli, action.kind(), &project.name, args, ACTION_TIMEOUT)?;
+        let args = action_args_with(cli, project, action, missing.is_empty());
+        let req = self.compose_request(
+            cli,
+            action.kind(),
+            &project.name,
+            args,
+            ACTION_TIMEOUT,
+            true,
+        )?;
         let mut opts = StreamOptions::new(cancel);
         opts.summary = Some(summary_for(action, &project.name));
         let run = run_streaming(self.activity(), req, opts, on_lines).await?;
@@ -310,11 +429,14 @@ impl Engine {
 
     /// Comprobaciones previas de una acción, sin ejecutar nada (también las usa
     /// la interfaz para responder de inmediato antes de abrir la salida en vivo).
+    /// `missing`: archivos del proyecto que no existen donde está el proyecto
+    /// ([`Engine::files_missing`]).
     pub fn compose_check(
         &self,
         project: &ProjectRef,
         action: &ComposeAction,
         confirmed: bool,
+        missing: &[String],
     ) -> Result<(), EngineError> {
         project.validate()?;
         action.validate()?;
@@ -332,7 +454,6 @@ impl Engine {
                     message: "esta acción necesita los archivos Compose del proyecto".into(),
                 });
             }
-            let missing = project.missing_files();
             if !missing.is_empty() {
                 return Err(EngineError::InvalidInput {
                     message: format!("no existe: {}", missing.join(", ")),
@@ -364,13 +485,22 @@ impl Engine {
                 message: format!("nombre de servicio no válido: {s:?}"),
             });
         }
-        let args = logs_args(cli, project, services, tail.min(MAX_LOG_TAIL), timestamps);
+        let missing = self.files_missing(&project.files).await?;
+        let args = logs_args_with(
+            cli,
+            project,
+            services,
+            tail.min(MAX_LOG_TAIL),
+            timestamps,
+            missing.is_empty(),
+        );
         let req = self.compose_request(
             cli,
             "compose.logs".into(),
             &project.name,
             args,
             LOGS_TIMEOUT,
+            true,
         )?;
         let mut opts = StreamOptions::new(cancel);
         opts.record_stdout = false;

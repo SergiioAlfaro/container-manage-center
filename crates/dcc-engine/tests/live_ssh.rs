@@ -915,3 +915,531 @@ async fn orphaned_sessions_of_dead_instances_are_closed_at_startup() {
     assert_eq!(dcc_engine::ssh::session::close_orphans(&ctx.paths).await, 0);
     live.close().await;
 }
+
+// ------------------------------------------------------------------ Compose remoto
+
+/// Docker Compose en el servidor (D-080): se detecta allí, los archivos son
+/// los del servidor (uno del equipo no cuenta), las acciones afectan solo a
+/// ese servidor, cancelar los registros no deja procesos en el servidor y
+/// el guardado se niega si el archivo cambió.
+#[tokio::test(flavor = "multi_thread")]
+async fn compose_runs_on_the_server_with_server_files() {
+    use dcc_engine::compose::project::{ComposeAction, ComposeCli, ProjectRef};
+    use dcc_engine::compose::remote_file;
+    use dcc_engine::compose::ComposeStatus;
+    let Some(lab) = lab() else { return };
+    let env = Env::new();
+    env.trusted(&lab);
+    let ctx = env.ctx(fixed(None));
+    let log = ActivityLog::new(2000);
+    let b = &lab.servers[1];
+    fixture::ensure_image(&local(&b.socket)).await;
+    let m = EngineManager::remote(
+        log.clone(),
+        profile(&lab, 1, None, key(&lab), RemoteDocker::Default),
+        ctx.clone(),
+        Timing::default(),
+    );
+    assert!(matches!(
+        m.connect().await,
+        ConnectionState::Connected { .. }
+    ));
+    let e = m.engine().await.unwrap();
+    let session = e.ssh_session().unwrap().clone();
+
+    // Compose del servidor.
+    let status = m.compose_status().await;
+    let ComposeStatus::Available { program, .. } = &status else {
+        panic!("{status:?}")
+    };
+    assert_eq!(
+        program, "docker",
+        "el programa del servidor, no una ruta local"
+    );
+    let cli: ComposeCli = m.compose_cli().await.unwrap();
+
+    // Carpeta de trabajo en el servidor (preparación de la prueba).
+    let pid = std::process::id();
+    let dir = format!("/home/{}/dcc-compose-{pid}/con ' comilla", b.user);
+    session
+        .run(
+            &["mkdir".into(), "-p".into(), "--".into(), dir.clone()],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    let project = format!("dccremote{pid}");
+    let content = format!(
+        "name: {project}\nservices:\n  web:\n    image: {}\n    labels:\n      dcc.test: \"true\"\n",
+        fixture::IMAGE
+    );
+    let created = remote_file::create(&e, &dir, &content).await.unwrap();
+    let path = format!("{dir}/compose.yaml");
+    assert_eq!(created.path, path);
+    assert_eq!(created.content, content);
+    assert!(created.writable);
+    // No se pisa un archivo existente.
+    assert!(remote_file::create(&e, &dir, "x").await.is_err());
+    assert_eq!(
+        remote_file::existing_default(&e, &dir)
+            .await
+            .unwrap()
+            .as_deref(),
+        Some(path.as_str())
+    );
+
+    // Un archivo que existe en ESTE equipo no cuenta para el servidor: se
+    // comprueba allí. En el laboratorio comparten disco, así que el archivo
+    // va en una carpeta privada (0700) que el usuario remoto no puede ver.
+    let private = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(private.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    assert_eq!(
+        std::fs::metadata(private.path())
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o700
+    );
+    let here_path = private.path().join("compose.yaml").display().to_string();
+    std::fs::write(&here_path, "services: {}\n").unwrap();
+    assert!(std::path::Path::new(&here_path).is_file());
+    let missing = e
+        .files_missing(&[path.clone(), here_path.clone()])
+        .await
+        .unwrap();
+    assert_eq!(missing, vec![here_path]);
+
+    // config y up en el servidor.
+    let p = ProjectRef {
+        name: project.clone(),
+        files: vec![path.clone()],
+        working_dir: None,
+        env_files: vec![],
+    };
+    let cfg = e.compose_config(&cli, &p, None).await.unwrap();
+    assert!(cfg.error.is_none(), "{:?}", cfg.error);
+    assert!(cfg.model.unwrap().services.iter().any(|s| s.name == "web"));
+    let up = e
+        .compose_run(
+            &cli,
+            &p,
+            &ComposeAction::Up {
+                services: vec![],
+                build: false,
+                pull: dcc_engine::compose::project::PullPolicy::Missing,
+                force_recreate: false,
+                remove_orphans: false,
+                profiles: vec![],
+            },
+            false,
+            tokio_util::sync::CancellationToken::new(),
+            |_| true,
+        )
+        .await
+        .unwrap();
+    assert!(up.success(), "{up:?}");
+    let label = format!("com.docker.compose.project={project}");
+    let on = |socket: &str| {
+        let out = std::process::Command::new("docker")
+            .args([
+                "-H",
+                &format!("unix://{socket}"),
+                "ps",
+                "-aq",
+                "--filter",
+                &format!("label={label}"),
+            ])
+            .output()
+            .unwrap();
+        String::from_utf8_lossy(&out.stdout).lines().count()
+    };
+    assert_eq!(on(&b.socket), 1, "en B");
+    assert_eq!(on(&lab.servers[0].socket), 0, "nada en A");
+    assert_eq!(on(&lab.servers[2].socket), 0, "nada en C");
+    // La lista de proyectos del servidor lo encuentra por sus etiquetas y
+    // comprueba sus archivos en el servidor.
+    let ps = e.compose_projects(&[]).await.unwrap();
+    let mine = ps
+        .iter()
+        .find(|x| x.reference.name == project)
+        .expect("proyecto desplegado");
+    assert_eq!(mine.reference.files, vec![path.clone()]);
+    assert!(mine.missing_files.is_empty(), "{:?}", mine.missing_files);
+
+    // Registros: cancelar cierra el canal y no deja `docker compose logs` en el servidor.
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let c2 = cancel.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(2)).await;
+        c2.cancel();
+    });
+    let logs = e
+        .compose_logs(&cli, &p, &[], 10, false, cancel, |_| true)
+        .await
+        .unwrap();
+    assert!(
+        !matches!(logs.end, dcc_engine::cli::RunEnd::Exited { code: Some(c) } if c != 0),
+        "{logs:?}"
+    );
+    let user = b.user.clone();
+    wait_for("sin compose logs en el servidor", 10, || {
+        std::process::Command::new("pgrep")
+            .args(["-u", &user, "-f", "compose.*logs"])
+            .output()
+            .map(|o| o.stdout.is_empty())
+            .unwrap_or(false)
+    })
+    .await;
+
+    // Guardar: con la versión leída sí; con una antigua, no.
+    let edited = content.replace(
+        "dcc.test: \"true\"",
+        "dcc.test: \"true\"\n      dcc.edit: \"1\"",
+    );
+    let saved = remote_file::save(&e, &path, &edited, &created.version)
+        .await
+        .unwrap();
+    assert_eq!(saved.content, edited);
+    let stale = remote_file::save(&e, &path, "otra", &created.version).await;
+    assert!(
+        matches!(stale, Err(dcc_engine::EngineError::FileChanged { .. })),
+        "{stale:?}"
+    );
+
+    // down (destructiva: exige confirmación).
+    let down = ComposeAction::Down {
+        volumes: false,
+        images: dcc_engine::compose::project::DownImages::None,
+        remove_orphans: false,
+    };
+    assert!(matches!(
+        e.compose_run(
+            &cli,
+            &p,
+            &down,
+            false,
+            tokio_util::sync::CancellationToken::new(),
+            |_| true
+        )
+        .await,
+        Err(dcc_engine::EngineError::NotConfirmed)
+    ));
+    let r = e
+        .compose_run(
+            &cli,
+            &p,
+            &down,
+            true,
+            tokio_util::sync::CancellationToken::new(),
+            |_| true,
+        )
+        .await
+        .unwrap();
+    assert!(r.success(), "{r:?}");
+    assert_eq!(on(&b.socket), 0);
+
+    // En actividad: la orden ssh equivalente, nunca el contenido del archivo.
+    let recs = log.snapshot();
+    let compose: Vec<_> = recs
+        .iter()
+        .filter(|r| r.kind.starts_with("compose."))
+        .collect();
+    assert!(!compose.is_empty());
+    for r in &compose {
+        let dcc_activity::Transport::Cli { program, args } = &r.transport else {
+            panic!()
+        };
+        assert_eq!(program, "ssh");
+        assert!(args.contains(&format!("{}@127.0.0.1", b.user)), "{args:?}");
+        assert!(r.server.as_ref().is_some_and(|s| s.remote));
+    }
+    let all = serde_json::to_string(&recs).unwrap();
+    assert!(!all.contains("dcc.edit"), "el contenido no se registra");
+
+    // Limpieza en el servidor.
+    session
+        .run(
+            &[
+                "rm".into(),
+                "-rf".into(),
+                "--".into(),
+                format!("/home/{}/dcc-compose-{pid}", b.user),
+            ],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    m.disconnect().await;
+}
+
+// ------------------------------------------------------------------ terminal SSH del servidor
+
+/// La shell del servidor: tamaño inicial y cambios de tamaño llegan al
+/// servidor, `exit` la termina, y cerrarla desde la aplicación no deja la
+/// shell en el servidor ni procesos `ssh` locales.
+#[tokio::test(flavor = "multi_thread")]
+async fn server_shell_session_resizes_and_closes_cleanly() {
+    use dcc_engine::ssh::shell::run_server_shell;
+    use dcc_engine::streams::{EndReason, TerminalInput};
+    let Some(lab) = lab() else { return };
+    let env = Env::new();
+    env.trusted(&lab);
+    let ctx = env.ctx(fixed(None));
+    let log = ActivityLog::new(200);
+    let c = &lab.servers[2];
+    let m = EngineManager::remote(
+        log.clone(),
+        profile(&lab, 2, None, key(&lab), RemoteDocker::Default),
+        ctx.clone(),
+        Timing::default(),
+    );
+    assert!(matches!(
+        m.connect().await,
+        ConnectionState::Connected { .. }
+    ));
+    let engine = m.engine().await.unwrap();
+    let shells = |user: &str| {
+        std::process::Command::new("pgrep")
+            .args(["-u", user, "-x", "bash"])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).lines().count())
+            .unwrap_or(0)
+    };
+    let before = shells(&c.user);
+
+    // 1) Tamaño, cambio de tamaño y salida con `exit`.
+    let (tx, rx) = tokio::sync::mpsc::channel(16);
+    let out = Arc::new(std::sync::Mutex::new(String::new()));
+    let o2 = out.clone();
+    let e2 = engine.clone();
+    let task = tokio::spawn(async move {
+        run_server_shell(
+            &e2,
+            (100, 24),
+            tokio_util::sync::CancellationToken::new(),
+            rx,
+            move |b| {
+                o2.lock().unwrap().push_str(&String::from_utf8_lossy(&b));
+                true
+            },
+        )
+        .await
+    });
+    let has = |t: &str| out.lock().unwrap().contains(t);
+    tx.send(TerminalInput::Data(
+        b"stty size; echo FIN-$((6*7))\n".to_vec(),
+    ))
+    .await
+    .unwrap();
+    wait_for("primera salida", 15, || has("FIN-42")).await;
+    assert!(has("24 100"), "{}", out.lock().unwrap());
+    tx.send(TerminalInput::Resize {
+        cols: 132,
+        rows: 40,
+    })
+    .await
+    .unwrap();
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    tx.send(TerminalInput::Data(
+        b"stty size; echo OTRA-$((6*8))\n".to_vec(),
+    ))
+    .await
+    .unwrap();
+    wait_for("tras cambiar el tamaño", 15, || has("OTRA-48")).await;
+    assert!(
+        has("40 132"),
+        "el servidor ve el nuevo tamaño: {}",
+        out.lock().unwrap()
+    );
+    tx.send(TerminalInput::Data(b"exit 0\n".to_vec()))
+        .await
+        .unwrap();
+    let end = tokio::time::timeout(Duration::from_secs(15), task)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(end.reason, EndReason::Finished);
+    assert_eq!(end.exit_code, Some(0));
+
+    // 2) Cerrada desde la aplicación: la shell del servidor termina.
+    let (tx, rx) = tokio::sync::mpsc::channel(16);
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let out = Arc::new(std::sync::Mutex::new(String::new()));
+    let o2 = out.clone();
+    let (e2, c2) = (engine.clone(), cancel.clone());
+    let task = tokio::spawn(async move {
+        run_server_shell(&e2, (80, 24), c2, rx, move |b| {
+            o2.lock().unwrap().push_str(&String::from_utf8_lossy(&b));
+            true
+        })
+        .await
+    });
+    tx.send(TerminalInput::Data(b"echo LISTO-$((2+3))\n".to_vec()))
+        .await
+        .unwrap();
+    wait_for("shell abierta", 15, || {
+        out.lock().unwrap().contains("LISTO-5")
+    })
+    .await;
+    assert!(shells(&c.user) > before, "hay una shell en el servidor");
+    cancel.cancel();
+    let end = tokio::time::timeout(Duration::from_secs(15), task)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(end.reason, EndReason::Closed);
+    let user = c.user.clone();
+    wait_for("sin shell en el servidor", 10, || shells(&user) == before).await;
+    // Ningún `ssh -tt` (canal de shell) sigue vivo: quedan la maestra y los
+    // canales de la API que el cliente HTTP conserva abiertos.
+    let shell_channels = || {
+        std::fs::read_dir("/proc")
+            .unwrap()
+            .filter_map(|e| {
+                let pid = e.ok()?.file_name().into_string().ok()?;
+                let cmd = std::fs::read(format!("/proc/{pid}/cmdline")).ok()?;
+                let args: Vec<String> = cmd
+                    .split(|b| *b == 0)
+                    .map(|a| String::from_utf8_lossy(a).into_owned())
+                    .collect();
+                (args.first().is_some_and(|a| a.ends_with("ssh"))
+                    && args.iter().any(|a| a == "-tt"))
+                .then_some(())
+            })
+            .count()
+    };
+    wait_for("sin canales de shell locales", 10, || shell_channels() == 0).await;
+
+    // En actividad: la orden ssh equivalente y cómo terminó.
+    let recs: Vec<_> = log
+        .snapshot()
+        .into_iter()
+        .filter(|r| r.kind == "server.shell")
+        .collect();
+    assert_eq!(recs.len(), 2);
+    assert!(recs.iter().all(|r| r
+        .server
+        .as_ref()
+        .is_some_and(|s| s.remote && s.address.contains(":2203"))));
+    drop(engine);
+    m.disconnect().await;
+    wait_for("sin procesos ssh", 10, || ssh_children() == 0).await;
+}
+
+// ------------------------------------------------------------------ carpetas del servidor
+
+/// Los bind mounts se comprueban en el servidor: una carpeta que solo existe
+/// en este equipo falta allí; una del servidor se describe como la ve el
+/// usuario SSH (tipo, propietario, lectura).
+#[tokio::test(flavor = "multi_thread")]
+async fn bind_folders_are_checked_on_the_server() {
+    use dcc_engine::binds::PathKind;
+    use dcc_engine::spec::{ContainerSpec, MountKind, MountSpec};
+    let Some(lab) = lab() else { return };
+    let env = Env::new();
+    env.trusted(&lab);
+    let ctx = env.ctx(fixed(None));
+    let log = ActivityLog::new(500);
+    let b = &lab.servers[1];
+    fixture::ensure_image(&local(&b.socket)).await;
+    let m = EngineManager::remote(
+        log.clone(),
+        profile(&lab, 1, None, key(&lab), RemoteDocker::Default),
+        ctx.clone(),
+        Timing::default(),
+    );
+    assert!(matches!(
+        m.connect().await,
+        ConnectionState::Connected { .. }
+    ));
+    let e = m.engine().await.unwrap();
+    let session = e.ssh_session().unwrap().clone();
+    let pid = std::process::id();
+    let on_server = format!("/home/{}/dcc-bind-{pid}", b.user);
+    session
+        .run(
+            &["mkdir".into(), "-p".into(), "--".into(), on_server.clone()],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    // Solo en este equipo (carpeta privada que el usuario remoto no ve).
+    let private = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(private.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let only_here = private.path().join("datos");
+    std::fs::create_dir(&only_here).unwrap();
+    let only_here = only_here.display().to_string();
+
+    let spec = |source: &str| ContainerSpec {
+        image: fixture::IMAGE.into(),
+        name: format!("dcc-test-bind-{pid}"),
+        mounts: vec![MountSpec {
+            kind: MountKind::Bind,
+            source: source.into(),
+            target: "/datos".into(),
+            read_only: false,
+        }],
+        labels: vec![dcc_engine::spec::KeyValue {
+            key: "dcc.test".into(),
+            value: "true".into(),
+        }],
+        ..Default::default()
+    };
+    let issues = e.spec_issues(&spec(&only_here)).await.unwrap();
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.code == "bind.missing" && i.field == "mounts.0.source"),
+        "{issues:?}"
+    );
+    // Crear con esa carpeta se rechaza antes de llamar a Docker.
+    assert!(matches!(
+        e.create_container(&spec(&only_here)).await,
+        Err(dcc_engine::EngineError::InvalidSpec { .. })
+    ));
+    let issues = e.spec_issues(&spec(&on_server)).await.unwrap();
+    assert!(
+        !issues.iter().any(|i| i.code == "bind.missing"),
+        "{issues:?}"
+    );
+
+    // Un contenedor del servidor con esa carpeta: la vista la describe como la ve el servidor.
+    let created = e.create_container(&spec(&on_server)).await.unwrap();
+    let binds = e.list_binds(None).await.unwrap();
+    let mine = binds
+        .iter()
+        .find(|x| x.source == on_server)
+        .expect("vinculación del servidor");
+    assert_eq!(mine.host.kind, PathKind::Directory);
+    assert!(mine.host.readable);
+    let uid: u32 = String::from_utf8(
+        std::process::Command::new("id")
+            .args(["-u", &b.user])
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .unwrap()
+    .trim()
+    .parse()
+    .unwrap();
+    assert_eq!(mine.host.uid, Some(uid));
+    // En actividad, las consultas al servidor llevan su orden ssh.
+    assert!(log.snapshot().iter().any(|r| r.kind == "bind.inspect" && matches!(&r.transport, dcc_activity::Transport::Cli { program, .. } if program == "ssh")));
+
+    e.remove_container(&created.id, None, true, false)
+        .await
+        .unwrap();
+    session
+        .run(
+            &["rm".into(), "-rf".into(), "--".into(), on_server],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    drop(e);
+    m.disconnect().await;
+}

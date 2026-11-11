@@ -603,6 +603,8 @@ impl Host {
             env: vec![("LC_ALL".into(), "C".into()), ("LANG".into(), "C".into())],
             cwd: None,
             timeout,
+            // Componentes del equipo local: nunca en un servidor remoto.
+            remote: None,
         }
     }
 

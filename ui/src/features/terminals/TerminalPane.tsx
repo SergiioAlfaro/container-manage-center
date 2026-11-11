@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Maximize2, Minimize2, Pencil, RotateCcw, X, Server as ServerIcon } from "lucide-react";
+import { Box, Maximize2, Minimize2, Pencil, RotateCcw, SquareTerminal, X, Server as ServerIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "@/shared/ui/controls";
 import { attachSession, closeSession, fitSession, focusSession, nameProblem, renameSession, reopenSession, setActive, toggleMaximize, MAX_NAME, type Session } from "./sessions";
@@ -76,7 +76,11 @@ export function TerminalPane({ session, active, maximized, canMaximize }: { sess
 
   return (
     <section
-      aria-label={t("terminals.paneLabel", { name: session.name, container: session.containerName, server: session.remote ? session.serverName : t("servers.local") })}
+      aria-label={
+        session.kind === "server"
+          ? t("terminals.serverPaneLabel", { name: session.name, server: session.serverName })
+          : t("terminals.paneLabel", { name: session.name, container: session.containerName, server: session.remote ? session.serverName : t("servers.local") })
+      }
       data-testid="terminal-pane"
       onMouseDown={() => setActive(key)}
       onFocusCapture={() => setActive(key)}
@@ -98,10 +102,17 @@ export function TerminalPane({ session, active, maximized, canMaximize }: { sess
           <ServerIcon size={12} aria-hidden className="shrink-0" />
           <span className="truncate">{session.remote ? session.serverName : t("servers.local")}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-1 font-mono text-[12px] text-[#d5dee7]" title={t("terminals.container", { name: session.containerName })}>
-          <Box size={13} aria-hidden className="shrink-0 text-[#6f8399]" />
-          <span className="truncate">{session.containerName}</span>
-        </span>
+        {session.kind === "server" ? (
+          <span className="flex min-w-0 items-center gap-1 text-[12px] font-semibold text-[#ffd79a]" title={t("terminals.serverShell")}>
+            <SquareTerminal size={13} aria-hidden className="shrink-0" />
+            <span className="truncate">{t("terminals.serverShell")}</span>
+          </span>
+        ) : (
+          <span className="flex min-w-0 items-center gap-1 font-mono text-[12px] text-[#d5dee7]" title={t("terminals.container", { name: session.containerName })}>
+            <Box size={13} aria-hidden className="shrink-0 text-[#6f8399]" />
+            <span className="truncate">{session.containerName}</span>
+          </span>
+        )}
         <span aria-hidden className="text-[#6f8399]">·</span>
         {editing ? (
           <form

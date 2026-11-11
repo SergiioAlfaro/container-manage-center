@@ -725,7 +725,15 @@
     "close": "Itxi saioa",
     "splitColumns": "Aldatu zutabeen tamaina",
     "splitRows": "Aldatu errenkaden tamaina",
-    "server": "{{name}} zerbitzaria"
+    "server": "{{name}} zerbitzaria",
+    "sessionKind": "Saio mota",
+    "kind": {
+      "container": "Edukiontzia",
+      "server": "Zerbitzaria (SSH shell-a)"
+    },
+    "serverShell": "Zerbitzariaren SSH shell-a",
+    "serverShellHint": "{{user}} erabiltzailearen shell-a irekitzen da {{server}} zerbitzarian: idazten duzuna zerbitzarian exekutatzen da, ez edukiontzi baten barruan.",
+    "serverPaneLabel": "{{name}} terminala: {{server}} zerbitzariaren SSH shell-a"
   },
   "stats": {
     "stop": "Utzi jasotzeari",
@@ -815,7 +823,8 @@
       "volumeName": "Hutsik = bolumen anonimoa. Ez badago, Dockerrek sortzen du.",
       "cpus": "Adibidez 0.5 edo 2.",
       "maxRetries": "0 = mugarik gabe.",
-      "user": "Izena edo UID[:GID]. Hutsik = irudiarena."
+      "user": "Izena edo UID[:GID]. Hutsik = irudiarena.",
+      "image_remote": "Zerbitzarian egon behar du."
     },
     "ph": {
       "name": "web-zerbitzaria",
@@ -843,7 +852,9 @@
       "restartHint": "Zer egiten duen Dockerrek prozesu nagusia amaitzen denean.",
       "options": "Aukerak",
       "caps": "Nukleoaren gaitasunak",
-      "capsHint": "Komaz bereizita, adib. NET_ADMIN edo ALL."
+      "capsHint": "Komaz bereizita, adib. NET_ADMIN edo ALL.",
+      "mountsHint_remote": "Docker bolumenak edo zerbitzariko karpetak (bind mounts).",
+      "portsHint_remote": "Argitaratu edukiontziaren atakak zerbitzarian."
     },
     "add": {
       "env": "Gehitu aldagaia",
@@ -893,7 +904,8 @@
     "startFailed": "Edukiontzia sortu da, baina ezin izan da abiarazi: {{message}}",
     "dockerWarning": "Dockerren abisua: {{message}}",
     "secretsHidden_one": "Balio sentikor {{count}} ******** gisa agertzen da hemen eta jarduera-panelean; Dockerri osorik bidaltzen zaio.",
-    "secretsHidden_other": "{{count}} balio sentikor ******** gisa agertzen dira hemen eta jarduera-panelean; Dockerri osorik bidaltzen zaizkio."
+    "secretsHidden_other": "{{count}} balio sentikor ******** gisa agertzen dira hemen eta jarduera-panelean; Dockerri osorik bidaltzen zaizkio.",
+    "imageNotLocal_remote": "{{ref}} irudia ez dago zerbitzarian. Dockerrek ez du deskargatuko edukiontzia sortzean; deskargatu lehenago zerbitzari honetan edo aukeratu dagoeneko duen bat."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Adierazi ordenagailuko karpeta.",
       "missing": "{{path}} karpeta ez dago ordenagailu honetan.",
-      "sensitive": "{{path}} idazteko baimenarekin muntatzeak sistemaren gaineko kontrola ematen dio edukiontziari. Markatu irakurtzeko soilik, behar ez baduzu."
+      "sensitive": "{{path}} idazteko baimenarekin muntatzeak sistemaren gaineko kontrola ematen dio edukiontziari. Markatu irakurtzeko soilik, behar ez baduzu.",
+      "missing_remote": "{{path}} karpeta ez dago zerbitzarian."
     },
     "cpus": {
       "range": "Adierazi PUZ kopuru bat, 0,01 eta 1024 artean."
@@ -1641,7 +1654,10 @@
     "empty": "Ez dago karpeta loturik duen edukiontzirik",
     "emptyBody": "Lotu karpeta bat, edukiontzi batek ordenagailu honetako fitxategiekin lan egin dezan.",
     "noMatches": "Ez dago bilaketarekin bat datorren karpetarik.",
-    "loadError": "Ezin izan da edukiontzien zerrenda lortu: {{message}}"
+    "loadError": "Ezin izan da edukiontzien zerrenda lortu: {{message}}",
+    "missing_remote": "Ez dago zerbitzarian. Edukiontzia «-v» aukerarekin sortu bazen, Dockerrek hutsik sortuko du berriro (root gisa) abiaraztean.",
+    "intro_remote": "Edukiontzien barruan muntatutako zerbitzariko karpetak. Dockerrek ez du uzten lehendik dagoen edukiontzi bati muntaketak gehitzen: karpeta bat lotzeko edukiontzi berri bat sortzen da laguntzailearekin.",
+    "emptyBody_remote": "Lotu zerbitzariko karpeta bat edukiontzi batek bere fitxategiekin lan egin dezan."
   },
   "composeList": {
     "add": "Ireki proiektua…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Egiaztatu Dockerren socketaren bide-izena profilean.",
       "upgradeDocker": "Eguneratu Docker Engine zerbitzarian 20.10 bertsiora edo berriago batera."
     },
-    "target": "Zerbitzaria"
+    "target": "Zerbitzaria",
+    "paths": {
+      "serverPath": "Zerbitzariko bide-izena",
+      "add": "Gehitu bide-izena",
+      "use": "Erabili",
+      "absolute": "Idatzi zerbitzariko bide-izen absolutu bat (/ ikurrarekin hasten da).",
+      "hint": "{{name}} zerbitzariko bide-izena: ez da ordenagailu honetako fitxategirik erabiltzen.",
+      "composeFile": "Compose fitxategia zerbitzarian",
+      "folder": "Karpeta zerbitzarian",
+      "bindLabel": "Zerbitzariko karpeta",
+      "bindHint": "Zerbitzariko bide-izena; karpetak bertan egon behar du (aplikazioak ez du sortzen).",
+      "buildContext": "Eraikitze-testuingurua ordenagailu honetako karpeta bat da: Dockerrek paketatu eta {{name}} zerbitzarira bidaltzen du, eta hark eraikitzen du irudia bertan."
+    },
+    "write": {
+      "titleSave": "Fitxategia zerbitzarian gorde?",
+      "titleCreate": "Fitxategia zerbitzarian sortu?",
+      "body": "Zerbitzariko bide-izen honetan idatziko da (lehenik egiaztatzen da fitxategia ez dela aldatu):",
+      "confirmSave": "Gorde zerbitzarian",
+      "confirmCreate": "Sortu zerbitzarian"
+    }
   }
 }

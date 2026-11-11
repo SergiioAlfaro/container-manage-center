@@ -23,8 +23,12 @@ import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
 
 export type SessionStatus = "opening" | "open" | "ended";
 
+/** Tipo de sesión: terminal de un contenedor o shell SSH del servidor (0.10.0). */
+export type SessionKind = "container" | "server";
+
 export interface Session {
   key: number;
+  kind: SessionKind;
   /** Servidor del contenedor (0.10.0): la sesión siempre va a ese servidor. */
   server: string;
   /** Nombre del servidor al abrirla (para la etiqueta; vacío = equipo local). */
@@ -117,21 +121,26 @@ function start(key: number) {
   let ended = false;
   const current = () => runtimes.get(key) === rt && rt.generation === gen;
 
-  dockerApi(s.server)
-    .terminalOpen(s.containerId, s.containerName, s.shell, rt.term.cols, rt.term.rows, (e: TerminalEvent) => {
-      if (!current()) return;
-      if (e.event === "output") {
-        rt.term.write(decodeBase64(e.data));
-        return;
-      }
-      ended = true;
-      rt.streamId = null;
-      const end = e.closed.end;
-      const summary = end?.summary ?? null;
-      const error = e.closed.error?.message ?? null;
-      patch(key, { status: "ended", summary, error, after: end?.container ?? null });
-      rt.term.write(`\r\n\x1b[2m— ${summary ?? error ?? ""} —\x1b[0m\r\n`);
-    })
+  const docker = dockerApi(s.server);
+  const onEvent = (e: TerminalEvent) => {
+    if (!current()) return;
+    if (e.event === "output") {
+      rt.term.write(decodeBase64(e.data));
+      return;
+    }
+    ended = true;
+    rt.streamId = null;
+    const end = e.closed.end;
+    const summary = end?.summary ?? null;
+    const error = e.closed.error?.message ?? null;
+    patch(key, { status: "ended", summary, error, after: end?.container ?? null });
+    rt.term.write(`\r\n\x1b[2m— ${summary ?? error ?? ""} —\x1b[0m\r\n`);
+  };
+  const opening =
+    s.kind === "server"
+      ? docker.serverShellOpen(rt.term.cols, rt.term.rows, onEvent)
+      : docker.terminalOpen(s.containerId, s.containerName, s.shell, rt.term.cols, rt.term.rows, onEvent);
+  opening
     .then((id) => {
       // Cerrada (o reabierta) mientras se abría: no se deja el flujo huérfano.
       if (!current() || rt.closeRequested) {
@@ -153,6 +162,8 @@ function start(key: number) {
 
 /** Abre una sesión nueva en un contenedor. Devuelve su clave, o `null` si se alcanzó el límite. */
 export function openSession(o: {
+  /** Por defecto, terminal de un contenedor. */
+  kind?: SessionKind;
   server: string;
   serverName: string;
   remote: boolean;
@@ -164,7 +175,8 @@ export function openSession(o: {
   const st = useTerminals.getState();
   if (st.sessions.length >= MAX_SESSIONS) return null;
   const key = ++nextKey;
-  const name = o.name && nameProblem(o.name) === null ? o.name.trim() : defaultName(o.containerName, st.sessions);
+  const base = o.kind === "server" ? `SSH ${o.serverName}` : o.containerName;
+  const name = o.name && nameProblem(o.name) === null ? o.name.trim() : defaultName(base, st.sessions);
   const term = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false });
   const untrack = trackTerminal(term);
   const fit = new FitAddon();
@@ -187,7 +199,7 @@ export function openSession(o: {
   };
   runtimes.set(key, rt);
   useTerminals.setState((s) => ({
-    sessions: [...s.sessions, { key, server: o.server, serverName: o.serverName, remote: o.remote, containerId: o.containerId, containerName: o.containerName, shell: o.shell, name, status: "opening", summary: null, error: null, after: null }],
+    sessions: [...s.sessions, { key, kind: o.kind ?? "container", server: o.server, serverName: o.serverName, remote: o.remote, containerId: o.containerId, containerName: o.containerName, shell: o.shell, name, status: "opening", summary: null, error: null, after: null }],
     active: key,
     // Una sesión nueva se ve: si había otra maximizada, se vuelve a la cuadrícula.
     maximized: null,

@@ -42,7 +42,7 @@ describe("Terminales: distribución y nombres", () => {
     expect(nameProblem("x".repeat(61))).toBe("long");
     expect(nameProblem("a\u001bb")).toBe("control");
     expect(nameProblem(" depuración ")).toBeNull();
-    const s = (name: string) => ({ key: 0, server: "local", serverName: "", remote: false, containerId: "", containerName: "web", shell: "sh" as const, name, status: "open" as const, summary: null, error: null, after: null });
+    const s = (name: string) => ({ key: 0, kind: "container" as const, server: "local", serverName: "", remote: false, containerId: "", containerName: "web", shell: "sh" as const, name, status: "open" as const, summary: null, error: null, after: null });
     expect(defaultName("web", [])).toBe("web");
     expect(defaultName("web", [s("web"), s("web (2)")])).toBe("web (3)");
   });

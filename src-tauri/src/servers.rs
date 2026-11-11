@@ -347,8 +347,10 @@ impl Servers {
             }
             let replaced = match pos {
                 Some(i) => {
-                    // Los datos de la última conexión los pone la aplicación.
+                    // Los datos de la última conexión y los proyectos Compose
+                    // los pone la aplicación, no la copia que envía la interfaz.
                     c.last_seen = next[i].config.last_seen.clone();
+                    c.compose_projects = next[i].config.compose_projects.clone();
                     let same_connection = profile_of(&next[i].config).auth == profile_of(&c).auth
                         && strip(&next[i].config) == strip(&c);
                     if same_connection {
@@ -362,6 +364,7 @@ impl Servers {
                 }
                 None => {
                     c.last_seen = None;
+                    c.compose_projects = Vec::new();
                     next.push(self.fresh(c.clone()));
                     None
                 }
@@ -484,6 +487,25 @@ impl Servers {
             return;
         }
         *list = next;
+    }
+
+    /// Cambia la lista de proyectos Compose de un servidor remoto y la guarda.
+    pub fn update_compose<T>(
+        &self,
+        id: &str,
+        f: impl FnOnce(&mut Vec<dcc_store::SavedProject>) -> CmdResult<T>,
+    ) -> CmdResult<T> {
+        let _w = self.write.lock();
+        let mut list = self.remotes.write();
+        let mut next = list.clone();
+        let r = next
+            .iter_mut()
+            .find(|r| r.config.id == id)
+            .ok_or_else(|| unknown(id))?;
+        let out = f(&mut r.config.compose_projects)?;
+        self.persist(&next)?;
+        *list = next;
+        Ok(out)
     }
 
     /// Registra en actividad una acción sobre la identidad o los secretos.
@@ -681,5 +703,41 @@ mod tests {
         });
         let saved = rt.block_on(s.save(c)).unwrap();
         assert!(saved.last_seen.is_none());
+    }
+
+    #[tokio::test]
+    async fn compose_projects_are_per_server_and_not_overwritten_by_a_profile_save() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = servers(dir.path());
+        let a = s.save(cfg()).await.unwrap();
+        let mut other = cfg();
+        other.host = "docker-b.example.com".into();
+        let b = s.save(other).await.unwrap();
+        s.update_compose(&a.id, |ps| {
+            ps.push(dcc_store::SavedProject {
+                name: "tienda".into(),
+                files: vec!["/srv/tienda/compose.yaml".into()],
+            });
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(s.config(&a.id).unwrap().compose_projects.len(), 1);
+        assert!(s.config(&b.id).unwrap().compose_projects.is_empty());
+        // La interfaz guarda el perfil con una copia sin proyectos: se conservan.
+        let mut stale = a.clone();
+        stale.name = "Otro nombre".into();
+        stale.compose_projects.clear();
+        let saved = s.save(stale).await.unwrap();
+        assert_eq!(saved.compose_projects.len(), 1);
+        assert_eq!(
+            servers(dir.path()).config(&a.id).unwrap().compose_projects[0].name,
+            "tienda"
+        );
+        assert_eq!(
+            s.update_compose("srv-ffffffff", |_| Ok(()))
+                .unwrap_err()
+                .code,
+            "server.unknown"
+        );
     }
 }

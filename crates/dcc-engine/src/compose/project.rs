@@ -291,6 +291,16 @@ pub fn projects_from(
     containers: &[ContainerSummary],
     registered: &[ProjectRef],
 ) -> Vec<ComposeProject> {
+    projects_from_with(containers, registered, |p| p.missing_files())
+}
+
+/// Como [`projects_from`], con la comprobación de archivos que corresponda
+/// (en un servidor remoto se hace en el servidor, 0.10.0).
+pub fn projects_from_with(
+    containers: &[ContainerSummary],
+    registered: &[ProjectRef],
+    missing: impl Fn(&ProjectRef) -> Vec<String>,
+) -> Vec<ComposeProject> {
     let mut map: BTreeMap<String, ComposeProject> = BTreeMap::new();
     for c in containers {
         let Some(name) = c.labels.get(LABEL_PROJECT) else {
@@ -382,7 +392,7 @@ pub fn projects_from(
             p.state = st;
             p.running = running;
             p.total = total;
-            p.missing_files = p.reference.missing_files();
+            p.missing_files = missing(&p.reference);
             p
         })
         .collect()
@@ -841,8 +851,18 @@ impl ComposeAction {
 
 /// Argumentos completos (sin el programa) de una acción sobre un proyecto.
 pub fn action_args(cli: &ComposeCli, project: &ProjectRef, action: &ComposeAction) -> Vec<String> {
-    let with_files =
-        action.needs_files() || project.missing_files().is_empty() && !project.files.is_empty();
+    action_args_with(cli, project, action, project.missing_files().is_empty())
+}
+
+/// Como [`action_args`], sabiendo si están todos los archivos (comprobado
+/// donde están: en el equipo o en el servidor remoto).
+pub fn action_args_with(
+    cli: &ComposeCli,
+    project: &ProjectRef,
+    action: &ComposeAction,
+    files_present: bool,
+) -> Vec<String> {
+    let with_files = action.needs_files() || files_present && !project.files.is_empty();
     let mut a = cli.prefix.clone();
     a.extend(project.global_args(with_files, None));
     if action.all_profiles() {
@@ -883,7 +903,26 @@ pub fn logs_args(
     tail: u32,
     timestamps: bool,
 ) -> Vec<String> {
-    let with_files = project.missing_files().is_empty() && !project.files.is_empty();
+    logs_args_with(
+        cli,
+        project,
+        services,
+        tail,
+        timestamps,
+        project.missing_files().is_empty(),
+    )
+}
+
+/// Como [`logs_args`], sabiendo si están todos los archivos.
+pub fn logs_args_with(
+    cli: &ComposeCli,
+    project: &ProjectRef,
+    services: &[String],
+    tail: u32,
+    timestamps: bool,
+    files_present: bool,
+) -> Vec<String> {
+    let with_files = files_present && !project.files.is_empty();
     let mut a = cli.prefix.clone();
     a.extend(project.global_args(with_files, None));
     a.extend([

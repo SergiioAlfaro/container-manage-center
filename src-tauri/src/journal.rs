@@ -170,7 +170,10 @@ impl EventFilter {
                     .any(|a| e.action == *a || e.action.starts_with(&format!("{a}:"))))
             && e.matches_text(&self.text)
             && (self.servers.is_empty()
-                || self.servers.iter().any(|s| s == server_id(e.server.as_ref())))
+                || self
+                    .servers
+                    .iter()
+                    .any(|s| s == server_id(e.server.as_ref())))
     }
 }
 
@@ -241,7 +244,10 @@ impl HistoryFilter {
         self.since.map_or(true, |s| secs >= s)
             && self.until.map_or(true, |u| secs <= u)
             && (self.servers.is_empty()
-                || self.servers.iter().any(|s| s == server_id(h.server.as_ref())))
+                || self
+                    .servers
+                    .iter()
+                    .any(|s| s == server_id(h.server.as_ref())))
             && (self.categories.is_empty() || self.categories.contains(&h.category))
             && (self.statuses.is_empty() || self.statuses.contains(&h.status))
             && (q.is_empty()
@@ -408,7 +414,10 @@ mod server_filter_tests {
         f.servers = vec!["srv-0123abcd".into()];
         assert!(f.matches(&remote) && !f.matches(&old));
         f.servers = vec!["local".into()];
-        assert!(!f.matches(&remote) && f.matches(&old), "los anteriores a 0.10.0 son del equipo local");
+        assert!(
+            !f.matches(&remote) && f.matches(&old),
+            "los anteriores a 0.10.0 son del equipo local"
+        );
 
         let mut e: EventFilter = serde_json::from_value(json!({})).unwrap();
         assert!(e.matches(&event(tag("srv-0123abcd"))));

@@ -725,7 +725,15 @@
     "close": "Close session",
     "splitColumns": "Resize columns",
     "splitRows": "Resize rows",
-    "server": "Server {{name}}"
+    "server": "Server {{name}}",
+    "sessionKind": "Session type",
+    "kind": {
+      "container": "Container",
+      "server": "Server (SSH shell)"
+    },
+    "serverShell": "Server SSH shell",
+    "serverShellHint": "Opens the shell of {{user}} on {{server}}: what you type runs on the server, not inside a container.",
+    "serverPaneLabel": "Terminal {{name}}: SSH shell of {{server}}"
   },
   "stats": {
     "stop": "Stop receiving",
@@ -815,7 +823,8 @@
       "volumeName": "Empty = anonymous volume. Docker creates it if it doesn't exist.",
       "cpus": "For example 0.5 or 2.",
       "maxRetries": "0 = no limit.",
-      "user": "Name or UID[:GID]. Empty = image default."
+      "user": "Name or UID[:GID]. Empty = image default.",
+      "image_remote": "It must exist on the server."
     },
     "ph": {
       "name": "web-server",
@@ -843,7 +852,9 @@
       "restartHint": "What Docker does when the main process exits.",
       "options": "Options",
       "caps": "Kernel capabilities",
-      "capsHint": "Comma separated, e.g. NET_ADMIN or ALL."
+      "capsHint": "Comma separated, e.g. NET_ADMIN or ALL.",
+      "mountsHint_remote": "Docker volumes or server folders (bind mounts).",
+      "portsHint_remote": "Publish container ports on the server."
     },
     "add": {
       "env": "Add variable",
@@ -893,7 +904,8 @@
     "startFailed": "The container was created but could not be started: {{message}}",
     "dockerWarning": "Docker warning: {{message}}",
     "secretsHidden_one": "{{count}} sensitive value is shown as ******** here and in the activity panel; Docker receives it in full.",
-    "secretsHidden_other": "{{count}} sensitive values are shown as ******** here and in the activity panel; Docker receives them in full."
+    "secretsHidden_other": "{{count}} sensitive values are shown as ******** here and in the activity panel; Docker receives them in full.",
+    "imageNotLocal_remote": "Image {{ref}} is not on the server. Docker will not download it when creating the container; pull it on this server first or choose one it already has."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Enter the host folder.",
       "missing": "Folder {{path}} does not exist on this computer.",
-      "sensitive": "Mounting {{path}} writable gives the container control over the system. Mark it read-only if you don't need writes."
+      "sensitive": "Mounting {{path}} writable gives the container control over the system. Mark it read-only if you don't need writes.",
+      "missing_remote": "Folder {{path}} does not exist on the server."
     },
     "cpus": {
       "range": "Enter a number of CPUs between 0.01 and 1024."
@@ -1641,7 +1654,10 @@
     "empty": "No container has bound folders",
     "emptyBody": "Bind a folder so a container can work with files on this machine.",
     "noMatches": "No folder matches the search.",
-    "loadError": "Could not get the container list: {{message}}"
+    "loadError": "Could not get the container list: {{message}}",
+    "missing_remote": "It does not exist on the server. If the container was created with “-v”, Docker will create it again, empty (as root), when it starts.",
+    "intro_remote": "Server folders mounted inside containers. Docker cannot add mounts to an existing container: to bind a folder, a new container is created with the wizard.",
+    "emptyBody_remote": "Bind a server folder so that a container works with its files."
   },
   "composeList": {
     "add": "Open project…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Check the Docker socket path in the profile.",
       "upgradeDocker": "Upgrade Docker Engine on the server to version 20.10 or later."
     },
-    "target": "Server"
+    "target": "Server",
+    "paths": {
+      "serverPath": "Path on the server",
+      "add": "Add path",
+      "use": "Use",
+      "absolute": "Enter an absolute server path (starting with /).",
+      "hint": "Path on server {{name}}: no files from this computer are used.",
+      "composeFile": "Compose file on the server",
+      "folder": "Folder on the server",
+      "bindLabel": "Server folder",
+      "bindHint": "Path on the server; the folder must exist there (the application does not create it).",
+      "buildContext": "The build context is a folder on this computer: Docker packs it and sends it to server {{name}}, which builds the image there."
+    },
+    "write": {
+      "titleSave": "Save the file on the server?",
+      "titleCreate": "Create the file on the server?",
+      "body": "It will be written to this path on the server (it is first checked that the file has not changed):",
+      "confirmSave": "Save on the server",
+      "confirmCreate": "Create on the server"
+    }
   }
 }

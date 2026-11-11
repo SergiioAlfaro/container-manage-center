@@ -725,7 +725,15 @@
     "close": "Fechar a sessão",
     "splitColumns": "Redimensionar as colunas",
     "splitRows": "Redimensionar as linhas",
-    "server": "Servidor {{name}}"
+    "server": "Servidor {{name}}",
+    "sessionKind": "Tipo de sessão",
+    "kind": {
+      "container": "Contentor",
+      "server": "Servidor (shell SSH)"
+    },
+    "serverShell": "Shell SSH do servidor",
+    "serverShellHint": "Abre a shell de {{user}} em {{server}}: o que escrever é executado no servidor, não dentro de um contentor.",
+    "serverPaneLabel": "Terminal {{name}}: shell SSH de {{server}}"
   },
   "stats": {
     "stop": "Deixar de receber",
@@ -815,7 +823,8 @@
       "volumeName": "Vazio = volume anónimo. Se não existir, o Docker cria-o.",
       "cpus": "Por exemplo 0.5 ou 2.",
       "maxRetries": "0 = sem limite.",
-      "user": "Nome ou UID[:GID]. Vazio = o da imagem."
+      "user": "Nome ou UID[:GID]. Vazio = o da imagem.",
+      "image_remote": "Tem de existir no servidor."
     },
     "ph": {
       "name": "servidor-web",
@@ -843,7 +852,9 @@
       "restartHint": "O que o Docker faz quando o processo principal termina.",
       "options": "Opções",
       "caps": "Capacidades do núcleo",
-      "capsHint": "Separadas por vírgulas, p. ex. NET_ADMIN ou ALL."
+      "capsHint": "Separadas por vírgulas, p. ex. NET_ADMIN ou ALL.",
+      "mountsHint_remote": "Volumes do Docker ou pastas do servidor (bind mounts).",
+      "portsHint_remote": "Publique portas do contentor no servidor."
     },
     "add": {
       "env": "Adicionar variável",
@@ -893,7 +904,8 @@
     "startFailed": "O contentor foi criado, mas não foi possível iniciá-lo: {{message}}",
     "dockerWarning": "Aviso do Docker: {{message}}",
     "secretsHidden_one": "{{count}} valor sensível aparece como ******** aqui e no painel de atividade; ao Docker é enviado completo.",
-    "secretsHidden_other": "{{count}} valores sensíveis aparecem como ******** aqui e no painel de atividade; ao Docker são enviados completos."
+    "secretsHidden_other": "{{count}} valores sensíveis aparecem como ******** aqui e no painel de atividade; ao Docker são enviados completos.",
+    "imageNotLocal_remote": "A imagem {{ref}} não está no servidor. O Docker não a vai descarregar ao criar o contentor; descarregue-a antes neste servidor ou escolha uma que já tenha."
   },
   "issues": {
     "name": {
@@ -956,7 +968,8 @@
     "bind": {
       "required": "Indique a pasta do computador.",
       "missing": "A pasta {{path}} não existe neste computador.",
-      "sensitive": "Montar {{path}} com escrita dá ao contentor controlo sobre o sistema. Marque-o como só de leitura se não precisar de escrita."
+      "sensitive": "Montar {{path}} com escrita dá ao contentor controlo sobre o sistema. Marque-o como só de leitura se não precisar de escrita.",
+      "missing_remote": "A pasta {{path}} não existe no servidor."
     },
     "cpus": {
       "range": "Indique um número de CPU entre 0,01 e 1024."
@@ -1641,7 +1654,10 @@
     "empty": "Nenhum contentor tem pastas vinculadas",
     "emptyBody": "Vincule uma pasta para que um contentor trabalhe com ficheiros deste computador.",
     "noMatches": "Nenhuma pasta corresponde à pesquisa.",
-    "loadError": "Não foi possível obter a lista de contentores: {{message}}"
+    "loadError": "Não foi possível obter a lista de contentores: {{message}}",
+    "missing_remote": "Não existe no servidor. Se o contentor foi criado com «-v», o Docker voltará a criá-la vazia (como root) ao arrancá-lo.",
+    "intro_remote": "Pastas do servidor montadas dentro de contentores. O Docker não permite adicionar montagens a um contentor existente: para associar uma pasta cria-se um contentor novo com o assistente.",
+    "emptyBody_remote": "Associe uma pasta do servidor para que um contentor trabalhe com os seus ficheiros."
   },
   "composeList": {
     "add": "Abrir projeto…",
@@ -2730,6 +2746,25 @@
       "checkSocket": "Verifique o caminho do socket do Docker no perfil.",
       "upgradeDocker": "Atualize o Docker Engine no servidor para a versão 20.10 ou posterior."
     },
-    "target": "Servidor"
+    "target": "Servidor",
+    "paths": {
+      "serverPath": "Caminho no servidor",
+      "add": "Adicionar caminho",
+      "use": "Usar",
+      "absolute": "Escreva um caminho absoluto do servidor (começa por /).",
+      "hint": "Caminho no servidor {{name}}: não são usados ficheiros deste computador.",
+      "composeFile": "Ficheiro Compose no servidor",
+      "folder": "Pasta no servidor",
+      "bindLabel": "Pasta do servidor",
+      "bindHint": "Caminho no servidor; a pasta tem de existir lá (a aplicação não a cria).",
+      "buildContext": "O contexto de construção é uma pasta deste computador: o Docker empacota-a e envia-a para o servidor {{name}}, que constrói a imagem lá."
+    },
+    "write": {
+      "titleSave": "Guardar o ficheiro no servidor?",
+      "titleCreate": "Criar o ficheiro no servidor?",
+      "body": "Será escrito neste caminho do servidor (primeiro verifica-se que o ficheiro não mudou):",
+      "confirmSave": "Guardar no servidor",
+      "confirmCreate": "Criar no servidor"
+    }
   }
 }
