@@ -1,17 +1,12 @@
-import {
-  Suspense,
-  lazy,
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentType,
-} from "react";
+import { Suspense, lazy, useEffect, useMemo, useState, type ComponentType } from "react";
 import { PanelRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ActivityPanel } from "@/features/activity/ActivityPanel";
 import { useActivity } from "@/features/activity/store";
 import { DashboardView } from "@/features/dashboard/DashboardView";
 import { ConnectionBadge } from "@/features/engine/ConnectionBadge";
+import { ServerSelector } from "@/features/servers/ServerSelector";
+import { SecretDialog } from "@/features/servers/SecretDialog";
 import { PendingSection } from "@/features/pending/PendingSection";
 import { useLiveRefresh } from "@/features/events/liveRefresh";
 import { api } from "@/shared/ipc/client";
@@ -32,6 +27,7 @@ const load = {
   ComposeView: () => import("@/features/compose/ComposeView"),
   TerminalsView: () => import("@/features/terminals/TerminalsView"),
   EventsView: () => import("@/features/events/EventsView"),
+  ServersView: () => import("@/features/servers/ServersView"),
   SettingsView: () => import("@/features/settings/SettingsView"),
 };
 type ViewName = keyof typeof load;
@@ -45,10 +41,7 @@ function remember(name: ViewName, m: unknown): ComponentType {
   return C;
 }
 const lazyViews = Object.fromEntries(
-  (Object.keys(load) as ViewName[]).map((n) => [
-    n,
-    lazy(() => load[n]().then((m) => ({ default: remember(n, m) }))),
-  ]),
+  (Object.keys(load) as ViewName[]).map((n) => [n, lazy(() => load[n]().then((m) => ({ default: remember(n, m) })))]),
 ) as unknown as Record<ViewName, ComponentType>;
 
 function View({ name }: { name: ViewName }) {
@@ -84,8 +77,7 @@ function useActivityBridge() {
         (e) => {
           const rec = apply(e);
           const { config, setActivityOpen } = useApp.getState();
-          if (rec?.status === "failed" && config.activity.openOnError)
-            setActivityOpen(true);
+          if (rec?.status === "failed" && config.activity.openOnError) setActivityOpen(true);
         },
         () => void reload(),
       )
@@ -132,11 +124,7 @@ function useServersBridge() {
   }, []);
 }
 
-function Section({
-  id,
-}: {
-  id: ReturnType<typeof useApp.getState>["section"];
-}) {
+function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) {
   switch (id) {
     case "dashboard":
       return <DashboardView />;
@@ -158,6 +146,8 @@ function Section({
       return <View name="EventsView" />;
     case "settings":
       return <View name="SettingsView" />;
+    case "servers":
+      return <View name="ServersView" />;
     default:
       return <PendingSection id={id} />;
   }
@@ -184,23 +174,9 @@ function useShortcuts() {
 export function App() {
   const { t } = useTranslation();
   usePreloadSections();
-  const {
-    section,
-    config,
-    info,
-    saveError,
-    navigate,
-    toggleSidebar,
-    toggleActivity,
-    setActivityOpen,
-    dismissSaveError,
-  } = useApp();
-  const running = useActivity(
-    (s) => s.records.filter((r) => r.status === "running").length,
-  );
-  const failedRecent = useActivity((s) =>
-    s.records.some((r) => r.status === "failed"),
-  );
+  const { section, config, info, saveError, navigate, toggleSidebar, toggleActivity, setActivityOpen, dismissSaveError } = useApp();
+  const running = useActivity((s) => s.records.filter((r) => r.status === "running").length);
+  const failedRecent = useActivity((s) => s.records.some((r) => r.status === "failed"));
   useActivityBridge();
   useLiveRefresh();
   useServersBridge();
@@ -227,25 +203,17 @@ export function App() {
 
   return (
     <div className="flex h-full">
-      <Sidebar
-        active={section}
-        collapsed={config.ui.sidebarCollapsed}
-        onNavigate={navigate}
-        onToggle={toggleSidebar}
-      />
+      <Sidebar active={section} collapsed={config.ui.sidebarCollapsed} onNavigate={navigate} onToggle={toggleSidebar} />
 
       <ServerScope key={selected} server={selected}>
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
             <div className="min-w-0">
-              <h1 className="truncate text-[17px] font-semibold leading-tight tracking-[-0.01em]">
-                {t(`sections.${section}.title`)}
-              </h1>
-              <p className="truncate text-[12.5px] text-ink-3">
-                {t(`sections.${section}.description`)}
-              </p>
+              <h1 className="truncate text-[17px] font-semibold leading-tight tracking-[-0.01em]">{t(`sections.${section}.title`)}</h1>
+              <p className="truncate text-[12.5px] text-ink-3">{t(`sections.${section}.description`)}</p>
             </div>
-            <div className="ml-auto flex shrink-0">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <ServerSelector />
               <ConnectionBadge onOpen={() => navigate("dashboard")} />
             </div>
             <button
@@ -256,41 +224,21 @@ export function App() {
               title={`${panelOpen ? t("activity.close") : t("activity.open")} (${t("activity.shortcut")})`}
               className={cx(
                 "relative inline-flex h-8 items-center gap-2 rounded-md border px-3 text-[13px] transition-colors",
-                panelOpen
-                  ? "border-beacon bg-beacon-soft text-beacon-strong"
-                  : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink",
+                panelOpen ? "border-beacon bg-beacon-soft text-beacon-strong" : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink",
               )}
             >
               <PanelRight size={16} strokeWidth={1.75} />
               <span>{t("activity.title")}</span>
-              {running > 0 && (
-                <span className="rounded-full bg-run px-1.5 text-[11px] leading-[18px] font-semibold text-white tabular-nums">
-                  {running}
-                </span>
-              )}
-              {running === 0 && failedRecent && (
-                <span aria-hidden className="h-2 w-2 rounded-full bg-err" />
-              )}
+              {running > 0 && <span className="rounded-full bg-run px-1.5 text-[11px] leading-[18px] font-semibold text-white tabular-nums">{running}</span>}
+              {running === 0 && failedRecent && <span aria-hidden className="h-2 w-2 rounded-full bg-err" />}
             </button>
           </header>
 
           {notice && (
-            <div
-              role="alert"
-              className="flex items-start gap-3 border-b border-warn/30 bg-warn/10 px-6 py-2.5 text-[13px]"
-            >
-              <p className="flex-1 text-ink">
-                {saveError
-                  ? t("settings.saveError", { message: saveError })
-                  : notice}
-              </p>
+            <div role="alert" className="flex items-start gap-3 border-b border-warn/30 bg-warn/10 px-6 py-2.5 text-[13px]">
+              <p className="flex-1 text-ink">{saveError ? t("settings.saveError", { message: saveError }) : notice}</p>
               {saveError && (
-                <button
-                  type="button"
-                  onClick={dismissSaveError}
-                  aria-label={t("common.dismiss")}
-                  className="text-ink-3 hover:text-ink"
-                >
+                <button type="button" onClick={dismissSaveError} aria-label={t("common.dismiss")} className="text-ink-3 hover:text-ink">
                   <X size={16} />
                 </button>
               )}
@@ -298,27 +246,12 @@ export function App() {
           )}
 
           {update && (
-            <div
-              role="status"
-              data-testid="update-banner"
-              className="flex items-center gap-3 border-b border-beacon/30 bg-beacon/10 px-6 py-2 text-[13px]"
-            >
-              <p className="flex-1 text-ink">
-                {t("updates.banner", { latest: update })}
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate("settings")}
-                className="font-medium text-beacon-strong hover:underline"
-              >
+            <div role="status" data-testid="update-banner" className="flex items-center gap-3 border-b border-beacon/30 bg-beacon/10 px-6 py-2 text-[13px]">
+              <p className="flex-1 text-ink">{t("updates.banner", { latest: update })}</p>
+              <button type="button" onClick={() => navigate("settings")} className="font-medium text-beacon-strong hover:underline">
                 {t("updates.bannerOpen")}
               </button>
-              <button
-                type="button"
-                onClick={() => setUpdate(null)}
-                aria-label={t("common.dismiss")}
-                className="text-ink-3 hover:text-ink"
-              >
+              <button type="button" onClick={() => setUpdate(null)} aria-label={t("common.dismiss")} className="text-ink-3 hover:text-ink">
                 <X size={16} />
               </button>
             </div>
@@ -327,10 +260,7 @@ export function App() {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <Suspense
               fallback={
-                <div
-                  role="status"
-                  className="flex items-center justify-center gap-2 py-20 text-[13px] text-ink-3"
-                >
+                <div role="status" className="flex items-center justify-center gap-2 py-20 text-[13px] text-ink-3">
                   <Spinner /> {t("common.loading")}
                 </div>
               }
@@ -338,6 +268,7 @@ export function App() {
               <Section id={section} />
             </Suspense>
           </div>
+          <SecretDialog />
         </main>
       </ServerScope>
 

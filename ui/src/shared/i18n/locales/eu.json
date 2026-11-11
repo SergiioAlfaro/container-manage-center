@@ -79,6 +79,10 @@
     "settings": {
       "title": "Konfigurazioa",
       "description": "Aplikazioaren hobespenak."
+    },
+    "servers": {
+      "title": "Zerbitzariak",
+      "description": "Ordenagailu hau eta Docker duten urruneko zerbitzariak SSH bidez."
     }
   },
   "pending": {
@@ -152,7 +156,12 @@
       "compose": "Compose"
     },
     "loadError": "Ezin izan da jarduera-historia kargatu: {{message}}",
-    "executedApp": "Aplikazioaren eragiketa"
+    "executedApp": "Aplikazioaren eragiketa",
+    "filterServer": "Zerbitzaria",
+    "allServers": "guztiak",
+    "connectionSsh": "SSH (docker system dial-stdio)",
+    "connectionLocal": "Socket lokala",
+    "connection": "Konexioa"
   },
   "settings": {
     "appearance": "Itxura",
@@ -696,7 +705,7 @@
       "long": "Erabili gehienez {{max}} karaktere.",
       "control": "Izenak ezin du kontrol-karaktererik izan."
     },
-    "paneLabel": "{{name}} terminala, {{container}} edukiontzian",
+    "paneLabel": "{{name}} terminala {{container}} edukiontzian ({{server}})",
     "container": "{{name}} edukiontzia",
     "state": {
       "opening": "Konektatzen…",
@@ -715,7 +724,8 @@
     "restore": "Leheneratu sareta",
     "close": "Itxi saioa",
     "splitColumns": "Aldatu zutabeen tamaina",
-    "splitRows": "Aldatu errenkaden tamaina"
+    "splitRows": "Aldatu errenkaden tamaina",
+    "server": "{{name}} zerbitzaria"
   },
   "stats": {
     "stop": "Utzi jasotzeari",
@@ -2364,5 +2374,362 @@
       "rollbackStop": "Desegin: gelditu kopia"
     },
     "openContainer": "Ireki edukiontzia"
+  },
+  "servers": {
+    "local": "Ordenagailu hau",
+    "localSocket": "Socket lokala",
+    "remoteBadge": "Urrunekoa",
+    "add": "Gehitu zerbitzaria",
+    "back": "Itzuli zerbitzarietara",
+    "open": "Ireki",
+    "connect": "Konektatu",
+    "connectNamed": "Konektatu {{name}} zerbitzarira",
+    "disconnect": "Deskonektatu",
+    "disconnectNamed": "Deskonektatu {{name}} zerbitzaritik",
+    "edit": "Editatu",
+    "delete": "Ezabatu profila",
+    "diagnose": "Diagnostikoa",
+    "refresh": "Eguneratu",
+    "never": "Inoiz ez",
+    "moreActions": "{{name}} zerbitzariaren ekintza gehiago",
+    "forgetSecret": "Ahaztu gordetako kredentzialak",
+    "notConnectedBody": "Zerbitzari hau ez dago konektatuta. Konektatu bere Dockerra ikusteko eta administratzeko; bitartean ez da eragiketarik egiten bertan.",
+    "listHint": "Zerbitzari bat deskonektatzeak edo ezabatzeak ez ditu inoiz ukitzen bere edukiontziak, irudiak, sareak edo bolumenak: zerbitzarian jarraitzen dute dauden bezala.",
+    "keyringNotice": "{{name}}: ezin izan da sistemaren biltegi segurua erabili ({{message}}). Kredentzialak saio honetarako bakarrik balio du.",
+    "groupWarning": "Zerbitzariko docker taldeko kide izatea zerbitzari horretan root sarbidea edukitzearen baliokidea da. Erabaki bere administratzailearekin onargarria den; aukera seguruagoa Docker rootless da.",
+    "noAutoFix": "Aplikazioak ez du Docker instalatzen, ez ditu baimenak aldatzen, ez du SSH konfigurazioa aldatzen eta ez du atakarik irekitzen zerbitzarian: urrats hauek zuk edo bere administratzaileak berrikusteko dira.",
+    "empty": {
+      "title": "Oraindik ez dago urruneko zerbitzaririk",
+      "body": "Gehitu SSH bidez sar zaitezkeen Docker zerbitzari bat. Konexioak sistemaren SSH bezeroa erabiltzen du, zerbitzariaren identitatea egiaztatzen du eta ez du inoiz Docker sarean jartzen."
+    },
+    "tabs": {
+      "label": "Zerbitzarien ikuspegia",
+      "servers": "Zerbitzariak",
+      "overview": "Ikuspegi orokorra"
+    },
+    "columns": {
+      "name": "Izena",
+      "address": "Helbidea",
+      "method": "Metodoa",
+      "status": "Egoera",
+      "docker": "Docker / API",
+      "os": "Sistema",
+      "lastSeen": "Azken konexioa",
+      "latency": "Latentzia",
+      "actions": "Ekintzak"
+    },
+    "status": {
+      "connected": "Konektatuta",
+      "disconnected": "Deskonektatuta",
+      "connecting": "Konektatzen",
+      "authError": "Autentifikazio-errorea",
+      "connectionError": "Konexio-errorea",
+      "dockerUnavailable": "Docker ez dago erabilgarri",
+      "identityError": "Identitatea berretsi gabe"
+    },
+    "selector": {
+      "label": "Zerbitzaria: {{name}}. Aldatu zerbitzaria",
+      "current": "unekoa",
+      "manage": "Kudeatu zerbitzariak"
+    },
+    "auth": {
+      "agent": "SSH agentea",
+      "key": "Gako pribatua",
+      "keyPassphrase": "Pasaesaldidun gakoa",
+      "password": "Pasahitza"
+    },
+    "authHint": {
+      "agent": "Sistemaren SSH agentean kargatutako gakoak eta zure ~/.ssh konfigurazioa erabiltzen ditu. Gomendatutako aukera da.",
+      "key": "Pasaesaldirik gabeko gako pribatu bat erabiltzen du. Bide-izena bakarrik gordetzen da: gakoa ez da kopiatzen ez irakurtzen.",
+      "keyPassphrase": "Pasaesaldiz babestutako gako pribatu bat erabiltzen du. Pasaesaldia konektatzean eskatzen da, eta zuk eskatzen baduzu bakarrik gordetzen da sistemaren biltegi seguruan.",
+      "password": "Ez da gomendagarria. Pasahitza konektatzean eskatzen da, eta zuk eskatzen baduzu bakarrik gordetzen da sistemaren biltegi seguruan. Erabili gakoak ahal duzun guztietan."
+    },
+    "docker": {
+      "default": "Lehenetsia",
+      "socket": "Socketa",
+      "context": "Testuingurua"
+    },
+    "dockerHint": {
+      "default": "Zerbitzariko docker bezeroak lehenespenez erabiltzen duen Dockerra (DOCKER_HOST, testuingurua edo sistemaren socketa).",
+      "socket": "Zerbitzariko Unix socket jakin bat, adibidez Docker rootless-ena.",
+      "context": "Zerbitzarian definitutako Docker testuinguru bat."
+    },
+    "fields": {
+      "name": "Izena",
+      "host": "Ostalaria",
+      "port": "SSH ataka",
+      "user": "Erabiltzailea",
+      "description": "Deskribapena (aukerakoa)",
+      "auth": "Autentifikazioa",
+      "keyPath": "Gako pribatuaren bide-izena",
+      "dockerTarget": "Docker zerbitzarian",
+      "dockerSocket": "Socketaren bide-izena zerbitzarian",
+      "dockerContext": "Testuinguruaren izena",
+      "connectTimeout": "Konexioaren gehieneko denbora (segundoak)",
+      "proxyJump": "Tarteko zerbitzaria (aukerakoa)",
+      "autoConnect": "Konektatu aplikazioa irekitzean"
+    },
+    "hints": {
+      "name": "Nola ikusiko den aplikazioan, adibidez «Ekoizpena».",
+      "host": "DNS izena, IPv4 edo IPv6 helbidea, edo ~/.ssh/config fitxategiko alias bat.",
+      "user": "SSH erabiltzailea zerbitzarian.",
+      "keyPath": "Gakoa dagoen tokian geratzen da. Adibidez ~/.ssh/id_ed25519.",
+      "connectTimeout": "3 eta 120 segundo artean.",
+      "proxyJump": "Formatua: erabiltzailea@ostalaria:ataka. SSHren ProxyJump-en baliokidea."
+    },
+    "issues": {
+      "nameRequired": "Idatzi izen bat.",
+      "nameInvalid": "Izena luzeegia da edo karaktere baliogabeak ditu.",
+      "hostRequired": "Idatzi ostalaria.",
+      "hostInvalid": "Ostalari baliogabea: erabili izen bat, IP bat edo alias bat, zuriunerik eta karaktere berezirik gabe.",
+      "portInvalid": "Atakak 1 eta 65535 artean egon behar du.",
+      "userRequired": "Idatzi erabiltzailea.",
+      "userInvalid": "Erabiltzaile baliogabea.",
+      "descriptionTooLong": "Deskribapena luzeegia da.",
+      "keyPathInvalid": "Adierazi gako pribatuaren bide-izena.",
+      "socketInvalid": "Adierazi socket baten bide-izen absolutu baliodun bat.",
+      "contextInvalid": "Testuinguru-izen baliogabea.",
+      "timeoutInvalid": "3 eta 120 segundo artean egon behar du.",
+      "proxyJumpInvalid": "Tarteko zerbitzari baliogabea (erabiltzailea@ostalaria:ataka).",
+      "idInvalid": "Zerbitzari-identifikatzaile baliogabea."
+    },
+    "editor": {
+      "addTitle": "Gehitu zerbitzaria",
+      "editTitle": "Editatu {{name}}",
+      "steps": "Urratsak",
+      "step": {
+        "general": "Datu orokorrak",
+        "auth": "Autentifikazioa",
+        "docker": "Docker",
+        "test": "Probatu konexioa"
+      },
+      "choose": "Aukeratu…",
+      "pickKey": "SSH gako pribatua",
+      "advanced": "Aukera aurreratuak",
+      "previous": "Aurrekoa",
+      "next": "Hurrengoa",
+      "save": "Gorde",
+      "saveConnect": "Gorde eta konektatu",
+      "fixFirst": "Berrikusi markatutako eremuak jarraitu aurretik.",
+      "keyNeverCopied": "Aplikazioak ez du inoiz zure gako pribatua kopiatzen: ssh-k bere bide-izenetik irakurtzen du konektatzean.",
+      "secretWhen": "Pasaesaldia edo pasahitza konektatzean eskatzen da. Gogoratzea aukeratzen baduzu, zifratuta gordetzen da sistemaren biltegi seguruan, inoiz ez aplikazioaren fitxategietan.",
+      "secretStored": "Kredentzial bat gordeta dago sistemaren biltegi seguruan.",
+      "secretNotStored": "Ez dago kredentzialik gordeta."
+    },
+    "test": {
+      "intro": "Urratsez urrats egiaztatzen du zerbitzarian Docker administra daitekeela. Kontsulta bakarrik egiten du: ez du ezer aldatzen.",
+      "run": "Probatu konexioa",
+      "running": "Probatzen…",
+      "ok": "Konexio zuzena: Docker {{version}}, API {{api}}, {{latency}} ms.",
+      "steps": "Probaren urratsak",
+      "secretHint": "Proba honetarako bakarrik erabiltzen da; ez da gordetzen.",
+      "readOnly": "Zerbitzarian docker --version, docker version eta docker system dial-stdio (APIaren kanala) bakarrik exekutatzen dira."
+    },
+    "checks": {
+      "resolve": "DNS ebazpena",
+      "reach": "SSH konexioa",
+      "identity": "Zerbitzariaren identitatea",
+      "auth": "Autentifikazioa",
+      "docker": "Docker erabilgarri",
+      "permission": "Dockerren gaineko baimenak",
+      "api": "APIaren bateragarritasuna"
+    },
+    "checkStatus": {
+      "ok": "Zuzena",
+      "failed": "Huts egin du",
+      "notRun": "Egiaztatu gabe",
+      "skipped": "Ez dagokio"
+    },
+    "hostKey": {
+      "unknownTitle": "Berretsi zerbitzariaren identitatea",
+      "unknownBody": "{{host}} zerbitzarira ({{port}} ataka) konektatzen zaren lehen aldia da. Egiaztatu hatz-marka hau zerbitzariarena dela fidatu aurretik.",
+      "changedTitle": "Zerbitzariaren identitatea aldatu da",
+      "changedBody": "{{host}} zerbitzariak ({{port}} ataka) berretsitakoaren desberdina den identitate bat aurkezten du. Berrinstalazio bat izan daiteke, baina baita erdiko gizonaren eraso bat ere. Ez konektatu egiaztatu arte.",
+      "type": "Gako mota: {{type}}",
+      "noKey": "Zerbitzariak ez du erakuts daitekeen gakorik aurkeztu.",
+      "howToVerify": "Egiaztatzeko, eskatu zerbitzariaren hatz-marka administratzaileari edo exekutatu zerbitzarian bertan:",
+      "trust": "Hatz-marka bat dator: fidatu",
+      "replace": "Ordeztu gordetako identitatea",
+      "confirmChanged": "Zerbitzariaren administratzailearekin egiaztatu dut hatz-marka berri hau zuzena dela.",
+      "inUserFile": "Aurreko identitatea {{file}} fitxategian dago. Aplikazioak ez du fitxategi hori aldatzen: hatz-marka berria egiaztatu baduzu, kendu zeuk zaharra komando honekin:",
+      "mismatch": "Zerbitzariak orain erakutsitakoaren desberdina den hatz-marka bat aurkezten du. Ez da ezer gorde: probatu berriro konexioa.",
+      "review": "Berrikusi identitatea",
+      "reviewTitle": "{{name}} zerbitzariaren identitatea"
+    },
+    "secret": {
+      "passphraseTitle": "{{name}} zerbitzariaren pasaesaldia",
+      "passwordTitle": "{{name}} zerbitzariaren pasahitza",
+      "passphrase": "{{path}} gakoaren pasaesaldia",
+      "password": "SSH pasahitza",
+      "remember": "Gogoratu sistemaren biltegi seguruan",
+      "rememberHint": "Sistemak zifratuta gordetzen du (GNOME Keyring, KWallet…). Zerbitzaria editatzean ezaba dezakezu.",
+      "noKeyring": "Saio honetan ez dago biltegi segururik erabilgarri: konexio bakoitzean eskatuko da. Ez da inoiz testu arruntean gordetzen.",
+      "passwordDiscouraged": "Pasahitz bidezko autentifikazioa ez da gomendagarria: SSH gakoak seguruagoak dira.",
+      "wrongPassword": "Pasahitza ez da zuzena.",
+      "wrongPassphrase": "Pasaesaldia ez da zuzena."
+    },
+    "deleteDialog": {
+      "title": "{{name}} zerbitzariaren profila ezabatu?",
+      "body": "Aplikaziotik ezabatzen dira konexio-profila, gordetako kredentzialak eta, beste profilik erabiltzen ez badu, zerbitzariaren identitate berretsia.",
+      "nothingRemote": "Zerbitzarian ez da ezer ezabatzen: bere edukiontziak, irudiak, sareak, bolumenak eta datuak bere horretan geratzen dira.",
+      "confirm": "Ezabatu profila"
+    },
+    "overview": {
+      "intro": "Zerbitzari bakoitza bereizita kontsultatzen da: bat motela edo erorita egoteak ez die besteei eragiten.",
+      "docker": "Docker",
+      "containers": "Edukiontziak",
+      "containersValue": "{{running}} exekutatzen · {{stopped}} geldituta · {{paused}} pausatuta",
+      "images": "Irudiak",
+      "resources": "Baliabideak",
+      "resourcesValue": "{{cpus}} CPU · {{memory}}",
+      "updated": "Eguneratuta",
+      "notConnected": "Konexiorik ez: ez dago daturik."
+    },
+    "diagnosis": {
+      "title": "{{name}} zerbitzariaren diagnostikoa",
+      "again": "Errepikatu diagnostikoa",
+      "running": "Zerbitzaria egiaztatzen…",
+      "fingerprint": "Hatz-marka",
+      "docker": "Docker",
+      "recentErrors": "Zerbitzari honetako azken erroreak",
+      "noErrors": "Ez dago azken errorerik.",
+      "localHint": "Ordenagailu honen diagnostiko xehatua Dashboard-ean dago konexiorik ez dagoenean."
+    },
+    "problems": {
+      "sshMissing": {
+        "title": "Ez dago SSH bezerorik ordenagailu honetan",
+        "body": "Urruneko zerbitzariak administratzeko ssh programa (OpenSSH) behar da."
+      },
+      "invalidProfile": {
+        "title": "Zerbitzariaren profila ez da baliozkoa",
+        "body": "Berrikusi zerbitzariaren datuak ({{codes}})."
+      },
+      "hostUnresolvable": {
+        "title": "Ez da zerbitzaria aurkitzen",
+        "body": "{{host}} izena ezin da ebatzi (DNS)."
+      },
+      "hostUnreachable": {
+        "title": "Zerbitzaria ez dago eskuragarri",
+        "body": "Ez dago {{host}} zerbitzarirako sare-biderik: {{message}}"
+      },
+      "sshRefused": {
+        "title": "SSH-k ez du erantzuten zerbitzarian",
+        "body": "{{host}} zerbitzariak {{port}} atakako konexioak baztertzen ditu: SSH zerbitzua geldituta dago edo beste ataka batean entzuten du."
+      },
+      "notSsh": {
+        "title": "Ataka hori ez da SSH",
+        "body": "{{host}}:{{port}} helbidean erantzuten duena ez da SSH zerbitzari bat."
+      },
+      "timeout": {
+        "title": "Zerbitzariak ez du garaiz erantzuten",
+        "body": "Ez da erantzunik jaso {{host}}:{{port}} helbidetik {{seconds}} segundotan. Baliteke suebaki batek konexioa baztertzea."
+      },
+      "hostKeyUnknown": {
+        "title": "Zerbitzariaren identitatea berretsi gabe",
+        "body": "{{host}} zerbitzariarekiko lehen konexioa da. Berretsi bere hatz-marka ({{type}} {{fingerprint}}) konektatu aurretik."
+      },
+      "hostKeyChanged": {
+        "title": "Zerbitzariaren identitatea aldatu da!",
+        "body": "{{host}} zerbitzariak berretsitakoaren desberdina den identitate bat ({{type}} {{fingerprint}}) aurkezten du. Erdiko gizonaren eraso bat izan daiteke. Konexioa gelditu da."
+      },
+      "authFailedKey": {
+        "title": "Gakoa ez da onartzen",
+        "body": "Zerbitzariak ez du gakoa onartzen {{user}} erabiltzailearentzat."
+      },
+      "authFailedAgent": {
+        "title": "SSH agenteak ez du gako onarturik",
+        "body": "Zerbitzariak ez du SSH agentearen gakoetako bat ere onartzen {{user}} erabiltzailearentzat."
+      },
+      "authFailedPassword": {
+        "title": "Erabiltzailea edo pasahitza okerrak",
+        "body": "Zerbitzariak ez du {{user}} erabiltzailearen pasahitza onartzen."
+      },
+      "passphraseRequired": {
+        "title": "Pasaesaldia falta da",
+        "body": "Gakoa pasaesaldiz babestuta dago eta ez dago bat ere erabilgarri."
+      },
+      "passwordRequired": {
+        "title": "Pasahitza falta da",
+        "body": "Zerbitzari honek pasahitza erabiltzen du eta ez dago bat ere erabilgarri."
+      },
+      "keyUnreadable": {
+        "title": "Ez da gako pribatua aurkitzen",
+        "body": "{{path}} ez dago edo ezin da irakurri."
+      },
+      "dockerMissing": {
+        "title": "Docker ez dago instalatuta zerbitzarian",
+        "body": "docker programa ez dago erabiltzailearentzat erabilgarri {{host}} zerbitzarian."
+      },
+      "dockerNotRunning": {
+        "title": "Docker geldituta dago zerbitzarian",
+        "body": "Dockerren daemonak ez du erantzuten {{host}} zerbitzarian: {{message}}"
+      },
+      "socketDenied": {
+        "title": "Ez dago baimenik zerbitzarian Docker erabiltzeko",
+        "body": "{{user}} erabiltzaileak ezin du Dockerren socketa erabili {{host}} zerbitzarian: {{message}}"
+      },
+      "contextMissing": {
+        "title": "Docker testuinguru hori ez dago",
+        "body": "{{name}} testuingurua ez dago definituta {{host}} zerbitzarian."
+      },
+      "notDocker": {
+        "title": "Hori ez da Docker",
+        "body": "{{host}} zerbitzariko adierazitako socketean erantzuten duena ez da Docker Engine: {{message}}"
+      },
+      "apiTooOld": {
+        "title": "Docker bertsio bateraezina",
+        "body": "{{host}} zerbitzariak {{version}} APIa du; aplikazioak gutxienez {{minimum}} behar du (Docker 20.10)."
+      },
+      "connectionLost": {
+        "title": "Konexioa galdu da",
+        "body": "{{host}} zerbitzariarekiko SSH konexioa eten da."
+      },
+      "other": {
+        "title": "Ezin izan da konektatu",
+        "body": "{{message}}"
+      }
+    },
+    "fix": {
+      "onServer": "Zerbitzarian:",
+      "onThisComputer": "Ordenagailu honetan:",
+      "retry": "Ondoren, konektatu berriro.",
+      "installSsh": "Instalatu OpenSSH bezeroa.",
+      "editProfile": "Editatu zerbitzaria eta zuzendu datuak.",
+      "checkName": "Egiaztatu izena ondo idatzita dagoela edo erabili IP helbidea.",
+      "resolveName": "Egiaztatu ordenagailu honek izena ebazten duen.",
+      "checkNetwork": "Egiaztatu sarea, VPNa edo suebakia ordenagailu honen eta zerbitzariaren artean.",
+      "ping": "Egiaztatu zerbitzariak erantzuten duen.",
+      "checkPort": "Egiaztatu zerbitzariaren SSH ataka (normalean 22).",
+      "sshdStatus": "Egiaztatu SSH zerbitzua martxan dagoela.",
+      "checkFirewall": "Egiaztatu suebakirik ez dela ataka horretarako konexioak baztertzen ari.",
+      "raiseTimeout": "Sarea motela bada, handitu konexioaren gehieneko denbora aukera aurreratuetan.",
+      "verifyFingerprint": "Eskatu zerbitzariaren hatz-marka administratzaileari edo egiaztatu zerbitzarian bertan.",
+      "trustIfMatches": "Zehazki bat badator, berretsi.",
+      "doNotConnect": "Ez konektatu eta ez idatzi pasahitzik zergatik aldatu den jakin arte.",
+      "askAdmin": "Galdetu administratzaileari zerbitzaria berrinstalatu den edo bere gakoak aldatu diren.",
+      "removeUserKey": "Hatz-marka berria zuzena bada, kendu zaharra zure ~/.ssh/known_hosts fitxategitik (aplikazioak ez du fitxategi hori aldatzen).",
+      "replaceInApp": "Hatz-marka berria zuzena bada, ordeztu modu esplizituan.",
+      "checkPassword": "Egiaztatu erabiltzailea eta pasahitza.",
+      "passwordDisabled": "Baliteke zerbitzariak pasahitzik ez onartzea (PasswordAuthentication no); kasu horretan erabili gako bat.",
+      "agentKeys": "Egiaztatu SSH agenteak zein gako dituen kargatuta.",
+      "authorizedKeys": "Egiaztatu gako publikoa zerbitzariko erabiltzailearen ~/.ssh/authorized_keys fitxategian dagoela.",
+      "tryYourself": "Probatu konexio bera terminal batetik.",
+      "checkKey": "Egiaztatu {{path}} zerbitzari honetarako gako zuzena dela.",
+      "enterSecret": "Konektatu berriro eta idatzi eskatzen denean.",
+      "checkKeyPath": "Egiaztatu {{path}} bide-izena.",
+      "keyPermissions": "Gakoak baimen pribatuak izan behar ditu.",
+      "installDocker": "Instalatu Docker Engine zerbitzarian dokumentazio ofizialari jarraituz (aplikazioak ez du instalatzen).",
+      "dockerOnPath": "Egiaztatu erabiltzaileak docker aurkitzen duela.",
+      "startDocker": "Abiarazi Docker zerbitzarian.",
+      "dockerStatus": "Egiaztatu bere egoera.",
+      "askAdminAccess": "Eskatu zerbitzariaren administratzaileari Dockerrerako sarbidea zure erabiltzailearentzat.",
+      "addToGroup": "Modu bat erabiltzailea docker taldera gehitzea da (administratzaileak egiten du).",
+      "relogin": "Talde-aldaketa saio berrietan aplikatzen da.",
+      "rootlessOption": "Aukera seguruagoa: Docker rootless erabiltzaile horrentzat, bere socketa profilean adierazita.",
+      "listContexts": "Egiaztatu definitutako testuinguruak.",
+      "checkSocket": "Egiaztatu Dockerren socketaren bide-izena profilean.",
+      "upgradeDocker": "Eguneratu Docker Engine zerbitzarian 20.10 bertsiora edo berriago batera."
+    },
+    "target": "Zerbitzaria"
   }
 }

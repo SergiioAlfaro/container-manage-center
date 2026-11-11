@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useRef, type ReactNode } from "react";
 import { AlertTriangle, Info, LoaderCircle, X } from "lucide-react";
 import { cx } from "./controls";
 
@@ -60,10 +60,18 @@ export function Checkbox({ checked, onChange, label, hint, disabled }: { checked
 }
 
 /**
+ * Servidor sobre el que actúan los diálogos de un ámbito (0.10.0): cada
+ * confirmación muestra a qué servidor va la operación. Lo pone `ServerScope`.
+ */
+export const DialogTarget = createContext<ReactNode>(null);
+
+/**
  * Diálogo modal: Escape cierra, el foco entra en el diálogo al abrir y vuelve
  * al elemento anterior al cerrar; Tab no sale del diálogo.
+ * `target={false}`: el diálogo trata datos de la aplicación, no de un servidor.
  */
-export function Dialog({ title, children, onClose, footer, wide = false }: { title: string; children: ReactNode; onClose: () => void; footer: ReactNode; wide?: boolean }) {
+export function Dialog({ title, children, onClose, footer, wide = false, target = true }: { title: string; children: ReactNode; onClose: () => void; footer: ReactNode; wide?: boolean; target?: boolean }) {
+  const server = useContext(DialogTarget);
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -102,7 +110,10 @@ export function Dialog({ title, children, onClose, footer, wide = false }: { tit
         <h2 id={titleId} className="border-b border-line px-5 py-3.5 text-[15px] font-semibold [overflow-wrap:anywhere]">
           {title}
         </h2>
-        <div className="min-h-0 space-y-3 overflow-y-auto px-5 py-4 text-[13.5px]">{children}</div>
+        <div className="min-h-0 space-y-3 overflow-y-auto px-5 py-4 text-[13.5px]">
+          {target && server}
+          {children}
+        </div>
         <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>
       </div>
     </div>

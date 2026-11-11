@@ -116,6 +116,7 @@ export function TerminalsView() {
       {creating && <NewTerminalDialog onClose={closeCreate} />}
       {confirmAll && (
         <Dialog
+          target={false}
           title={t("terminals.closeAllTitle")}
           onClose={closeConfirm}
           footer={

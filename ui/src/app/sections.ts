@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   Radio,
+  Server,
   Settings,
   SquareTerminal,
   Workflow,
@@ -14,6 +15,7 @@ import {
 
 export type SectionId =
   | "dashboard"
+  | "servers"
   | "containers"
   | "images"
   | "networks"
@@ -34,6 +36,8 @@ export interface SectionDef {
  *  (0.9.1) va en su propio grupo, «Herramientas», antes de la supervisión. */
 export const SECTIONS: SectionDef[] = [
   { id: "dashboard", icon: LayoutDashboard, group: "top" },
+  // 0.10.0: administración remota y varios servidores.
+  { id: "servers", icon: Server, group: "top" },
   { id: "containers", icon: Boxes, group: "resources" },
   { id: "images", icon: Layers, group: "resources" },
   { id: "networks", icon: Cable, group: "resources" },

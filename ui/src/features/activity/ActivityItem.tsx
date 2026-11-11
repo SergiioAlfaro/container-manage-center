@@ -104,6 +104,11 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
           >
             {t(`activity.via.${r.transport.via}`)}
           </span>
+          {r.server?.remote && (
+            <span data-testid="activity-server" title={`${t("servers.target")}: ${r.server.name} (${r.server.address})`} className="max-w-[30%] shrink-0 truncate rounded-[4px] bg-beacon/15 px-1.5 py-px text-[10.5px] font-semibold text-beacon-strong">
+              {r.server.name}
+            </span>
+          )}
           <span className="min-w-0 truncate text-ink-2">
             {t(opKey(r.kind), { defaultValue: r.kind })}
             {r.target && <span className="text-ink-3"> {r.target}</span>}
@@ -177,6 +182,12 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
           <Captured label={t("activity.stderr")} value={r.stderr} tone="err" />
 
           <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[12px]">
+            <dt className="text-ink-3">{t("servers.target")}</dt>
+            <dd className="selectable">
+              {r.server?.remote ? `${r.server.name} (${r.server.address})` : t("servers.local")}
+            </dd>
+            <dt className="text-ink-3">{t("activity.connection")}</dt>
+            <dd>{r.server?.remote ? t("activity.connectionSsh") : t("activity.connectionLocal")}</dd>
             <dt className="text-ink-3">{t("activity.started")}</dt>
             <dd className="selectable tabular-nums">{formatDateTime(r.startedAt, i18n.language)}</dd>
             {r.finishedAt && (

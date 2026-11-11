@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { apiRecord, cliRecord } from "@/test/fixtures";
-import { EMPTY_FILTER, describeTransport, formatDuration, headlineCommand, matches, quoteArg, renderArgv, upsert } from "./logic";
+import { EMPTY_FILTER, describeTransport, formatDuration, headlineCommand, matches, quoteArg, renderArgv, upsert, isFiltered, recordServer } from "./logic";
 
 describe("quoteArg (misma regla que Rust)", () => {
   it("no entrecomilla argumentos seguros", () => {
@@ -82,5 +82,23 @@ describe("formatDuration", () => {
     expect(formatDuration(1530)).toBe("1.53 s");
     expect(formatDuration(42_100)).toBe("42.1 s");
     expect(formatDuration(125_000)).toBe("2 min 5 s");
+  });
+});
+
+describe("filtro por servidor (0.10.0)", () => {
+  const remote = { id: "srv-0123abcd", name: "Producción", address: "deploy@docker-a:22", remote: true };
+  it("filtra por servidor; los registros sin servidor son del equipo local", () => {
+    const a = apiRecord({ server: remote });
+    const old = apiRecord({ server: null });
+    const f = { ...EMPTY_FILTER, server: "srv-0123abcd" };
+    expect(matches(a, f)).toBe(true);
+    expect(matches(old, f)).toBe(false);
+    expect(matches(old, { ...EMPTY_FILTER, server: "local" })).toBe(true);
+    expect(matches(a, { ...EMPTY_FILTER, server: "local" })).toBe(false);
+    expect(isFiltered({ ...EMPTY_FILTER, server: "local" })).toBe(true);
+    expect(recordServer(old)).toBe("local");
+  });
+  it("el nombre del servidor se puede buscar", () => {
+    expect(matches(apiRecord({ server: remote }), { ...EMPTY_FILTER, query: "producción" })).toBe(true);
   });
 });

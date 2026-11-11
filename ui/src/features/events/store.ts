@@ -37,8 +37,9 @@ export const useEvents = create<EventsState>((set, get) => ({
       const page = await api.eventsRecent({ limit: LIVE_MAX });
       set((s) => {
         // Los que ya hayan llegado por el canal no se duplican.
-        const seen = new Set(s.live.map((e) => `${e.timeNano}${e.action}${e.actorId}`));
-        const older = page.events.filter((e) => !seen.has(`${e.timeNano}${e.action}${e.actorId}`));
+        const key = (e: DockerEvent) => `${e.server?.id ?? "local"}|${e.timeNano}${e.action}${e.actorId}`;
+        const seen = new Set(s.live.map(key));
+        const older = page.events.filter((e) => !seen.has(key(e)));
         return { live: [...s.live, ...older].slice(0, LIVE_MAX), loaded: true };
       });
     } catch {

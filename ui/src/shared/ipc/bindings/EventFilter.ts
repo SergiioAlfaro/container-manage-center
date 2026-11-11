@@ -12,4 +12,8 @@ text: string,
 /**
  * Máximo de resultados (los más recientes); 0 = 1000.
  */
-limit: number, };
+limit: number, 
+/**
+ * Servidores (0.10.0); vacío = todos. Sin servidor = equipo local.
+ */
+servers: Array<string>, };

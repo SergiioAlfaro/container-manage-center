@@ -146,6 +146,15 @@ pub struct EventFilter {
     pub text: String,
     /// Máximo de resultados (los más recientes); 0 = 1000.
     pub limit: u32,
+    /// Servidores (0.10.0); vacío = todos. Sin servidor = equipo local.
+    pub servers: Vec<String>,
+}
+
+/// Identificador del servidor de un registro; los anteriores a 0.10.0 no lo
+/// tienen y son del equipo local.
+fn server_id(tag: Option<&dcc_activity::ServerTag>) -> &str {
+    tag.map(|t| t.id.as_str())
+        .unwrap_or(dcc_activity::ServerTag::LOCAL_ID)
 }
 
 impl EventFilter {
@@ -160,6 +169,8 @@ impl EventFilter {
                     .iter()
                     .any(|a| e.action == *a || e.action.starts_with(&format!("{a}:"))))
             && e.matches_text(&self.text)
+            && (self.servers.is_empty()
+                || self.servers.iter().any(|s| s == server_id(e.server.as_ref())))
     }
 }
 
@@ -219,6 +230,8 @@ pub struct HistoryFilter {
     /// Texto en el tipo de operación, recurso, resumen o error.
     pub text: String,
     pub limit: u32,
+    /// Servidores (0.10.0); vacío = todos. Sin servidor = equipo local.
+    pub servers: Vec<String>,
 }
 
 impl HistoryFilter {
@@ -227,6 +240,8 @@ impl HistoryFilter {
         let q = self.text.trim().to_lowercase();
         self.since.map_or(true, |s| secs >= s)
             && self.until.map_or(true, |u| secs <= u)
+            && (self.servers.is_empty()
+                || self.servers.iter().any(|s| s == server_id(h.server.as_ref())))
             && (self.categories.is_empty() || self.categories.contains(&h.category))
             && (self.statuses.is_empty() || self.statuses.contains(&h.status))
             && (q.is_empty()
@@ -353,4 +368,52 @@ pub fn spawn_events_watcher<R: Runtime>(
             }
         }
     });
+}
+
+#[cfg(test)]
+mod server_filter_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn tag(id: &str) -> serde_json::Value {
+        json!({ "id": id, "name": "Prod", "address": "u@h", "remote": true })
+    }
+
+    fn entry(server: serde_json::Value) -> HistoryEntry {
+        serde_json::from_value(json!({
+            "id": "00000000-0000-4000-8000-000000000001",
+            "category": "container", "kind": "container.start", "target": "web",
+            "transport": { "via": "app", "action": "x" }, "status": "succeeded",
+            "startedAt": "2026-11-11T10:00:00Z", "finishedAt": null, "durationMs": 1,
+            "summary": null, "error": null, "httpStatus": null, "exitCode": null,
+            "server": server
+        }))
+        .unwrap()
+    }
+
+    fn event(server: serde_json::Value) -> DockerEvent {
+        serde_json::from_value(json!({
+            "timeNano": 1_794_000_000_000_000_000i64, "kind": "container", "action": "start",
+            "actorId": "abc", "name": "web", "attributes": {}, "scope": "local", "server": server
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn history_and_events_filter_by_server() {
+        let remote = entry(tag("srv-0123abcd"));
+        let old = entry(serde_json::Value::Null);
+        let mut f: HistoryFilter = serde_json::from_value(json!({})).unwrap();
+        assert!(f.matches(&remote) && f.matches(&old), "sin filtro: todos");
+        f.servers = vec!["srv-0123abcd".into()];
+        assert!(f.matches(&remote) && !f.matches(&old));
+        f.servers = vec!["local".into()];
+        assert!(!f.matches(&remote) && f.matches(&old), "los anteriores a 0.10.0 son del equipo local");
+
+        let mut e: EventFilter = serde_json::from_value(json!({})).unwrap();
+        assert!(e.matches(&event(tag("srv-0123abcd"))));
+        e.servers = vec!["local".into()];
+        assert!(!e.matches(&event(tag("srv-0123abcd"))));
+        assert!(e.matches(&event(serde_json::Value::Null)));
+    }
 }

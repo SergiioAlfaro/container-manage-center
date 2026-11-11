@@ -30,6 +30,8 @@ const TECHNICAL = [
   "Config", "WebKitGTK", "glibc", "Docker CLI", "Docker Compose", "Debian 13:", "Compose: {{project}}",
   // 0.9.2: distintivo de operaciones de la propia aplicación y nombre de la API.
   "APP", "Docker Engine API", "Digests",
+  // 0.10.0: columna de versión y recursos de un servidor (nombres de producto y unidades).
+  "Docker / API", "{{cpus}} CPU · {{memory}}", "SSH (docker system dial-stdio)",
 ];
 const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   fr: [
@@ -40,6 +42,8 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   it: [
     "Dashboard", "Area", "No", "Host", "Kernel", "{{count}} container", "Entrypoint", "Gateway", "Container {{name}}", "Container", "Volume",
     "{{count}} volume", "Repository", "Tag", "Driver", "Local", "File", "Output", "Plugin", "Computer", "Desktop", "volume", "REPOSITORY:TAG",
+    // 0.10.0: en italiano se usan «server» y «password».
+    "Server {{name}}", "Password", "Server",
   ],
   ca: [
     "Context", "Equivalent", "Error", "Error: {{message}}", "Executable", "General", "Local", "No", "Node", "Ports", "Protocol", "Secret",

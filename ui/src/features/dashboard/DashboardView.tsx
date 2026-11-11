@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { useApi } from "@/app/server";
+import { useApi, useServerView } from "@/app/server";
+import { RemotePanel } from "@/features/servers/RemotePanel";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -175,11 +176,14 @@ export function DashboardView() {
   const { state, reconnecting, reconnect } = useEngine();
   const navigate = useApp((s) => s.navigate);
   const connected = state?.state === "connected";
+  const remote = !!useServerView()?.remote;
   const q = useQuery({ queryKey: keys.overview, queryFn: api.engineOverview, enabled: connected });
 
   return (
     <div className="mx-auto max-w-[1080px] px-8 py-7">
-      {state === null || state.state === "connecting" ? (
+      {remote && state?.state !== "connected" && state?.state !== "connecting" ? (
+        <RemotePanel />
+      ) : state === null || state.state === "connecting" || state.state === "idle" ? (
         <div className="flex items-center justify-center gap-2 py-24 text-[13px] text-ink-3">
           <Spinner /> {t("conn.connecting")}
         </div>

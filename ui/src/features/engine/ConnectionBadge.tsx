@@ -27,6 +27,14 @@ export function ConnectionBadge({ onOpen }: { onOpen: () => void }) {
         {state.engine.rootless && <span className="rounded bg-beacon-soft px-1 text-[10.5px] font-semibold text-beacon-strong">{t("conn.rootless")}</span>}
       </>
     );
+  } else if (state.state === "idle") {
+    title = t("conn.openDashboard");
+    content = (
+      <>
+        <span aria-hidden className="h-2 w-2 rounded-full bg-ink-3/60" />
+        <span>{t("servers.status.disconnected")}</span>
+      </>
+    );
   } else {
     title = t("conn.openDashboard");
     content = (

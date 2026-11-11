@@ -30,6 +30,7 @@ export function Menu({
   open,
   onOpenChange,
   align = "right",
+  buttonClassName,
 }: {
   /** Nombre accesible del botón. */
   label: string;
@@ -38,6 +39,8 @@ export function Menu({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   align?: "left" | "right";
+  /** Clases del botón (por defecto, un botón cuadrado de icono). */
+  buttonClassName?: string;
 }) {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -97,7 +100,7 @@ export function Menu({
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => onOpenChange(!open)}
-        className={cx("grid h-7 w-7 place-items-center rounded-md text-ink-2 hover:bg-surface-sunk hover:text-ink", open && "bg-surface-sunk text-ink")}
+        className={buttonClassName ?? cx("grid h-7 w-7 place-items-center rounded-md text-ink-2 hover:bg-surface-sunk hover:text-ink", open && "bg-surface-sunk text-ink")}
       >
         {trigger}
       </button>

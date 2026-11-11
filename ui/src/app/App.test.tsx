@@ -24,7 +24,7 @@ describe("App", () => {
     configSet.mockImplementation(async (c) => c);
   });
 
-  it("muestra los diez apartados en el orden requerido (0.9.1 añade «Terminales»)", async () => {
+  it("muestra los once apartados en el orden requerido (0.9.1 añade «Terminales»; 0.10.0, «Servidores»)", async () => {
     await boot();
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });
     const labels = within(nav)
@@ -32,6 +32,7 @@ describe("App", () => {
       .map((li) => li.textContent);
     expect(labels).toEqual([
       "Dashboard",
+      "Servidores",
       "Contenedores",
       "Imágenes",
       "Redes",

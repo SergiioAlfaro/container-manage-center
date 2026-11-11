@@ -6,4 +6,8 @@ export type HistoryFilter = { since: number | null, until: number | null, catego
 /**
  * Texto en el tipo de operación, recurso, resumen o error.
  */
-text: string, limit: number, };
+text: string, limit: number, 
+/**
+ * Servidores (0.10.0); vacío = todos. Sin servidor = equipo local.
+ */
+servers: Array<string>, };

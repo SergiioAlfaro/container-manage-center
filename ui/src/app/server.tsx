@@ -14,6 +14,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { create } from "zustand";
 import { api as appApi, dockerApi, LOCAL_SERVER, toCommandError, type DockerApi } from "@/shared/ipc/client";
 import { createQueryClient } from "@/shared/query";
+import { useTranslation } from "react-i18next";
+import { cx } from "@/shared/ui/controls";
+import { DialogTarget } from "@/shared/ui/feedback";
+import { KindIcon } from "@/features/servers/ui";
+import { displayAddress } from "@/features/servers/remote";
 import type { ConnectionState } from "@/shared/ipc/bindings/ConnectionState";
 import type { ServerView } from "@/shared/ipc/bindings/ServerView";
 import type { ServerStateEvent } from "@/shared/ipc/bindings/ServerStateEvent";
@@ -186,8 +191,40 @@ export function ServerScope({ server, client, children }: { server: string; clie
   const qc = client ?? queryClientFor(server);
   return (
     <ScopeContext.Provider value={scope}>
-      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+      <DialogTarget.Provider value={<ServerTargetLine server={server} />}>
+        <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+      </DialogTarget.Provider>
     </ScopeContext.Provider>
+  );
+}
+
+/**
+ * Línea «Servidor: nombre · dirección» de los diálogos del ámbito (§7: las
+ * confirmaciones dicen en qué servidor se actúa). Solo si hay servidores
+ * remotos: con un único equipo no aporta nada.
+ */
+function ServerTargetLine({ server }: { server: string }) {
+  const { t } = useTranslation();
+  const view = useServers((s) => s.servers.find((x) => x.id === server));
+  const anyRemote = useServers((s) => s.servers.some((x) => x.remote));
+  if (!anyRemote) return null;
+  const remote = !!view?.remote;
+  const name = remote ? view!.name : t("servers.local");
+  const address = view?.config ? displayAddress(view.config) : (view?.address ?? "");
+  return (
+    <p
+      data-testid="dialog-server"
+      className={cx(
+        "flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[12.5px]",
+        remote ? "border-beacon/40 bg-beacon-soft text-beacon-strong" : "border-line bg-surface-2 text-ink-2",
+      )}
+    >
+      <KindIcon remote={remote} />
+      <span>
+        {t("servers.target")}: <strong className="font-semibold">{name}</strong>
+      </span>
+      {address && <span className="selectable min-w-0 truncate font-mono text-[11.5px] opacity-80">{address}</span>}
+    </p>
   );
 }
 

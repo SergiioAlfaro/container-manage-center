@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useApi } from "@/app/server";
+import { useApi, useServerId } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eraser, Pause, Play, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,10 @@ function LiveTab() {
   const [types, setTypes] = useState<EventType[]>([]);
   const [text, setText] = useState("");
   useEffect(() => void load(), [load]);
-  const visible = useMemo(() => live.filter((e) => matchesLocal(e, { types, text })), [live, types, text]);
+  // Solo los eventos del servidor de este ámbito (0.10.0).
+  const server = useServerId();
+  const mine = (e: { server: { id: string } | null }) => (e.server?.id ?? "local") === server;
+  const visible = useMemo(() => live.filter((e) => mine(e) && matchesLocal(e, { types, text })), [live, types, text, server]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -39,7 +42,7 @@ function LiveTab() {
           {paused ? (
             <Button size="sm" onClick={() => setPaused(false)}>
               <Play size={13} />
-              {pending.length > 0 ? t("events.resumeN", { count: pending.length }) : t("events.resume")}
+              {pending.filter(mine).length > 0 ? t("events.resumeN", { count: pending.filter(mine).length }) : t("events.resume")}
             </Button>
           ) : (
             <Button size="sm" onClick={() => setPaused(true)}>
@@ -64,6 +67,7 @@ function LiveTab() {
 
 function JournalTab() {
   const api = useApi();
+  const server = api.server;
   const { t } = useTranslation();
   const qc = useQueryClient();
   const typeLabel = useTypeLabel();
@@ -80,6 +84,7 @@ function JournalTab() {
     actions: actions.split(",").map((a) => a.trim()).filter(Boolean),
     text,
     limit: 1000,
+    servers: [server],
   };
   const q = useQuery({ queryKey: ["eventsJournal", filter], queryFn: () => api.eventsJournal(filter) });
   const clear = useMutation({
@@ -131,6 +136,7 @@ function JournalTab() {
       )}
       {confirm && (
         <Dialog
+          target={false}
           title={t("events.journalClearTitle")}
           onClose={() => setConfirm(false)}
           footer={

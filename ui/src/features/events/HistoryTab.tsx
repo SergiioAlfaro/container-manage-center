@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useServers } from "@/app/server";
 import { opKey } from "@/features/activity/ActivityItem";
 import { describeTransport, formatDateTime, formatDuration } from "@/features/activity/logic";
 import { api } from "@/shared/ipc/client";
@@ -29,11 +30,18 @@ function Row({ h, previous }: { h: HistoryEntry; previous: boolean }) {
           {t(opKey(h.kind), { defaultValue: h.kind })}
           {h.target && <span className="ml-2 font-mono text-[12px] text-ink-2">{h.target}</span>}
         </span>
+        {h.server?.remote && (
+          <span title={h.server.address} className="max-w-[160px] shrink-0 truncate rounded bg-beacon/15 px-1.5 text-[11px] font-semibold text-beacon-strong">
+            {h.server.name}
+          </span>
+        )}
         {previous && <span className="shrink-0 rounded bg-surface-sunk px-1.5 text-[11px] text-ink-3">{t("history.previous")}</span>}
         <span className="w-[72px] shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{formatDuration(h.durationMs)}</span>
       </button>
       {open && (
         <dl className="selectable mx-4 mb-2 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 rounded-md bg-surface-2 px-3 py-2 text-[12px]">
+          <dt className="text-ink-3">{t("servers.target")}</dt>
+          <dd>{h.server?.remote ? `${h.server.name} (${h.server.address})` : t("servers.local")}</dd>
           <dt className="text-ink-3">{t("activity.executed")}</dt>
           <dd className="font-mono text-[11.5px] [overflow-wrap:anywhere]">{describeTransport(h.transport)}</dd>
           {h.summary && (
@@ -78,7 +86,10 @@ export function HistoryTab() {
   const [statuses, setStatuses] = useState<OpStatus[]>([]);
   const [text, setText] = useState("");
   const [confirm, setConfirm] = useState(false);
-  const filter = { since: fromLocalInput(since), until: fromLocalInput(until), categories, statuses, text, limit: 1000 };
+  // 0.10.0: el historial es de todos los servidores; se puede filtrar por uno.
+  const [server, setServer] = useState("all");
+  const known = useServers((s) => s.servers);
+  const filter = { since: fromLocalInput(since), until: fromLocalInput(until), categories, statuses, text, limit: 1000, servers: server === "all" ? [] : [server] };
   const q = useQuery({ queryKey: ["history", filter], queryFn: () => api.historyList(filter) });
   const clear = useMutation({
     mutationFn: api.historyClear,
@@ -96,6 +107,19 @@ export function HistoryTab() {
         <DateField label={t("events.since")} value={since} onChange={setSince} />
         <DateField label={t("events.until")} value={until} onChange={setUntil} />
         <SearchBox value={text} onChange={setText} placeholder={t("history.search")} />
+        {known.some((x) => x.remote) && (
+          <label className="flex items-center gap-1.5 text-[12.5px] text-ink-2">
+            {t("activity.filterServer")}
+            <select value={server} onChange={(e) => setServer(e.target.value)} className="h-8 rounded-md border border-line bg-surface px-2 text-[12.5px]">
+              <option value="all">{t("activity.allServers")}</option>
+              {known.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.remote ? x.name : t("servers.local")}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Chips label={t("activity.filterCategory")} items={CATEGORIES} selected={categories} onChange={setCategories} render={(c) => t(`activity.category.${c}`)} />
@@ -133,6 +157,7 @@ export function HistoryTab() {
       )}
       {confirm && (
         <Dialog
+          target={false}
           title={t("history.clearTitle")}
           onClose={() => setConfirm(false)}
           footer={

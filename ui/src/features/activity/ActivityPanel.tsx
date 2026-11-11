@@ -6,6 +6,7 @@ import type { OpStatus } from "@/shared/ipc/bindings/OpStatus";
 import { Button } from "@/shared/ui/controls";
 import { ActivityItem } from "./ActivityItem";
 import { CATEGORIES, STATUSES, isFiltered, matches } from "./logic";
+import { useServers } from "@/app/server";
 import { useActivity } from "./store";
 
 const selectClass =
@@ -16,6 +17,15 @@ export function ActivityPanel({ onClose }: { onClose: () => void }) {
   const { records, filter, setFilter, resetFilter, clear, loadError } = useActivity();
 
   const visible = useMemo(() => records.filter((r) => matches(r, filter)), [records, filter]);
+  // Servidores conocidos y los que aparecen en los registros (también los ya eliminados).
+  const known = useServers((s) => s.servers);
+  const servers = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of known) m.set(s.id, s.remote ? s.name : t("servers.local"));
+    for (const r of records) if (r.server && !m.has(r.server.id)) m.set(r.server.id, r.server.remote ? r.server.name : t("servers.local"));
+    if (!m.has("local")) m.set("local", t("servers.local"));
+    return [...m.entries()].map(([id, name]) => ({ id, name }));
+  }, [known, records, t]);
   const running = records.filter((r) => r.status === "running").length;
   const failed = records.filter((r) => r.status === "failed").length;
 
@@ -87,6 +97,18 @@ export function ActivityPanel({ onClose }: { onClose: () => void }) {
               </option>
             ))}
           </select>
+          {servers.length > 1 && (
+            <select aria-label={t("activity.filterServer")} value={filter.server} onChange={(e) => setFilter({ server: e.target.value })} className={selectClass}>
+              <option value="all">
+                {t("activity.filterServer")}: {t("activity.allServers")}
+              </option>
+              {servers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          )}
           <Button
             variant="quiet"
             onClick={() => void clear()}

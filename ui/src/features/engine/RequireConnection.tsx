@@ -5,14 +5,19 @@ import { useApp } from "@/app/store";
 import { Button } from "@/shared/ui/controls";
 import { Spinner } from "@/shared/ui/feedback";
 import { useEngine } from "./store";
+import { useServerView } from "@/app/server";
+import { RemotePanel } from "@/features/servers/RemotePanel";
 
 /** Muestra el contenido solo con conexión; si no, explica por qué y dónde verlo. */
 export function RequireConnection({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const state = useEngine((s) => s.state);
   const navigate = useApp((s) => s.navigate);
+  const remote = !!useServerView()?.remote;
 
-  if (state === null || state.state === "connecting") {
+  // Servidor remoto sin conexión: su estado, la causa y cómo conectar (0.10.0).
+  if (remote && (state?.state === "idle" || state?.state === "disconnected")) return <RemotePanel />;
+  if (state === null || state.state === "connecting" || state.state === "idle") {
     return (
       <div className="flex items-center justify-center gap-2 py-24 text-[13px] text-ink-3">
         <Spinner /> {t("conn.connecting")}

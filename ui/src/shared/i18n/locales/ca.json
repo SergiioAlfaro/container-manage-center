@@ -79,6 +79,10 @@
     "settings": {
       "title": "Configuració",
       "description": "Preferències de l’aplicació."
+    },
+    "servers": {
+      "title": "Servidors",
+      "description": "Aquest equip i servidors remots amb Docker per SSH."
     }
   },
   "pending": {
@@ -152,7 +156,12 @@
       "compose": "Compose"
     },
     "loadError": "No s’ha pogut carregar l’historial d’activitat: {{message}}",
-    "executedApp": "Operació de l’aplicació"
+    "executedApp": "Operació de l’aplicació",
+    "filterServer": "Servidor",
+    "allServers": "tots",
+    "connectionSsh": "SSH (docker system dial-stdio)",
+    "connectionLocal": "Sòcol local",
+    "connection": "Connexió"
   },
   "settings": {
     "appearance": "Aparença",
@@ -696,7 +705,7 @@
       "long": "Fes servir com a màxim {{max}} caràcters.",
       "control": "El nom no pot contenir caràcters de control."
     },
-    "paneLabel": "Terminal {{name}} a {{container}}",
+    "paneLabel": "Terminal {{name}} a {{container}} ({{server}})",
     "container": "Contenidor {{name}}",
     "state": {
       "opening": "S’està connectant…",
@@ -715,7 +724,8 @@
     "restore": "Restaurar la quadrícula",
     "close": "Tancar la sessió",
     "splitColumns": "Redimensionar les columnes",
-    "splitRows": "Redimensionar les files"
+    "splitRows": "Redimensionar les files",
+    "server": "Servidor {{name}}"
   },
   "stats": {
     "stop": "Deixar de rebre",
@@ -2364,5 +2374,362 @@
       "rollbackStop": "Desfer: aturar la còpia"
     },
     "openContainer": "Obrir el contenidor"
+  },
+  "servers": {
+    "local": "Aquest equip",
+    "localSocket": "Sòcol local",
+    "remoteBadge": "Remot",
+    "add": "Afegeix un servidor",
+    "back": "Torna als servidors",
+    "open": "Obre",
+    "connect": "Connecta",
+    "connectNamed": "Connecta amb {{name}}",
+    "disconnect": "Desconnecta",
+    "disconnectNamed": "Desconnecta de {{name}}",
+    "edit": "Edita",
+    "delete": "Elimina el perfil",
+    "diagnose": "Diagnòstic",
+    "refresh": "Actualitza",
+    "never": "Mai",
+    "moreActions": "Més accions de {{name}}",
+    "forgetSecret": "Oblida les credencials desades",
+    "notConnectedBody": "Aquest servidor no està connectat. Connecta'l per veure i administrar el seu Docker; mentrestant no s'hi fa cap operació.",
+    "listHint": "Desconnectar o eliminar un servidor mai no toca els seus contenidors, imatges, xarxes ni volums: continuen al servidor tal com estiguin.",
+    "keyringNotice": "{{name}}: no s'ha pogut fer servir el magatzem segur del sistema ({{message}}). La credencial només val per a aquesta sessió.",
+    "groupWarning": "Pertànyer al grup docker del servidor equival a tenir accés de root en aquest servidor. Decideix amb el seu administrador si és acceptable; l'alternativa més segura és Docker rootless.",
+    "noAutoFix": "L'aplicació no instal·la Docker, no canvia permisos, no modifica la configuració SSH ni obre ports al servidor: aquests passos són perquè els revisis tu o el seu administrador.",
+    "empty": {
+      "title": "Encara no hi ha servidors remots",
+      "body": "Afegeix un servidor amb Docker al qual tinguis accés per SSH. La connexió fa servir el client SSH del sistema, verifica la identitat del servidor i no exposa Docker a la xarxa."
+    },
+    "tabs": {
+      "label": "Vista de servidors",
+      "servers": "Servidors",
+      "overview": "Vista general"
+    },
+    "columns": {
+      "name": "Nom",
+      "address": "Adreça",
+      "method": "Mètode",
+      "status": "Estat",
+      "docker": "Docker / API",
+      "os": "Sistema",
+      "lastSeen": "Darrera connexió",
+      "latency": "Latència",
+      "actions": "Accions"
+    },
+    "status": {
+      "connected": "Connectat",
+      "disconnected": "Desconnectat",
+      "connecting": "Connectant",
+      "authError": "Error d'autenticació",
+      "connectionError": "Error de connexió",
+      "dockerUnavailable": "Docker no disponible",
+      "identityError": "Identitat sense confirmar"
+    },
+    "selector": {
+      "label": "Servidor: {{name}}. Canvia de servidor",
+      "current": "actual",
+      "manage": "Administra els servidors"
+    },
+    "auth": {
+      "agent": "Agent SSH",
+      "key": "Clau privada",
+      "keyPassphrase": "Clau amb frase de pas",
+      "password": "Contrasenya"
+    },
+    "authHint": {
+      "agent": "Fa servir les claus carregades a l'agent SSH del sistema i la teva configuració de ~/.ssh. És l'opció recomanada.",
+      "key": "Fa servir una clau privada sense frase de pas. Només se'n desa el camí: la clau no es copia ni es llegeix.",
+      "keyPassphrase": "Fa servir una clau privada protegida amb frase de pas. La frase es demana en connectar i només es desa si ho demanes, al magatzem segur del sistema.",
+      "password": "Desaconsellat. La contrasenya es demana en connectar i només es desa si ho demanes, al magatzem segur del sistema. Fes servir claus sempre que puguis."
+    },
+    "docker": {
+      "default": "Predeterminat",
+      "socket": "Sòcol",
+      "context": "Context"
+    },
+    "dockerHint": {
+      "default": "El Docker que fa servir per defecte el client docker del servidor (DOCKER_HOST, context o sòcol del sistema).",
+      "socket": "Un sòcol Unix concret del servidor, per exemple el de Docker rootless.",
+      "context": "Un context de Docker definit al servidor."
+    },
+    "fields": {
+      "name": "Nom",
+      "host": "Amfitrió",
+      "port": "Port SSH",
+      "user": "Usuari",
+      "description": "Descripció (opcional)",
+      "auth": "Autenticació",
+      "keyPath": "Camí de la clau privada",
+      "dockerTarget": "Docker al servidor",
+      "dockerSocket": "Camí del sòcol al servidor",
+      "dockerContext": "Nom del context",
+      "connectTimeout": "Temps màxim de connexió (segons)",
+      "proxyJump": "Servidor intermedi (opcional)",
+      "autoConnect": "Connecta en obrir l'aplicació"
+    },
+    "hints": {
+      "name": "Com es veurà a l'aplicació, per exemple «Producció».",
+      "host": "Nom DNS, adreça IPv4 o IPv6, o un àlies de ~/.ssh/config.",
+      "user": "Usuari SSH al servidor.",
+      "keyPath": "La clau es queda on és. Per exemple ~/.ssh/id_ed25519.",
+      "connectTimeout": "Entre 3 i 120 segons.",
+      "proxyJump": "Format usuari@amfitrió:port. Equival a ProxyJump de SSH."
+    },
+    "issues": {
+      "nameRequired": "Escriu un nom.",
+      "nameInvalid": "El nom és massa llarg o té caràcters no vàlids.",
+      "hostRequired": "Escriu l'amfitrió.",
+      "hostInvalid": "Amfitrió no vàlid: fes servir un nom, una IP o un àlies sense espais ni caràcters especials.",
+      "portInvalid": "El port ha d'estar entre 1 i 65535.",
+      "userRequired": "Escriu l'usuari.",
+      "userInvalid": "Usuari no vàlid.",
+      "descriptionTooLong": "La descripció és massa llarga.",
+      "keyPathInvalid": "Indica el camí de la clau privada.",
+      "socketInvalid": "Indica un camí absolut de sòcol vàlid.",
+      "contextInvalid": "Nom de context no vàlid.",
+      "timeoutInvalid": "Ha d'estar entre 3 i 120 segons.",
+      "proxyJumpInvalid": "Servidor intermedi no vàlid (usuari@amfitrió:port).",
+      "idInvalid": "Identificador de servidor no vàlid."
+    },
+    "editor": {
+      "addTitle": "Afegeix un servidor",
+      "editTitle": "Edita {{name}}",
+      "steps": "Passos",
+      "step": {
+        "general": "Dades generals",
+        "auth": "Autenticació",
+        "docker": "Docker",
+        "test": "Prova la connexió"
+      },
+      "choose": "Tria…",
+      "pickKey": "Clau privada SSH",
+      "advanced": "Opcions avançades",
+      "previous": "Anterior",
+      "next": "Següent",
+      "save": "Desa",
+      "saveConnect": "Desa i connecta",
+      "fixFirst": "Revisa els camps marcats abans de continuar.",
+      "keyNeverCopied": "L'aplicació mai no copia la teva clau privada: ssh la llegeix des del seu camí en connectar.",
+      "secretWhen": "La frase de pas o la contrasenya es demana en connectar. Si tries recordar-la, es desa xifrada al magatzem segur del sistema, mai en fitxers de l'aplicació.",
+      "secretStored": "Hi ha una credencial desada al magatzem segur del sistema.",
+      "secretNotStored": "No hi ha cap credencial desada."
+    },
+    "test": {
+      "intro": "Comprova pas a pas que es pot administrar Docker al servidor. Només es consulta: no es canvia res.",
+      "run": "Prova la connexió",
+      "running": "Provant…",
+      "ok": "Connexió correcta: Docker {{version}}, API {{api}}, {{latency}} ms.",
+      "steps": "Passos de la prova",
+      "secretHint": "Només es fa servir per a aquesta prova; no es desa.",
+      "readOnly": "Al servidor només s'executa docker --version, docker version i docker system dial-stdio (el canal de l'API)."
+    },
+    "checks": {
+      "resolve": "Resolució DNS",
+      "reach": "Connexió SSH",
+      "identity": "Identitat del servidor",
+      "auth": "Autenticació",
+      "docker": "Docker disponible",
+      "permission": "Permisos sobre Docker",
+      "api": "Compatibilitat de l'API"
+    },
+    "checkStatus": {
+      "ok": "Correcte",
+      "failed": "Ha fallat",
+      "notRun": "Sense comprovar",
+      "skipped": "No s'aplica"
+    },
+    "hostKey": {
+      "unknownTitle": "Confirma la identitat del servidor",
+      "unknownBody": "És la primera vegada que et connectes a {{host}} (port {{port}}). Comprova que aquesta empremta és la del servidor abans de confiar-hi.",
+      "changedTitle": "La identitat del servidor ha canviat",
+      "changedBody": "{{host}} (port {{port}}) presenta una identitat diferent de la confirmada. Pot ser una reinstal·lació, però també un atac d'intermediari. No et connectis fins que l'hagis comprovada.",
+      "type": "Tipus de clau: {{type}}",
+      "noKey": "El servidor no ha presentat cap clau que es pugui mostrar.",
+      "howToVerify": "Per comprovar-la, demana a l'administrador l'empremta del servidor o executa al mateix servidor:",
+      "trust": "L'empremta coincideix: confia-hi",
+      "replace": "Substitueix la identitat desada",
+      "confirmChanged": "He comprovat amb l'administrador del servidor que aquesta nova empremta és la correcta.",
+      "inUserFile": "La identitat anterior és a {{file}}. L'aplicació no modifica aquest fitxer: si has comprovat la nova empremta, elimina l'anterior tu mateix amb:",
+      "mismatch": "Ara el servidor presenta una empremta diferent de la mostrada. No s'ha desat res: torna a provar la connexió.",
+      "review": "Revisa la identitat",
+      "reviewTitle": "Identitat de {{name}}"
+    },
+    "secret": {
+      "passphraseTitle": "Frase de pas per a {{name}}",
+      "passwordTitle": "Contrasenya per a {{name}}",
+      "passphrase": "Frase de pas de {{path}}",
+      "password": "Contrasenya SSH",
+      "remember": "Recorda-la al magatzem segur del sistema",
+      "rememberHint": "El sistema la desa xifrada (GNOME Keyring, KWallet…). La pots esborrar en editar el servidor.",
+      "noKeyring": "No hi ha cap magatzem segur disponible en aquesta sessió: es demanarà a cada connexió. Mai no es desa en text pla.",
+      "passwordDiscouraged": "L'autenticació amb contrasenya està desaconsellada: les claus SSH són més segures.",
+      "wrongPassword": "La contrasenya no és correcta.",
+      "wrongPassphrase": "La frase de pas no és correcta."
+    },
+    "deleteDialog": {
+      "title": "Vols eliminar el perfil de {{name}}?",
+      "body": "S'elimina de l'aplicació el perfil de connexió, les credencials desades i, si cap altre perfil no la fa servir, la identitat confirmada del servidor.",
+      "nothingRemote": "No s'elimina res del servidor: els seus contenidors, imatges, xarxes, volums i dades continuen intactes.",
+      "confirm": "Elimina el perfil"
+    },
+    "overview": {
+      "intro": "Cada servidor es consulta per separat: un de lent o caigut no afecta els altres.",
+      "docker": "Docker",
+      "containers": "Contenidors",
+      "containersValue": "{{running}} en execució · {{stopped}} aturats · {{paused}} en pausa",
+      "images": "Imatges",
+      "resources": "Recursos",
+      "resourcesValue": "{{cpus}} CPU · {{memory}}",
+      "updated": "Actualitzat",
+      "notConnected": "Sense connexió: no hi ha dades."
+    },
+    "diagnosis": {
+      "title": "Diagnòstic de {{name}}",
+      "again": "Repeteix el diagnòstic",
+      "running": "Comprovant el servidor…",
+      "fingerprint": "Empremta",
+      "docker": "Docker",
+      "recentErrors": "Errors recents en aquest servidor",
+      "noErrors": "Cap error recent.",
+      "localHint": "El diagnòstic detallat d'aquest equip és al Dashboard quan no hi ha connexió."
+    },
+    "problems": {
+      "sshMissing": {
+        "title": "No hi ha client SSH en aquest equip",
+        "body": "Per administrar servidors remots cal el programa ssh (OpenSSH)."
+      },
+      "invalidProfile": {
+        "title": "El perfil del servidor no és vàlid",
+        "body": "Revisa les dades del servidor ({{codes}})."
+      },
+      "hostUnresolvable": {
+        "title": "No es troba el servidor",
+        "body": "El nom {{host}} no es pot resoldre (DNS)."
+      },
+      "hostUnreachable": {
+        "title": "El servidor no és accessible",
+        "body": "No hi ha ruta de xarxa fins a {{host}}: {{message}}"
+      },
+      "sshRefused": {
+        "title": "L'SSH no respon al servidor",
+        "body": "{{host}} rebutja les connexions al port {{port}}: el servei SSH està aturat o escolta en un altre port."
+      },
+      "notSsh": {
+        "title": "Aquest port no és SSH",
+        "body": "El que respon a {{host}}:{{port}} no és un servidor SSH."
+      },
+      "timeout": {
+        "title": "El servidor no respon a temps",
+        "body": "No hi ha hagut resposta de {{host}}:{{port}} en {{seconds}} segons. Pot ser que un tallafoc descarti la connexió."
+      },
+      "hostKeyUnknown": {
+        "title": "Identitat del servidor sense confirmar",
+        "body": "És la primera connexió amb {{host}}. Confirma'n l'empremta ({{type}} {{fingerprint}}) abans de connectar."
+      },
+      "hostKeyChanged": {
+        "title": "La identitat del servidor ha canviat!",
+        "body": "{{host}} presenta una identitat diferent ({{type}} {{fingerprint}}) de la confirmada. Podria ser un atac d'intermediari. S'ha aturat la connexió."
+      },
+      "authFailedKey": {
+        "title": "La clau no s'accepta",
+        "body": "El servidor no accepta la clau per a l'usuari {{user}}."
+      },
+      "authFailedAgent": {
+        "title": "L'agent SSH no té cap clau acceptada",
+        "body": "El servidor no accepta cap de les claus de l'agent SSH per a l'usuari {{user}}."
+      },
+      "authFailedPassword": {
+        "title": "Usuari o contrasenya incorrectes",
+        "body": "El servidor no accepta la contrasenya de l'usuari {{user}}."
+      },
+      "passphraseRequired": {
+        "title": "Falta la frase de pas",
+        "body": "La clau està protegida amb frase de pas i no n'hi ha cap de disponible."
+      },
+      "passwordRequired": {
+        "title": "Falta la contrasenya",
+        "body": "Aquest servidor fa servir contrasenya i no n'hi ha cap de disponible."
+      },
+      "keyUnreadable": {
+        "title": "No es troba la clau privada",
+        "body": "{{path}} no existeix o no es pot llegir."
+      },
+      "dockerMissing": {
+        "title": "Docker no està instal·lat al servidor",
+        "body": "El programa docker no està disponible per a l'usuari a {{host}}."
+      },
+      "dockerNotRunning": {
+        "title": "Docker està aturat al servidor",
+        "body": "El dimoni de Docker no respon a {{host}}: {{message}}"
+      },
+      "socketDenied": {
+        "title": "Sense permís per fer servir Docker al servidor",
+        "body": "L'usuari {{user}} no pot fer servir el sòcol de Docker a {{host}}: {{message}}"
+      },
+      "contextMissing": {
+        "title": "Aquest context de Docker no existeix",
+        "body": "El context {{name}} no està definit a {{host}}."
+      },
+      "notDocker": {
+        "title": "Això no és Docker",
+        "body": "El que respon al sòcol indicat de {{host}} no és Docker Engine: {{message}}"
+      },
+      "apiTooOld": {
+        "title": "Versió de Docker incompatible",
+        "body": "{{host}} té l'API {{version}}; l'aplicació necessita com a mínim la {{minimum}} (Docker 20.10)."
+      },
+      "connectionLost": {
+        "title": "S'ha perdut la connexió",
+        "body": "La connexió SSH amb {{host}} s'ha tallat."
+      },
+      "other": {
+        "title": "No s'ha pogut connectar",
+        "body": "{{message}}"
+      }
+    },
+    "fix": {
+      "onServer": "Al servidor:",
+      "onThisComputer": "En aquest equip:",
+      "retry": "Després, torna a connectar.",
+      "installSsh": "Instal·la el client OpenSSH.",
+      "editProfile": "Edita el servidor i corregeix-ne les dades.",
+      "checkName": "Comprova que el nom està ben escrit o fes servir l'adreça IP.",
+      "resolveName": "Comprova si aquest equip resol el nom.",
+      "checkNetwork": "Comprova la xarxa, la VPN o el tallafoc entre aquest equip i el servidor.",
+      "ping": "Comprova si el servidor respon.",
+      "checkPort": "Comprova el port SSH del servidor (habitualment el 22).",
+      "sshdStatus": "Comprova que el servei SSH està en marxa.",
+      "checkFirewall": "Comprova que cap tallafoc descarta les connexions a aquest port.",
+      "raiseTimeout": "Si la xarxa és lenta, augmenta el temps màxim de connexió a les opcions avançades.",
+      "verifyFingerprint": "Demana a l'administrador l'empremta del servidor o comprova-la al mateix servidor.",
+      "trustIfMatches": "Si coincideix exactament, confirma-la.",
+      "doNotConnect": "No et connectis ni escriguis contrasenyes fins a saber per què ha canviat.",
+      "askAdmin": "Pregunta a l'administrador si el servidor s'ha reinstal·lat o se n'han canviat les claus.",
+      "removeUserKey": "Si la nova empremta és correcta, elimina l'anterior del teu ~/.ssh/known_hosts (l'aplicació no modifica aquest fitxer).",
+      "replaceInApp": "Si la nova empremta és correcta, substitueix-la de manera explícita.",
+      "checkPassword": "Comprova l'usuari i la contrasenya.",
+      "passwordDisabled": "Pot ser que el servidor no admeti contrasenyes (PasswordAuthentication no); en aquest cas fes servir una clau.",
+      "agentKeys": "Comprova quines claus té carregades l'agent SSH.",
+      "authorizedKeys": "Comprova que la clau pública és a ~/.ssh/authorized_keys de l'usuari al servidor.",
+      "tryYourself": "Prova la mateixa connexió des d'un terminal.",
+      "checkKey": "Comprova que {{path}} és la clau correcta per a aquest servidor.",
+      "enterSecret": "Torna a connectar i escriu-la quan es demani.",
+      "checkKeyPath": "Comprova el camí {{path}}.",
+      "keyPermissions": "La clau ha de tenir permisos privats.",
+      "installDocker": "Instal·la Docker Engine al servidor seguint la documentació oficial (l'aplicació no l'instal·la).",
+      "dockerOnPath": "Comprova que l'usuari troba docker.",
+      "startDocker": "Inicia Docker al servidor.",
+      "dockerStatus": "Comprova'n l'estat.",
+      "askAdminAccess": "Demana a l'administrador del servidor accés a Docker per al teu usuari.",
+      "addToGroup": "Una manera és afegir l'usuari al grup docker (ho fa l'administrador).",
+      "relogin": "El canvi de grup s'aplica a les sessions noves.",
+      "rootlessOption": "Alternativa més segura: Docker rootless per a aquest usuari, indicant el seu sòcol al perfil.",
+      "listContexts": "Comprova els contextos definits.",
+      "checkSocket": "Comprova el camí del sòcol de Docker al perfil.",
+      "upgradeDocker": "Actualitza Docker Engine al servidor a la versió 20.10 o posterior."
+    },
+    "target": "Servidor"
   }
 }

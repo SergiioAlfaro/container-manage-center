@@ -207,6 +207,7 @@ export function SettingsView() {
       </Group>
       {resetting && (
         <Dialog
+          target={false}
           title={t("settings.resetConfirmTitle")}
           onClose={() => setResetting(false)}
           footer={

@@ -79,6 +79,10 @@
     "settings": {
       "title": "Paramètres",
       "description": "Préférences de l’application."
+    },
+    "servers": {
+      "title": "Serveurs",
+      "description": "Cet ordinateur et des serveurs Docker distants via SSH."
     }
   },
   "pending": {
@@ -152,7 +156,12 @@
       "compose": "Compose"
     },
     "loadError": "Impossible de charger l’historique d’activité : {{message}}",
-    "executedApp": "Opération de l’application"
+    "executedApp": "Opération de l’application",
+    "filterServer": "Serveur",
+    "allServers": "tous",
+    "connectionSsh": "SSH (docker system dial-stdio)",
+    "connectionLocal": "Socket local",
+    "connection": "Connexion"
   },
   "settings": {
     "appearance": "Apparence",
@@ -696,7 +705,7 @@
       "long": "Utilisez au maximum {{max}} caractères.",
       "control": "Le nom ne peut pas contenir de caractères de contrôle."
     },
-    "paneLabel": "Terminal {{name}} sur {{container}}",
+    "paneLabel": "Terminal {{name}} dans {{container}} ({{server}})",
     "container": "Conteneur {{name}}",
     "state": {
       "opening": "Connexion…",
@@ -715,7 +724,8 @@
     "restore": "Rétablir la grille",
     "close": "Fermer la session",
     "splitColumns": "Redimensionner les colonnes",
-    "splitRows": "Redimensionner les rangées"
+    "splitRows": "Redimensionner les rangées",
+    "server": "Serveur {{name}}"
   },
   "stats": {
     "stop": "Arrêter la réception",
@@ -2364,5 +2374,362 @@
       "rollbackStop": "Annulation : arrêter la copie"
     },
     "openContainer": "Ouvrir le conteneur"
+  },
+  "servers": {
+    "local": "Cet ordinateur",
+    "localSocket": "Socket local",
+    "remoteBadge": "Distant",
+    "add": "Ajouter un serveur",
+    "back": "Retour aux serveurs",
+    "open": "Ouvrir",
+    "connect": "Se connecter",
+    "connectNamed": "Se connecter à {{name}}",
+    "disconnect": "Se déconnecter",
+    "disconnectNamed": "Se déconnecter de {{name}}",
+    "edit": "Modifier",
+    "delete": "Supprimer le profil",
+    "diagnose": "Diagnostic",
+    "refresh": "Actualiser",
+    "never": "Jamais",
+    "moreActions": "Plus d'actions pour {{name}}",
+    "forgetSecret": "Oublier les identifiants enregistrés",
+    "notConnectedBody": "Ce serveur n'est pas connecté. Connectez-vous pour voir et administrer son Docker ; d'ici là, aucune opération n'y est effectuée.",
+    "listHint": "Déconnecter ou supprimer un serveur ne touche jamais à ses conteneurs, images, réseaux ou volumes : ils restent sur le serveur tels quels.",
+    "keyringNotice": "{{name}} : le stockage sécurisé du système n'a pas pu être utilisé ({{message}}). L'identifiant ne vaut que pour cette session.",
+    "groupWarning": "Appartenir au groupe docker du serveur équivaut à un accès root sur ce serveur. Décidez avec son administrateur si c'est acceptable ; Docker rootless est l'alternative la plus sûre.",
+    "noAutoFix": "L'application n'installe pas Docker, ne modifie pas les permissions ni la configuration SSH et n'ouvre aucun port sur le serveur : ces étapes sont à examiner par vous ou par son administrateur.",
+    "empty": {
+      "title": "Aucun serveur distant pour l'instant",
+      "body": "Ajoutez un serveur Docker auquel vous avez accès via SSH. La connexion utilise le client SSH du système, vérifie l'identité du serveur et n'expose jamais Docker sur le réseau."
+    },
+    "tabs": {
+      "label": "Vue des serveurs",
+      "servers": "Serveurs",
+      "overview": "Vue d'ensemble"
+    },
+    "columns": {
+      "name": "Nom",
+      "address": "Adresse",
+      "method": "Méthode",
+      "status": "État",
+      "docker": "Docker / API",
+      "os": "Système",
+      "lastSeen": "Dernière connexion",
+      "latency": "Latence",
+      "actions": "Actions"
+    },
+    "status": {
+      "connected": "Connecté",
+      "disconnected": "Déconnecté",
+      "connecting": "Connexion…",
+      "authError": "Erreur d'authentification",
+      "connectionError": "Erreur de connexion",
+      "dockerUnavailable": "Docker indisponible",
+      "identityError": "Identité non confirmée"
+    },
+    "selector": {
+      "label": "Serveur : {{name}}. Changer de serveur",
+      "current": "actuel",
+      "manage": "Gérer les serveurs"
+    },
+    "auth": {
+      "agent": "Agent SSH",
+      "key": "Clé privée",
+      "keyPassphrase": "Clé avec phrase secrète",
+      "password": "Mot de passe"
+    },
+    "authHint": {
+      "agent": "Utilise les clés chargées dans l'agent SSH du système et votre configuration ~/.ssh. C'est l'option recommandée.",
+      "key": "Utilise une clé privée sans phrase secrète. Seul son chemin est enregistré : la clé n'est jamais copiée ni lue.",
+      "keyPassphrase": "Utilise une clé privée protégée par une phrase secrète. La phrase est demandée à la connexion et n'est enregistrée que si vous le demandez, dans le stockage sécurisé du système.",
+      "password": "Déconseillé. Le mot de passe est demandé à la connexion et n'est enregistré que si vous le demandez, dans le stockage sécurisé du système. Utilisez des clés dès que possible."
+    },
+    "docker": {
+      "default": "Par défaut",
+      "socket": "Socket",
+      "context": "Contexte"
+    },
+    "dockerHint": {
+      "default": "Le Docker utilisé par défaut par le client docker du serveur (DOCKER_HOST, contexte ou socket du système).",
+      "socket": "Un socket Unix précis du serveur, par exemple celui de Docker rootless.",
+      "context": "Un contexte Docker défini sur le serveur."
+    },
+    "fields": {
+      "name": "Nom",
+      "host": "Hôte",
+      "port": "Port SSH",
+      "user": "Utilisateur",
+      "description": "Description (facultative)",
+      "auth": "Authentification",
+      "keyPath": "Chemin de la clé privée",
+      "dockerTarget": "Docker sur le serveur",
+      "dockerSocket": "Chemin du socket sur le serveur",
+      "dockerContext": "Nom du contexte",
+      "connectTimeout": "Délai de connexion (secondes)",
+      "proxyJump": "Serveur de rebond (facultatif)",
+      "autoConnect": "Se connecter à l'ouverture de l'application"
+    },
+    "hints": {
+      "name": "Comment il apparaîtra dans l'application, par exemple « Production ».",
+      "host": "Nom DNS, adresse IPv4 ou IPv6, ou un alias de ~/.ssh/config.",
+      "user": "Utilisateur SSH sur le serveur.",
+      "keyPath": "La clé reste où elle est. Par exemple ~/.ssh/id_ed25519.",
+      "connectTimeout": "Entre 3 et 120 secondes.",
+      "proxyJump": "Format utilisateur@hôte:port. Équivaut au ProxyJump de SSH."
+    },
+    "issues": {
+      "nameRequired": "Saisissez un nom.",
+      "nameInvalid": "Le nom est trop long ou contient des caractères non valides.",
+      "hostRequired": "Saisissez l'hôte.",
+      "hostInvalid": "Hôte non valide : utilisez un nom, une IP ou un alias sans espaces ni caractères spéciaux.",
+      "portInvalid": "Le port doit être compris entre 1 et 65535.",
+      "userRequired": "Saisissez l'utilisateur.",
+      "userInvalid": "Utilisateur non valide.",
+      "descriptionTooLong": "La description est trop longue.",
+      "keyPathInvalid": "Indiquez le chemin de la clé privée.",
+      "socketInvalid": "Indiquez un chemin absolu de socket valide.",
+      "contextInvalid": "Nom de contexte non valide.",
+      "timeoutInvalid": "Doit être compris entre 3 et 120 secondes.",
+      "proxyJumpInvalid": "Serveur de rebond non valide (utilisateur@hôte:port).",
+      "idInvalid": "Identifiant de serveur non valide."
+    },
+    "editor": {
+      "addTitle": "Ajouter un serveur",
+      "editTitle": "Modifier {{name}}",
+      "steps": "Étapes",
+      "step": {
+        "general": "Informations générales",
+        "auth": "Authentification",
+        "docker": "Docker",
+        "test": "Tester la connexion"
+      },
+      "choose": "Choisir…",
+      "pickKey": "Clé privée SSH",
+      "advanced": "Options avancées",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "save": "Enregistrer",
+      "saveConnect": "Enregistrer et se connecter",
+      "fixFirst": "Vérifiez les champs signalés avant de continuer.",
+      "keyNeverCopied": "L'application ne copie jamais votre clé privée : ssh la lit depuis son chemin à la connexion.",
+      "secretWhen": "La phrase secrète ou le mot de passe est demandé à la connexion. Si vous choisissez de le mémoriser, il est enregistré chiffré dans le stockage sécurisé du système, jamais dans les fichiers de l'application.",
+      "secretStored": "Un identifiant est enregistré dans le stockage sécurisé du système.",
+      "secretNotStored": "Aucun identifiant n'est enregistré."
+    },
+    "test": {
+      "intro": "Vérifie étape par étape que Docker peut être administré sur le serveur. Simple consultation : rien n'est modifié.",
+      "run": "Tester la connexion",
+      "running": "Test en cours…",
+      "ok": "Connexion réussie : Docker {{version}}, API {{api}}, {{latency}} ms.",
+      "steps": "Étapes du test",
+      "secretHint": "Utilisé uniquement pour ce test ; il n'est pas enregistré.",
+      "readOnly": "Seuls docker --version, docker version et docker system dial-stdio (le canal de l'API) sont exécutés sur le serveur."
+    },
+    "checks": {
+      "resolve": "Résolution DNS",
+      "reach": "Connexion SSH",
+      "identity": "Identité du serveur",
+      "auth": "Authentification",
+      "docker": "Docker disponible",
+      "permission": "Permissions sur Docker",
+      "api": "Compatibilité de l'API"
+    },
+    "checkStatus": {
+      "ok": "Correct",
+      "failed": "Échec",
+      "notRun": "Non vérifié",
+      "skipped": "Sans objet"
+    },
+    "hostKey": {
+      "unknownTitle": "Confirmez l'identité du serveur",
+      "unknownBody": "C'est la première connexion à {{host}} (port {{port}}). Vérifiez que cette empreinte est bien celle du serveur avant de lui faire confiance.",
+      "changedTitle": "L'identité du serveur a changé",
+      "changedBody": "{{host}} (port {{port}}) présente une identité différente de celle confirmée. Cela peut venir d'une réinstallation, mais aussi d'une attaque de l'homme du milieu. Ne vous connectez pas avant de l'avoir vérifiée.",
+      "type": "Type de clé : {{type}}",
+      "noKey": "Le serveur n'a présenté aucune clé affichable.",
+      "howToVerify": "Pour la vérifier, demandez l'empreinte du serveur à l'administrateur ou exécutez sur le serveur :",
+      "trust": "L'empreinte correspond : faire confiance",
+      "replace": "Remplacer l'identité enregistrée",
+      "confirmChanged": "J'ai vérifié auprès de l'administrateur du serveur que cette nouvelle empreinte est correcte.",
+      "inUserFile": "L'identité précédente se trouve dans {{file}}. L'application ne modifie pas ce fichier : si vous avez vérifié la nouvelle empreinte, supprimez l'ancienne vous-même avec :",
+      "mismatch": "Le serveur présente maintenant une empreinte différente de celle affichée. Rien n'a été enregistré : testez de nouveau la connexion.",
+      "review": "Vérifier l'identité",
+      "reviewTitle": "Identité de {{name}}"
+    },
+    "secret": {
+      "passphraseTitle": "Phrase secrète pour {{name}}",
+      "passwordTitle": "Mot de passe pour {{name}}",
+      "passphrase": "Phrase secrète de {{path}}",
+      "password": "Mot de passe SSH",
+      "remember": "Mémoriser dans le stockage sécurisé du système",
+      "rememberHint": "Enregistré chiffré par le système (GNOME Keyring, KWallet…). Vous pouvez le supprimer en modifiant le serveur.",
+      "noKeyring": "Aucun stockage sécurisé n'est disponible dans cette session : il sera demandé à chaque connexion. Il n'est jamais enregistré en clair.",
+      "passwordDiscouraged": "L'authentification par mot de passe est déconseillée : les clés SSH sont plus sûres.",
+      "wrongPassword": "Le mot de passe est incorrect.",
+      "wrongPassphrase": "La phrase secrète est incorrecte."
+    },
+    "deleteDialog": {
+      "title": "Supprimer le profil de {{name}} ?",
+      "body": "Le profil de connexion, ses identifiants enregistrés et, si aucun autre profil ne l'utilise, l'identité confirmée du serveur sont supprimés de l'application.",
+      "nothingRemote": "Rien n'est supprimé sur le serveur : ses conteneurs, images, réseaux, volumes et données restent intacts.",
+      "confirm": "Supprimer le profil"
+    },
+    "overview": {
+      "intro": "Chaque serveur est interrogé séparément : un serveur lent ou indisponible n'affecte pas les autres.",
+      "docker": "Docker",
+      "containers": "Conteneurs",
+      "containersValue": "{{running}} en cours · {{stopped}} arrêtés · {{paused}} en pause",
+      "images": "Images",
+      "resources": "Ressources",
+      "resourcesValue": "{{cpus}} CPU · {{memory}}",
+      "updated": "Mis à jour",
+      "notConnected": "Non connecté : aucune donnée."
+    },
+    "diagnosis": {
+      "title": "Diagnostic de {{name}}",
+      "again": "Relancer le diagnostic",
+      "running": "Vérification du serveur…",
+      "fingerprint": "Empreinte",
+      "docker": "Docker",
+      "recentErrors": "Erreurs récentes sur ce serveur",
+      "noErrors": "Aucune erreur récente.",
+      "localHint": "Le diagnostic détaillé de cet ordinateur se trouve sur le Dashboard lorsqu'il n'y a pas de connexion."
+    },
+    "problems": {
+      "sshMissing": {
+        "title": "Aucun client SSH sur cet ordinateur",
+        "body": "L'administration de serveurs distants nécessite le programme ssh (OpenSSH)."
+      },
+      "invalidProfile": {
+        "title": "Le profil du serveur n'est pas valide",
+        "body": "Vérifiez les informations du serveur ({{codes}})."
+      },
+      "hostUnresolvable": {
+        "title": "Serveur introuvable",
+        "body": "Le nom {{host}} ne peut pas être résolu (DNS)."
+      },
+      "hostUnreachable": {
+        "title": "Le serveur est inaccessible",
+        "body": "Aucune route réseau vers {{host}} : {{message}}"
+      },
+      "sshRefused": {
+        "title": "SSH ne répond pas sur le serveur",
+        "body": "{{host}} refuse les connexions sur le port {{port}} : le service SSH est arrêté ou écoute sur un autre port."
+      },
+      "notSsh": {
+        "title": "Ce port n'est pas SSH",
+        "body": "Ce qui répond sur {{host}}:{{port}} n'est pas un serveur SSH."
+      },
+      "timeout": {
+        "title": "Le serveur ne répond pas à temps",
+        "body": "Aucune réponse de {{host}}:{{port}} en {{seconds}} secondes. Un pare-feu bloque peut-être la connexion."
+      },
+      "hostKeyUnknown": {
+        "title": "Identité du serveur non confirmée",
+        "body": "C'est la première connexion à {{host}}. Confirmez son empreinte ({{type}} {{fingerprint}}) avant de vous connecter."
+      },
+      "hostKeyChanged": {
+        "title": "L'identité du serveur a changé !",
+        "body": "{{host}} présente une identité différente ({{type}} {{fingerprint}}) de celle confirmée. Il pourrait s'agir d'une attaque de l'homme du milieu. La connexion a été arrêtée."
+      },
+      "authFailedKey": {
+        "title": "La clé n'est pas acceptée",
+        "body": "Le serveur n'accepte pas la clé pour l'utilisateur {{user}}."
+      },
+      "authFailedAgent": {
+        "title": "L'agent SSH n'a aucune clé acceptée",
+        "body": "Le serveur n'accepte aucune des clés de l'agent SSH pour l'utilisateur {{user}}."
+      },
+      "authFailedPassword": {
+        "title": "Utilisateur ou mot de passe incorrect",
+        "body": "Le serveur n'accepte pas le mot de passe de l'utilisateur {{user}}."
+      },
+      "passphraseRequired": {
+        "title": "Phrase secrète manquante",
+        "body": "La clé est protégée par une phrase secrète et aucune n'est disponible."
+      },
+      "passwordRequired": {
+        "title": "Mot de passe manquant",
+        "body": "Ce serveur utilise un mot de passe et aucun n'est disponible."
+      },
+      "keyUnreadable": {
+        "title": "Clé privée introuvable",
+        "body": "{{path}} n'existe pas ou ne peut pas être lu."
+      },
+      "dockerMissing": {
+        "title": "Docker n'est pas installé sur le serveur",
+        "body": "Le programme docker n'est pas disponible pour l'utilisateur sur {{host}}."
+      },
+      "dockerNotRunning": {
+        "title": "Docker est arrêté sur le serveur",
+        "body": "Le démon Docker ne répond pas sur {{host}} : {{message}}"
+      },
+      "socketDenied": {
+        "title": "Pas de permission pour utiliser Docker sur le serveur",
+        "body": "L'utilisateur {{user}} ne peut pas utiliser le socket Docker sur {{host}} : {{message}}"
+      },
+      "contextMissing": {
+        "title": "Ce contexte Docker n'existe pas",
+        "body": "Le contexte {{name}} n'est pas défini sur {{host}}."
+      },
+      "notDocker": {
+        "title": "Ce n'est pas Docker",
+        "body": "Ce qui répond sur le socket indiqué de {{host}} n'est pas Docker Engine : {{message}}"
+      },
+      "apiTooOld": {
+        "title": "Version de Docker incompatible",
+        "body": "{{host}} a l'API {{version}} ; l'application nécessite au moins la {{minimum}} (Docker 20.10)."
+      },
+      "connectionLost": {
+        "title": "Connexion perdue",
+        "body": "La connexion SSH à {{host}} a été coupée."
+      },
+      "other": {
+        "title": "Connexion impossible",
+        "body": "{{message}}"
+      }
+    },
+    "fix": {
+      "onServer": "Sur le serveur :",
+      "onThisComputer": "Sur cet ordinateur :",
+      "retry": "Ensuite, reconnectez-vous.",
+      "installSsh": "Installez le client OpenSSH.",
+      "editProfile": "Modifiez le serveur et corrigez ses informations.",
+      "checkName": "Vérifiez l'orthographe du nom ou utilisez l'adresse IP.",
+      "resolveName": "Vérifiez si cet ordinateur résout le nom.",
+      "checkNetwork": "Vérifiez le réseau, le VPN ou le pare-feu entre cet ordinateur et le serveur.",
+      "ping": "Vérifiez si le serveur répond.",
+      "checkPort": "Vérifiez le port SSH du serveur (généralement 22).",
+      "sshdStatus": "Vérifiez que le service SSH est en cours d'exécution.",
+      "checkFirewall": "Vérifiez qu'aucun pare-feu ne bloque les connexions vers ce port.",
+      "raiseTimeout": "Si le réseau est lent, augmentez le délai de connexion dans les options avancées.",
+      "verifyFingerprint": "Demandez l'empreinte du serveur à l'administrateur ou vérifiez-la sur le serveur lui-même.",
+      "trustIfMatches": "Si elle correspond exactement, confirmez-la.",
+      "doNotConnect": "Ne vous connectez pas et ne saisissez aucun mot de passe avant de savoir pourquoi elle a changé.",
+      "askAdmin": "Demandez à l'administrateur si le serveur a été réinstallé ou si ses clés ont changé.",
+      "removeUserKey": "Si la nouvelle empreinte est correcte, supprimez l'ancienne de votre ~/.ssh/known_hosts (l'application ne modifie pas ce fichier).",
+      "replaceInApp": "Si la nouvelle empreinte est correcte, remplacez-la explicitement.",
+      "checkPassword": "Vérifiez l'utilisateur et le mot de passe.",
+      "passwordDisabled": "Le serveur n'accepte peut-être pas les mots de passe (PasswordAuthentication no) ; utilisez alors une clé.",
+      "agentKeys": "Vérifiez quelles clés sont chargées dans l'agent SSH.",
+      "authorizedKeys": "Vérifiez que la clé publique figure dans ~/.ssh/authorized_keys de l'utilisateur sur le serveur.",
+      "tryYourself": "Essayez la même connexion depuis un terminal.",
+      "checkKey": "Vérifiez que {{path}} est la bonne clé pour ce serveur.",
+      "enterSecret": "Reconnectez-vous et saisissez-la lorsqu'elle est demandée.",
+      "checkKeyPath": "Vérifiez le chemin {{path}}.",
+      "keyPermissions": "La clé doit avoir des permissions privées.",
+      "installDocker": "Installez Docker Engine sur le serveur en suivant la documentation officielle (l'application ne l'installe pas).",
+      "dockerOnPath": "Vérifiez que l'utilisateur trouve docker.",
+      "startDocker": "Démarrez Docker sur le serveur.",
+      "dockerStatus": "Vérifiez son état.",
+      "askAdminAccess": "Demandez à l'administrateur du serveur un accès à Docker pour votre utilisateur.",
+      "addToGroup": "Une possibilité est d'ajouter l'utilisateur au groupe docker (à faire par l'administrateur).",
+      "relogin": "Le changement de groupe s'applique aux nouvelles sessions.",
+      "rootlessOption": "Alternative plus sûre : Docker rootless pour cet utilisateur, en indiquant son socket dans le profil.",
+      "listContexts": "Vérifiez les contextes définis.",
+      "checkSocket": "Vérifiez le chemin du socket Docker dans le profil.",
+      "upgradeDocker": "Mettez à jour Docker Engine sur le serveur vers la version 20.10 ou ultérieure."
+    },
+    "target": "Serveur"
   }
 }

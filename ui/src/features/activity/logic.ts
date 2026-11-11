@@ -45,20 +45,28 @@ export interface ActivityFilter {
   query: string;
   category: Category | "all";
   status: OpStatus | "all";
+  /** Servidor (0.10.0): identificador o "all". */
+  server: string;
 }
 
-export const EMPTY_FILTER: ActivityFilter = { query: "", category: "all", status: "all" };
+export const EMPTY_FILTER: ActivityFilter = { query: "", category: "all", status: "all", server: "all" };
+
+/** Servidor de un registro; los anteriores a 0.10.0 son del equipo local. */
+export function recordServer(r: Pick<OperationRecord, "server">): string {
+  return r.server?.id ?? "local";
+}
 
 export function isFiltered(f: ActivityFilter): boolean {
-  return f.query.trim() !== "" || f.category !== "all" || f.status !== "all";
+  return f.query.trim() !== "" || f.category !== "all" || f.status !== "all" || f.server !== "all";
 }
 
 export function matches(r: OperationRecord, f: ActivityFilter): boolean {
+  if (f.server !== "all" && recordServer(r) !== f.server) return false;
   if (f.category !== "all" && r.category !== f.category) return false;
   if (f.status !== "all" && r.status !== f.status) return false;
   const q = f.query.trim().toLowerCase();
   if (!q) return true;
-  const haystack = [r.kind, r.target ?? "", r.equivalentCommand ?? "", describeTransport(r.transport), r.error ?? "", r.summary ?? ""]
+  const haystack = [r.kind, r.target ?? "", r.equivalentCommand ?? "", describeTransport(r.transport), r.error ?? "", r.summary ?? "", r.server?.name ?? ""]
     .join("\n")
     .toLowerCase();
   return q.split(/\s+/).every((term) => haystack.includes(term));

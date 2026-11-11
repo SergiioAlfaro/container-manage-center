@@ -248,6 +248,7 @@ export function ComponentsSettings() {
 
       {plan && (
         <Dialog
+          target={false}
           title={t("components.confirmTitle")}
           onClose={closePlan}
           footer={
