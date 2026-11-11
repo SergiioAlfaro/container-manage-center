@@ -1,5 +1,27 @@
 # Cambios
 
+## 0.10.0 — 2026-11-11 (actualización previa a la Fase 10: administración remota)
+- **Servidores remotos por SSH** (nuevo apartado **Servidores**, D-075–D-081):
+  - Lista de servidores con nombre, dirección, usuario, puerto, método, estado (Conectado, Desconectado, Conectando, Error de autenticación, Error de conexión, Docker no disponible), versión de Docker y de la API, sistema, última conexión y latencia. El equipo local sigue como siempre («Este equipo»).
+  - Asistente **Añadir servidor**: datos generales, autenticación (agente SSH, clave privada, clave con frase, contraseña desaconsejada), Docker (predeterminado, socket o contexto) y opciones avanzadas (tiempo de espera, salto `ProxyJump`, conexión al iniciar). La clave privada nunca se copia: se guarda su ruta.
+  - **Probar conexión** con siete comprobaciones (DNS, conexión SSH, identidad, autenticación, Docker disponible, permisos, compatibilidad de la API) y cómo resolver cada problema. Nunca instala Docker ni cambia nada en el servidor.
+  - Editar, cambiar credenciales, conectar/desconectar, diagnóstico por servidor y **Eliminar perfil**, que no borra nada del servidor.
+- **Conexión segura** (D-075, D-076):
+  - Cliente OpenSSH del sistema con `docker system dial-stdio`: Docker nunca se expone en TCP. Una sesión maestra por servidor y canales multiplexados.
+  - Argumentos separados, opciones de seguridad siempre antes del destino y `--`; los argumentos remotos se entrecomillan uno a uno.
+  - Huella del servidor confirmada en el primer contacto; un cambio detiene la conexión con aviso de posible suplantación y solo se acepta tras revisarla. Lista de huellas propia (0600); `~/.ssh/known_hosts` no se modifica.
+  - Al arrancar se cierran las sesiones que dejó una instancia anterior.
+- **Credenciales** (D-077): en el almacén seguro del sistema (Secret Service: GNOME Keyring, KWallet…) solo si se pide; sin almacén se avisa y se piden cada vez. Nunca en archivos, en el registro ni en los diagnósticos. Los perfiles van en `servers.toml`, separados de `config.toml` y de los secretos.
+- **Paridad remota** (D-078–D-080): Dashboard, contenedores, imágenes, redes, volúmenes, carpetas vinculadas, edición de contenedores, eventos y Compose en el servidor elegido. Compose se ejecuta en el servidor con los archivos del servidor; las rutas se escriben y se comprueban allí, y antes de escribir un archivo se confirma el destino.
+- **Varios servidores** (D-078, D-079):
+  - Selector de servidor en la barra superior y **Vista general** de todos los servidores.
+  - Cada operación va ligada a su servidor; un servidor caído no afecta a los demás.
+  - Las confirmaciones muestran servidor y dirección.
+- **Terminales** (D-081): terminales de contenedores de varios servidores a la vez, etiquetadas con servidor y contenedor, y **Shell SSH del servidor** como tipo de sesión aparte. Al desconectar o cerrar no quedan procesos.
+- **Panel de actividad, eventos e historial**: servidor y método de conexión en cada entrada, orden equivalente (`docker --host ssh://…` o `ssh … -- …`), y filtro por servidor.
+- **Ayuda**: nueva sección «Servidores remotos por SSH» en los ocho idiomas (27 secciones).
+- **Paquete**: recomienda `openssh-client`.
+
 ## 0.9.2 — 2026-11-11 (actualización previa a la Fase 10)
 - **Editar configuración** de un contenedor (menú ⋯ de la lista, botón derecho y detalle; D-070):
   - Pestañas General, Red, Almacenamiento, Variables, Puertos, Recursos y Avanzado.

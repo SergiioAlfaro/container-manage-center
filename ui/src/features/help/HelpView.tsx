@@ -27,6 +27,7 @@ export const HELP_SECTION_IDS = [
   "first-setup",
   "connection",
   "rootless",
+  "remote-servers",
   "dashboard",
   "containers",
   "container-lifecycle",

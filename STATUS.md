@@ -6,9 +6,9 @@
 
 | | |
 |---|---|
-| **Fase actual** | Actualización 0.9.2 (antes de la Fase 10) |
-| **Versión** | 0.9.2 |
-| **Estado** | Implementada; pendiente de validación del propietario |
+| **Fase actual** | Actualización 0.10.0 (antes de la Fase 10) |
+| **Versión** | 0.10.0 |
+| **Estado** | Implementada; pendiente de validación del propietario (también la 0.9.2) |
 | **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8, 9 y la actualización 0.9.1 |
 | **Fases pendientes** | 10 |
 
@@ -25,6 +25,7 @@
 | 9. Configuración y optimización | **Validada** (2026-11-08, Debian 13, versión 0.9.0) |
 | Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | **Validada** (confirmada por el propietario en la solicitud de la 0.9.2, 2026-11-11) |
 | Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | Implementada; pendiente de validación |
+| Actualización 0.10.0 (administración remota de servidores Docker por SSH) | Implementada; pendiente de validación |
 | 10. Pruebas finales y distribución | No iniciada |
 
 ---
@@ -887,9 +888,45 @@ Ninguno abierto.
 
 ---
 
+## Actualización 0.10.0 · Administración remota de servidores Docker por SSH
+
+### Objetivos
+Administrar el Docker de otros equipos Linux por SSH, a la vez que el local y con las mismas funciones, sin rehacer lo validado y sin rebajar la seguridad: nada de Docker en TCP sin TLS, secretos solo en el almacén del sistema, identidad del servidor siempre verificada, órdenes sin concatenar cadenas y ningún cambio automático en el servidor.
+
+### Funcionalidades implementadas
+- **Servidores** (D-078): lista con estado, versiones, sistema, última conexión y latencia; asistente de alta con siete comprobaciones; editar, credenciales, conectar/desconectar, diagnóstico y eliminar perfil sin tocar el servidor.
+- **Transporte** (D-075): OpenSSH del sistema + `docker system dial-stdio`; sesión maestra por servidor y canales multiplexados; argumentos separados y entrecomillados uno a uno; sesiones huérfanas cerradas al arrancar.
+- **Identidad** (D-076): huella confirmada en el primer contacto; cambio = conexión detenida con aviso; sustitución solo tras revisarla; `~/.ssh/known_hosts` intacto.
+- **Credenciales** (D-077): agente, clave, clave con frase o contraseña (desaconsejada); secretos en Secret Service solo si se pide; sin almacén se avisa y se piden cada vez.
+- **Paridad remota** (D-079, D-080): todas las pantallas y operaciones en el servidor elegido; Compose y archivos en el servidor, con confirmación del destino; carpetas vinculadas comprobadas en el servidor.
+- **Varios servidores** (D-079): selector, vista general, cada operación ligada a su servidor, confirmaciones con servidor y dirección, fallos aislados.
+- **Terminales** (D-081): de contenedores de varios servidores a la vez, etiquetadas, y shell SSH del servidor como sesión aparte; sin procesos restantes.
+- **Actividad, eventos e historial**: servidor, conexión y orden equivalente en cada entrada; filtro por servidor.
+- **Ayuda** (27 secciones en los ocho idiomas), INSTALL.md con los requisitos de cada servidor; el paquete recomienda `openssh-client`.
+
+### Cambios en componentes compartidos (y por qué)
+- **`AppState`**: `engine` pasa a `servers` (registro con el gestor local y los remotos). Todas las órdenes de Docker reciben el servidor; sin él, la operación podría ir a un servidor distinto del elegido.
+- **IPC de la interfaz**: `api` se divide en `dockerApi(server)` (órdenes de Docker) y las propias de la aplicación; `useEngine`, las cachés de consultas y los diálogos dependen del servidor del ámbito.
+- **`Dialog`**: línea opcional con el servidor de destino. **`Menu`**: `buttonClassName`.
+- **Registro de flujos**: cada flujo con su servidor, para cerrar los de un servidor al desconectarlo.
+- **Compose**: la lista de proyectos registrados es por servidor (antes se guardaban los remotos en la lista local, error detectado en las pruebas); `compose_projects` comprueba los archivos de todos los proyectos.
+- **`cli.rs`**: `CliRequest.remote` para ejecutar el mismo programa en el servidor.
+- **`EngineManager`**: constructor remoto, `same()` y `Debug`.
+
+### Pruebas ejecutadas
+@@PRUEBAS-0.10.0@@
+
+### Limitaciones y observaciones
+@@LIMITACIONES-0.10.0@@
+
+### Errores conocidos
+@@ERRORES-0.10.0@@
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-update-0.9.2.sh --deb --net` en Debian 13 y envía `verify-update-0.9.2-report.txt`. Si el veredicto es «parte automática superada», instala el paquete 0.9.2 y realiza M1–M10.
-2. Corregir lo que surja y marcar la 0.9.2 como validada.
+1. El propietario ejecuta `bash scripts/verify-update-0.10.0.sh --deb --net` en Debian 13 y envía `verify-update-0.10.0-report.txt`. Si el veredicto es «parte automática superada», instala el paquete 0.10.0 y realiza R1–R10 (administración remota) y, si no lo hizo, M1–M10 de la 0.9.2 (`scripts/verify-update-0.9.2.sh` las lista).
+2. Corregir lo que surja y marcar la 0.9.2 y la 0.10.0 como validadas.
 3. Fase 10: pruebas finales y distribución (necesita decidir nombre, licencia y dónde se publica). **No se ha iniciado.**
 
 ## Decisiones pendientes del propietario

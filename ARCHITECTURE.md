@@ -24,8 +24,10 @@ Versión 0.7.1 (Fase 7 con correcciones).
 │         compose    detección (D-032), proyectos, acciones, archivos (Fase 7)          │
 │         events     suscripción en vivo y consulta de eventos (Fase 8, D-057)          │
 │         cli        procesos sin shell, salida en vivo y cancelación por grupo         │
+│         ssh        servidores remotos: sesión maestra OpenSSH, canales dial-stdio     │
 └──────────────┬───────────────────────────────────────────────┬───────────────────────┘
       socket Unix de Docker (API)                      docker compose (proceso CLI)
+      ssh … docker system dial-stdio (servidor remoto)   ssh … -- docker compose …
 ```
 
 ## Estructura de directorios
@@ -203,6 +205,31 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 ### Flujos en la aplicación (`src-tauri/src/streams.rs`)
 `StreamRegistry` guarda, por identificador, el `CancellationToken` y, para la terminal, el canal de entrada. `logs_open`/`stats_open`/`terminal_open` devuelven el identificador y envían los eventos por un `Channel` de Tauri; al terminar mandan `end` con `StreamClosed { end: StreamEnd { reason, summary, exitCode } | error }` y se retiran del registro. `stream_close` cancela; al destruirse la ventana se cancelan todos.
 
+## Administración remota (0.10.0, D-075–D-081)
+
+### Transporte (`dcc-engine/src/ssh/`, D-075)
+- `SshSession` (`session.rs`): una sesión maestra de OpenSSH por servidor (`ControlMaster=yes`, `ControlPersist=no`) con un socket de control `c-<pid>-<servidor>-<aleatorio>` en `$XDG_RUNTIME_DIR/docker-control-center/ssh` (0700). Cada canal de Docker es `ssh -o ControlMaster=no -o ControlPath=… -T -- host docker system dial-stdio` (argumentos entrecomillados uno a uno cuando hace falta) multiplexado por esa sesión; bollard lo usa como transporte propio (`connect.rs`). `close_orphans()` cierra al arrancar solo las sesiones de PID que ya no existen.
+- `args.rs`: las opciones de seguridad (`StrictHostKeyChecking=yes` con la lista de huellas de la aplicación y, solo para leer, la del usuario; `UpdateHostKeys=no`; `BatchMode`/`IdentitiesOnly` según el método; sin reenvíos de agente, X11 ni puertos; `PermitLocalCommand=no`; `ServerAlive*` para detectar cortes) van siempre antes del destino y de `--`; los argumentos remotos se entrecomillan uno a uno (`shell_quote`). Nunca se construye una orden concatenando entradas del usuario.
+- `problem.rs` clasifica los fallos (`RemoteProblem`: DNS, inaccesible, rechazado, tiempo, autenticación, huella desconocida o cambiada, Docker ausente, detenido, sin permiso, API incompatible…); `connect.rs` hace las siete comprobaciones de **Probar conexión** y el diagnóstico.
+
+### Identidad del servidor (`hostkey.rs`, D-076)
+Primer contacto: la clave se captura en un archivo temporal y se muestra la huella; solo se guarda si el usuario confirma y la huella coincide. Lista de huellas propia (`known_hosts` de la aplicación, 0600). Una huella cambiada detiene la conexión (`HostKeyChanged`) y solo se sustituye con `server_trust(replace=true)`. `~/.ssh/known_hosts` se consulta pero nunca se modifica.
+
+### Secretos (`src-tauri/src/secrets.rs`, `ssh/askpass.rs`, D-077)
+`SSH_ASKPASS` es el propio binario (`main.rs` llama primero a `askpass::client_main()`), que pide el secreto por un socket Unix privado de un solo uso. Los secretos viven en memoria (`zeroize`) durante la sesión y, si el usuario lo pide, en Secret Service (crate `secret-service`). Sin almacén seguro se informa (`KeyringStatus::Unavailable`) y se piden cada vez; nunca se escriben en archivos ni en el registro.
+
+### Registro de servidores (`src-tauri/src/servers.rs`, `dcc-store/src/servers.rs`, D-078)
+`servers.toml` (0600, escritura atómica) guarda los perfiles, separado de `config.toml` y sin secretos. `Servers` mantiene el `EngineManager` local y uno por servidor remoto (`EngineManager::remote`), cada uno con su propio registro de actividad etiquetado (`ServerTag`), sus tareas canceladas con un `CancellationToken` propio y su estado (`server://state`). Los 59 comandos de Docker reciben `server`; `state.server(&id)` devuelve el gestor o `server.unknown`. Los flujos se registran por servidor (`StreamRegistry::close_server`).
+
+### Interfaz (D-079)
+`app/server.tsx`: `ServerScope` da a cada pantalla su servidor; `useApi()` devuelve `dockerApi(server)` (todas las órdenes de Docker llevan el servidor) y `queryClientFor(server)` separa las cachés; el área principal se vuelve a montar al cambiar de servidor (`key`). Los diálogos muestran el servidor de destino (`DialogTarget`). `features/servers/`: lista, asistente (`ServerEditor.tsx`), revisión de identidad, petición de secretos, diagnóstico, selector y vista general.
+
+### CLI y Compose remotos (D-080)
+`CliRequest.remote = RemoteExec { session, tty }` ejecuta el mismo programa en el servidor por un canal de la sesión (`[env K=V…] programa args`, entrecomillado); la orden equivalente registrada es `ssh [-p] [-J] usuario@host -- …`. Compose usa los archivos del servidor: existencia (`stat`), lectura (`base64`), guardado atómico (`dd conv=excl` + `chmod` + `mv`) y creación sin sobrescribir (`compose/remote_file.rs`). Los proyectos registrados son por servidor. Las carpetas vinculadas se comprueban en el servidor (`binds::host_paths`).
+
+### Shell SSH del servidor (`ssh/shell.rs`, D-081)
+`ssh -tt` por la sesión verificada sobre una PTY local (`openpty`, `setsid` + `TIOCSCTTY`, `TIOCSWINSZ`). Al cerrar: SIGHUP al grupo y, si no termina en 5 s, SIGKILL.
+
 ## Comandos IPC
 
 | Comando | Descripción |
@@ -213,6 +240,11 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 | `engine_reconnect` | Detectar y conectar de nuevo (registrado) |
 | `engine_test(docker)` | Probar una configuración sin guardarla ni sustituir la conexión |
 | `engine_overview` | Versión e información del motor |
+| `servers_list`, `server_validate`, `server_save`, `server_delete(confirmed)` | Perfiles de servidores remotos (0.10.0). Eliminar un perfil no toca el servidor |
+| `server_connect(secret, remember)`, `server_disconnect`, `server_test`, `server_diagnose`, `servers_overview` | Conexión, prueba de siete pasos, diagnóstico y vista general |
+| `server_host_key`, `server_trusted_keys`, `server_trust(key, replace)` | Identidad del servidor (huella) |
+| `keyring_status`, `server_secret_status`, `server_forget_secret` | Almacén seguro de credenciales |
+| `server_shell_open` | Shell SSH del servidor (solo servidores remotos) |
 | `compose_status` | Versión del plugin Compose |
 | `containers_list`, `container_action(id, name, action)` | Contenedores; la acción devuelve el estado confirmado (`ContainerState`) |
 | `container_remove(id, name, force, volumes, confirmed)` | Exige `confirmed = true` |
@@ -268,7 +300,7 @@ El plugin `opener` de Tauri (0.9.1, D-066) solo puede abrir `https://github.com/
 
 Al cerrar la ventana (0.9.1, D-063) se cierran los flujos abiertos y se espera a que terminen (como mucho 8 s): `StreamRegistry::close_all_and_wait`.
 
-Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
+Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://state` (0.10.0), `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
 
 ## Interfaz
 - `features/engine/store.ts`: estado de conexión; `App` lo alimenta con `engine_state` y el evento `engine://state`. Al pasar a conectado se invalidan todas las consultas; al perder la conexión se descartan.
@@ -289,7 +321,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 - `features/settings/`: `UpdatesSettings.tsx`, `SystemSettings.tsx` (con `systemReport`), restablecer en `SettingsView.tsx` y `layout.tsx` (`Group`, `Row`).
 - `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms y como mucho una vez por segundo durante las ráfagas, `refreshDelay`), `EventRow.tsx` (filas memorizadas con claves estables, `eventKeys`), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
 - `features/terminals/` (0.9.1, D-064): `sessions.ts` (gestor de sesiones fuera de React: una xterm y un flujo por sesión, generación por apertura, cierre sin huérfanos; estado visible en Zustand), `TerminalsView.tsx` (distribución según `layout.ts`, `Splitter.tsx` con ratón y teclado), `TerminalPane.tsx`, `NewTerminalDialog.tsx`.
-- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 26 secciones, `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
+- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 27 secciones (0.10.0), `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
 - `shared/i18n`: `en`, `es`, `ca`, `gl`, `eu`, `fr`, `it`, `pt` en el orden del selector (D-067, D-073); `LANGUAGE_NAMES` con los endónimos.
 - `features/containers/edit/` (0.9.2, D-069, D-070): `EditContainer.tsx` (pestañas, barra de cambios pendientes, ciclo de vida, copias de seguridad, redes con los diálogos de la Fase 5, Avanzado de solo lectura), `ReviewPanel.tsx` (comparación, asistente de recreación con riesgos y confirmación, resultado paso a paso), `model.ts` (borrador y clasificación para los indicadores; decide el backend), `CommitDialog.tsx`. `create/editors.tsx` reúne los editores de puertos, montajes, memoria y clave/valor que comparten el asistente de creación y la edición.
 - `shared/ui/Menu.tsx` (0.9.2): menú de acciones accesible (botón ⋯ y botón derecho en la fila).
@@ -300,16 +332,18 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 25 actividad · 239 motor · 25 configuración |
+| Rust unitarias | `cargo test` | actividad · 301 motor · configuración (0.10.0) |
 | Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 75: incluye las de actualizaciones (servidor local, límites, redirecciones; HTTPS real solo con `DCC_NET_TESTS=1`) y la de la Fase 9 por IPC; ocho contra Docker real (inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose; eventos) |
 | Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
 | Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p dcc-engine --test events_interrupted` | 3 |
-| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 328 |
+| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 371 |
+| Administración remota contra servidores SSH reales (0.10.0) | `DCC_DOCKER_TESTS=1 DCC_SSH_LAB=lab.json cargo test -p dcc-engine --test live_ssh -- --test-threads=1`; IPC con `DCC_TEST_ASKPASS`; las suites de recursos con `DCC_SSH_TEST=usuario@host:puerto` (laboratorio de `scripts/dev/remote-lab.sh`, solo en una máquina de pruebas) | 12 + 1 IPC; contenedores, imágenes, redes, volúmenes, terminales, edición y eventos repetidos por SSH |
+| Llavero real (0.10.0) | `DCC_KEYRING_TEST=1` dentro de una sesión D-Bus con un llavero temporal | 1 |
 | Edición, recreación y commit contra Docker real (0.9.2) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |
 | Terminales múltiples contra Docker real (0.9.1) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_terminals` | 5 |
 | Desinstalación real (0.9.1) | `DCC_TEST_CHROOT=… DCC_TEST_DEB=… cargo test -p docker-control-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-update-0.9.2.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
-| Manual | `scripts/verify-update-0.9.2.sh` | M1–M10 (solo lo que cambia en la 0.9.2) |
+| Paquete | `scripts/verify-update-0.10.0.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
+| Manual | `scripts/verify-update-0.10.0.sh` | R1–R10 (solo lo que cambia en la 0.10.0) |

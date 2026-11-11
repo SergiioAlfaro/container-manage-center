@@ -975,3 +975,75 @@ falla sin la corrección y pasa con ella).
   * Resumen de una recreación o restauración, cuyos pasos aparecen a la vez como operaciones API.
   * No ofrece copiar una orden, porque no existe.
 * **Secretos**: el cuerpo de creación del contenedor nuevo se registra con los valores sensibles ocultos.
+
+## Actualización 0.10.0 — Administración remota y varios servidores
+
+### D-075 · Transporte: OpenSSH del sistema y `docker system dial-stdio`
+* **Cómo**: la aplicación lanza el cliente `ssh` del sistema, que ejecuta `docker system dial-stdio` en el servidor (el mismo mecanismo que `docker -H ssh://…`). Una **conexión maestra** por servidor (`ControlMaster`) y un **canal multiplexado** por cada conexión HTTP de bollard (`connect_with_custom_transport`), sin repetir la autenticación.
+* **Descartado**:
+  * Docker por TCP (2375/2376): exige abrir un puerto en el servidor y, sin TLS, es acceso de root sin autenticar.
+  * La función `ssh` de bollard: usa `KnownHosts::Add` (acepta cualquier clave nueva) y no permite fijar opciones.
+  * Una biblioteca SSH propia: duplicaría la configuración, el agente y las claves del usuario, que OpenSSH ya gestiona bien.
+* **Opciones de seguridad, siempre las primeras** (en `ssh` gana el primer valor, también frente a `~/.ssh/config`): `StrictHostKeyChecking=yes`, `UpdateHostKeys=no`, `ForwardAgent=no`, `ForwardX11=no`, `ClearAllForwardings=yes`, `PermitLocalCommand=no`, tiempo de conexión y `ServerAlive`. El destino va tras `--`.
+* **Sin shell local**: `ssh` se lanza con argumentos separados. La orden remota es fija o se compone con argumentos entrecomillados uno a uno (`shell_quote`, probado con entradas hostiles contra `/bin/sh` real).
+* **Requisito del servidor**: Docker Engine 20.10 o posterior (API 1.41); se comprueba al conectar.
+* **Cierre**: al salir se cierran todas las sesiones. Los sockets de control llevan el PID de la instancia; al arrancar se cierran solo los de instancias que ya no existen (cierre forzado), nunca los de otra en marcha.
+
+### D-076 · Identidad del servidor
+* **Primera conexión**: se muestra la huella (`SHA256:…`) y su tipo; no se conecta hasta que el usuario la confirma. Al confirmar, la clave se captura en un archivo temporal y **solo se guarda si su huella es exactamente la mostrada**.
+* **Dónde**: en un `known_hosts` propio (0600). `~/.ssh/known_hosts` se lee pero **nunca se modifica**.
+* **Cambio de identidad**: la conexión se detiene, no se reintenta sola y se avisa de un posible ataque de intermediario. Solo se sustituye con una confirmación expresa tras revisarla; si la clave anterior está en el archivo del usuario, se le da la orden `ssh-keygen -R` para que lo haga él.
+
+### D-077 · Credenciales
+* **Métodos**: agente SSH (recomendado), clave privada, clave con frase de paso y contraseña (desaconsejada, decisión del propietario). De una clave solo se guarda la ruta: **nunca se copia ni se lee**.
+* **Entrega a `ssh`**: por `SSH_ASKPASS`, con la propia aplicación como programa askpass. Se comunica por un socket efímero (carpeta 0700, socket 0600, uid del otro extremo comprobado) que solo responde a la pregunta esperada. El secreto nunca va en argumentos, variables de entorno ni archivos, y en memoria se borra al liberarse (`zeroize`).
+* **Recordar**: en el keyring del sistema (Secret Service: GNOME Keyring, KWallet…), en Rust puro (`secret-service`/zbus). **Sin keyring no hay alternativa**: se avisa y se pide en cada conexión; nunca en texto plano.
+* **Separación**: perfiles en `servers.toml`, secretos en el keyring, y ninguno en el registro de actividad, los diagnósticos ni los errores. Se pueden borrar al editar el servidor y se borran al eliminarlo.
+* **Credencial incorrecta**: se olvida de la sesión (y del keyring si se acaba de guardar) y se vuelve a pedir.
+
+### D-078 · Registro de servidores y operación explícita
+* **Perfiles**: van en `servers.toml`, aparte de `config.toml` (0600, escritura atómica, copia del archivo corrupto). Así la pantalla de preferencias, que guarda la configuración completa, no puede pisar la lista de servidores.
+  * Los datos que pone la aplicación (última conexión y proyectos Compose del servidor) no se pueden sobrescribir con la copia que envía la interfaz.
+* **Un gestor por servidor**: el equipo local y cada servidor remoto tienen su propio gestor de conexión, con su monitor, sus eventos y sus tareas.
+  * Los remotos empiezan sin conectar.
+  * Uno caído no afecta a los demás.
+  * El monitor no reintenta lo que necesita al usuario (identidad, credenciales, permisos).
+* **Servidor explícito**: las 59 órdenes IPC que actúan sobre un servidor (Docker, Compose y sus archivos, terminales) reciben `server`. Un identificador ausente o desconocido es un error y **nunca se recurre a otro servidor**; no hay un «servidor actual» en el backend.
+  * Los flujos (logs, terminales, Compose…) llevan su servidor.
+  * Desconectar o eliminar un servidor cierra solo los suyos.
+* **Eliminar un perfil** borra solo datos de la aplicación: perfil, credenciales y, si ningún otro perfil la usa, la identidad guardada. No ejecuta nada en el servidor.
+
+### D-079 · Interfaz por servidor
+* **Ámbito**: todo lo que cuelga de `ServerScope` trabaja con un servidor.
+  * `useApi()` da las órdenes de Docker ligadas a ese servidor.
+  * Cada servidor tiene su propia caché de consultas.
+  * Al cambiar de servidor, el área principal se monta de nuevo: nada de uno puede mostrarse ni usarse en otro.
+* **Operaciones que siguen solas**: descargas, construcciones, Compose y terminales guardan su servidor al empezar y siguen yendo a él aunque se cambie de servidor.
+  * El cliente global `api` ya no tiene órdenes de Docker, así que TypeScript impide usarlas sin servidor.
+* **Visibilidad**:
+  * Selector con estado e indicador «Remoto» en la barra superior.
+  * Línea «Servidor: nombre · dirección» en los diálogos de un ámbito (también en las confirmaciones destructivas).
+  * Servidor en cada operación del panel de actividad, del historial y de los eventos, con filtro por servidor.
+
+### D-080 · Compose y órdenes del CLI en el servidor
+* **Dónde se ejecuta**: en un servidor remoto, `docker compose` (o `docker-compose`) **se ejecuta en el servidor** por la sesión SSH verificada.
+  * Se descartó el CLI local con `DOCKER_HOST=ssh://…`: usaría su propio SSH, sin las opciones de la aplicación, y además los archivos del proyecto están en el servidor.
+  * La detección también se hace allí.
+* **Registro**: en el panel de actividad aparece la orden `ssh` equivalente. El socket o contexto del perfil se pasa con `env DOCKER_HOST=…`/`DOCKER_CONTEXT=…`.
+* **Terminal remota**: las acciones y los registros usan terminal remota (`-tt`). Al cancelar se cierra el canal, el servidor envía SIGHUP a `compose` y no quedan procesos en el servidor. Las órdenes con entrada estándar (validar el contenido sin guardar) van sin terminal.
+* **Archivos del proyecto** (comprobar, leer, guardar y crear): siempre en el servidor, nunca en este equipo.
+  * Lectura exacta con `base64`.
+  * Guardado atómico con `dd conv=excl` en un temporal más `chmod` y `mv`, con comprobación de versión.
+  * Creación sin pisar nada.
+  * El contenido no se registra, y la interfaz confirma el destino antes de escribir.
+* **Proyectos añadidos**: una lista por servidor, con rutas del servidor.
+* **Bind mounts y carpetas**: se comprueban y describen en el servidor (`stat`, `find -readable`) al crear, editar, previsualizar y listar.
+  * Los textos «de este equipo» tienen una variante «del servidor», usada solo en remoto.
+* **Construcción**: el contexto sigue siendo una carpeta de este equipo, que Docker envía al servidor; la pantalla lo dice.
+
+### D-081 · Terminal SSH del servidor
+* **Tipo de sesión aparte**: una shell interactiva en el servidor, distinta de la terminal de un contenedor y solo para servidores remotos.
+* **Sobre una PTY local**: `ssh -tt` (por la sesión verificada) se ejecuta sobre una PTY propia como terminal de control, así que los cambios de tamaño llegan al servidor.
+* **Cierre**: envía SIGHUP a la sesión y la shell del servidor termina. Se comprueba que no quedan ni la shell remota ni procesos `ssh` del canal.
+* **Lo que se ejecuta**: no hay ninguna orden propia; solo la shell de inicio de sesión del usuario.
+* **Registro y etiquetas**: queda en el panel de actividad con su servidor, y el panel de la terminal lo indica.

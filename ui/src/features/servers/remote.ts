@@ -266,6 +266,7 @@ export function emptyServer(): ServerConfig {
     autoConnect: false,
     rememberSecret: false,
     lastSeen: null,
+    composeProjects: [],
   };
 }
 

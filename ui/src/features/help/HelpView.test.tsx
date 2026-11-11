@@ -12,7 +12,7 @@ import { parseHelp } from "./markdown";
 import { LANGUAGES } from "@/shared/i18n";
 
 describe("Ayuda: documento", () => {
-  it.each(Object.keys(HELP_DOCS))("%s: tiene las 26 secciones exigidas, en orden y con contenido", (lang) => {
+  it.each(Object.keys(HELP_DOCS))("%s: tiene las 27 secciones (26 exigidas y «Servidores remotos», 0.10.0), en orden y con contenido", (lang) => {
     const s = parseHelp(HELP_DOCS[lang]!);
     expect(s.map((x) => x.id)).toEqual([...HELP_SECTION_IDS]);
     s.forEach((x, i) => {
@@ -34,8 +34,8 @@ describe("Ayuda: documento", () => {
   it("hay ayuda para cada idioma de la interfaz, con las secciones nuevas de 0.9.2", () => {
     expect(Object.keys(HELP_DOCS).sort()).toEqual([...LANGUAGES].sort());
     const es = parseHelp(HELP_DOCS.es!);
-    expect(es.find((x) => x.id === "container-edit")?.title).toBe("10. Editar la configuración de un contenedor");
-    expect(es.find((x) => x.id === "container-commit")?.title).toBe("11. Crear una imagen a partir de un contenedor");
+    expect(es.find((x) => x.id === "container-edit")?.title).toBe("11. Editar la configuración de un contenedor");
+    expect(es.find((x) => x.id === "container-commit")?.title).toBe("12. Crear una imagen a partir de un contenedor");
   });
 
   it("el Markdown se convierte en elementos, sin HTML", () => {
@@ -60,15 +60,15 @@ describe("Ayuda: navegación", () => {
   it("muestra el índice y la primera sección; el índice y Siguiente/Anterior navegan", async () => {
     renderWithQuery(<HelpView />);
     const toc = screen.getByRole("navigation", { name: "Índice de la ayuda" });
-    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(26);
+    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(27);
     expect(screen.getByRole("heading", { level: 2, name: "1. Qué es Docker Control Center" })).toBeInTheDocument();
-    await userEvent.click(within(toc).getByRole("button", { name: "20. Terminales simultáneas" }));
-    expect(screen.getByRole("heading", { level: 2, name: "20. Terminales simultáneas" })).toBeInTheDocument();
-    expect(within(toc).getByRole("button", { name: "20. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
-    await userEvent.click(within(screen.getByTestId("help-content")).getByRole("button", { name: /21\. Panel de actividad/ }));
-    expect(screen.getByRole("heading", { level: 2, name: /^21\. Panel de actividad/ })).toBeInTheDocument();
+    await userEvent.click(within(toc).getByRole("button", { name: "21. Terminales simultáneas" }));
+    expect(screen.getByRole("heading", { level: 2, name: "21. Terminales simultáneas" })).toBeInTheDocument();
+    expect(within(toc).getByRole("button", { name: "21. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
+    await userEvent.click(within(screen.getByTestId("help-content")).getByRole("button", { name: /22\. Panel de actividad/ }));
+    expect(screen.getByRole("heading", { level: 2, name: /^22\. Panel de actividad/ })).toBeInTheDocument();
     // Las tablas y el código se muestran como tales.
-    await userEvent.click(within(toc).getByRole("button", { name: "23. Desinstalación y gestión de dependencias" }));
+    await userEvent.click(within(toc).getByRole("button", { name: "24. Desinstalación y gestión de dependencias" }));
     expect(screen.getByText(/pkexec \/usr\/bin\/apt-get remove -y --no-auto-remove/).tagName).toBe("PRE");
   });
 
@@ -76,8 +76,8 @@ describe("Ayuda: navegación", () => {
     renderWithQuery(<HelpView />);
     await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en la ayuda" }), "pkexec");
     const content = screen.getByTestId("help-content");
-    expect(within(content).getByRole("heading", { name: "23. Desinstalación y gestión de dependencias" })).toBeInTheDocument();
-    expect(within(content).queryByRole("heading", { name: "15. Redes Docker" })).not.toBeInTheDocument();
+    expect(within(content).getByRole("heading", { name: "24. Desinstalación y gestión de dependencias" })).toBeInTheDocument();
+    expect(within(content).queryByRole("heading", { name: "16. Redes Docker" })).not.toBeInTheDocument();
     await userEvent.clear(screen.getByRole("searchbox"));
     await userEvent.type(screen.getByRole("searchbox"), "zzzz-nada");
     expect(screen.getByText("Ninguna sección contiene ese texto.")).toBeInTheDocument();
@@ -105,5 +105,18 @@ describe("Ayuda: navegación", () => {
     renderWithQuery(<HelpView />);
     expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: github })).toBeInTheDocument();
+  });
+});
+
+describe("Ayuda: servidores remotos (0.10.0)", () => {
+  it.each(Object.keys(HELP_DOCS))("%s: explica los servidores remotos tras «Docker rootless» y ya no dice que ssh:// no se admite", (lang) => {
+    const s = parseHelp(HELP_DOCS[lang]!);
+    const i = s.findIndex((x) => x.id === "remote-servers");
+    expect(i).toBe(s.findIndex((x) => x.id === "rootless") + 1);
+    expect(s[i]!.title.startsWith("7. ")).toBe(true);
+    const text = HELP_DOCS[lang]!;
+    expect(text).toContain("docker system dial-stdio");
+    expect(text).toContain("2375");
+    expect(text).not.toMatch(/`tcp:\/\/` (y|and|i|e|et|eta) `ssh:\/\/`/);
   });
 });

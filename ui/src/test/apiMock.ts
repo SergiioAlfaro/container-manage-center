@@ -872,6 +872,7 @@ export function serverConfig(over: Partial<ServerConfig> = {}): ServerConfig {
     autoConnect: false,
     rememberSecret: false,
     lastSeen: null,
+    composeProjects: [],
     ...over,
   };
 }

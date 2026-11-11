@@ -67,15 +67,35 @@ Aplikazioak ez du inoiz sudo eskatzen, ez ditu baimenak eta taldeak aldatzen, et
 - **Gorde eta konektatu**: konfigurazioa aplikatzen du.
 - **Konektatu berriro**: detekzioa errepikatzen du.
 
-`tcp://` eta `ssh://` konexioak ez dira onartzen bertsio honetan.
+`tcp://` konexioak ez dira onartzen. Urruneko zerbitzariak SSH bidez administratzen dira **Zerbitzariak** ataletik (hurrengo atala).
 
-## 7. Arbela eta diagnostikoa {#dashboard}
+## 7. Urruneko zerbitzariak SSH bidez {#remote-servers}
+
+**Zerbitzariak** ataletik **SSH** bidez sar zaitezkeen beste Linux ordenagailu batzuen Dockerra administra dezakezu, ordenagailu honetakoarekin batera. Konexioak sistemaren SSH bezeroa (`ssh`) erabiltzen du eta `docker system dial-stdio` exekutatzen du zerbitzarian: Docker ez da **inoiz** sarean jartzen (ez dago TCP 2375rik) eta ez da atakarik irekitzen.
+
+**Zerbitzariaren baldintzak**: martxan dagoen SSH zerbitzari bat, Docker Engine 20.10 edo berriagoa (API 1.41) eta Docker erabil dezakeen erabiltzaile bat. Compose-rako, `docker compose` edo `docker-compose` zerbitzarian. Aplikazioak **ez du Docker instalatzen, ez ditu baimenak aldatzen, ez du SSH konfigurazioa ukitzen eta ez du atakarik irekitzen**: zerbait falta bada, zer den eta nola konpondu esaten dizu.
+
+**Gehitu zerbitzaria** (laguntzailea): datu orokorrak (izena, ostalaria, erabiltzailea, 22 ataka), autentifikazioa, Docker (lehenetsia, socket jakin bat edo testuinguru bat) eta **Probatu konexioa**, zazpi urrats egiaztatzen dituena: DNS, SSH konexioa, zerbitzariaren identitatea, autentifikazioa, Docker erabilgarri, baimenak eta APIaren bateragarritasuna.
+
+- **Autentifikazioa**: SSH agentea (gomendatua), gako pribatua, pasaesaldidun gakoa edo pasahitza (ez gomendagarria). Gako pribatua **ez da inoiz kopiatzen**: bide-izena bakarrik gordetzen da.
+- **Kredentzialak**: pasaesaldia edo pasahitza konektatzean eskatzen dira. **Gogoratzea** aukeratzen baduzu, **sistemaren biltegi seguruan** gordetzen da (GNOME Keyring, KWallet…); biltegirik ez badago, aldi bakoitzean eskatzen da eta **inoiz** ez da testu arruntean gordetzen. Zerbitzaria editatzean ezaba dezakezu.
+- **Zerbitzariaren identitatea**: lehen aldian **hatz-marka** (`SHA256:…`) erakusten da, egiaztatu eta berretsi dezazun. Aldatzen bada, konexioa gelditu egiten da **erdiko gizonaren eraso** posible baten abisuarekin; berrikusi ondoren bakarrik ordezten da. Gako zaharra zure `~/.ssh/known_hosts` fitxategian badago, aplikazioak ez du fitxategi hori aldatzen eta zeuk egiteko komandoa ematen dizu.
+
+**Zenbait zerbitzari**: goiko barrako **hautatzaileak** zein zerbitzaritan ari zaren adierazten du, bere egoerarekin, eta urrunekoak bereizten ditu. Zerbitzaria aldatzean, pantaila osoa zerbitzari horretara pasatzen da. **Ikuspegi orokorrak** denak batera erakusten ditu (egoera, bertsioa, edukiontziak eta baliabideak). Zerbitzari bakoitza independentea da: bat erorita egoteak ez die besteei eragiten, eta eragiketa bakoitza hasi zenuen zerbitzarira joaten da. Berrespenek **zerbitzaria eta helbidea** adierazten dituzte, eta jarduera-panelak eragiketa bakoitzaren zerbitzaria erakusten du eta haren arabera iragaz daiteke.
+
+**Urruneko zerbitzari batean** edukiontziak, irudiak, sareak, bolumenak, terminalak eta Compose lokalean bezala dabiltza. Bide-izenak (Compose fitxategiak, bind mount-en karpetak) **zerbitzarikoak** dira: eskuz idazten dira eta bertan egiaztatzen dira; zerbitzarian fitxategi bat idatzi aurretik helburua berresten da. **Terminalak** atalean **zerbitzariaren SSH shell-a** ere ireki dezakezu, saio mota bereizi bat.
+
+**Deskonektatzeak** SSH saioa eta bere terminalak ixten ditu; **profila ezabatzeak** aplikazioaren datuak bakarrik ezabatzen ditu (profila, kredentzialak eta gordetako identitatea). Bietako batek ere ez ditu ukitzen zerbitzariko edukiontziak, irudiak, sareak, bolumenak edo datuak.
+
+Zerbitzariko `docker` taldeko kide izatea bertan **root** sarbidea edukitzearen baliokidea da: erabaki bere administratzailearekin; Docker rootless da aukera seguruena.
+
+## 8. Arbela eta diagnostikoa {#dashboard}
 
 Konexioarekin, **Arbelak** une horretan lortutako datuak erakusten ditu: Docker Engineren eta APIaren bertsioa, socketa eta konexioaren jatorria, edukiontziak (exekutatzen, pausatuta, geldituta), irudiak, ordenagailuaren datuak (sistema, nukleoa, PUZa, memoria), biltegiratzea eta exekuzioa (kontrolatzailea, datu-direktorioa, cgroups, erregistroak) eta deabruaren abisuak. **Eguneratu** botoiak berriro eskatzen ditu.
 
 Konexiorik gabe, **diagnostikoa** erakusten du: zergati zehatza, konpontzeko urratsak (terminal batean kopiatzeko komandoekin), egiaztatutako socketak haien emaitzarekin eta detektatutako instalazioa. **Konektatu berriro** eta **Konfiguratu konexioa** botoiak goiburuan daude.
 
-## 8. Edukiontzien kudeaketa {#containers}
+## 9. Edukiontzien kudeaketa {#containers}
 
 **Edukiontziak** atalak edukiontzi guztiak zerrendatzen ditu, `docker ps -a` bezala: egoera, izena eta ID laburra, Compose proiektua, irudia, Dockerren egoera, argitaratutako atakak eta antzinatasuna. **Guztiak / Exekutatzen / Geldituta** iragazi dezakezu, eta izenaren, irudiaren, IDaren edo proiektuaren arabera bilatu. Errenkada bakoitzaren **⋯** menuak (edo eskuineko botoiak) **Editatu konfigurazioa** eta **Sortu irudia edukiontzi honetatik** eskaintzen ditu.
 
@@ -87,7 +107,7 @@ Konexiorik gabe, **diagnostikoa** erakusten du: zergati zehatza, konpontzeko urr
 
 Gelditzeak eta berrabiarazteak 10 segundo itxaroten dute prozesua amaitu arte, behartu aurretik, Dockerrek bezala. Ekintza bakoitzaren ondoren, edukiontziaren benetako egoera kontsultatzen da. Dockerrek ekintza bat baztertzen badu, haren mezua taularen gainean eta jarduera-panelean agertzen da. Zerrendak bere kabuz eguneratzen dira Dockerren zerbait aldatzen denean, terminaletik ere bai.
 
-## 9. Edukiontziak sortzea, bikoiztea, ikuskatzea eta ezabatzea {#container-lifecycle}
+## 10. Edukiontziak sortzea, bikoiztea, ikuskatzea eta ezabatzea {#container-lifecycle}
 
 **Sortu edukiontzia** botoiak sei fitxa dituen laguntzaile bat irekitzen du (irudia bakarrik da derrigorrezkoa): Orokorra, Ingurunea, Sarea, Biltegiratzea, Baliabideak eta Aurreratua.
 
@@ -102,7 +122,7 @@ Edukiontzi baten izena sakatzean, haren **xehetasuna** irekitzen da: Laburpena, 
 
 **Ezabatu** botoiak berrespena eskatzen du. Exekutatzen edo pausatuta dagoen edukiontzi bat **Behartuta gelditu eta ezabatu** markatzen baduzu bakarrik ezabatzen da. Aukeran, haren bolumen anonimoak ezabatzen dira; izena duten bolumenak eta lotutako karpetak ez dira ukitzen. Ezin da desegin.
 
-## 10. Edukiontzi baten konfigurazioa editatzea {#container-edit}
+## 11. Edukiontzi baten konfigurazioa editatzea {#container-edit}
 
 **Editatu konfigurazioa** edukiontzi bakoitzaren **⋯** menuan dago (baita errenkadaren gainean eskuineko botoia sakatuta ere) eta xehetasunaren goiburuan. Konfigurazioa fitxatan antolatzen da: **Orokorra**, **Sarea**, **Biltegiratzea**, **Aldagaiak**, **Atakak**, **Baliabideak** eta **Aurreratua**. Aldaketa bakoitzak nola aplikatzen den adierazten du:
 
@@ -130,7 +150,7 @@ Edukiontzi baten izena sakatzean, haren **xehetasuna** irekitzen da: Laburpena, 
 
 **Ez da inoiz bolumenik, karpetarik edo irudirik ezabatzen.** Bolumen anonimoak berriro muntatzen dira beren edukiarekin. Kopia geldituta geratzen da **Orokorra › Babeskopiak** atalean; hortik **Leheneratu** dezakezu (uneko edukiontzia baztertu egiten da, ez da ezabatzen) edo **Ezabatu**, behar ez duzunean. Eragiketa guztiak jarduera-panelean geratzen dira, balio sentikorrik gabe.
 
-## 11. Irudi bat edukiontzi batetik sortzea {#container-commit}
+## 12. Irudi bat edukiontzi batetik sortzea {#container-commit}
 
 **Sortu irudia edukiontzi honetatik** (zerrendako **⋯** menua eta xehetasunaren goiburua) `docker commit`-en baliokidea da: edukiontziaren fitxategi-sistemaren uneko egoera irudi berri gisa gordetzen du.
 
@@ -141,7 +161,7 @@ Edukiontzi baten izena sakatzean, haren **xehetasuna** irekitzen da: Laburpena, 
 - Izen hori duen irudi bat badago, abisatu egiten da eta esplizituki onartu behar da: aurrekoa ez da ezabatzen, etiketarik gabe geratzen da.
 - Jatorrizko edukiontzia ez da aldatzen. Amaitzean, **Ikusi irudia** botoiak haren xehetasuna irekitzen du Irudiak atalean.
 
-## 12. Erregistroak, estatistikak eta terminalak {#logs-stats-terminal}
+## 13. Erregistroak, estatistikak eta terminalak {#logs-stats-terminal}
 
 Edukiontzi baten xehetasunean:
 
@@ -151,7 +171,7 @@ Edukiontzi baten xehetasunean:
 
 Eragiketa errealak dira, irekita dauden bitartean jarduera-panelean agertzen dira eta xehetasunetik irtetean ixten dira. Hainbat terminalekin aldi berean lan egiteko, erabili **Terminalak** atala.
 
-## 13. Irudien kudeaketa {#images}
+## 14. Irudien kudeaketa {#images}
 
 **Irudiak** atalak tokiko irudiak zerrendatzen ditu, `docker image ls` bezala: etiketak, ID laburra, tamaina, antzinatasuna eta zer edukiontzik erabiltzen dituzten. **Guztiak / Erabiltzen / Erabili gabe / Etiketarik gabe** iragazkiak eta etiketaren edo IDaren araberako bilaketa.
 
@@ -160,7 +180,7 @@ Eragiketa errealak dira, irekita dauden bitartean jarduera-panelean agertzen dir
 - **Ezabatu**: irudiak hainbat etiketa baditu, bakarra ken dezakezu; irudi osoa ezabatzeko behartu egin behar da. Dockerrek ez ditu ezabatzen exekutatzen ari diren edukiontzien irudiak.
 - **Garbitu** botoiak edukiontzirik erabiltzen ez dituen etiketarik gabeko irudiak ezabatzen ditu edo, berrespen gehigarri batekin, erabiltzen ez diren guztiak.
 
-## 14. Irudiak deskargatzea eta eraikitzea {#pull-build}
+## 15. Irudiak deskargatzea eta eraikitzea {#pull-build}
 
 **Deskargatu irudia** botoiak erreferentzia eskatzen du (`nginx:1.27`, `erabiltzailea/app`, `erregistroa.adibidea.com:5000/app:v2`; etiketarik gabe, `latest` erabiltzen da). Kredentzialak:
 
@@ -174,7 +194,7 @@ Eragiketa errealak dira, irekita dauden bitartean jarduera-panelean agertzen dir
 
 **Eraiki irudia** botoiak laguntzaile bat irekitzen du: testuingurua (bidaltzen den karpeta, `.dockerignore` errespetatuz) eta Dockerfile-a, izenak (`--tag`), argumentuak (`--build-arg`), metadatuak (`--label`), azken etapa, cacherik gabe, oinarrizko irudi berriak bilatu eta eraikitzailea (**BuildKit** edo **klasikoa**). Urratsak beren egoerarekin ikusten dira, eta irteera `docker build --progress=plain` bezala; bertan behera utz daiteke.
 
-## 15. Dockerren sareak {#networks}
+## 16. Dockerren sareak {#networks}
 
 **Sareak** atalak sareak zerrendatzen ditu, `docker network ls` bezala, kontrolatzailearekin, azpisareekin eta edukiontziekin. **bridge**, **host** eta **none** sareak aurredefinituak dira eta ezin dira ezabatu.
 
@@ -182,7 +202,7 @@ Eragiketa errealak dira, irekita dauden bitartean jarduera-panelean agertzen dir
 - **Konektatu** edukiontzi bat (martxan edo geldituta), aukerako aliasekin eta IP finkoarekin. **Deskonektatu** botoiak berrespena eskatzen du.
 - **Ezabatu** eta **Garbitu** botoiek abisatu egiten dute sarea konfiguratuta duten eta gero abiarazi ezin izango diren geldituta dauden edukiontziak badaude.
 
-## 16. Bolumenak {#volumes}
+## 17. Bolumenak {#volumes}
 
 **Bolumenak** atalak bolumenak zerrendatzen ditu, `docker volume ls` bezala, haien kontrolatzailearekin eta muntatzen dituzten edukiontziekin. Anonimoak horrela markatzen dira. **Kalkulatu tamainak** botoiak bakoitzaren tokia eskatzen dio Dockerri (`docker system df -v` bezala); ez da automatikoki egiten, denbora behar baitezake.
 
@@ -191,13 +211,13 @@ Eragiketa errealak dira, irekita dauden bitartean jarduera-panelean agertzen dir
 - **Ezabatu**: Dockerrek ez du ezabatzen edozein edukiontzik muntatzen duen bolumenik, geldituta egon arren.
 - **Garbitu**: erabili gabeko bolumen anonimoak ezabatzen ditu edo, berrespenarekin, erabili gabeko bolumen guztiak.
 
-## 17. Lotutako direktorioak (bind mounts) {#binds}
+## 18. Lotutako direktorioak (bind mounts) {#binds}
 
 Atal honek edukiontzien barruan muntatutako zure ordenagailuko karpetak eta fitxategiak erakusten ditu, bidearen arabera taldekatuta: mota, baimenak eta jabea, badauden, zer edukiontzik muntatzen dituzten, non eta zer sarbiderekin. Arreta behar dutenak seinalatzen dira: **Dockerren socketa** (Dockerren kontrola ematen dio edukiontziari), sistemaren erroa edo direktorioak eta jada existitzen ez diren bideak.
 
 Dockerrek ez du uzten karpeta bat gehitzen lehendik dagoen edukiontzi bati. **Lotu karpeta bat…** botoiak karpeta-hautatzailea irekitzen du eta, ondoren, edukiontzien laguntzailea, karpeta hori `/mnt/<izena>` bidean muntatuta duela.
 
-## 18. Docker Compose {#compose}
+## 19. Docker Compose {#compose}
 
 **Docker Compose** atalak Compose v2 edo berriagoa behar du; instalatuta ez badago, nola instalatu azaltzen du. Eragiketa guztiek Docker Compose ofiziala exekutatzen dute eta jarduera-panelean agertzen dira komando zehatzarekin.
 
@@ -207,7 +227,7 @@ Zerrendak Dockerren edukiontziak dituzten proiektuak erakusten ditu (terminaleti
 - **Proiektu berria**: aukeratu karpeta bat, idatzi edukia (txantiloi batetik abiatzen da) eta **Sortu proiektua**: Docker Composerekin balidatzen da `compose.yaml` sortu aurretik.
 - **Kendu zerrendatik** botoiak zerrendatik kentzen du bakarrik; ez ditu ukitzen Docker eta fitxategiak.
 
-## 19. Compose proiektuen eta profilen kudeaketa {#compose-projects}
+## 20. Compose proiektuen eta profilen kudeaketa {#compose-projects}
 
 Proiektu baten xehetasunean:
 
@@ -219,7 +239,7 @@ Proiektu baten xehetasunean:
 - **Fitxategia**: fitxategiak editatzen ditu; **Balidatu** botoiak Docker Composerekin egiaztatzen ditu gorde gabe, eta **Gorde** botoiak aurretik balidatzen ditu eta ez ditu gainidazten beste programa batek aldatu baditu.
 - **Konfigurazioa**: azken konfigurazioa, Docker Composeren arabera. Sekretuak izan ditzake; beraz, ezkutatuta dago zuk eskatu arte, eta ez da jarduera-panelean gordetzen.
 
-## 20. Aldibereko terminalak {#terminals}
+## 21. Aldibereko terminalak {#terminals}
 
 **Terminalak** atalak hainbat terminal erreal (`docker exec -it`) aldi berean ireki eta ikusteko aukera ematen du, exekutatzen ari diren edukiontzietan, edukiontzi berean edo beste batzuetan.
 
@@ -234,7 +254,7 @@ Proiektu baten xehetasunean:
 
 Jarduera-panelak saio bakoitzaren irekiera, itxiera eta erroreak erregistratzen ditu, baina ez idazten dena eta terminalaren irteera.
 
-## 21. Jarduera-panela eta eragiketen erregistroa {#activity}
+## 22. Jarduera-panela eta eragiketen erregistroa {#activity}
 
 Eragiketa bakoitza **jarduera-panelean** agertzen da: ordua, **API** ikurra (Docker Enginera socketaren bidez egindako eskaera), **CLI** (prozesua, `docker compose` edo `apt-get` bezala) edo **APP** (aplikazioaren beraren eragiketa, hala nola hizkuntza- edo kolore-aldaketa bat, edo urratsak bereizita agertzen diren birsortze baten laburpena), mota, baliabidea, iraupena eta egoera. Lerro nagusia komando baliokidea da, eta kopiatu egin dezakezu. Sarrera bat zabaltzean, benetan exekutatutako eragiketa, emaitza, errorea eta haren HTTP kodea (huts egin badu) eta prozesuen irteerak ikusten dituzu.
 
@@ -242,7 +262,7 @@ Eragiketa bakoitza **jarduera-panelean** agertzen da: ordua, **API** ikurra (Doc
 
 Historiak zer egin zen, noiz eta zer emaitzarekin gordetzen du, baina inoiz ez eskaeren gorputza, komandoa edo irteerak, pasahitzak izan ditzaketelako. `~/.local/state/docker-control-center/` karpetan dago, eta zure erabiltzaileak bakarrik irakur dezake.
 
-## 22. Konfigurazioa, gaiak eta hizkuntzak {#settings}
+## 23. Konfigurazioa, gaiak eta hizkuntzak {#settings}
 
 - **Itxura**: gaia (Sistemarena, Argia, Iluna), **kolore nagusia** (berde urdinxka edo **morea**; berehala aplikatzen da botoietan, hautapenean, adierazleetan eta nabigazioan) eta hizkuntza, ordena honetan: **English**, **Español** (lehenetsia), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** eta **Português**. Hizkuntza bakoitza bere izenarekin agertzen da. Hizkuntza eta kolorea gorde egiten dira, aplikazioa berriro irekitzean mantentzen dira, eta haien aldaketak jarduera-panelean geratzen dira.
 - **Jarduera-panela**: erroreen aurrean irekitzea, gordetako eragiketak (50–10 000) eta **Gorde historia saioen artean**.
@@ -260,7 +280,7 @@ Historiak zer egin zen, noiz eta zer emaitzarekin gordetzen du, baina inoiz ez e
 
 Dockerrek berak sortutako mezuak (adibidez, Docker Engineren errore bat) eta programen irteera iristen diren bezala erakusten dira, itzuli gabe. Aplikazioaren motorrak jarduera-panelean idazten dituen laburpen teknikoak (adibidez, terminal bat nola amaitu zen) eta datu zehatzak dituzten errore-mezuak gaztelaniaz sortzen dira hizkuntza guztietan.
 
-## 23. Desinstalazioa eta mendekotasunen kudeaketa {#uninstall}
+## 24. Desinstalazioa eta mendekotasunen kudeaketa {#uninstall}
 
 **Konfigurazioa › Desinstalazioa eta osagaiak** atalak aplikazioak zer instalatu zuen erakusten du, eta terminala erabili gabe kentzeko aukera ematen du. **Aztertu** botoiak dpkg eta APT kontsultatzen ditu, ezer aldatu gabe:
 
@@ -281,7 +301,7 @@ Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **koma
 
 `pkexec` instalatuta ez badago, aplikazioak ezin du baimenik eskatu: elkarrizketa-koadroak `sudo` duen komando baliokidea erakusten du, zuk terminal batean exekutatzeko.
 
-## 24. Segurtasuna eta kredentzialen tratamendua {#security}
+## 25. Segurtasuna eta kredentzialen tratamendua {#security}
 
 - Aplikazioa **ez da root gisa exekutatzen**, ez du inoiz sudo eskatzen funtzionatzeko, eta ez ditu socketaren baimenak eta taldeak aldatzen.
 - Kanpoko komandoak **shellik gabe** exekutatzen dira, argumentuak bereizita: idazten duzuna ez da inoiz komando gisa interpretatzen.
@@ -292,7 +312,7 @@ Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **koma
 - Leihoak kanpoko konexioak blokeatzen ditu. Aplikazioaren konexio bakarra bertsioen egiaztapena da, desgaituta dagoena iturri bat adierazten ez duzun bitartean. Laguntzako GitHub botoiak helbide hori bakarrik ireki dezake, zure nabigatzailean.
 - Dockerren socketa edukiontzi batean muntatzeak edo `docker` taldeko kide izateak ordenagailuaren kontrol osoa ematen du: aplikazioak seinalatu egiten du.
 
-## 25. Ohiko arazoen konponbidea {#troubleshooting}
+## 26. Ohiko arazoen konponbidea {#troubleshooting}
 
 | Erakutsitako zergatia | Zer egin |
 |---|---|
@@ -300,7 +320,7 @@ Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **koma
 | Ez da Docker Engine aurkitzen / geldituta dago | `sudo systemctl enable --now docker` (rootless: `systemctl --user enable --now docker`) |
 | Ez dago socketa erabiltzeko baimenik | Docker rootless, edo `docker` taldea eta saioa berriro hasi |
 | Dagoeneko taldekoa zara, baina ez dabil | Itxi saioa eta sartu berriro |
-| Dockerren konexio bateraezina | `tcp://` edo `ssh://`: erabili tokiko socket bat (`docker context use default`) |
+| Dockerren konexio bateraezina | `tcp://` edo `ssh://` tokiko konexioan: erabili tokiko socket bat (`docker context use default`); urruneko zerbitzari baterako, gehitu **Zerbitzariak** atalean |
 | Dockerrek ez du garaiz erantzuten | `sudo systemctl restart docker` |
 | Dockerren bertsioa zaharregia da | Eguneratu Docker 20.10 bertsiora edo berriago batera |
 
@@ -311,7 +331,7 @@ Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **koma
 - **Desinstalazioak ez du mendekotasun bat eskaintzen**: beste programa batek erabiltzen du, lehendik instalatuta zegoen edo ezin da ziur jakin; arrazoia haren ondoan agertzen da.
 - **Arazo baten berri emateko**: Konfigurazioa › Sistema › **Kopiatu** botoiak datu sentikorrik gabeko txosten bat sortzen du.
 
-## 26. Ohiko galderak {#faq}
+## 27. Ohiko galderak {#faq}
 
 **Aplikazioak `docker` komandoak exekutatzen ditu?** Ez: Docker Engineren APIa erabiltzen du. Jarduera-panelean ikusten duzun komandoa baliokidea da, erreproduzitu ahal izateko. Docker Compose, berriz, bere programa ofizialarekin exekutatzen da.
 

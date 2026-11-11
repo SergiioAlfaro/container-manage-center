@@ -1,6 +1,6 @@
 # Guía de usuario
 
-> Versión 0.9.2. (La nota original de la Fase 2 se conserva abajo por historia.)
+> Versión 0.10.0. (La nota original de la Fase 2 se conserva abajo por historia.)
 >
 > Versión 0.2.1 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
 > contenedores (consultar, iniciar, detener, reiniciar, pausar, reanudar y
@@ -24,6 +24,76 @@
 
 La aplicación vigila la conexión y reconecta sola cuando Docker vuelve a estar
 disponible.
+
+## Servidores remotos por SSH
+
+Desde **Servidores** se administra el Docker de otros equipos Linux a los que
+tienes acceso por SSH, a la vez que el de este equipo. La conexión usa el
+cliente SSH del sistema (`ssh`) y ejecuta `docker system dial-stdio` en el
+servidor: Docker **nunca** se expone en la red (nada de TCP 2375) y no se abre
+ningún puerto.
+
+**Requisitos del servidor** (detalle en INSTALL.md): servidor SSH en marcha,
+Docker Engine 20.10 o posterior (API 1.41) con su CLI, y un usuario que pueda
+usar Docker. Para Compose, `docker compose` o `docker-compose` en el servidor.
+La aplicación **no instala Docker, no cambia permisos, no toca la configuración
+SSH ni abre puertos**: si falta algo, te dice qué y cómo resolverlo.
+
+### Añadir un servidor
+
+1. **General**: nombre, dirección (nombre DNS, IPv4 o IPv6), usuario, puerto
+   (22) y descripción.
+2. **Autenticación**: agente SSH (recomendado), clave privada, clave con frase o
+   contraseña (desaconsejada). La clave privada **nunca se copia**: solo se
+   guarda su ruta.
+3. **Docker**: el predeterminado del servidor, un socket concreto o un contexto
+   de Docker; opciones avanzadas: tiempo de espera, salto (`ProxyJump`) y
+   conectar al iniciar la aplicación.
+4. **Probar conexión**: siete comprobaciones (DNS, conexión SSH, identidad del
+   servidor, autenticación, Docker disponible, permisos, compatibilidad de la
+   API). Cada problema indica la causa y cómo resolverlo.
+
+La primera vez se muestra la **huella** del servidor (`SHA256:…`): compárala con
+la del servidor y confírmala. Si la huella cambia más adelante, la conexión se
+detiene con un aviso de posible **suplantación**; solo se acepta la nueva con
+**Revisar identidad** y una confirmación expresa. La aplicación usa su propia
+lista de huellas y nunca modifica tu `~/.ssh/known_hosts`.
+
+### Credenciales
+
+La frase de la clave o la contraseña se piden al conectar. Si marcas
+**Recordar**, se guardan en el almacén seguro del sistema (GNOME Keyring,
+KWallet…); si no hay ninguno, la aplicación lo indica y las pide cada vez.
+Nunca se guardan en archivos ni aparecen en el panel de actividad o en los
+diagnósticos. **Olvidar credenciales guardadas** las borra del almacén.
+
+### Trabajar con varios servidores
+
+- El **selector** de la barra superior indica en qué servidor trabajas y su
+  estado; al cambiar, toda la pantalla pasa a ese servidor. Los servidores
+  remotos se distinguen del local.
+- **Vista general**: todos los servidores con su estado, versión de Docker,
+  contenedores en ejecución y detenidos, y recursos. Desde ella se abre un
+  servidor.
+- En un servidor remoto funcionan el Dashboard, contenedores (incluida la
+  edición), imágenes, redes, volúmenes, carpetas vinculadas, eventos, terminales
+  y Compose como en local. Las rutas (archivos Compose, carpetas de los bind
+  mounts) son **del servidor**: se escriben a mano y se comprueban allí; antes
+  de escribir un archivo en el servidor se confirma el destino.
+- Cada operación va al servidor en el que la iniciaste, y las confirmaciones
+  muestran el **servidor y su dirección**. Un servidor caído no afecta a los
+  demás.
+- **Diagnóstico** distingue servidor inaccesible, SSH detenido, credenciales
+  incorrectas, huella cambiada, Docker detenido, socket inaccesible, falta de
+  permisos y versión incompatible.
+- **Desconectar** cierra la sesión SSH y sus terminales. **Eliminar perfil**
+  borra solo los datos de la aplicación (perfil, credenciales e identidad
+  guardada). Ninguna de las dos toca contenedores, imágenes, redes, volúmenes
+  ni datos del servidor.
+
+Pertenecer al grupo `docker` del servidor equivale a tener acceso de **root**
+en él: decídelo con su administrador; Docker rootless es la alternativa más
+segura.
 
 ## Dashboard
 
@@ -414,6 +484,10 @@ en otros.
   contenedor. Si el contenedor se detiene o se elimina, el panel lo indica; una
   sesión terminada se puede volver a abrir si el contenedor sigue existiendo.
 - Al cerrar la aplicación se terminan todas las sesiones.
+- Con servidores remotos, cada panel indica el servidor y el contenedor, y se
+  pueden tener terminales de varios servidores a la vez. **Shell SSH del
+  servidor** abre una sesión en el propio servidor (no en un contenedor). Al
+  desconectar un servidor se cierran sus terminales sin dejar procesos.
 - El panel de actividad registra la apertura, el cierre y los errores, nunca lo
   que se escribe ni la salida.
 

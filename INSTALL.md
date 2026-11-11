@@ -6,7 +6,7 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.9.2_amd64.deb
+sudo apt install ./docker-control-center_0.10.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -111,6 +111,34 @@ instalado, `docker compose version --short` responde `unknown flag: --short`:
 no es que la versión no admita la opción, es que el CLI de Docker no encuentra
 el plugin.
 
+## Servidores remotos (0.10.0)
+
+Desde **Servidores** se administran servidores Docker remotos por **SSH**, a la vez que el equipo local. Docker no se expone por la red: la aplicación usa el cliente SSH del sistema y `docker system dial-stdio` en el servidor.
+
+### En este equipo
+- Cliente OpenSSH (`ssh` y `ssh-keygen`): paquete `openssh-client`, que el `.deb` recomienda.
+- Para recordar frases de paso o contraseñas, un almacén seguro de secretos (GNOME Keyring, KWallet u otro compatible con Secret Service). Sin él, las credenciales se piden en cada conexión y no se guardan nunca en texto plano.
+
+### Requisitos mínimos de cada servidor
+| Requisito | Detalle |
+|---|---|
+| Servidor SSH | En marcha y accesible desde este equipo (puerto 22 u otro). |
+| Docker Engine | 20.10 o posterior (API 1.41). |
+| Cliente `docker` | En el `PATH` del usuario SSH (`docker system dial-stdio`). |
+| Permisos | El usuario SSH puede usar el socket de Docker (grupo `docker`, Docker rootless o un socket propio indicado en el perfil). |
+| Docker Compose | Opcional: `docker compose` (plugin) o `docker-compose` v2 en el servidor. |
+| Utilidades | `stat`, `base64`, `find`, `dd`, `mv`, `chmod` (coreutils y findutils de GNU), para los archivos Compose y las carpetas vinculadas. |
+
+Pertenecer al grupo `docker` del servidor equivale a tener acceso de **root** en él. Docker rootless, con su socket indicado en el perfil, es la alternativa más segura.
+
+### Lo que la aplicación no hace en un servidor
+No instala Docker, no cambia permisos ni grupos, no modifica la configuración SSH, no abre puertos y no modifica `~/.ssh/known_hosts`. La identidad de cada servidor se confirma con su huella la primera vez y se guarda en `~/.config/docker-control-center/known_hosts` (0600).
+
+### Archivos
+- `~/.config/docker-control-center/servers.toml`: perfiles (sin secretos, 0600).
+- `~/.config/docker-control-center/known_hosts`: identidades confirmadas.
+- `$XDG_RUNTIME_DIR/docker-control-center/ssh/`: sockets de control temporales (0700).
+
 ## Diagnóstico de problemas
 
 Si no hay conexión, el **Dashboard** muestra la causa, los sockets comprobados y
@@ -154,7 +182,8 @@ vigila la conexión activa cada 10 s.
 
 La aplicación no necesita Internet: las fuentes y recursos van empaquetados, la
 política de seguridad de la ventana bloquea cualquier conexión externa y Docker
-se usa a través del socket local. La única conexión propia de la aplicación es la
+se usa a través del socket local (y, para los servidores remotos que añadas, por
+SSH hasta cada servidor). La única conexión propia de la aplicación es la
 comprobación de versiones nuevas (Configuración → Actualizaciones), que está
 desactivada mientras no indiques una fuente y la uses. Solo las operaciones que **Docker Engine** hace
 contra registros remotos necesitan que Docker tenga red: descargar imágenes,
@@ -162,7 +191,7 @@ buscar en Docker Hub y construir con imágenes base que no estén en el equipo.
 
 ## Credenciales de registros privados
 
-La aplicación no guarda credenciales. Con la opción "Las de Docker" usa las que
+La aplicación no guarda credenciales de registros. Con la opción "Las de Docker" usa las que
 guardó `docker login` (en `~/.docker/config.json` o en el *credential helper*
 configurado allí, como `docker-credential-secretservice` o
 `docker-credential-pass`). Si el helper no está instalado, la descarga sigue sin

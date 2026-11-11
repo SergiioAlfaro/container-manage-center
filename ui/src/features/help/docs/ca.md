@@ -67,15 +67,35 @@ A **Configuració › Connexió amb Docker** pots:
 - **Desar i connectar**: aplica la configuració.
 - **Tornar a connectar**: repeteix la detecció.
 
-Les connexions `tcp://` i `ssh://` no s’admeten en aquesta versió.
+Les connexions `tcp://` no s’admeten. Els servidors remots s’administren per SSH des de **Servidors** (secció següent).
 
-## 7. Tauler i diagnòstic {#dashboard}
+## 7. Servidors remots per SSH {#remote-servers}
+
+Des de **Servidors** pots administrar el Docker d'altres equips Linux als quals tinguis accés per **SSH**, alhora que el d'aquest equip. La connexió fa servir el client SSH del sistema (`ssh`) i executa `docker system dial-stdio` al servidor: Docker **mai** no s'exposa a la xarxa (res de TCP 2375) i no s'obre cap port.
+
+**Requisits del servidor**: servidor SSH en marxa, Docker Engine 20.10 o posterior (API 1.41) i un usuari que pugui fer servir Docker. Per a Compose, `docker compose` o `docker-compose` al servidor. L'aplicació **no instal·la Docker, no canvia permisos, no toca la configuració SSH ni obre ports**: si falta alguna cosa, et diu què i com resoldre-ho.
+
+**Afegeix un servidor** (assistent): dades generals (nom, amfitrió, usuari, port 22), autenticació, Docker (predeterminat, un sòcol concret o un context) i **Prova la connexió**, que comprova set passos: DNS, connexió SSH, identitat del servidor, autenticació, Docker disponible, permisos i compatibilitat de l'API.
+
+- **Autenticació**: agent SSH (recomanat), clau privada, clau amb frase de pas o contrasenya (desaconsellada). La clau privada **mai no es copia**: només se'n desa el camí.
+- **Credencials**: la frase de pas o la contrasenya es demanen en connectar. Si tries **recordar-la**, es desa al **magatzem segur del sistema** (GNOME Keyring, KWallet…); si no n'hi ha, es demana cada vegada i **mai** no es desa en text pla. La pots esborrar en editar el servidor.
+- **Identitat del servidor**: la primera vegada es mostra l'**empremta** (`SHA256:…`) perquè la comprovis i la confirmis. Si canvia, la connexió s'atura amb un avís de possible **atac d'intermediari**; només se substitueix després de revisar-la. Si la clau anterior és al teu `~/.ssh/known_hosts`, l'aplicació no modifica aquest fitxer i et dona l'ordre per fer-ho tu.
+
+**Diversos servidors**: el **selector** de la barra superior indica en quin servidor treballes, amb el seu estat, i distingeix els remots. En canviar de servidor, tota la pantalla passa a aquest servidor. **Vista general** els mostra tots alhora (estat, versió, contenidors i recursos). Cada servidor és independent: un de caigut no afecta els altres, i cada operació va al servidor on la vas iniciar. Les confirmacions indiquen **servidor i adreça**, i el tauler d'activitat mostra el servidor de cada operació i permet filtrar-hi.
+
+**En un servidor remot** funcionen contenidors, imatges, xarxes, volums, terminals i Compose com en local. Els camins (fitxers Compose, carpetes dels bind mounts) són **del servidor**: s'escriuen a mà i s'hi comproven; abans d'escriure un fitxer al servidor es confirma la destinació. A **Terminals** també pots obrir la **shell SSH del servidor**, un tipus de sessió a part.
+
+**Desconnectar** tanca la sessió SSH i els seus terminals; **eliminar el perfil** esborra només les dades de l'aplicació (perfil, credencials i identitat desada). Cap de les dues coses toca els contenidors, imatges, xarxes, volums ni dades del servidor.
+
+Pertànyer al grup `docker` del servidor equival a tenir-hi accés de **root**: decideix-ho amb el seu administrador; Docker rootless és l'alternativa més segura.
+
+## 8. Tauler i diagnòstic {#dashboard}
 
 Amb connexió, el **Tauler** mostra dades obtingudes en aquell moment: versió de Docker Engine i de l’API, sòcol i origen de la connexió, contenidors (en execució, en pausa, aturats), imatges, dades de l’equip (sistema, nucli, CPU, memòria), emmagatzematge i execució (controlador, directori de dades, cgroups, registres) i els avisos del dimoni. **Actualitzar** les torna a demanar.
 
 Sense connexió mostra el **diagnòstic**: la causa concreta, els passos per resoldre-la (amb les ordres per copiar en un terminal), els sòcols comprovats amb el resultat i el que s’ha detectat instal·lat. Els botons **Tornar a connectar** i **Configurar la connexió** són a la capçalera.
 
-## 8. Gestió de contenidors {#containers}
+## 9. Gestió de contenidors {#containers}
 
 L’apartat **Contenidors** llista tots els contenidors, com `docker ps -a`: estat, nom i ID curt, projecte Compose, imatge, estat de Docker, ports publicats i antiguitat. Pots filtrar per **Tots / En execució / Aturats** i cercar per nom, imatge, ID o projecte. El menú **⋯** de cada fila (o el botó dret) ofereix **Editar la configuració** i **Crear una imatge a partir d’aquest contenidor**.
 
@@ -87,7 +107,7 @@ L’apartat **Contenidors** llista tots els contenidors, com `docker ps -a`: est
 
 Aturar i reiniciar esperen 10 segons que el procés acabi abans de forçar-lo, com Docker. Després de cada acció es consulta l’estat real del contenidor. Si Docker rebutja una acció, el seu missatge apareix damunt de la taula i al tauler d’activitat. Les llistes s’actualitzen soles quan alguna cosa canvia a Docker, també des del terminal.
 
-## 9. Creació, duplicació, inspecció i eliminació de contenidors {#container-lifecycle}
+## 10. Creació, duplicació, inspecció i eliminació de contenidors {#container-lifecycle}
 
 **Crear un contenidor** obre un assistent amb sis pestanyes (només la imatge és obligatòria): General, Entorn, Xarxa, Emmagatzematge, Recursos i Avançat.
 
@@ -102,7 +122,7 @@ En prémer el nom d’un contenidor s’obre el seu **detall**: Resum, Registres
 
 **Eliminar** demana confirmació. Un contenidor en execució o en pausa només s’elimina si marques **Aturar-lo a la força i eliminar-lo**. Opcionalment s’eliminen els seus volums anònims; els volums amb nom i les carpetes vinculades no es toquen. No es pot desfer.
 
-## 10. Editar la configuració d’un contenidor {#container-edit}
+## 11. Editar la configuració d’un contenidor {#container-edit}
 
 **Editar la configuració** és al menú **⋯** de cada contenidor (també amb el botó dret sobre la fila) i a la capçalera del detall. La configuració s’organitza en pestanyes: **General**, **Xarxa**, **Emmagatzematge**, **Variables**, **Ports**, **Recursos** i **Avançat**. Cada canvi indica com s’aplica:
 
@@ -130,7 +150,7 @@ En prémer el nom d’un contenidor s’obre el seu **detall**: Resum, Registres
 
 **No s’eliminen mai volums, carpetes ni imatges.** Els volums anònims es tornen a muntar amb el seu contingut. La còpia queda aturada a **General › Còpies de seguretat**, des d’on la pots **Restaurar** (el contenidor actual s’aparta, no s’elimina) o **Eliminar** quan ja no la necessitis. Totes les operacions queden al tauler d’activitat, sense valors sensibles.
 
-## 11. Crear una imatge a partir d’un contenidor {#container-commit}
+## 12. Crear una imatge a partir d’un contenidor {#container-commit}
 
 **Crear una imatge a partir d’aquest contenidor** (menú **⋯** de la llista i capçalera del detall) equival a `docker commit`: desa l’estat actual del sistema de fitxers del contenidor com una imatge nova.
 
@@ -141,7 +161,7 @@ En prémer el nom d’un contenidor s’obre el seu **detall**: Resum, Registres
 - Si ja existeix una imatge amb aquest nom, s’avisa i cal acceptar-ho expressament: l’anterior no s’elimina, es queda sense etiqueta.
 - El contenidor original no es modifica. En acabar, **Veure la imatge** n’obre el detall a Imatges.
 
-## 12. Registres, estadístiques i terminals {#logs-stats-terminal}
+## 13. Registres, estadístiques i terminals {#logs-stats-terminal}
 
 Al detall d’un contenidor:
 
@@ -151,7 +171,7 @@ Al detall d’un contenidor:
 
 Són operacions reals que apareixen al tauler d’activitat mentre estan obertes i es tanquen en sortir del detall. Per treballar amb diversos terminals alhora, fes servir l’apartat **Terminals**.
 
-## 13. Gestió d’imatges {#images}
+## 14. Gestió d’imatges {#images}
 
 L’apartat **Imatges** llista les imatges locals, com `docker image ls`: etiquetes, ID curt, mida, antiguitat i quins contenidors les fan servir. Filtres **Totes / En ús / Sense ús / Sense etiqueta** i cerca per etiqueta o ID.
 
@@ -160,7 +180,7 @@ L’apartat **Imatges** llista les imatges locals, com `docker image ls`: etique
 - **Eliminar**: si la imatge té diverses etiquetes en pots treure només una; la imatge completa exigeix forçar-ho. Docker no elimina imatges de contenidors en execució.
 - **Netejar** elimina les imatges sense etiqueta que no fa servir cap contenidor o, amb una confirmació addicional, totes les que no es fan servir.
 
-## 14. Baixada i construcció d’imatges {#pull-build}
+## 15. Baixada i construcció d’imatges {#pull-build}
 
 **Baixar una imatge** demana la referència (`nginx:1.27`, `usuari/app`, `registre.exemple.com:5000/app:v2`; sense etiqueta es fa servir `latest`). Credencials:
 
@@ -174,7 +194,7 @@ El quadre **Baixades** mostra el progrés total i per capa; mentrestant pots can
 
 **Construir una imatge** obre un assistent: context (la carpeta que s’envia, respectant `.dockerignore`) i Dockerfile, noms (`--tag`), arguments (`--build-arg`), metadades (`--label`), etapa final, sense memòria cau, cercar imatges base noves i constructor (**BuildKit** o **clàssic**). Es veuen els passos amb el seu estat i la sortida com `docker build --progress=plain`; es pot cancel·lar.
 
-## 15. Xarxes de Docker {#networks}
+## 16. Xarxes de Docker {#networks}
 
 L’apartat **Xarxes** llista les xarxes, com `docker network ls`, amb el controlador, les subxarxes i els contenidors. Les xarxes **bridge**, **host** i **none** són predefinides i no es poden eliminar.
 
@@ -182,7 +202,7 @@ L’apartat **Xarxes** llista les xarxes, com `docker network ls`, amb el contro
 - **Connectar** un contenidor (en marxa o aturat), amb àlies i IP fixa opcionals. **Desconnectar** demana confirmació.
 - **Eliminar** i **Netejar** avisen si hi ha contenidors aturats que tenen configurada la xarxa i que després no podran arrencar.
 
-## 16. Volums {#volumes}
+## 17. Volums {#volumes}
 
 L’apartat **Volums** llista els volums, com `docker volume ls`, amb el controlador i els contenidors que els munten. Els anònims es marquen com a tals. **Calcular les mides** demana a Docker l’espai de cadascun (com `docker system df -v`); no es fa automàticament perquè pot trigar.
 
@@ -191,13 +211,13 @@ L’apartat **Volums** llista els volums, com `docker volume ls`, amb el control
 - **Eliminar**: Docker no elimina un volum que munti qualsevol contenidor, encara que estigui aturat.
 - **Netejar**: elimina els volums anònims sense ús o, amb confirmació, tots els volums sense ús.
 
-## 17. Directoris vinculats (bind mounts) {#binds}
+## 18. Directoris vinculats (bind mounts) {#binds}
 
 Aquest apartat mostra les carpetes i els fitxers del teu equip muntats dins de contenidors, agrupats per ruta: tipus, permisos i propietari, si existeixen, quins contenidors els munten, on i amb quin accés. S’assenyalen els que requereixen atenció: el **sòcol de Docker** (dona el control de Docker al contenidor), l’arrel o directoris del sistema i les rutes que ja no existeixen.
 
 Docker no permet afegir una carpeta a un contenidor que ja existeix. **Vincular una carpeta…** obre el selector de carpetes i després l’assistent de contenidors amb aquesta carpeta muntada a `/mnt/<nom>`.
 
-## 18. Docker Compose {#compose}
+## 19. Docker Compose {#compose}
 
 L’apartat **Docker Compose** necessita Compose v2 o posterior; si no està instal·lat, explica com instal·lar-lo. Totes les operacions executen el Docker Compose oficial i apareixen al tauler d’activitat amb l’ordre exacta.
 
@@ -207,7 +227,7 @@ La llista mostra els projectes amb contenidors a Docker (també els desplegats d
 - **Projecte nou**: tria una carpeta, escriu el contingut (es parteix d’una plantilla) i **Crear el projecte**: es valida amb Docker Compose abans de crear `compose.yaml`.
 - **Treure de la llista** només el treu de la llista; no toca Docker ni els fitxers.
 
-## 19. Gestió de projectes i perfils de Compose {#compose-projects}
+## 20. Gestió de projectes i perfils de Compose {#compose-projects}
 
 Al detall d’un projecte:
 
@@ -219,7 +239,7 @@ Al detall d’un projecte:
 - **Fitxer**: edita els fitxers; **Validar** els comprova amb Docker Compose sense desar-los, i **Desar** els valida abans i no els sobreescriu si un altre programa els ha canviat.
 - **Configuració**: la configuració final segons Docker Compose. Pot contenir secrets, així que està amagada fins que la demanes i no es desa al tauler d’activitat.
 
-## 20. Terminals simultanis {#terminals}
+## 21. Terminals simultanis {#terminals}
 
 L’apartat **Terminals** permet obrir i veure alhora diversos terminals reals (`docker exec -it`) en contenidors en execució, en el mateix contenidor o en d’altres.
 
@@ -234,7 +254,7 @@ L’apartat **Terminals** permet obrir i veure alhora diversos terminals reals (
 
 El tauler d’activitat registra l’obertura, el tancament i els errors de cada sessió, però no el que s’hi escriu ni la sortida del terminal.
 
-## 21. Tauler d’activitat i registre d’operacions {#activity}
+## 22. Tauler d’activitat i registre d’operacions {#activity}
 
 Cada operació apareix al **tauler d’activitat**: hora, distintiu **API** (petició a Docker Engine pel sòcol), **CLI** (procés, com `docker compose` o `apt-get`) o **APP** (operació de la mateixa aplicació, com un canvi d’idioma o de color, o el resum d’una recreació els passos de la qual apareixen a part), tipus, recurs, durada i estat. La línia principal és l’ordre equivalent, que pots copiar. En desplegar una entrada veus l’operació executada de debò, el resultat, l’error i el seu codi HTTP si ha fallat, i les sortides dels processos.
 
@@ -242,7 +262,7 @@ L’apartat **Esdeveniments i registres** mostra els esdeveniments de Docker en 
 
 L’historial desa què s’ha fet, quan i amb quin resultat, però mai el cos de les peticions, l’ordre ni les sortides, perquè poden contenir contrasenyes. És a `~/.local/state/docker-control-center/`, només llegible pel teu usuari.
 
-## 22. Configuració, temes i idiomes {#settings}
+## 23. Configuració, temes i idiomes {#settings}
 
 - **Aparença**: tema (Sistema, Clar, Fosc), **color principal** (verd blavós o **morat**; s’aplica a l’instant als botons, la selecció, els indicadors i la navegació) i idioma, en aquest ordre: **English**, **Español** (predeterminat), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** i **Português**. Cada idioma apareix amb el seu propi nom. L’idioma i el color es desen, es mantenen en tornar a obrir l’aplicació i els seus canvis queden al tauler d’activitat.
 - **Tauler d’activitat**: obrir-lo davant d’errors, operacions conservades (50–10 000) i **Desar l’historial entre sessions**.
@@ -260,7 +280,7 @@ L’historial desa què s’ha fet, quan i amb quin resultat, però mai el cos d
 
 Els missatges que genera el mateix Docker (per exemple, un error de Docker Engine) i la sortida dels programes es mostren tal com arriben, sense traduir. Els resums tècnics que el motor de l’aplicació escriu al tauler d’activitat (per exemple, com ha acabat un terminal) i els missatges d’error amb dades concretes es generen en castellà en tots els idiomes.
 
-## 23. Desinstal·lació i gestió de dependències {#uninstall}
+## 24. Desinstal·lació i gestió de dependències {#uninstall}
 
 **Configuració › Desinstal·lació i components** mostra què ha instal·lat l’aplicació i permet treure-ho sense fer servir el terminal. **Analitzar** consulta dpkg i APT sense canviar res:
 
@@ -281,7 +301,7 @@ En confirmar, el sistema demana la teva contrasenya d’administrador (pkexec) *
 
 Si `pkexec` no està instal·lat, l’aplicació no pot demanar permisos: el diàleg mostra l’ordre equivalent amb `sudo` perquè l’executis tu en un terminal.
 
-## 24. Seguretat i tractament de credencials {#security}
+## 25. Seguretat i tractament de credencials {#security}
 
 - L’aplicació **no s’executa com a root**, no demana mai sudo per funcionar i no canvia permisos del sòcol ni grups.
 - Les ordres externes s’executen **sense intèrpret** i amb arguments separats: el que escrius no s’interpreta mai com a ordres.
@@ -292,7 +312,7 @@ Si `pkexec` no està instal·lat, l’aplicació no pot demanar permisos: el di�
 - La finestra bloqueja les connexions externes. L’única connexió pròpia és la comprovació de versions, desactivada mentre no indiquis una font. El botó de GitHub de l’Ajuda només pot obrir aquesta adreça, al teu navegador.
 - Muntar el sòcol de Docker en un contenidor o pertànyer al grup `docker` dona el control total de l’equip: l’aplicació ho assenyala.
 
-## 25. Solució de problemes freqüents {#troubleshooting}
+## 26. Solució de problemes freqüents {#troubleshooting}
 
 | Causa mostrada | Què cal fer |
 |---|---|
@@ -300,7 +320,7 @@ Si `pkexec` no està instal·lat, l’aplicació no pot demanar permisos: el di�
 | No es troba Docker Engine / està aturat | `sudo systemctl enable --now docker` (rootless: `systemctl --user enable --now docker`) |
 | Sense permís per fer servir el sòcol | Docker rootless, o el grup `docker` i tornar a iniciar la sessió |
 | Ja pertanys al grup, però no funciona | Tanca la sessió i torna a entrar |
-| Connexió de Docker no compatible | `tcp://` o `ssh://`: fes servir un sòcol local (`docker context use default`) |
+| Connexió de Docker no compatible | `tcp://` o `ssh://` a la connexió local: fes servir un sòcol local (`docker context use default`); per a un servidor remot, afegeix-lo a **Servidors** |
 | Docker no respon a temps | `sudo systemctl restart docker` |
 | Versió de Docker massa antiga | Actualitza a Docker 20.10 o posterior |
 
@@ -311,7 +331,7 @@ Si `pkexec` no està instal·lat, l’aplicació no pot demanar permisos: el di�
 - **La desinstal·lació no ofereix una dependència**: la fa servir un altre programa, ja estava instal·lada o no es pot saber amb seguretat; el motiu hi apareix al costat.
 - **Per informar d’un problema**: Configuració › Sistema › **Copiar** genera un informe sense dades sensibles.
 
-## 26. Preguntes freqüents {#faq}
+## 27. Preguntes freqüents {#faq}
 
 **L’aplicació executa ordres `docker`?** No: fa servir l’API de Docker Engine. L’ordre que veus al tauler d’activitat és l’equivalent, perquè la puguis reproduir. Docker Compose sí que s’executa amb el seu programa oficial.
 
