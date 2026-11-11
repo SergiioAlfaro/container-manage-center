@@ -3,4 +3,8 @@ import type { Diagnosis } from "./Diagnosis";
 import type { Endpoint } from "./Endpoint";
 import type { EngineSummary } from "./EngineSummary";
 
-export type ConnectionState = { "state": "connecting" } | { "state": "connected", endpoint: Endpoint, engine: EngineSummary, since: string, } | { "state": "disconnected", diagnosis: Diagnosis, since: string, };
+export type ConnectionState = { "state": "idle" } | { "state": "connecting" } | { "state": "connected", endpoint: Endpoint, engine: EngineSummary, since: string, 
+/**
+ * Tiempo de respuesta medido al conectar (servidores remotos).
+ */
+latencyMs?: number, } | { "state": "disconnected", diagnosis: Diagnosis, since: string, };

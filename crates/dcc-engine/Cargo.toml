@@ -27,6 +27,13 @@ base64 = "0.22"
 regex = "1"
 tar = "0.4"
 dcc-activity.workspace = true
+# Transporte SSH propio para bollard (0.10.0, D-075): conector de hyper sobre
+# canales `docker system dial-stdio`.
+hyper = { version = "1", default-features = false, features = ["client", "http1"] }
+hyper-util = { version = "0.1", default-features = false, features = ["client-legacy", "http1", "tokio"] }
+tower-service = "0.3"
+# Los secretos de SSH se borran de la memoria al liberarse (D-077).
+zeroize = "1"
 
 [dev-dependencies]
 tempfile.workspace = true

@@ -454,9 +454,10 @@ impl Engine {
         let mut tracker = progress::BuildTracker::default();
         let real_path = spec.path();
         let result: Result<EndReason, EngineError> = async {
+            let dialer = self.dialer();
             let mut resp = tokio::select! {
                 _ = cancel.cancelled() => return Ok(EndReason::Closed),
-                r = http::post_stream(&self.endpoint().socket_path, &real_path, &headers, rx) => r?,
+                r = http::post_stream(&dialer, &real_path, &headers, rx) => r?,
             };
             if resp.status != 200 {
                 let message = resp.error_message().await;

@@ -18,6 +18,8 @@ pub enum ConnectionMode {
     Auto,
     /// Un socket Unix concreto indicado por el usuario.
     Custom { socket_path: String },
+    /// Docker Engine de un servidor remoto por SSH (0.10.0, D-075).
+    Ssh { profile: crate::ssh::SshProfile },
 }
 
 /// De dónde salió un socket candidato.
@@ -39,6 +41,8 @@ pub enum EndpointSource {
     Rootless,
     /// Socket del daemon del sistema.
     System,
+    /// Servidor remoto por SSH (0.10.0). `socket_path` es entonces `ssh://usuario@host:puerto`.
+    Ssh { server_id: String, name: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -53,7 +57,16 @@ pub struct Endpoint {
 impl Endpoint {
     /// URI en el formato que entiende el CLI (`-H unix:///…`).
     pub fn host_uri(&self) -> String {
-        format!("unix://{}", self.socket_path)
+        if self.is_remote() {
+            self.socket_path.clone()
+        } else {
+            format!("unix://{}", self.socket_path)
+        }
+    }
+
+    /// Docker Engine de un servidor remoto (SSH).
+    pub fn is_remote(&self) -> bool {
+        matches!(self.source, EndpointSource::Ssh { .. })
     }
 }
 
@@ -169,6 +182,11 @@ pub enum Problem {
         socket_path: Option<String>,
         message: String,
     },
+    /// Servidor remoto: causa y resultado de cada paso de la conexión (0.10.0).
+    Remote {
+        remote: crate::ssh::RemoteProblem,
+        steps: Vec<crate::ssh::CheckStep>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -202,11 +220,17 @@ pub struct EngineSummary {
 )]
 #[ts(export)]
 pub enum ConnectionState {
+    /// Sin conectar a petición del usuario (servidores remotos, 0.10.0).
+    Idle,
     Connecting,
     Connected {
         endpoint: Endpoint,
         engine: EngineSummary,
         since: DateTime<Utc>,
+        /// Tiempo de respuesta medido al conectar (servidores remotos).
+        #[serde(default)]
+        #[ts(optional, type = "number")]
+        latency_ms: Option<u64>,
     },
     Disconnected {
         diagnosis: Box<Diagnosis>,

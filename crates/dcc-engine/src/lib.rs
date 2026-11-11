@@ -31,6 +31,7 @@ pub mod reference;
 pub mod registry_auth;
 pub mod resources;
 pub mod spec;
+pub mod ssh;
 pub mod streams;
 pub mod sys;
 pub mod volumes;

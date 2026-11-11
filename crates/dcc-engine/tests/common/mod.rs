@@ -72,18 +72,23 @@ impl Proxy {
                                 Ok(n) => n,
                             };
                             pending.push_str(&String::from_utf8_lossy(&buf[..n]));
-                            while let Some(i) = pending.find("\r\n") {
-                                let line: String = pending.drain(..i + 2).collect();
-                                let mut parts = line.trim_end().splitn(3, ' ');
-                                if let (Some(m), Some(p), Some(v)) =
-                                    (parts.next(), parts.next(), parts.next())
-                                {
-                                    if v.starts_with("HTTP/")
-                                        && ["GET", "POST", "PUT", "DELETE", "HEAD"].contains(&m)
-                                    {
-                                        reqs.lock().unwrap().push((m.to_owned(), p.to_owned()));
-                                    }
-                                }
+                            // La línea de petición puede llegar pegada al cuerpo de la
+                            // anterior (sin salto de línea entre ambos), según cómo se
+                            // agrupen los bytes: se busca en cualquier punto del flujo.
+                            let mut consumed = 0;
+                            for c in request_line().captures_iter(&pending) {
+                                reqs.lock()
+                                    .unwrap()
+                                    .push((c[1].to_owned(), c[2].to_owned()));
+                                consumed = c.get(0).unwrap().end();
+                            }
+                            pending.drain(..consumed);
+                            if pending.len() > 64 * 1024 {
+                                let keep = pending.len() - 1024;
+                                let cut = (keep..pending.len())
+                                    .find(|i| pending.is_char_boundary(*i))
+                                    .unwrap_or(0);
+                                pending.drain(..cut);
                             }
                             if sw.write_all(&buf[..n]).await.is_err() {
                                 break;
@@ -108,8 +113,40 @@ impl Proxy {
         self.path
     }
 
+    /// Peticiones que pasaron por el proxy. En modo SSH se excluye exactamente
+    /// `HEAD /_ping`: lo envía el CLI `docker system dial-stdio` del servidor
+    /// al abrir cada canal para negociar la versión; el motor nunca lo usa
+    /// (lo comprueba `remote_cli_negotiates_with_head_ping_only` en live_ssh).
     pub fn requests(&self) -> Vec<(String, String)> {
+        let v = self.requests.lock().unwrap().clone();
+        if ssh_target().is_some() {
+            v.into_iter()
+                .filter(|(m, p)| !(m == "HEAD" && p == "/_ping"))
+                .collect()
+        } else {
+            v
+        }
+    }
+
+    /// Todas las peticiones, también las del CLI remoto.
+    pub fn all_requests(&self) -> Vec<(String, String)> {
         self.requests.lock().unwrap().clone()
+    }
+}
+
+fn request_line() -> &'static regex::Regex {
+    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    RE.get_or_init(|| {
+        regex::Regex::new(r"(GET|POST|PUT|DELETE|HEAD) (\S+) HTTP/1\.[01]\r\n").unwrap()
+    })
+}
+
+/// Valor de `--host` en las órdenes equivalentes: el socket del proxy en local
+/// o `ssh://usuario@host:puerto` en modo SSH.
+pub fn docker_host(proxy_path: &Path) -> String {
+    match ssh_target() {
+        Some(t) => format!("ssh://{}@{}:{}", t.user, t.host, t.port),
+        None => format!("unix://{}", proxy_path.display()),
     }
 }
 
@@ -124,6 +161,116 @@ pub fn recorded(log: &ActivityLog) -> Vec<(String, String)> {
         .collect();
     v.reverse(); // snapshot es del más reciente al más antiguo
     v
+}
+
+// ------------------------------------------------------------- SSH (0.10.0)
+
+/// Servidor SSH de pruebas: `DCC_SSH_TEST=usuario@host:puerto`, con
+/// `DCC_SSH_TEST_KEY` (clave sin frase) y `DCC_SSH_TEST_KNOWN_HOSTS` (huella ya
+/// confirmada). Si está definido, las pruebas reales usan el motor por SSH.
+#[derive(Debug, Clone)]
+pub struct SshTarget {
+    pub user: String,
+    pub host: String,
+    pub port: u16,
+    pub key: String,
+    pub known_hosts: PathBuf,
+}
+
+pub fn ssh_target() -> Option<SshTarget> {
+    let spec = std::env::var("DCC_SSH_TEST").ok()?;
+    let (user, rest) = spec.split_once('@')?;
+    let (host, port) = rest.rsplit_once(':')?;
+    Some(SshTarget {
+        user: user.into(),
+        host: host.into(),
+        port: port.parse().ok()?,
+        key: std::env::var("DCC_SSH_TEST_KEY").expect("falta DCC_SSH_TEST_KEY"),
+        known_hosts: std::env::var("DCC_SSH_TEST_KNOWN_HOSTS")
+            .expect("falta DCC_SSH_TEST_KNOWN_HOSTS")
+            .into(),
+    })
+}
+
+/// Contexto SSH de pruebas: askpass = el binario `dcc-askpass` del motor.
+pub fn ssh_context(
+    runtime: &Path,
+    known_hosts: PathBuf,
+    secrets: Arc<dyn dcc_engine::ssh::SecretProvider>,
+) -> dcc_engine::ssh::SshContext {
+    dcc_engine::ssh::SshContext {
+        paths: dcc_engine::ssh::SshPaths {
+            ssh: "/usr/bin/ssh".into(),
+            ssh_keygen: "/usr/bin/ssh-keygen".into(),
+            runtime_dir: runtime.to_owned(),
+            app_known_hosts: known_hosts,
+            user_known_hosts: "/nonexistent/known_hosts".into(),
+            askpass: env!("CARGO_BIN_EXE_dcc-askpass").into(),
+        },
+        secrets,
+    }
+}
+
+pub fn ssh_profile(
+    t: &SshTarget,
+    docker: dcc_engine::ssh::RemoteDocker,
+) -> dcc_engine::ssh::SshProfile {
+    dcc_engine::ssh::SshProfile {
+        id: format!("srv-{:08x}", std::process::id()),
+        name: "Pruebas".into(),
+        host: t.host.clone(),
+        port: t.port,
+        user: t.user.clone(),
+        description: String::new(),
+        auth: dcc_engine::ssh::SshAuth::Key {
+            path: t.key.clone(),
+        },
+        docker,
+        options: Default::default(),
+    }
+}
+
+/// Deja que el usuario remoto (otro usuario del mismo equipo en las pruebas)
+/// llegue al socket: directorio 0755 y socket 0666. Solo en modo SSH.
+pub fn expose_for_remote(socket: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    // Solo sockets creados por la prueba en un directorio temporal (el proxy):
+    // nunca el socket real de Docker ni su directorio.
+    if !socket.starts_with(std::env::temp_dir())
+        || socket.starts_with("/var/run")
+        || socket.starts_with("/run")
+    {
+        return;
+    }
+    if let Some(dir) = socket.parent() {
+        let _ = std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o755));
+    }
+    let _ = std::fs::set_permissions(socket, std::fs::Permissions::from_mode(0o666));
+}
+
+/// Gestor para las pruebas reales: local con el socket indicado o, con
+/// `DCC_SSH_TEST`, por SSH con el Docker remoto apuntando a ese mismo socket
+/// (el proxy de registro queda detrás de SSH y sus comprobaciones siguen valiendo).
+pub fn manager(log: ActivityLog, socket: String) -> dcc_engine::manager::EngineManager {
+    match ssh_target() {
+        None => dcc_engine::manager::EngineManager::new(
+            log,
+            ConnectionMode::Custom {
+                socket_path: socket,
+            },
+        ),
+        Some(t) => {
+            expose_for_remote(Path::new(&socket));
+            let runtime = std::env::temp_dir().join(format!("dcc-ssh-test-{}", std::process::id()));
+            let ctx = ssh_context(
+                &runtime,
+                t.known_hosts.clone(),
+                Arc::new(dcc_engine::ssh::NoSecrets),
+            );
+            let profile = ssh_profile(&t, dcc_engine::ssh::RemoteDocker::Socket { path: socket });
+            dcc_engine::manager::EngineManager::remote(log, profile, ctx, Default::default())
+        }
+    }
 }
 
 pub mod registry;

@@ -20,7 +20,7 @@ use dcc_activity::{ActivityLog, OpStatus};
 use dcc_engine::streams::{
     ContainerAfter, EndReason, ShellChoice, StreamEnd, TerminalInput, PID_MARK_START,
 };
-use dcc_engine::{ConnectionMode, ConnectionState, Engine, EngineError, EngineManager};
+use dcc_engine::{ConnectionState, Engine, EngineError};
 use futures_util::StreamExt;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
@@ -31,7 +31,8 @@ async fn setup() -> (Engine, ActivityLog, bollard::Docker) {
         bollard::Docker::connect_with_unix(&sock, 60, bollard::API_DEFAULT_VERSION).unwrap();
     fixture::ensure_shell_image(&docker).await;
     let log = ActivityLog::new(2000);
-    let m = EngineManager::new(log.clone(), ConnectionMode::Custom { socket_path: sock });
+    // Local o, con DCC_SSH_TEST, por SSH (0.10.0).
+    let m = common::manager(log.clone(), sock);
     assert!(matches!(
         m.connect().await,
         ConnectionState::Connected { .. }

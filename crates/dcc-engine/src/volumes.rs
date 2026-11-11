@@ -461,11 +461,11 @@ impl Engine {
             equivalent: Some(vec!["system".into(), "df".into(), "--verbose".into()]),
             timeout: Some(std::time::Duration::from_secs(600)),
         };
-        let socket = self.endpoint().socket_path.clone();
+        let dialer = self.dialer();
         let v = self
             .call(
                 op,
-                async move { http::get_json(&socket, path).await },
+                async move { http::get_json(&dialer, path).await },
                 |v| Some(format!("{} volúmenes medidos", parse_volume_sizes(v).len())),
             )
             .await?;

@@ -101,5 +101,8 @@ export function explain(d: Diagnosis): Explanation {
       return { problem: "apiTooOld", params: { api: p.apiVersion, min: p.minimum }, steps: [{ key: "upgrade" }, { key: "installOfficial" }, retry] };
     case "other":
       return { problem: "other", params: { message: p.message }, steps: [retry] };
+    case "remote":
+      // Servidores remotos: su diagnóstico propio está en la sección Servidores.
+      return { problem: "other", params: { message: p.remote.kind }, steps: [retry] };
   }
 }

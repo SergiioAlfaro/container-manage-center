@@ -16,7 +16,7 @@ use dcc_engine::pull::PullUpdate;
 use dcc_engine::registry_auth::PullAuth;
 use dcc_engine::spec::KeyValue;
 use dcc_engine::streams::EndReason;
-use dcc_engine::{ConnectionMode, ConnectionState, Engine, EngineError, EngineManager};
+use dcc_engine::{ConnectionState, Engine, EngineError};
 use tokio_util::sync::CancellationToken;
 
 /// Configuración de Docker vacía: las pruebas no leen las credenciales del usuario.
@@ -36,12 +36,8 @@ async fn engine_via_proxy(
     fixture::ensure_image(&docker).await;
     let proxy = Proxy::start(&dir.path().join("p.sock"), sock).await;
     let log = ActivityLog::new(2000);
-    let m = EngineManager::new(
-        log.clone(),
-        ConnectionMode::Custom {
-            socket_path: proxy.path.display().to_string(),
-        },
-    );
+    // Local o, con DCC_SSH_TEST, por SSH con el proxy detrás (0.10.0).
+    let m = common::manager(log.clone(), proxy.path.display().to_string());
     assert!(matches!(
         m.connect().await,
         ConnectionState::Connected { .. }
@@ -305,8 +301,8 @@ async fn pull_from_local_registry_reports_progress_and_records_once() {
         r.equivalent_command.as_deref(),
         Some(
             format!(
-                "docker --host unix://{} pull {reference}",
-                proxy.path.display()
+                "docker --host {} pull {reference}",
+                docker_host(&proxy.path)
             )
             .as_str()
         )
@@ -794,8 +790,8 @@ async fn search_is_recorded_whether_or_not_the_daemon_has_internet() {
         r.equivalent_command.as_deref(),
         Some(
             format!(
-                "docker --host unix://{} search --limit 5 --filter is-official=true alpine",
-                proxy.path.display()
+                "docker --host {} search --limit 5 --filter is-official=true alpine",
+                docker_host(&proxy.path)
             )
             .as_str()
         )

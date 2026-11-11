@@ -3,4 +3,4 @@
 /**
  * De dónde salió un socket candidato.
  */
-export type EndpointSource = { "kind": "custom" } | { "kind": "dockerHost" } | { "kind": "context", name: string, } | { "kind": "rootless" } | { "kind": "system" };
+export type EndpointSource = { "kind": "custom" } | { "kind": "dockerHost" } | { "kind": "context", name: string, } | { "kind": "rootless" } | { "kind": "system" } | { "kind": "ssh", serverId: string, name: string, };

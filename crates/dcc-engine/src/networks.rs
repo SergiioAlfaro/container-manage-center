@@ -924,12 +924,12 @@ impl Engine {
             equivalent: Some(spec.cli_args()),
             timeout: Some(std::time::Duration::from_secs(120)),
         };
-        let socket = self.endpoint().socket_path.clone();
+        let dialer = self.dialer();
         let json = serde_json::to_vec(&body).unwrap_or_default();
         let r = self
             .call(
                 op,
-                async move { http::post_json(&socket, "/networks/create", json).await },
+                async move { http::post_json(&dialer, "/networks/create", json).await },
                 |r| {
                     Some(format!(
                         "Red creada: {}",

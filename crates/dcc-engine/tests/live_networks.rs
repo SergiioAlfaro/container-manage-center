@@ -12,7 +12,7 @@ use common::*;
 use dcc_activity::{ActivityLog, OpStatus};
 use dcc_engine::networks::{Cidr, ConnectOptions, IpamPool, NetworkSpec};
 use dcc_engine::spec::KeyValue;
-use dcc_engine::{ConnectionMode, ConnectionState, Engine, EngineError, EngineManager};
+use dcc_engine::{ConnectionState, Engine, EngineError};
 
 async fn engine_via_proxy(
     dir: &tempfile::TempDir,
@@ -23,12 +23,8 @@ async fn engine_via_proxy(
     fixture::ensure_image(&docker).await;
     let proxy = Proxy::start(&dir.path().join("p.sock"), sock).await;
     let log = ActivityLog::new(1000);
-    let m = EngineManager::new(
-        log.clone(),
-        ConnectionMode::Custom {
-            socket_path: proxy.path.display().to_string(),
-        },
-    );
+    // Local o, con DCC_SSH_TEST, por SSH con el proxy detrás (0.10.0).
+    let m = common::manager(log.clone(), proxy.path.display().to_string());
     assert!(matches!(
         m.connect().await,
         ConnectionState::Connected { .. }
@@ -202,10 +198,10 @@ async fn create_list_inspect_connect_disconnect_and_remove() {
         r.equivalent_command.as_deref(),
         Some(
             format!(
-                "docker --host unix://{} network create --driver bridge --subnet {subnet} \
+                "docker --host {} network create --driver bridge --subnet {subnet} \
                  --ip-range {prefix}.128/25 --gateway {prefix}.1 --label 'dcc.app=mi web' \
                  --label dcc.test=true --opt com.docker.network.driver.mtu=1400 --attachable {name}",
-                proxy.path.display()
+                docker_host(&proxy.path)
             )
             .as_str()
         )

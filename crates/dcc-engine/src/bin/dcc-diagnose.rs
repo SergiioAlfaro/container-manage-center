@@ -56,6 +56,7 @@ async fn main() {
         );
     } else {
         match &state {
+            ConnectionState::Idle => println!("Sin conectar"),
             ConnectionState::Connected {
                 endpoint, engine, ..
             } => {
@@ -121,6 +122,7 @@ async fn main() {
                     format!("salida no reconocida de {program}: {output}")
                 }
                 C::Error { message } => format!("error: {message}"),
+                C::RemotePending => "servidor remoto: se ejecuta en el servidor".to_owned(),
             };
             println!("Docker Compose: {line}");
         }

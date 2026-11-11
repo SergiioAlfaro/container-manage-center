@@ -44,6 +44,8 @@ struct Inner {
     locks: crate::resources::ResourceLocks,
     /// Última detección correcta de Compose (se renueva con `compose_status`).
     compose: parking_lot::Mutex<Option<crate::compose::project::ComposeCli>>,
+    /// Rutas y secretos para conectar por SSH (servidores remotos, 0.10.0).
+    ssh: Option<crate::ssh::SshContext>,
 }
 
 /// Intervalos del monitor. Configurables para las pruebas.
@@ -90,7 +92,39 @@ impl EngineManager {
         env: EnvFn,
         timing: Timing,
     ) -> Self {
-        let (state, _) = watch::channel(ConnectionState::Connecting);
+        Self::build(activity, mode, env, timing, None)
+    }
+
+    /// Gestor de un servidor remoto por SSH (0.10.0). Empieza sin conectar:
+    /// solo se conecta cuando se pide.
+    pub fn remote(
+        activity: ActivityLog,
+        profile: crate::ssh::SshProfile,
+        ssh: crate::ssh::SshContext,
+        timing: Timing,
+    ) -> Self {
+        Self::build(
+            activity,
+            ConnectionMode::Ssh { profile },
+            Arc::new(HostEnv::from_process),
+            timing,
+            Some(ssh),
+        )
+    }
+
+    fn build(
+        activity: ActivityLog,
+        mode: ConnectionMode,
+        env: EnvFn,
+        timing: Timing,
+        ssh: Option<crate::ssh::SshContext>,
+    ) -> Self {
+        let initial = if ssh.is_some() {
+            ConnectionState::Idle
+        } else {
+            ConnectionState::Connecting
+        };
+        let (state, _) = watch::channel(initial);
         Self {
             inner: Arc::new(Inner {
                 activity,
@@ -103,8 +137,44 @@ impl EngineManager {
                 timing,
                 locks: Default::default(),
                 compose: Default::default(),
+                ssh,
             }),
         }
+    }
+
+    /// Servidor remoto (SSH).
+    pub fn is_remote(&self) -> bool {
+        self.inner.ssh.is_some()
+    }
+
+    /// Cierra la conexión (servidores remotos: la sesión SSH y sus canales).
+    /// No toca nada del servidor. Queda sin conectar hasta que se pida.
+    pub async fn disconnect(&self) {
+        let _guard = self.inner.connect_lock.lock().await;
+        let old = self.inner.engine.write().await.take();
+        self.inner.state.send_replace(ConnectionState::Idle);
+        if let Some(e) = old {
+            if let Some(s) = e.ssh_session().cloned() {
+                drop(e);
+                s.close().await;
+            }
+        }
+    }
+
+    /// Prueba la conexión SSH en siete pasos sin sustituir la actual (0.10.0).
+    pub async fn test_ssh(
+        &self,
+        profile: &crate::ssh::SshProfile,
+    ) -> Result<crate::ssh::connect::TestReport, EngineError> {
+        let ctx = self.inner.ssh.as_ref().ok_or(EngineError::Other {
+            message: "este gestor no es de un servidor remoto".into(),
+        })?;
+        Ok(crate::ssh::connect::test(ctx, profile, &self.inner.activity).await)
+    }
+
+    /// Contexto SSH (rutas y secretos), si el gestor es remoto.
+    pub fn ssh_context(&self) -> Option<&crate::ssh::SshContext> {
+        self.inner.ssh.as_ref()
     }
 
     pub fn state(&self) -> ConnectionState {
@@ -163,15 +233,30 @@ impl EngineManager {
         if tracked {
             self.inner.state.send_replace(ConnectionState::Connecting);
         }
-        let new_state = match attempt(&self.inner.activity, &mode, &env, tracked).await {
+        let (result, latency_ms) = match (&mode, &self.inner.ssh) {
+            (ConnectionMode::Ssh { profile }, Some(ctx)) => {
+                attempt_ssh(&self.inner.activity, profile, ctx).await
+            }
+            _ => (
+                attempt(&self.inner.activity, &mode, &env, tracked).await,
+                None,
+            ),
+        };
+        let new_state = match result {
             Attempt::Connected(engine, summary) => {
                 let endpoint = engine.endpoint().clone();
-                *self.inner.engine.write().await =
-                    Some((*engine).with_locks(self.inner.locks.clone()));
+                let previous = self
+                    .inner
+                    .engine
+                    .write()
+                    .await
+                    .replace((*engine).with_locks(self.inner.locks.clone()));
+                drop(previous);
                 ConnectionState::Connected {
                     endpoint,
                     engine: summary,
                     since: Utc::now(),
+                    latency_ms,
                 }
             }
             Attempt::Failed(diagnosis) => {
@@ -206,11 +291,25 @@ impl EngineManager {
     pub async fn run_monitor(self) {
         let t = self.inner.timing;
         let mut retry = t.retry_min;
+        let mut changes = self.inner.state.subscribe();
         loop {
-            let connected = matches!(
-                *self.inner.state.borrow(),
-                ConnectionState::Connected { .. }
-            );
+            let state = changes.borrow_and_update().clone();
+            // Servidor remoto sin conectar, o con un problema que necesita al
+            // usuario (identidad, credenciales…): no se reintenta solo.
+            let waiting = match &state {
+                ConnectionState::Idle => true,
+                ConnectionState::Disconnected { diagnosis, .. } => matches!(
+                    &diagnosis.problem,
+                    Problem::Remote { remote, .. } if remote.needs_user()
+                ),
+                _ => false,
+            };
+            if waiting {
+                let _ = changes.changed().await;
+                retry = t.retry_min;
+                continue;
+            }
+            let connected = matches!(state, ConnectionState::Connected { .. });
             if connected {
                 retry = t.retry_min;
                 tokio::select! {
@@ -276,6 +375,12 @@ impl EngineManager {
     /// Docker Compose v2+ (plugin o binario independiente), ejecutando el CLI
     /// oficial sin shell (D-005, D-032).
     pub async fn compose_status(&self) -> crate::compose::ComposeStatus {
+        if self.is_remote() {
+            // El CLI local no debe hablar con un servidor remoto por su cuenta
+            // (sin las opciones de seguridad de la aplicación). Compose remoto
+            // se ejecuta en el propio servidor (D-080).
+            return crate::compose::ComposeStatus::remote_pending();
+        }
         let mut env = Vec::new();
         if let Ok(e) = self.engine().await {
             env.push(("DOCKER_HOST".to_owned(), e.endpoint().host_uri()));
@@ -308,6 +413,7 @@ impl EngineManager {
 fn same_state(a: &ConnectionState, b: &ConnectionState) -> bool {
     match (a, b) {
         (ConnectionState::Connecting, ConnectionState::Connecting) => true,
+        (ConnectionState::Idle, ConnectionState::Idle) => true,
         (
             ConnectionState::Connected {
                 endpoint: e1,
@@ -325,6 +431,36 @@ fn same_state(a: &ConnectionState, b: &ConnectionState) -> bool {
             ConnectionState::Disconnected { diagnosis: d2, .. },
         ) => d1.problem == d2.problem && d1.mode == d2.mode,
         _ => false,
+    }
+}
+
+/// Conexión con un servidor remoto: la secuencia de siete pasos.
+async fn attempt_ssh(
+    activity: &ActivityLog,
+    profile: &crate::ssh::SshProfile,
+    ctx: &crate::ssh::SshContext,
+) -> (Attempt, Option<u64>) {
+    let out = crate::ssh::connect::connect(ctx, profile, activity).await;
+    match out.result {
+        Ok(c) => (
+            Attempt::Connected(Box::new(c.engine), c.summary),
+            Some(c.latency_ms),
+        ),
+        Err(remote) => (
+            Attempt::Failed(Box::new(Diagnosis {
+                problem: Problem::Remote {
+                    remote,
+                    steps: out.steps,
+                },
+                candidates: Vec::new(),
+                installation: Installation::default(),
+                user: sys::user_context(),
+                mode: ConnectionMode::Ssh {
+                    profile: profile.clone(),
+                },
+            })),
+            None,
+        ),
     }
 }
 

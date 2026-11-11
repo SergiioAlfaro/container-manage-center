@@ -13,7 +13,7 @@ use dcc_engine::binds::{BindRisk, PathKind};
 use dcc_engine::build::BuildSpec;
 use dcc_engine::spec::KeyValue;
 use dcc_engine::volumes::VolumeSpec;
-use dcc_engine::{ConnectionMode, ConnectionState, Engine, EngineError, EngineManager};
+use dcc_engine::{ConnectionState, Engine, EngineError};
 use tokio_util::sync::CancellationToken;
 
 async fn engine_via_proxy(
@@ -25,12 +25,8 @@ async fn engine_via_proxy(
     fixture::ensure_image(&docker).await;
     let proxy = Proxy::start(&dir.path().join("p.sock"), sock).await;
     let log = ActivityLog::new(1000);
-    let m = EngineManager::new(
-        log.clone(),
-        ConnectionMode::Custom {
-            socket_path: proxy.path.display().to_string(),
-        },
-    );
+    // Local o, con DCC_SSH_TEST, por SSH con el proxy detrás (0.10.0).
+    let m = common::manager(log.clone(), proxy.path.display().to_string());
     assert!(matches!(
         m.connect().await,
         ConnectionState::Connected { .. }

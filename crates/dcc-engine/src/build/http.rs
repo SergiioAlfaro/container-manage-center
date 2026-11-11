@@ -13,14 +13,14 @@ use std::io;
 
 use bytes::Bytes;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::net::UnixStream;
 use tokio::sync::mpsc;
 
+use crate::client::{Dialer, RawStream};
 use crate::error::EngineError;
 
 pub struct Response {
     pub status: u16,
-    reader: BufReader<tokio::net::unix::OwnedReadHalf>,
+    reader: BufReader<tokio::io::ReadHalf<Box<dyn RawStream>>>,
     chunked: bool,
     remaining: Option<u64>,
     chunk_left: u64,
@@ -38,18 +38,18 @@ fn io_err(e: io::Error) -> EngineError {
 /// Envía la petición y devuelve la respuesta en cuanto llegan sus cabeceras.
 /// El cuerpo se sigue enviando en segundo plano mientras se lee la respuesta.
 pub async fn post_stream(
-    socket: &str,
+    dialer: &Dialer,
     path: &str,
     headers: &[(String, String)],
     body: mpsc::Receiver<Result<Bytes, io::Error>>,
 ) -> Result<Response, EngineError> {
-    post_with(socket, path, "application/x-tar", headers, body).await
+    post_with(dialer, path, "application/x-tar", headers, body).await
 }
 
 /// Envía un cuerpo JSON completo y devuelve el JSON de la respuesta, o el
 /// error de Docker con su código HTTP.
 pub async fn post_json(
-    socket: &str,
+    dialer: &Dialer,
     path: &str,
     json: Vec<u8>,
 ) -> Result<serde_json::Value, EngineError> {
@@ -60,7 +60,7 @@ pub async fn post_json(
             message: "no se pudo preparar la petición".into(),
         })?;
     drop(tx);
-    let mut r = post_with(socket, path, "application/json", &[], rx).await?;
+    let mut r = post_with(dialer, path, "application/json", &[], rx).await?;
     if !(200..300).contains(&r.status) {
         let message = r.error_message().await;
         return Err(EngineError::Docker {
@@ -73,9 +73,9 @@ pub async fn post_json(
 
 /// `GET` que devuelve la respuesta en cuanto llegan sus cabeceras (el cuerpo
 /// se lee después, p. ej. el flujo continuo de `GET /events`, Fase 8).
-pub async fn get_stream(socket: &str, path: &str) -> Result<Response, EngineError> {
-    let stream = UnixStream::connect(socket).await.map_err(io_err)?;
-    let (rd, mut wr) = stream.into_split();
+pub async fn get_stream(dialer: &Dialer, path: &str) -> Result<Response, EngineError> {
+    let stream = dialer.connect().await.map_err(io_err)?;
+    let (rd, mut wr) = tokio::io::split(stream);
     let head =
         format!("GET {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\n\r\n");
     let writer = tokio::spawn(async move {
@@ -88,8 +88,8 @@ pub async fn get_stream(socket: &str, path: &str) -> Result<Response, EngineErro
 }
 
 /// `GET` que devuelve el JSON de la respuesta, o el error de Docker.
-pub async fn get_json(socket: &str, path: &str) -> Result<serde_json::Value, EngineError> {
-    let mut r = get_stream(socket, path).await?;
+pub async fn get_json(dialer: &Dialer, path: &str) -> Result<serde_json::Value, EngineError> {
+    let mut r = get_stream(dialer, path).await?;
     if !(200..300).contains(&r.status) {
         let message = r.error_message().await;
         return Err(EngineError::Docker {
@@ -101,14 +101,14 @@ pub async fn get_json(socket: &str, path: &str) -> Result<serde_json::Value, Eng
 }
 
 async fn post_with(
-    socket: &str,
+    dialer: &Dialer,
     path: &str,
     content_type: &str,
     headers: &[(String, String)],
     mut body: mpsc::Receiver<Result<Bytes, io::Error>>,
 ) -> Result<Response, EngineError> {
-    let stream = UnixStream::connect(socket).await.map_err(io_err)?;
-    let (rd, mut wr) = stream.into_split();
+    let stream = dialer.connect().await.map_err(io_err)?;
+    let (rd, mut wr) = tokio::io::split(stream);
     let mut head = format!("POST {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\nContent-Type: {content_type}\r\nTransfer-Encoding: chunked\r\n");
     for (k, v) in headers {
         head.push_str(&format!("{k}: {v}\r\n"));
@@ -137,7 +137,7 @@ async fn post_with(
 
 /// Lee la línea de estado y las cabeceras.
 async fn read_response(
-    rd: tokio::net::unix::OwnedReadHalf,
+    rd: tokio::io::ReadHalf<Box<dyn RawStream>>,
     writer: tokio::task::JoinHandle<io::Result<()>>,
 ) -> Result<Response, EngineError> {
     let mut reader = BufReader::new(rd);
@@ -350,7 +350,7 @@ mod tests {
         tx.send(Ok(Bytes::from_static(b" tar"))).await.unwrap();
         drop(tx);
         let mut r = post_stream(
-            &sock,
+            &crate::client::Dialer::Unix(sock.clone()),
             "/build?t=a&t=b",
             &[("X-Registry-Config".into(), "e30=".into())],
             rx,
@@ -379,7 +379,14 @@ mod tests {
         let (_d, sock, _task) = server(reply).await;
         let (tx, rx) = mpsc::channel(1);
         drop(tx);
-        let mut r = post_stream(&sock, "/build", &[], rx).await.unwrap();
+        let mut r = post_stream(
+            &crate::client::Dialer::Unix(sock.clone()),
+            "/build",
+            &[],
+            rx,
+        )
+        .await
+        .unwrap();
         assert_eq!(r.status, 400);
         assert_eq!(r.error_message().await, "Cannot locate Dockerfile");
     }

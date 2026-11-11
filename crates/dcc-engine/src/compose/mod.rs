@@ -60,8 +60,16 @@ pub enum ComposeStatus {
     Legacy { version: String, program: String },
     /// Respondió, pero la salida no se reconoce como Compose.
     Unrecognized { program: String, output: String },
+    /// Servidor remoto: Compose se ejecuta en el propio servidor (0.10.0, D-080).
+    RemotePending,
     /// Error al ejecutar el programa.
     Error { message: String },
+}
+
+impl ComposeStatus {
+    pub fn remote_pending() -> Self {
+        ComposeStatus::RemotePending
+    }
 }
 
 /// Resultado de interpretar `… version`.

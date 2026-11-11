@@ -1,4 +1,5 @@
-//! Cliente de Docker Engine sobre un socket Unix con registro de actividad.
+//! Cliente de Docker Engine (socket Unix local o canal SSH remoto, 0.10.0)
+//! con registro de actividad.
 //!
 //! Cada método público que habla con Docker declara la petición HTTP real que
 //! `bollard` envía (método y ruta exactos, verificados por las pruebas de
@@ -6,6 +7,7 @@
 //! `docker` equivalente.
 
 use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 
 use bollard::Docker;
@@ -63,12 +65,36 @@ impl ApiOp {
     }
 }
 
+/// Flujo de bytes hacia la API de Docker (para las peticiones que no pasan por
+/// bollard: construcción, eventos, tamaños de volúmenes, creación de redes).
+pub trait RawStream: tokio::io::AsyncRead + tokio::io::AsyncWrite + Send + Unpin {}
+impl<T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Send + Unpin> RawStream for T {}
+
+/// Cómo se abre una conexión nueva con el Docker Engine de este motor.
+#[derive(Clone, Debug)]
+pub enum Dialer {
+    /// Socket Unix local.
+    Unix(String),
+    /// Canal `docker system dial-stdio` por SSH (0.10.0).
+    Ssh(Arc<crate::ssh::SshSession>),
+}
+
+impl Dialer {
+    pub async fn connect(&self) -> std::io::Result<Box<dyn RawStream>> {
+        match self {
+            Dialer::Unix(path) => Ok(Box::new(tokio::net::UnixStream::connect(path).await?)),
+            Dialer::Ssh(s) => Ok(Box::new(s.dial().await?)),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Engine {
     docker: Docker,
     endpoint: Endpoint,
     activity: ActivityLog,
     locks: ResourceLocks,
+    dialer: Dialer,
 }
 
 impl std::fmt::Debug for Engine {
@@ -87,11 +113,66 @@ impl Engine {
             bollard::API_DEFAULT_VERSION,
         )?;
         Ok(Self {
+            dialer: Dialer::Unix(endpoint.socket_path.clone()),
             docker,
             endpoint,
             activity,
             locks: ResourceLocks::default(),
         })
+    }
+
+    /// Motor sobre una sesión SSH ya autenticada (0.10.0, D-075): bollard
+    /// habla HTTP por canales `docker system dial-stdio` de esa sesión.
+    pub fn new_ssh(
+        endpoint: Endpoint,
+        session: Arc<crate::ssh::SshSession>,
+        activity: ActivityLog,
+    ) -> Result<Self, EngineError> {
+        use hyper_util::client::legacy::Client;
+        use hyper_util::rt::TokioExecutor;
+        let client = Client::builder(TokioExecutor::new())
+            .pool_idle_timeout(Duration::from_secs(60))
+            // Cada conexión es un proceso `ssh`: pocas en reposo.
+            .pool_max_idle_per_host(2)
+            .build(crate::ssh::session::SshConnector {
+                session: session.clone(),
+            });
+        let docker = Docker::connect_with_custom_transport(
+            move |req: bollard::BollardRequest| {
+                let client = client.clone();
+                async move {
+                    client
+                        .request(req)
+                        .await
+                        .map_err(|e| bollard::errors::Error::IOError {
+                            err: std::io::Error::other(e),
+                        })
+                }
+            },
+            Some("http://docker"),
+            CLIENT_TIMEOUT_SECS,
+            bollard::API_DEFAULT_VERSION,
+        )?;
+        Ok(Self {
+            docker,
+            endpoint,
+            activity,
+            locks: ResourceLocks::default(),
+            dialer: Dialer::Ssh(session),
+        })
+    }
+
+    /// Cómo abrir una conexión directa con la API (peticiones fuera de bollard).
+    pub fn dialer(&self) -> Dialer {
+        self.dialer.clone()
+    }
+
+    /// Sesión SSH, si el motor es remoto.
+    pub fn ssh_session(&self) -> Option<&Arc<crate::ssh::SshSession>> {
+        match &self.dialer {
+            Dialer::Ssh(s) => Some(s),
+            Dialer::Unix(_) => None,
+        }
     }
 
     /// Comparte los bloqueos por recurso entre reconexiones.

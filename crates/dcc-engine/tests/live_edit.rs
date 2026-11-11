@@ -23,7 +23,7 @@ use dcc_engine::edit_ops::{ApplyOptions, CommitRequest};
 use dcc_engine::spec::{
     KeyValue, MountKind, MountSpec, PortSpec, Protocol, RestartName, RestartSpec, MIB,
 };
-use dcc_engine::{ConnectionMode, ConnectionState, Engine, EngineError, EngineManager};
+use dcc_engine::{ConnectionState, Engine, EngineError};
 use futures_util::StreamExt;
 
 async fn engine_via_proxy(
@@ -36,12 +36,8 @@ async fn engine_via_proxy(
     fixture::ensure_shell_image(&docker).await;
     let proxy = Proxy::start(&dir.path().join("p.sock"), sock).await;
     let log = ActivityLog::new(2000);
-    let m = EngineManager::new(
-        log.clone(),
-        ConnectionMode::Custom {
-            socket_path: proxy.path.display().to_string(),
-        },
-    );
+    // Local o, con DCC_SSH_TEST, por SSH con el proxy detrás (0.10.0).
+    let m = common::manager(log.clone(), proxy.path.display().to_string());
     assert!(matches!(
         m.connect().await,
         ConnectionState::Connected { .. }

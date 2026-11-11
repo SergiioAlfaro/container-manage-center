@@ -33,6 +33,9 @@ export function composeLabel(fetching: boolean, s: ComposeStatus | undefined, t:
       return t("settingsDocker.composeUnrecognized", { output: s.output });
     case "error":
       return t("settingsDocker.composeError", { message: s.message });
+    case "remotePending":
+      // Solo aparece para servidores remotos; esta pantalla es la del Docker local.
+      return t("settingsDocker.composeNotChecked");
   }
 }
 

@@ -15,9 +15,7 @@ use dcc_engine::spec::{
     MIB,
 };
 use dcc_engine::streams::{EndReason, LogStream, ShellChoice, TerminalInput};
-use dcc_engine::{
-    ConnectionMode, ConnectionState, ContainerAction, Engine, EngineError, EngineManager,
-};
+use dcc_engine::{ConnectionState, ContainerAction, Engine, EngineError};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
@@ -31,12 +29,8 @@ async fn engine_via_proxy(
     fixture::ensure_image(&docker).await;
     let proxy = Proxy::start(&dir.path().join("p.sock"), sock).await;
     let log = ActivityLog::new(1000);
-    let m = EngineManager::new(
-        log.clone(),
-        ConnectionMode::Custom {
-            socket_path: proxy.path.display().to_string(),
-        },
-    );
+    // Local o, con DCC_SSH_TEST, por SSH con el proxy detrás (0.10.0).
+    let m = common::manager(log.clone(), proxy.path.display().to_string());
     assert!(matches!(
         m.connect().await,
         ConnectionState::Connected { .. }
@@ -177,7 +171,7 @@ async fn create_full_spec_inspect_and_duplicate_roundtrip() {
                 .cli_command(false)
                 .replacen(
                     "docker ",
-                    &format!("docker --host unix://{} ", proxy.path.display()),
+                    &format!("docker --host {} ", docker_host(&proxy.path)),
                     1
                 )
                 .as_str()

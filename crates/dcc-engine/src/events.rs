@@ -281,12 +281,12 @@ impl Engine {
             equivalent: Some(args.clone()),
             timeout: Some(Duration::from_secs(30)),
         };
-        let socket = self.endpoint().socket_path.clone();
+        let dialer = self.dialer();
         let (events, truncated) = self
             .call(
                 op,
                 async move {
-                    let mut r = http::get_stream(&socket, &path).await?;
+                    let mut r = http::get_stream(&dialer, &path).await?;
                     if !(200..300).contains(&r.status) {
                         let message = r.error_message().await;
                         return Err(EngineError::Docker {
@@ -344,8 +344,9 @@ impl Engine {
             equivalent_command: Some(self.docker_cli(&["events".to_owned()])),
         };
         let handle = self.activity().begin(spec("events.watch"));
+        let dialer = self.dialer();
         let opened = tokio::select! {
-            r = http::get_stream(&self.endpoint().socket_path, &path) => r,
+            r = http::get_stream(&dialer, &path) => r,
             _ = cancel.cancelled() => {
                 handle.cancel(Failure { error: "Cancelada antes de abrirse".into(), ..Default::default() });
                 return Ok(());
