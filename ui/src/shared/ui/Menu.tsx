@@ -2,8 +2,14 @@
  * Menú de acciones accesible (0.9.2): botón con `aria-haspopup="menu"`, lista
  * con `role="menu"`, flechas para moverse, Escape para cerrar y clic fuera.
  * Se puede abrir desde fuera (`open`), p. ej. con el botón derecho en una fila.
+ *
+ * La lista se pinta en `document.body` con posición fija junto al botón: dentro
+ * de una tabla con desplazamiento, un menú absoluto quedaría recortado (lo
+ * mostró la aplicación real). Se abre hacia arriba si no cabe debajo y se
+ * cierra al desplazar o redimensionar.
  */
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cx } from "./controls";
 
 export interface MenuItem {
@@ -37,17 +43,41 @@ export function Menu({
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLUListElement>(null);
+  const [pos, setPos] = useState<CSSProperties>({ visibility: "hidden" });
 
   const entries = () => Array.from(list.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]:not([disabled])") ?? []);
+
+  // Posición junto al botón, calculada antes de pintar.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const b = button.current?.getBoundingClientRect();
+    const h = list.current?.offsetHeight ?? 0;
+    if (!b) return;
+    const below = b.bottom + 4 + h <= window.innerHeight - 8;
+    const top = below ? b.bottom + 4 : Math.max(8, b.top - 4 - h);
+    setPos(align === "right" ? { top, right: Math.max(8, window.innerWidth - b.right) } : { top, left: Math.max(8, b.left) });
+  }, [open, align]);
 
   useEffect(() => {
     if (!open) return;
     entries()[0]?.focus();
     const onDown = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) onOpenChange(false);
+      const t = e.target as Node;
+      if (!root.current?.contains(t) && !list.current?.contains(t)) onOpenChange(false);
+    };
+    // Al desplazar o redimensionar, el menú se quedaría separado de su fila.
+    const onMove = (e: Event) => {
+      if (!list.current?.contains(e.target as Node)) onOpenChange(false);
     };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+      setPos({ visibility: "hidden" });
+    };
   }, [open, onOpenChange]);
 
   const close = (refocus = true) => {
@@ -61,7 +91,8 @@ export function Menu({
         ref={button}
         type="button"
         aria-label={label}
-        title={label}
+        // Sin descripción emergente con el menú abierto: taparía sus opciones.
+        title={open ? undefined : label}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
@@ -70,7 +101,8 @@ export function Menu({
       >
         {trigger}
       </button>
-      {open && (
+      {open &&
+        createPortal(
         <ul
           ref={list}
           id={id}
@@ -99,7 +131,8 @@ export function Menu({
               close(false);
             }
           }}
-          className={cx("panel-enter absolute top-8 z-40 min-w-[250px] rounded-lg border border-line bg-surface py-1 text-left shadow-xl", align === "right" ? "right-0" : "left-0")}
+          style={{ position: "fixed", ...pos }}
+          className="panel-enter z-50 min-w-[250px] rounded-lg border border-line bg-surface py-1 text-left shadow-xl"
         >
           {items.map((it) => (
             <li key={it.id} role="none">
@@ -122,8 +155,9 @@ export function Menu({
               </button>
             </li>
           ))}
-        </ul>
-      )}
+        </ul>,
+          document.body,
+        )}
     </div>
   );
 }

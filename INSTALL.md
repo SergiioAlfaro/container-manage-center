@@ -6,7 +6,7 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 ## Opción A: paquete .deb
 
 ```bash
-sudo apt install ./docker-control-center_0.9.1_amd64.deb
+sudo apt install ./docker-control-center_0.9.2_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).

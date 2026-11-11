@@ -136,6 +136,7 @@ Un clic sur le nom d’un conteneur ouvre son **détail** : Résumé, Journaux, 
 
 - Indiquez le **dépôt** et l’**étiquette** (vide = `latest`) ; facultativement, l’**auteur** et un **message**. Le nom complet est affiché et validé avant la création.
 - **Les volumes et les dossiers montés ne sont pas inclus** : seule la couche en écriture du conteneur l’est. La boîte de dialogue liste les montages laissés de côté.
+- L’image **enregistre bien la configuration du conteneur**, y compris ses variables d’environnement (même celles qui contiennent des mots de passe ou des jetons) : ne la publiez pas dans un registre si elle contient des secrets.
 - Si le conteneur est en cours d’exécution, il est par défaut **mis en pause** quelques secondes pendant la création de l’image, pour qu’elle soit cohérente ; vous pouvez décocher cette option. Il n’est jamais arrêté.
 - Si une image porte déjà ce nom, un avertissement s’affiche et vous devez l’accepter explicitement : l’ancienne n’est pas supprimée, elle perd simplement son étiquette.
 - Le conteneur d’origine n’est pas modifié. À la fin, **Voir l’image** ouvre son détail dans Images.

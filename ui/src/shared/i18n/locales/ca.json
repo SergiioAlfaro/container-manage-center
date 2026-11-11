@@ -2133,6 +2133,7 @@
     "notIncluded": "Només es desa la capa d’escriptura del contenidor (els fitxers que ha canviat fora dels seus muntatges). Les dades d’aquests muntatges no entren a la imatge:",
     "excludedList": "Muntatges que no entren a la imatge",
     "noMounts": "Aquest contenidor no té muntatges: es desa tot el seu sistema de fitxers.",
+    "envIncluded": "La imatge també desa la configuració del contenidor, incloses les seves variables d’entorn (també les que contenen contrasenyes o tokens). No la publiquis en un registre si conté secrets.",
     "mountKind": {
       "volume": "volum",
       "bind": "carpeta",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "S’atura el contenidor actual.",
       "backup": "Se li canvia el nom a {{backup}} i es conserva com a còpia de seguretat.",
-      "create": "Es crea un contenidor nou amb el nom original, la imatge {{image}} i la configuració completa amb els teus canvis.",
+      "create": "Es crea un contenidor nou anomenat {{name}}, amb la imatge {{image}} i la configuració completa amb els teus canvis.",
       "startVerify": "S’inicia i es comprova que continua en execució durant uns segons.",
       "verifyStopped": "Es comprova que Docker l’ha creat correctament. Queda aturat, com l’original.",
       "rollback": "Si alguna cosa falla, s’elimina el contenidor nou i l’original recupera el seu nom i el seu estat."

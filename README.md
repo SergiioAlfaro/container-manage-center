@@ -14,11 +14,11 @@ Tauri 2 · Rust · React · TypeScript.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitectura técnica |
 | [DECISIONS.md](DECISIONS.md) | Decisiones técnicas |
 
-Estado: versión 0.2.0, Fase 2 (conexión con Docker, Dashboard, contenedores e
-imágenes). Comprobación en tu equipo:
+Estado: versión 0.9.2 (actualización previa a la Fase 10). Detalle en
+[STATUS.md](STATUS.md). Comprobación en tu equipo:
 
 ```bash
-bash scripts/verify-phase-2.sh          # añade --deb para construir el paquete
+bash scripts/verify-update-0.9.2.sh     # añade --deb para construir el paquete
 ```
 
 Diagnóstico de la conexión desde terminal:

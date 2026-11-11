@@ -2133,6 +2133,7 @@
     "notIncluded": "Seule la couche en écriture du conteneur est enregistrée (les fichiers modifiés en dehors de ses montages). Les données de ces montages ne font pas partie de l’image :",
     "excludedList": "Montages non inclus dans l’image",
     "noMounts": "Ce conteneur n’a aucun montage : tout son système de fichiers est enregistré.",
+    "envIncluded": "L’image enregistre aussi la configuration du conteneur, y compris ses variables d’environnement (même celles qui contiennent des mots de passe ou des jetons). Ne la publiez pas dans un registre si elle contient des secrets.",
     "mountKind": {
       "volume": "volume",
       "bind": "dossier",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "Le conteneur actuel est arrêté.",
       "backup": "Il est renommé {{backup}} et conservé comme copie de sauvegarde.",
-      "create": "Un nouveau conteneur est créé avec le nom d’origine, l’image {{image}} et la configuration complète incluant vos modifications.",
+      "create": "Un nouveau conteneur nommé {{name}} est créé, avec l’image {{image}} et la configuration complète incluant vos modifications.",
       "startVerify": "Il est démarré, puis l’application vérifie qu’il reste en cours d’exécution pendant quelques secondes.",
       "verifyStopped": "L’application vérifie que Docker l’a créé correctement. Il reste arrêté, comme l’original.",
       "rollback": "En cas d’échec, le nouveau conteneur est supprimé et l’original retrouve son nom et son état."

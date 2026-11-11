@@ -136,6 +136,7 @@ Al pulsar el nombre de un contenedor se abre su **detalle**: Resumen, Logs, Term
 
 - Indica el **repositorio** y la **etiqueta** (vacía = `latest`); opcionalmente, **autor** y **mensaje**. Se ve el nombre completo antes de crear y se valida.
 - **No incluye los volúmenes ni las carpetas montadas**: solo la capa de escritura del contenedor. El diálogo lista los montajes que quedan fuera.
+- La imagen **sí guarda la configuración del contenedor**, incluidas sus variables de entorno (también las que contienen contraseñas o tokens): no la publiques en un registro si contiene secretos.
 - Si el contenedor está en ejecución, por defecto se **pausa** unos segundos mientras se crea la imagen, para que sea coherente; puedes desmarcarlo. Nunca se detiene.
 - Si ya existe una imagen con ese nombre, se avisa y hay que aceptarlo expresamente: la anterior no se elimina, se queda sin etiqueta.
 - El contenedor original no se modifica. Al terminar, **Ver la imagen** abre su detalle en Imágenes.

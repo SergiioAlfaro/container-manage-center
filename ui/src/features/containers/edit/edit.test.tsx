@@ -122,6 +122,8 @@ describe("Crear imagen: diálogo", () => {
     const list = await within(dialog).findByRole("list", { name: "Montajes que no entran en la imagen" });
     expect(within(list).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["/var/lib/app (volumen: datos)", "/usr/share/nginx/html (carpeta: /srv/web)"]);
     expect(within(dialog).getByText("El contenedor está en ejecución. Sus procesos no se detienen.")).toBeInTheDocument();
+    // Las variables de entorno sí entran en la imagen (docker commit guarda la configuración).
+    expect(within(dialog).getByText(/La imagen también guarda la configuración del contenedor, incluidas sus variables de entorno/)).toBeInTheDocument();
     expect(within(dialog).getByRole("checkbox", { name: /Pausar el contenedor/ })).toBeChecked();
   });
 
@@ -261,6 +263,7 @@ describe("Editar configuración: pantalla", () => {
     expect(await screen.findByRole("heading", { name: "Recreación segura" })).toBeInTheDocument();
     expect(screen.getByText("Requiere recrear el contenedor")).toBeInTheDocument();
     expect(screen.getByText(/Se le cambia el nombre a web-dcc-backup-20261111-120000/)).toBeInTheDocument();
+    expect(screen.getByText(/Se crea un contenedor nuevo llamado web, con la imagen nginx:1.27/)).toBeInTheDocument();
     expect(screen.getByText(/No se elimina ningún volumen, carpeta ni imagen/)).toBeInTheDocument();
     expect(screen.getByText(/El servicio se interrumpirá/)).toBeInTheDocument();
     const recreate = screen.getByRole("button", { name: "Recrear contenedor" });
@@ -280,6 +283,26 @@ describe("Editar configuración: pantalla", () => {
       { confirmRecreate: true, acceptedRisks: ["writableLayer"], keepMac: false },
     );
     expect(screen.getAllByLabelText("Correcto")).toHaveLength(5);
+    // La cabecera y «Volver al contenedor» pasan al contenedor nuevo (el ID anterior es ahora la copia).
+    useContainersNav.setState({ page: { kind: "list" } });
+    await userEvent.click(screen.getByRole("button", { name: "Volver al contenedor" }));
+    expect(useContainersNav.getState().page).toMatchObject({ kind: "detail", id: "n3wn3wn3wn3w", name: "web" });
+  });
+
+  it("si al recrear también cambia el nombre, la revisión y la cabecera usan el nombre nuevo", async () => {
+    api.containerEditApply.mockImplementationOnce(async (_id, r) =>
+      editOutcome({ containerId: "n3wn3wn3wn3w", name: r.name, recreated: true, backupName: "web-dcc-backup-20261111-120000", steps: [] }),
+    );
+    await open();
+    await userEvent.clear(screen.getByLabelText(/^Nombre/));
+    await userEvent.type(screen.getByLabelText(/^Nombre/), "web2");
+    await userEvent.type(screen.getByLabelText(/^Descripción/), "nota");
+    await userEvent.click(screen.getByRole("button", { name: "Revisar cambios" }));
+    expect(await screen.findByText(/Se crea un contenedor nuevo llamado web2,/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("checkbox", { name: /escritos fuera de sus volúmenes/ }));
+    await userEvent.click(screen.getByRole("checkbox", { name: /quiero recrear/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Recrear contenedor" }));
+    expect(await screen.findByRole("heading", { level: 2, name: "Editar configuración de web2" })).toBeInTheDocument();
   });
 
   it("si un motivo impide recrear con seguridad, no se ofrece continuar", async () => {

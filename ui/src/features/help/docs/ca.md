@@ -136,6 +136,7 @@ En prémer el nom d’un contenidor s’obre el seu **detall**: Resum, Registres
 
 - Indica el **repositori** i l’**etiqueta** (buida = `latest`); opcionalment, l’**autor** i un **missatge**. Abans de crear-la es veu el nom complet i es valida.
 - **No inclou els volums ni les carpetes muntades**: només la capa d’escriptura del contenidor. El diàleg llista els muntatges que en queden fora.
+- La imatge **sí que desa la configuració del contenidor**, incloses les seves variables d’entorn (també les que contenen contrasenyes o tokens): no la publiquis en un registre si conté secrets.
 - Si el contenidor està en execució, per defecte es **posa en pausa** uns segons mentre es crea la imatge, perquè sigui coherent; ho pots desmarcar. No s’atura mai.
 - Si ja existeix una imatge amb aquest nom, s’avisa i cal acceptar-ho expressament: l’anterior no s’elimina, es queda sense etiqueta.
 - El contenidor original no es modifica. En acabar, **Veure la imatge** n’obre el detall a Imatges.

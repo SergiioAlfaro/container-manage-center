@@ -404,8 +404,11 @@ impl Engine {
                 notices.push(edit::risk("macUnknown", &[]));
             }
             let taken: Vec<String> = ctx.list.iter().map(|o| o.name.clone()).collect();
+            // La copia lleva el nombre que tendrá el contenedor nuevo: así aparece
+            // entre sus copias y restaurarla lo sustituye, aunque la misma
+            // recreación le cambie el nombre (lo detectó la prueba en la aplicación real).
             let bname = edit::backup_name(
-                &current.name,
+                &desired.name,
                 edit::BACKUP_INFIX,
                 chrono::Utc::now(),
                 &taken,

@@ -878,3 +878,100 @@ falla sin la corrección y pasa con ella).
 * **Cambio deliberado en `Button`**: un botón desactivado ya no usa `pointer-events: none`, para que siga mostrando su descripción emergente (que suele explicar por qué no se puede usar). Los estilos de encima solo se aplican si está activo (`enabled:`). Toda la suite anterior sigue pasando.
 * **Reglas globales de baja especificidad** (`:where`): filas de tabla y desplegables con estado de encima, y transiciones de 150 ms. La preferencia «reducir movimiento» ya las anulaba (Fase 1).
 * **Prueba**: recorre todos los apartados y exige nombre accesible y descripción emergente en cada botón de solo icono.
+
+### D-069 · Crear una imagen a partir de un contenedor
+* **Operación**: `POST /commit` de la API (equivalente a `docker commit`), con `Engine::call` y bloqueo del contenedor como el resto de operaciones. El panel de actividad muestra la orden `docker commit` equivalente.
+* **Qué entra**: solo la capa de escritura del contenedor. Antes de crear, el diálogo enumera los volúmenes, carpetas y tmpfs montados, cuyo contenido **no** entra. La prueba real lo comprueba escribiendo en la capa, en un volumen y en una carpeta.
+* **Variables de entorno**: `docker commit` guarda en la imagen la configuración del contenedor, incluidas sus variables, también las secretas. El diálogo lo advierte (lo detecté al revisar la imagen creada en la aplicación real). No se eliminan automáticamente, porque cambiaría el resultado de `docker commit` y la imagen podría dejar de funcionar.
+* **Contenedor en ejecución**: por defecto se pausa durante la creación (como `docker commit`) para que la imagen sea coherente. El usuario puede desmarcarlo. Nunca se detiene ni se reinicia el contenedor.
+* **Nombre existente**: `commit_preview` comprueba si ya hay una imagen con ese nombre. Sin `replace_existing`, `commit_image` responde `AlreadyExists` y no crea nada. Con él, la imagen anterior no se elimina: se queda sin etiqueta y sus contenedores siguen funcionando.
+* **Validación en Rust** (y la misma, inmediata, en la interfaz): repositorio con la gramática de referencias de Docker (minúsculas, separadores, registro con puerto), etiqueta, longitud máxima, y autor y mensaje sin caracteres de control.
+* **Después**: el diálogo abre la imagen nueva en Imágenes.
+
+### D-070 · Editar la configuración y recreación segura
+* **Clasificación de cada cambio** (la hace el backend, `edit.rs`; la interfaz solo la anticipa):
+  * **Directos**:
+    * Nombre: `rename`.
+    * Política de reinicio, CPU, memoria y memoria reservada: `update`, sin reiniciar.
+    * Redes: conectar y desconectar se aplica al momento con las operaciones de la Fase 5.
+  * **Exigen recrear**:
+    * Variables de entorno, puertos y montajes.
+    * Descripción: es la etiqueta `dcc.description`, y las etiquetas no se pueden cambiar en un contenedor existente.
+    * Quitar un límite: `docker update` no sabe quitarlo.
+  * **Solo lectura**: imagen, comando, usuario, directorio de trabajo, modo de red, privilegios, capacidades, etc. Se muestran en la pestaña «Avanzado» sin campos editables y con un enlace a «Duplicar».
+* **Por qué recrear desde el `inspect` completo**: el cuerpo del contenedor nuevo se construye a partir de toda la configuración real del original (Config y HostConfig) y solo se cambia lo editado. Así no se pierden opciones que la aplicación no edita (capacidades, ulimits, logs, healthcheck, dispositivos, etiquetas…). La prueba real compara el JSON crudo de `inspect` antes y después: solo cambian los campos editados y los que Docker genera.
+* **Montajes**:
+  * Los binds y montajes se copian tal cual.
+  * Los volúmenes anónimos se vuelven a montar por su nombre, para conservar el contenido en lugar de crear uno vacío.
+* **Redes**:
+  * Se conservan IPAM, aliases propios, links y opciones.
+  * Se descartan los aliases que Docker genera con el ID antiguo.
+  * La red principal va en la creación y las demás se conectan después.
+* **Secuencia**:
+  1. Detener (si estaba en ejecución).
+  2. Volver a leer el contenedor detenido.
+  3. Renombrarlo a `<nombre>-dcc-backup-<fecha>` (la copia).
+  4. Crear el nuevo y conectar sus redes.
+  5. Iniciar y comprobar durante 3 s que sigue en ejecución sin reinicios.
+* **Nombre de la copia**: `<nombre que tendrá el contenedor nuevo>-dcc-backup-<fecha>`. Si la misma recreación cambia el nombre, la copia lleva el nombre nuevo, para que aparezca entre las copias del contenedor y restaurarla lo sustituya. Se corrigió al probar la aplicación real: con el nombre antiguo, la copia no aparecía. Lo cubre la prueba real `recreation_with_rename_…`.
+* **Vuelta atrás**: si algo falla, se elimina el contenedor nuevo **sin sus volúmenes**, el original recupera su nombre y su estado y se informa paso a paso. Si la vuelta atrás tampoco termina, se explica dónde está cada cosa.
+* **Protección de datos** (requisito 2.4):
+  * El original nunca se elimina: queda como copia detenida que se puede restaurar o eliminar a mano.
+  * Restaurar aparta el actual como `-dcc-replaced-`, sin borrarlo.
+  * Nunca se borran volúmenes, carpetas ni imágenes.
+* **Se niega a recrear** (bloqueos):
+  * Estados distintos de running, exited o created.
+  * Contenedores con `--rm`, de Compose o de Swarm.
+  * Imagen que ya no existe.
+  * Configuración que no se puede leer entera.
+* **Riesgos que se aceptan uno a uno**:
+  * Archivos escritos fuera de los volúmenes, o tamaño desconocido.
+  * Contenedores que usan la red de este (`--network container:`).
+  * Montajes que se quitan.
+  * Etiqueta de la imagen que ahora apunta a otra imagen.
+* **Confirmaciones**: además de los riesgos, se pide una confirmación explícita de la recreación. Los cambios directos no piden confirmaciones innecesarias.
+* **Puertos**: antes de aplicar se comprueba que no los use otro contenedor. Un puerto ocupado por un programa ajeno a Docker solo se detecta al iniciar, y entonces se vuelve al original.
+* **Alternativas descartadas**:
+  * Recrear con el modelo del asistente de creación: perdería todo lo que no edita.
+  * Eliminar el original tras comprobar el nuevo: la orden pide no hacerlo automáticamente, y una copia detenida no ocupa más que su capa.
+
+### D-071 · Dirección MAC al recrear
+* **Hallazgos (Docker 29)**: un contenedor detenido muestra la MAC del endpoint vacía; uno creado y nunca iniciado muestra la configurada. Docker 24 (API 1.43) no admite fijar la MAC del endpoint al crear.
+* **Decisión**: no se fija la MAC automáticamente, porque si el original tenía una asignada por Docker, fijarla convertiría una MAC dinámica en estática.
+  * Con el contenedor en ejecución y API ≥ 1.44, se ofrece la casilla «Conservar las direcciones MAC actuales» (para quien la fijó con `--mac-address`).
+  * Un contenedor creado y nunca iniciado conserva la suya.
+  * Detenido: se avisa de que recibirá una nueva.
+  * API < 1.44: se avisa y la opción se rechaza.
+* **Comprobación**: tras iniciar, `verify_macs` comprueba que la MAC es la pedida.
+
+### D-072 · Color principal morado y acento de la barra lateral
+* **Tema**: el morado se aplica con `data-accent="purple"` en `<html>`, que solo redefine los tokens del acento (`--beacon*` y `--focus`) en claro y en oscuro. Todos los componentes ya usaban esos tokens, así que no hay reglas por componente.
+* **Aplicación**: se aplica al momento, incluidas las terminales abiertas, que cambian su cursor sin reiniciarse. Se guarda en `config.toml` (`ui.accent`) y su cambio queda en el panel de actividad.
+* **`--beacon-nav`** (nuevo): la barra lateral es siempre oscura y usaba el acento general. El icono activo en verde azulado tenía un contraste de 1,9–2,6:1, por debajo de 3:1, que es un defecto de accesibilidad demostrado. Ahora usa un acento propio para fondos oscuros.
+* **Ajuste del verde azulado claro**: el texto blanco de los botones primarios tenía un contraste de 4,43:1, por debajo de 4,5:1 (AA). Se oscureció de `#0e858a` a `#0d8287` (4,61:1): la diferencia no se aprecia, pero cumple AA. Es el único cambio en el color existente.
+* **Contrastes medidos** (prueba `styles/accent.test.ts`, que los calcula con la fórmula de WCAG a partir de app.css):
+  * Botón primario: verde azulado 4,61 (claro) y 7,12 (oscuro); morado 5,97 y 6,38.
+  * Texto del acento fuerte sobre las superficies: ≥ 5,4 en los cuatro casos.
+  * Foco: ≥ 3 en los cuatro casos.
+  * Icono de la barra lateral: ≥ 4,5 sobre el casco y ≥ 3 sobre la fila seleccionada.
+
+### D-073 · Catalán, gallego, euskera y portugués
+* **Idiomas**: `Language` en Rust y TypeScript admite `ca`, `gl`, `eu` y `pt`.
+  * El selector, ahora una lista desplegable, sigue el orden pedido: English, Español, Català, Galego, Euskara, Français, Italiano, Português.
+  * Cada idioma aparece con su propio nombre (endónimo) y con `lang` en la opción.
+  * Español sigue siendo el idioma por defecto.
+* **Variante**: portugués europeo (pt-PT), con «contentor», «registos» y «transferir». Las fechas y los números usan ca-ES, gl-ES, eu-ES y pt-PT.
+* **Traducción**:
+  * Todas las claves de la interfaz (unas 1900), incluidas las de esta actualización.
+  * La ayuda completa: 26 secciones en los ocho idiomas, con las dos nuevas («Editar la configuración» y «Crear una imagen»).
+  * Las pruebas exigen las mismas claves y variables `{{…}}` en los ocho idiomas, ningún texto vacío y ninguna cadena igual a la inglesa, salvo una lista explícita por idioma.
+* **Revisión nativa recomendada**: las traducciones son completas y coherentes, pero no las ha revisado un hablante nativo, sobre todo el euskera. Conviene hacerlo antes de distribuir.
+* **Sin cambios (D-067)**: los resúmenes que el backend escribe en el panel de actividad y los errores con datos concretos siguen en español en todos los idiomas.
+
+### D-074 · Grupos de opciones con flechas y operaciones de la aplicación
+* **`Segmented`** (tema, color, filtros): además de Tab, Intro y Espacio, las flechas eligen la opción anterior o la siguiente (patrón de grupo de opciones de WAI-ARIA). No cambia el orden de tabulación ni el aspecto. Toda la suite anterior sigue pasando.
+* **Panel de actividad**: nuevo transporte `app` (distintivo APP) para operaciones que no son peticiones a Docker ni procesos:
+  * Cambio de idioma y de color.
+  * Resumen de una recreación o restauración, cuyos pasos aparecen a la vez como operaciones API.
+  * No ofrece copiar una orden, porque no existe.
+* **Secretos**: el cuerpo de creación del contenedor nuevo se registra con los valores sensibles ocultos.

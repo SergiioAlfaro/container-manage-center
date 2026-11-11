@@ -136,6 +136,7 @@ Ao clicar no nome de um contentor abre-se o seu **detalhe**: Resumo, Registos, T
 
 - Indique o **repositório** e a **etiqueta** (vazia = `latest`); opcionalmente, o **autor** e uma **mensagem**. O nome completo é mostrado e validado antes de criar.
 - **Não inclui os volumes nem as pastas montadas**: apenas a camada de escrita do contentor. A caixa de diálogo enumera as montagens que ficam de fora.
+- A imagem **guarda a configuração do contentor**, incluindo as suas variáveis de ambiente (também as que contêm palavras-passe ou tokens): não a publique num registo se contiver segredos.
 - Se o contentor estiver em execução, por omissão é **posto em pausa** durante alguns segundos enquanto a imagem é criada, para que fique coerente; pode desmarcar essa opção. Nunca é parado.
 - Se já existir uma imagem com esse nome, é dado um aviso e tem de o aceitar expressamente: a anterior não é eliminada, fica sem etiqueta.
 - O contentor original não é alterado. No fim, **Ver imagem** abre o seu detalhe em Imagens.

@@ -1,6 +1,6 @@
 # Guía de usuario
 
-> Versión 0.9.1. (La nota original de la Fase 2 se conserva abajo por historia.)
+> Versión 0.9.2. (La nota original de la Fase 2 se conserva abajo por historia.)
 >
 > Versión 0.2.1 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
 > contenedores (consultar, iniciar, detener, reiniciar, pausar, reanudar y
@@ -66,7 +66,9 @@ eliminan sus volúmenes anónimos; los volúmenes con nombre y las carpetas
 vinculadas no se tocan. No se puede deshacer.
 
 Pulsa el **nombre** de un contenedor para abrir su detalle, o **Crear contenedor**
-para abrir el asistente.
+para abrir el asistente. El menú **⋯** de cada fila (o el botón derecho sobre
+ella) ofrece **Editar configuración** y **Crear imagen a partir de este
+contenedor**; se maneja también con el teclado (flechas, Inicio, Fin, Escape).
 
 ### Crear un contenedor
 
@@ -125,6 +127,54 @@ actividad mientras están abiertas y se cierran al salir del detalle.
 
 **Duplicar** abre el asistente con la configuración del contenedor (con nombre
 `<nombre>-copia`) y avisa de los ajustes que no se trasladan.
+
+### Editar la configuración
+
+**Editar configuración** (menú ⋯ o cabecera del detalle) organiza la
+configuración en pestañas: General, Red, Almacenamiento, Variables, Puertos,
+Recursos y Avanzado. Cada campo indica cómo se aplica su cambio:
+
+| Cambio | Cómo se aplica |
+|---|---|
+| Nombre, política de reinicio, CPU, memoria y memoria reservada | Directamente (`docker rename`, `docker update`), sin reiniciar |
+| Conectar o desconectar redes | Directamente y al momento |
+| Variables, puertos, volúmenes y carpetas, descripción, quitar un límite | Hay que **recrear** el contenedor |
+| Imagen, comando, usuario y el resto de «Avanzado» | Solo lectura (Docker no permite cambiarlos): usa **Duplicar** |
+
+Las pestañas con cambios pendientes llevan un punto, y la barra inferior resume
+los cambios. **Revisar cambios** compara la configuración actual con la nueva
+(qué cambia, qué se mantiene y qué exige recrear); no se aplica nada hasta que
+confirmas.
+
+**Recreación segura.** Si hace falta recrear, la revisión explica los pasos y:
+- no deja continuar si no es seguro (contenedor de Compose o Swarm, creado con
+  `--rm`, en pausa o reiniciándose, imagen que ya no existe);
+- pide aceptar uno a uno los riesgos (archivos escritos fuera de los volúmenes,
+  que no pasan al contenedor nuevo; montajes que quitas; contenedores que usan
+  la red de este…) y una confirmación final;
+- detiene el contenedor si está en ejecución, le cambia el nombre a
+  `<nombre>-dcc-backup-<fecha>` (la copia), crea el nuevo con **toda** la
+  configuración del original más tus cambios, conecta sus redes y comprueba que
+  funciona;
+- si algo falla, elimina el nuevo (sin sus volúmenes), devuelve el nombre al
+  original y lo vuelve a iniciar.
+
+Nunca se borran volúmenes, carpetas ni imágenes. La copia queda detenida en
+**General › Copias de seguridad**, desde donde puedes **Restaurar** (el actual
+se aparta, no se borra) o **Eliminar** cuando ya no la necesites.
+
+### Crear una imagen a partir de un contenedor
+
+Equivale a `docker commit`: guarda el estado actual del sistema de archivos del
+contenedor como una imagen nueva. Indica repositorio y etiqueta (vacía =
+`latest`) y, si quieres, autor y mensaje; se muestra el nombre completo antes de
+crear. **No incluye los volúmenes ni las carpetas montadas** (el diálogo los
+enumera). Sí guarda la configuración del contenedor, incluidas sus variables de
+entorno (también las secretas): no la publiques en un registro si contiene
+secretos. Si el contenedor está en ejecución, por defecto se pausa unos
+segundos mientras se crea la imagen; nunca se detiene. Si ya existe una imagen
+con ese nombre, hay que aceptarlo expresamente (la anterior se queda sin
+etiqueta, no se borra). **Ver la imagen** abre su detalle en Imágenes.
 
 ## Imágenes
 
@@ -404,8 +454,10 @@ guardar con la opción **Guardar historial** de Configuración.
 ## Panel de actividad
 
 Cada operación que la aplicación ejecuta sobre Docker aparece aquí: hora,
-distintivo **API** (petición a Docker Engine por el socket) o **CLI** (proceso,
-como `docker compose`), tipo de operación, recurso, duración y estado. La línea
+distintivo **API** (petición a Docker Engine por el socket), **CLI** (proceso,
+como `docker compose`) o **APP** (operación de la propia aplicación: cambio de
+idioma o de color, o el resumen de una recreación cuyos pasos aparecen aparte),
+tipo de operación, recurso, duración y estado. La línea
 principal es el comando `docker` equivalente, que puedes copiar.
 
 Al desplegar una entrada ves la **operación ejecutada** de verdad (por ejemplo
@@ -422,7 +474,7 @@ mientras haya conexión).
 
 ## Configuración
 
-- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma (Español, English, Français, Italiano).
+- **Apariencia**: tema (Sistema, Claro, Oscuro), **color principal** (verde azulado o morado; se aplica al momento) e idioma, en este orden: English, Español (por defecto), Català, Galego, Euskara, Français, Italiano y Português. El idioma y el color se guardan y sus cambios quedan en el panel de actividad.
 - **Panel de actividad**: abrirlo automáticamente ante errores, número de operaciones conservadas (50–10.000) y **Guardar historial** (operaciones y eventos de Docker entre sesiones, sin secretos).
 - **Conexión con Docker**:
   - **Automático**: busca `DOCKER_HOST`, el contexto activo, tu socket rootless y el del sistema.

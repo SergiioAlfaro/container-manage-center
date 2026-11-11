@@ -2133,6 +2133,7 @@
     "notIncluded": "Edukiontziaren idazketa-geruza bakarrik gordetzen da (haren muntaketetatik kanpo aldatutako fitxategiak). Muntaketa hauetako datuak ez dira irudian sartzen:",
     "excludedList": "Irudian sartzen ez diren muntaketak",
     "noMounts": "Edukiontzi honek ez du muntaketarik: haren fitxategi-sistema osoa gordetzen da.",
+    "envIncluded": "Irudiak edukiontziaren konfigurazioa ere gordetzen du, ingurune-aldagaiak barne (pasahitzak edo tokenak dituztenak ere bai). Ez argitaratu erregistro batean sekreturik badu.",
     "mountKind": {
       "volume": "bolumena",
       "bind": "karpeta",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "Uneko edukiontzia gelditzen da.",
       "backup": "Izena {{backup}} izatera aldatzen zaio eta babeskopia gisa gordetzen da.",
-      "create": "Edukiontzi berri bat sortzen da jatorrizko izenarekin, {{image}} irudiarekin eta konfigurazio osoarekin, zure aldaketak barne.",
+      "create": "{{name}} izeneko edukiontzi berri bat sortzen da, {{image}} irudiarekin eta konfigurazio osoarekin, zure aldaketak barne.",
       "startVerify": "Abiarazi egiten da, eta segundo batzuetan exekutatzen jarraitzen duela egiaztatzen da.",
       "verifyStopped": "Dockerrek ondo sortu duela egiaztatzen da. Geldituta geratzen da, jatorrizkoa bezala.",
       "rollback": "Zerbaitek huts egiten badu, edukiontzi berria ezabatu egiten da, eta jatorrizkoak bere izena eta egoera berreskuratzen ditu."

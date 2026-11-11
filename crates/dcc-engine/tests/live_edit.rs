@@ -1660,3 +1660,91 @@ async fn commit_creates_an_image_without_volume_data_and_leaves_the_container_al
     assert_eq!(r3.reference, stopped_ref);
     assert_eq!(status(&inspect(&docker, &id).await), "exited");
 }
+
+// ------------------------------------------------- recrear y renombrar a la vez
+
+#[tokio::test(flavor = "multi_thread")]
+async fn recreation_with_rename_lists_the_backup_under_the_new_name_and_restores_it() {
+    if !enabled() {
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let (e, _log, _proxy, docker) = engine_via_proxy(&dir).await;
+    let p = prefix("renrec");
+    let mut clean = Cleanup::new(&docker, &p);
+    let vol = format!("{p}-vol");
+    clean.volumes.push(vol.clone());
+    let id = create(
+        &docker,
+        &p,
+        ContainerCreateBody {
+            image: Some(fixture::SHELL_IMAGE.into()),
+            labels: Some(labels()),
+            env: Some(vec!["MODO=uno".into()]),
+            host_config: Some(HostConfig {
+                binds: Some(vec![format!("{vol}:/datos")]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
+    )
+    .await;
+    docker.start_container(&id, None).await.unwrap();
+    assert_eq!(sh(&docker, &id, "echo dato > /datos/f").await.1, 0);
+
+    let cfg = e.edit_config(&id).await.unwrap();
+    let new_name = format!("{p}-nuevo");
+    let req = EditRequest {
+        name: new_name.clone(),
+        env: vec![KeyValue {
+            key: "MODO".into(),
+            value: "dos".into(),
+        }],
+        ..cfg.current.clone()
+    };
+    let plan = e.edit_plan(&id, &req).await.unwrap();
+    assert!(plan.needs_recreate, "{plan:?}");
+    let backup = plan.backup_name.clone().unwrap();
+    assert!(
+        backup.starts_with(&format!("{new_name}-dcc-backup-")),
+        "la copia lleva el nombre nuevo: {backup}"
+    );
+    let out = e.edit_apply(&id, &req, &confirm(&plan)).await.unwrap();
+    assert_eq!(out.error, None, "{out:?}");
+    assert!(out.recreated);
+    assert_eq!(out.name, new_name);
+    assert_eq!(out.backup_name.as_deref(), Some(backup.as_str()));
+    assert_ne!(out.container_id, id);
+    // El original es la copia (mismo ID), detenido.
+    let b = inspect(&docker, &id).await;
+    assert_eq!(b.name.unwrap().trim_start_matches('/'), backup);
+    assert_eq!(status(&inspect(&docker, &id).await), "exited");
+
+    // La pantalla del contenedor nuevo muestra su copia.
+    let cfg2 = e.edit_config(&out.container_id).await.unwrap();
+    assert_eq!(cfg2.current.name, new_name);
+    assert_eq!(cfg2.backups.len(), 1, "{:?}", cfg2.backups);
+    assert_eq!(cfg2.backups[0].id, id);
+    assert_eq!(cfg2.backups[0].original_name, new_name);
+    let (data, _) = sh(&docker, &out.container_id, "cat /datos/f; echo $MODO").await;
+    assert_eq!(data.split_whitespace().collect::<Vec<_>>(), ["dato", "dos"]);
+
+    // Restaurar: la copia recupera el nombre y el recreado se aparta sin borrarse.
+    let r = e.restore_backup(&id, true, true).await.unwrap();
+    assert_eq!(r.error, None, "{r:?}");
+    let restored = inspect(&docker, &id).await;
+    assert_eq!(
+        restored.name.clone().unwrap().trim_start_matches('/'),
+        new_name
+    );
+    assert_eq!(status(&restored), "running");
+    let (data, _) = sh(&docker, &id, "cat /datos/f; echo $MODO").await;
+    assert_eq!(data.split_whitespace().collect::<Vec<_>>(), ["dato", "uno"]);
+    let aside = inspect(&docker, &out.container_id).await;
+    assert!(aside
+        .name
+        .unwrap()
+        .trim_start_matches('/')
+        .starts_with(&format!("{new_name}-dcc-replaced-")));
+    assert!(docker.inspect_volume(&vol).await.is_ok());
+}

@@ -136,6 +136,7 @@ Clicking a container's name opens its **detail**: Summary, Logs, Terminal, Stati
 
 - Enter the **repository** and **tag** (empty = `latest`); optionally, **author** and **message**. The full name is shown and validated before creating.
 - **It does not include volumes or mounted folders**: only the container's writable layer. The dialog lists the mounts left out.
+- The image **does store the container's configuration**, including its environment variables (even those holding passwords or tokens): don't push it to a registry if it contains secrets.
 - If the container is running, by default it is **paused** for a few seconds while the image is created, so that it is consistent; you can untick this. It is never stopped.
 - If an image with that name already exists, you are warned and must explicitly accept it: the previous one is not deleted, it just becomes untagged.
 - The original container is not modified. When finished, **View image** opens its detail in Images.

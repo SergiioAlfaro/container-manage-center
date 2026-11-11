@@ -2133,6 +2133,7 @@
     "notIncluded": "Solo se guarda la capa de escritura del contenedor (los archivos que ha cambiado fuera de sus montajes). Los datos de estos montajes no entran en la imagen:",
     "excludedList": "Montajes que no entran en la imagen",
     "noMounts": "Este contenedor no tiene montajes: se guarda todo su sistema de archivos.",
+    "envIncluded": "La imagen también guarda la configuración del contenedor, incluidas sus variables de entorno (también las que contienen contraseñas o tokens). No la publiques en un registro si contiene secretos.",
     "mountKind": {
       "volume": "volumen",
       "bind": "carpeta",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "Se detiene el contenedor actual.",
       "backup": "Se le cambia el nombre a {{backup}} y se conserva como copia de seguridad.",
-      "create": "Se crea un contenedor nuevo con el nombre original, la imagen {{image}} y la configuración completa con tus cambios.",
+      "create": "Se crea un contenedor nuevo llamado {{name}}, con la imagen {{image}} y la configuración completa con tus cambios.",
       "startVerify": "Se inicia y se comprueba que sigue en ejecución durante unos segundos.",
       "verifyStopped": "Se comprueba que Docker lo ha creado correctamente. Queda detenido, como el original.",
       "rollback": "Si algo falla, se elimina el contenedor nuevo y el original recupera su nombre y su estado."

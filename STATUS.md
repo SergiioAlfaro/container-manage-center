@@ -1,15 +1,15 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-08
+Última actualización: 2026-11-11
 
 ## Resumen
 
 | | |
 |---|---|
-| **Fase actual** | Actualización 0.9.1 (antes de la Fase 10) |
-| **Versión** | 0.9.1 |
+| **Fase actual** | Actualización 0.9.2 (antes de la Fase 10) |
+| **Versión** | 0.9.2 |
 | **Estado** | Implementada; pendiente de validación del propietario |
-| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8, 9 |
+| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8, 9 y la actualización 0.9.1 |
 | **Fases pendientes** | 10 |
 
 | Fase | Estado |
@@ -23,7 +23,8 @@
 | 7. Docker Compose | **Validada** (2026-11-07, Debian 13, versión 0.7.1) |
 | 8. Actividad, eventos y monitorización | **Validada** (2026-11-08, Debian 13, versión 0.8.0) |
 | 9. Configuración y optimización | **Validada** (2026-11-08, Debian 13, versión 0.9.0) |
-| Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | Implementada; pendiente de validación |
+| Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | **Validada** (confirmada por el propietario en la solicitud de la 0.9.2, 2026-11-11) |
+| Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | Implementada; pendiente de validación |
 | 10. Pruebas finales y distribución | No iniciada |
 
 ---

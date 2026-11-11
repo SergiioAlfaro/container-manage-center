@@ -136,6 +136,7 @@ Facendo clic sul nome di un container si apre il suo **dettaglio**: Riepilogo, L
 
 - Indica il **repository** e il **tag** (vuoto = `latest`); facoltativamente, **autore** e **messaggio**. Il nome completo viene mostrato e verificato prima della creazione.
 - **Non include i volumi né le cartelle montate**: solo il livello scrivibile del container. La finestra elenca i mount esclusi.
+- L’immagine **salva invece la configurazione del container**, comprese le sue variabili d’ambiente (anche quelle che contengono password o token): non pubblicarla in un registro se contiene segreti.
 - Se il container è in esecuzione, per impostazione predefinita viene **messo in pausa** per qualche secondo durante la creazione dell’immagine, perché sia coerente; puoi disattivare l’opzione. Non viene mai fermato.
 - Se esiste già un’immagine con quel nome, viene mostrato un avviso e bisogna accettarlo espressamente: la precedente non viene eliminata, resta solo senza tag.
 - Il container originale non viene modificato. Alla fine, **Vedi l’immagine** apre il suo dettaglio in Immagini.

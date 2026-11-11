@@ -136,6 +136,7 @@ Edukiontzi baten izena sakatzean, haren **xehetasuna** irekitzen da: Laburpena, 
 
 - Adierazi **biltegia** eta **etiketa** (hutsik = `latest`); aukeran, **egilea** eta **mezua**. Sortu aurretik izen osoa ikusten da eta balidatu egiten da.
 - **Ez ditu barne hartzen bolumenak eta muntatutako karpetak**: edukiontziaren idazketa-geruza bakarrik. Elkarrizketa-koadroak kanpoan geratzen diren muntaketak zerrendatzen ditu.
+- Irudiak **edukiontziaren konfigurazioa gordetzen du**, ingurune-aldagaiak barne (pasahitzak edo tokenak dituztenak ere bai): ez argitaratu erregistro batean sekreturik badu.
 - Edukiontzia exekutatzen ari bada, lehenespenez segundo batzuetan **pausatzen** da irudia sortzen den bitartean, koherentea izan dadin; desmarkatu dezakezu. Ez da inoiz gelditzen.
 - Izen hori duen irudi bat badago, abisatu egiten da eta esplizituki onartu behar da: aurrekoa ez da ezabatzen, etiketarik gabe geratzen da.
 - Jatorrizko edukiontzia ez da aldatzen. Amaitzean, **Ikusi irudia** botoiak haren xehetasuna irekitzen du Irudiak atalean.

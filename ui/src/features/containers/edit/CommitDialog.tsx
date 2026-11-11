@@ -204,6 +204,7 @@ export function CommitDialog({ id, name, onClose }: { id: string; name: string; 
         ) : (
           info.data && <p className="mt-1 text-ink-3">{t("commit.noMounts")}</p>
         )}
+        <p className="mt-2">{t("commit.envIncluded")}</p>
       </Banner>
       {info.error && <Banner tone="error">{t("commit.loadError", { message: (info.error as { message: string }).message })}</Banner>}
 

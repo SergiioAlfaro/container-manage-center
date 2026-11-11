@@ -136,6 +136,7 @@ Ao premer o nome dun contedor ábrese o seu **detalle**: Resumo, Rexistros, Term
 
 - Indica o **repositorio** e a **etiqueta** (baleira = `latest`); opcionalmente, o **autor** e unha **mensaxe**. Antes de crear vese o nome completo e valídase.
 - **Non inclúe os volumes nin os cartafoles montados**: só a capa de escritura do contedor. O diálogo lista as montaxes que quedan fóra.
+- A imaxe **si garda a configuración do contedor**, incluídas as súas variables de ambiente (tamén as que conteñen contrasinais ou tokens): non a publiques nun rexistro se contén segredos.
 - Se o contedor está en execución, de forma predeterminada **pórase en pausa** uns segundos mentres se crea a imaxe, para que sexa coherente; podes desmarcalo. Nunca se detén.
 - Se xa existe unha imaxe con ese nome, avísase e hai que aceptalo expresamente: a anterior non se elimina, queda sen etiqueta.
 - O contedor orixinal non se modifica. Ao rematar, **Ver a imaxe** abre o seu detalle en Imaxes.

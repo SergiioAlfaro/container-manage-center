@@ -1,5 +1,31 @@
 # Cambios
 
+## 0.9.2 — 2026-11-11 (actualización previa a la Fase 10)
+- **Editar configuración** de un contenedor (menú ⋯ de la lista, botón derecho y detalle; D-070):
+  - Pestañas General, Red, Almacenamiento, Variables, Puertos, Recursos y Avanzado.
+  - Cada cambio indica si se aplica directamente (nombre, reinicio, CPU, memoria, redes) o exige recrear (variables, puertos, montajes, descripción, quitar un límite). Lo que Docker no permite cambiar se muestra como solo lectura.
+  - Revisión con la comparación actual/nuevo, lo que se mantiene y lo que exige recrear.
+  - **Recreación segura**: bloqueos y riesgos que se aceptan uno a uno, confirmación, copia `-dcc-backup-` del original, comprobación de que el nuevo funciona y vuelta atrás automática si falla. Nunca se borran volúmenes, carpetas ni imágenes.
+  - Copias de seguridad: restaurar (con confirmación) o eliminar.
+  - Dirección MAC: se conserva solo si se pide o si es conocida (D-071).
+- **Crear imagen a partir de este contenedor** (`docker commit`, D-069):
+  - Repositorio, etiqueta, autor y mensaje, con validación y vista previa del nombre completo.
+  - Lista de volúmenes y carpetas que no entran en la imagen.
+  - Pausa opcional si el contenedor está en ejecución, sin detenerlo nunca.
+  - Aviso y confirmación expresa si el nombre ya existe.
+  - «Ver la imagen» la abre en Imágenes.
+- **Color principal morado** en Configuración → Apariencia, junto al verde azulado de siempre (D-072):
+  - Se aplica al momento, también a las terminales abiertas, en tema claro y oscuro, y se guarda.
+  - La barra lateral tiene un acento propio con contraste suficiente.
+  - El verde azulado claro se ajustó de forma imperceptible para cumplir AA con texto blanco (4,43 → 4,61:1).
+- **Catalán, gallego, euskera y portugués** (pt-PT) en toda la interfaz y en la ayuda; el selector es una lista en el orden pedido (D-073).
+- **Ayuda**: 26 secciones en los ocho idiomas, con «Editar la configuración de un contenedor» y «Crear una imagen a partir de un contenedor».
+- **Panel de actividad**:
+  - Distintivo APP para las operaciones propias de la aplicación: cambios de idioma y de color, y resumen de recreaciones y restauraciones.
+  - Nuevas operaciones: `container.rename`, `container.update`, `container.recreate`, `container.restoreBackup` y `container.commit`.
+  - Nunca registra los valores de variables sensibles.
+- **Teclado**: menú de acciones accesible (flechas, Inicio, Fin, Escape) y grupos de opciones que se manejan con flechas (D-074).
+
 ## 0.9.1 — 2026-11-08 (actualización previa a la Fase 10)
 - **Terminales** (nuevo apartado, D-064):
   - Varias terminales reales (`docker exec -it`) a la vez, en el mismo contenedor o en otros.

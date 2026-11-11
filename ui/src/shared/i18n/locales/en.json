@@ -2133,6 +2133,7 @@
     "notIncluded": "Only the container's writable layer is saved (the files it changed outside its mounts). The data in these mounts is not part of the image:",
     "excludedList": "Mounts not included in the image",
     "noMounts": "This container has no mounts: its whole file system is saved.",
+    "envIncluded": "The image also stores the container's configuration, including its environment variables (even those holding passwords or tokens). Don't push it to a registry if it contains secrets.",
     "mountKind": {
       "volume": "volume",
       "bind": "folder",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "The current container is stopped.",
       "backup": "It is renamed to {{backup}} and kept as a backup.",
-      "create": "A new container is created with the original name, the image {{image}} and the full configuration including your changes.",
+      "create": "A new container named {{name}} is created, with the image {{image}} and the full configuration including your changes.",
       "startVerify": "It is started and checked to keep running for a few seconds.",
       "verifyStopped": "The app checks that Docker created it correctly. It stays stopped, like the original.",
       "rollback": "If anything fails, the new container is deleted and the original gets its name and state back."

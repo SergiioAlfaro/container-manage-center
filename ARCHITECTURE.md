@@ -99,6 +99,10 @@ Si ningún candidato conecta, el `Problem` elegido es, por prioridad: ruta invá
 | Logs (flujo, D-036) | `GET /containers/{id}/logs?follow=true&stdout=true&stderr=true&timestamps=true&tail=N` | `docker logs --follow --timestamps --tail N {id}` |
 | Estadísticas (flujo) | `GET /containers/{id}/stats?stream=true&one-shot=false` | `docker stats {id}` |
 | Terminal (D-036, D-037) | `POST /containers/{id}/exec` → `POST /exec/{id}/start` (conexión secuestrada) → `POST /exec/{id}/resize` (no registrado, contado) → `GET /exec/{id}/json` | `docker exec --interactive --tty {id} <shell>` |
+| Renombrar (0.9.2, D-070) | `POST /containers/{id}/rename?name=…` | `docker rename {id} {nombre}` |
+| Cambiar reinicio y límites (0.9.2) | `POST /containers/{id}/update` con `RestartPolicy`, `NanoCpus`/`CpuQuota`, `Memory`, `MemorySwap`, `MemoryReservation` | `docker update …` |
+| Recrear (0.9.2, D-070) | `POST /containers/{id}/stop` → `GET /containers/{id}/json?size=true` → `rename` a la copia → `POST /containers/create` (cuerpo construido desde el `inspect` completo, registrado con los secretos ocultos) → `POST /networks/{red}/connect` → `start` → comprobación; vuelta atrás con `DELETE /containers/{nuevo}?v=false&force=true`, `rename` y `start` | resumen `container.recreate` (APP) y cada paso como operación API |
+| Crear imagen (0.9.2, D-069) | `POST /commit?container=…&repo=…&tag=…&author=…&comment=…&pause=…` | `docker commit [--author] [--message] [--pause=false] {id} {repo}:{tag}` |
 
 ### Imágenes (Fase 4)
 | Operación | Petición real | Comando equivalente |
@@ -213,6 +217,11 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 | `containers_list`, `container_action(id, name, action)` | Contenedores; la acción devuelve el estado confirmado (`ContainerState`) |
 | `container_remove(id, name, force, volumes, confirmed)` | Exige `confirmed = true` |
 | `images_list` | Imágenes con su uso |
+| `container_edit_config(id)` | 0.9.2 (D-070): `EditableConfig` (lo editable, lo de solo lectura, redes, copias de seguridad, tamaño de la capa) |
+| `container_edit_plan(id, request)` | Valida en Rust y compara → `EditPlan` (cambios directos o que exigen recrear, lo que se mantiene, bloqueos, riesgos, avisos, órdenes equivalentes, cuerpo final sin secretos). No cambia nada |
+| `container_edit_apply(id, request, options)` | Aplica: directos o recreación segura (exige `confirmRecreate` y que cada riesgo esté en `acceptedRisks`) → `EditOutcome` con cada paso |
+| `container_restore_backup(id, start, confirmed)` | Exige `confirmed`; restaura una copia y aparta el contenedor actual sin borrarlo |
+| `container_commit_preview(id, request)` · `container_commit(id, request)` | 0.9.2 (D-069): referencia validada, imagen existente, montajes excluidos y orden equivalente; crear la imagen (`engine.alreadyExists` si el nombre existe y no se aceptó) |
 | `container_preview(spec)` | Valida y traduce sin hablar con Docker: problemas, `docker run`/`docker create` equivalentes, cuerpo JSON y nº de secretos ocultos |
 | `container_create(spec, start)` | Crea (y opcionalmente inicia); si no arranca devuelve el contenedor creado con `startError` |
 | `container_inspect(id, name)` · `container_duplicate_spec(id, name)` | Detalle (`ContainerDetails`) y especificación para duplicar (`DuplicateSpec`) |
@@ -280,8 +289,11 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 - `features/settings/`: `UpdatesSettings.tsx`, `SystemSettings.tsx` (con `systemReport`), restablecer en `SettingsView.tsx` y `layout.tsx` (`Group`, `Row`).
 - `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms y como mucho una vez por segundo durante las ráfagas, `refreshDelay`), `EventRow.tsx` (filas memorizadas con claves estables, `eventKeys`), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
 - `features/terminals/` (0.9.1, D-064): `sessions.ts` (gestor de sesiones fuera de React: una xterm y un flujo por sesión, generación por apertura, cierre sin huérfanos; estado visible en Zustand), `TerminalsView.tsx` (distribución según `layout.ts`, `Splitter.tsx` con ratón y teclado), `TerminalPane.tsx`, `NewTerminalDialog.tsx`.
-- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{es,en,fr,it}.md`, `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
-- `shared/i18n`: `es`, `en`, `fr`, `it` (D-067).
+- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 26 secciones, `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
+- `shared/i18n`: `en`, `es`, `ca`, `gl`, `eu`, `fr`, `it`, `pt` en el orden del selector (D-067, D-073); `LANGUAGE_NAMES` con los endónimos.
+- `features/containers/edit/` (0.9.2, D-069, D-070): `EditContainer.tsx` (pestañas, barra de cambios pendientes, ciclo de vida, copias de seguridad, redes con los diálogos de la Fase 5, Avanzado de solo lectura), `ReviewPanel.tsx` (comparación, asistente de recreación con riesgos y confirmación, resultado paso a paso), `model.ts` (borrador y clasificación para los indicadores; decide el backend), `CommitDialog.tsx`. `create/editors.tsx` reúne los editores de puertos, montajes, memoria y clave/valor que comparten el asistente de creación y la edición.
+- `shared/ui/Menu.tsx` (0.9.2): menú de acciones accesible (botón ⋯ y botón derecho en la fila).
+- Color principal (D-072): `applyAppearance` pone `data-accent` en `<html>`; `styles/app.css` redefine solo los tokens `--beacon*` y `--focus`; `--beacon-nav` para la barra lateral; `shared/ui/terminalTheme.ts` actualiza las terminales abiertas.
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
 
 ## Pruebas
@@ -293,10 +305,11 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `docker://ev
 | Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
 | Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p dcc-engine --test events_interrupted` | 3 |
-| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 275 |
+| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 327 |
+| Edición, recreación y commit contra Docker real (0.9.2) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |
 | Terminales múltiples contra Docker real (0.9.1) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_terminals` | 5 |
 | Desinstalación real (0.9.1) | `DCC_TEST_CHROOT=… DCC_TEST_DEB=… cargo test -p docker-control-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-update-0.9.1.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
-| Manual | `scripts/verify-update-0.9.1.sh` | M1–M12 |
+| Paquete | `scripts/verify-update-0.9.2.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
+| Manual | `scripts/verify-update-0.9.2.sh` | M1–M10 (solo lo que cambia en la 0.9.2) |

@@ -23,7 +23,17 @@ import { IssueList } from "../create/fields";
 import { useContainersNav } from "../store";
 import { OutcomeBanner, editKey } from "./shared";
 
-export function ReviewPanel({ cfg, request, onBack }: { cfg: EditableConfig; request: EditRequest; onBack: (issues?: SpecIssue[]) => void }) {
+export function ReviewPanel({
+  cfg,
+  request,
+  onBack,
+  onApplied,
+}: {
+  cfg: EditableConfig;
+  request: EditRequest;
+  onBack: (issues?: SpecIssue[]) => void;
+  onApplied?: (out: EditOutcome) => void;
+}) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   // Una sola comparación al abrir la revisión (cada consulta queda en la actividad).
@@ -33,6 +43,7 @@ export function ReviewPanel({ cfg, request, onBack }: { cfg: EditableConfig; req
   const [confirmed, setConfirmed] = useState(false);
   const apply = useMutation({
     mutationFn: (p: EditPlan) => api.containerEditApply(cfg.id, request, { confirmRecreate: p.needsRecreate && confirmed, acceptedRisks: accepted, keepMac }),
+    onSuccess: (out) => onApplied?.(out),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: keys.containers });
       void qc.invalidateQueries({ queryKey: keys.overview });
@@ -109,7 +120,7 @@ export function ReviewPanel({ cfg, request, onBack }: { cfg: EditableConfig; req
           <ol className="list-decimal space-y-1 pl-5 text-[13px] text-ink-2">
             {p.willStop && <li>{t("edit.plan.stop")}</li>}
             <li>{t("edit.plan.backup", { backup: p.backupName ?? "" })}</li>
-            <li>{t("edit.plan.create", { image: p.imageRef ?? "?" })}</li>
+            <li>{t("edit.plan.create", { image: p.imageRef ?? "?", name: request.name.trim() })}</li>
             <li>{p.willStop ? t("edit.plan.startVerify") : t("edit.plan.verifyStopped")}</li>
             <li>{t("edit.plan.rollback")}</li>
           </ol>

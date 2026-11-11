@@ -2133,6 +2133,7 @@
     "notIncluded": "Viene salvato solo il livello scrivibile del container (i file modificati fuori dai suoi mount). I dati di questi mount non fanno parte dell’immagine:",
     "excludedList": "Mount non inclusi nell’immagine",
     "noMounts": "Questo container non ha mount: viene salvato tutto il suo file system.",
+    "envIncluded": "L’immagine salva anche la configurazione del container, comprese le sue variabili d’ambiente (anche quelle che contengono password o token). Non pubblicarla in un registro se contiene segreti.",
     "mountKind": {
       "volume": "volume",
       "bind": "cartella",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "Il container attuale viene fermato.",
       "backup": "Viene rinominato {{backup}} e conservato come copia di sicurezza.",
-      "create": "Viene creato un nuovo container con il nome originale, l’immagine {{image}} e la configurazione completa con le tue modifiche.",
+      "create": "Viene creato un nuovo container chiamato {{name}}, con l’immagine {{image}} e la configurazione completa con le tue modifiche.",
       "startVerify": "Viene avviato e si verifica che resti in esecuzione per qualche secondo.",
       "verifyStopped": "Si verifica che Docker lo abbia creato correttamente. Resta fermo, come l’originale.",
       "rollback": "Se qualcosa non va, il nuovo container viene eliminato e l’originale riprende il suo nome e il suo stato."

@@ -41,21 +41,25 @@ export function EditContainer({ id, name }: { id: string; name: string }) {
   const nav = useContainersNav();
   const q = useQuery({ queryKey: editKey(id), queryFn: () => api.containerEditConfig(id) });
   const cfg = q.data;
+  // Tras recrear, este ID es el de la copia: la cabecera pasa a mostrar el contenedor nuevo.
+  const [now, setNow] = useState<{ id: string; name: string; status: string } | null>(null);
+  const shownName = now?.name ?? cfg?.current.name ?? name;
+  const shownStatus = now?.status ?? cfg?.status;
 
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-8 py-3">
-        <Button variant="ghost" size="sm" onClick={() => nav.showDetail(id, cfg?.current.name ?? name)}>
+        <Button variant="ghost" size="sm" onClick={() => nav.showDetail(now?.id ?? id, shownName)}>
           <ArrowLeft size={15} />
           {t("edit.back")}
         </Button>
         <div className="flex min-w-0 items-center gap-2">
           <PencilLine size={16} className="shrink-0 text-beacon-strong" aria-hidden />
-          <h2 className="selectable truncate text-[15px] font-semibold">{t("edit.title", { name: cfg?.current.name ?? name })}</h2>
-          {cfg && (
+          <h2 className="selectable truncate text-[15px] font-semibold">{t("edit.title", { name: shownName })}</h2>
+          {shownStatus && (
             <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
-              <span aria-hidden className={cx("h-2 w-2 rounded-full", STATE_DOT[cfg.status] ?? "bg-off")} />
-              {t(`containers.state.${cfg.status}`, { defaultValue: cfg.status })}
+              <span aria-hidden className={cx("h-2 w-2 rounded-full", STATE_DOT[shownStatus] ?? "bg-off")} />
+              {t(`containers.state.${shownStatus}`, { defaultValue: shownStatus })}
             </span>
           )}
         </div>
@@ -70,13 +74,13 @@ export function EditContainer({ id, name }: { id: string; name: string }) {
         </div>
       ) : (
         // Al recargar la configuración (p. ej. tras aplicar) se parte de nuevo de lo que dice Docker.
-        <Editor key={`${cfg.id}-${q.dataUpdatedAt}`} cfg={cfg} />
+        <Editor key={`${cfg.id}-${q.dataUpdatedAt}`} cfg={cfg} onApplied={setNow} />
       )}
     </div>
   );
 }
 
-function Editor({ cfg }: { cfg: EditableConfig }) {
+function Editor({ cfg, onApplied }: { cfg: EditableConfig; onApplied: (now: { id: string; name: string; status: string }) => void }) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<EditTab>("general");
   const [draft, setDraft] = useState<EditRequest>(() => structuredClone(cfg.current));
@@ -102,6 +106,7 @@ function Editor({ cfg }: { cfg: EditableConfig }) {
       <ReviewPanel
         cfg={cfg}
         request={request}
+        onApplied={(out) => onApplied({ id: out.containerId, name: out.name, status: out.started ? "running" : out.containerId === cfg.id ? cfg.status : "created" })}
         onBack={(found) => {
           setReviewing(false);
           if (found && found.length > 0) {

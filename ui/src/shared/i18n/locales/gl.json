@@ -2133,6 +2133,7 @@
     "notIncluded": "Só se garda a capa de escritura do contedor (os ficheiros que cambiou fóra das súas montaxes). Os datos destas montaxes non entran na imaxe:",
     "excludedList": "Montaxes que non entran na imaxe",
     "noMounts": "Este contedor non ten montaxes: gárdase todo o seu sistema de ficheiros.",
+    "envIncluded": "A imaxe tamén garda a configuración do contedor, incluídas as súas variables de ambiente (tamén as que conteñen contrasinais ou tokens). Non a publiques nun rexistro se contén segredos.",
     "mountKind": {
       "volume": "volume",
       "bind": "cartafol",
@@ -2299,7 +2300,7 @@
     "plan": {
       "stop": "Detense o contedor actual.",
       "backup": "Cámbiaselle o nome a {{backup}} e consérvase como copia de seguridade.",
-      "create": "Créase un contedor novo co nome orixinal, a imaxe {{image}} e a configuración completa cos teus cambios.",
+      "create": "Créase un contedor novo chamado {{name}}, coa imaxe {{image}} e a configuración completa cos teus cambios.",
       "startVerify": "Iníciase e compróbase que segue en execución durante uns segundos.",
       "verifyStopped": "Compróbase que Docker o creou correctamente. Queda detido, coma o orixinal.",
       "rollback": "Se algo falla, elimínase o contedor novo e o orixinal recupera o seu nome e o seu estado."
