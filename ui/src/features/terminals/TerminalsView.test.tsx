@@ -5,9 +5,8 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, container, containers, streams } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { FakeTerminal } from "@/test/xtermMock";
-import { useEngine } from "@/features/engine/store";
 import type { TerminalEvent } from "@/shared/ipc/bindings/TerminalEvent";
 import { layoutFor, pairs } from "./layout";
 import { defaultName, MAX_SESSIONS, nameProblem, openSession, resetTerminals, useTerminals } from "./sessions";
@@ -21,7 +20,7 @@ const withApi = [...containers, container({ id: API, name: "api", image: "node:2
 function open(name: string, id = WEB, containerName = "web") {
   let key: number | null = null;
   act(() => {
-    key = openSession({ containerId: id, containerName, shell: "sh", name });
+    key = openSession({ server: "local", serverName: "", remote: false, containerId: id, containerName, shell: "sh", name });
   });
   return key!;
 }
@@ -43,7 +42,7 @@ describe("Terminales: distribución y nombres", () => {
     expect(nameProblem("x".repeat(61))).toBe("long");
     expect(nameProblem("a\u001bb")).toBe("control");
     expect(nameProblem(" depuración ")).toBeNull();
-    const s = (name: string) => ({ key: 0, containerId: "", containerName: "web", shell: "sh" as const, name, status: "open" as const, summary: null, error: null, after: null });
+    const s = (name: string) => ({ key: 0, server: "local", serverName: "", remote: false, containerId: "", containerName: "web", shell: "sh" as const, name, status: "open" as const, summary: null, error: null, after: null });
     expect(defaultName("web", [])).toBe("web");
     expect(defaultName("web", [s("web"), s("web (2)")])).toBe("web (3)");
   });
@@ -55,7 +54,7 @@ describe("Terminales: sesiones reales e independientes", () => {
     streams.reset();
     FakeTerminal.all = [];
     resetTerminals();
-    useEngine.setState({ state: connected, reconnecting: false });
+    setServerState(connected);
   });
   afterEach(() => resetTerminals());
 
@@ -298,7 +297,7 @@ describe("Terminales: sesiones reales e independientes", () => {
   it("hay un máximo de sesiones simultáneas", async () => {
     renderWithQuery(<TerminalsView />);
     for (let i = 0; i < MAX_SESSIONS; i++) open(`s${i}`);
-    expect(openSession({ containerId: WEB, containerName: "web", shell: "sh" })).toBeNull();
+    expect(openSession({ server: "local", serverName: "", remote: false, containerId: WEB, containerName: "web", shell: "sh" })).toBeNull();
     expect(screen.getAllByRole("button", { name: "Nueva terminal" })[0]).toBeDisabled();
     expect(api.terminalOpen).toHaveBeenCalledTimes(MAX_SESSIONS);
   });

@@ -89,10 +89,23 @@ import type { UnsavedFile } from "./bindings/UnsavedFile";
 import type { ComponentsReport } from "./bindings/ComponentsReport";
 import type { RemovalPlan } from "./bindings/RemovalPlan";
 import type { RemovalResult } from "./bindings/RemovalResult";
+import type { ServerView } from "./bindings/ServerView";
+import type { ServerConfig } from "./bindings/ServerConfig";
+import type { ProfileIssue } from "./bindings/ProfileIssue";
+import type { ConnectOutcome } from "./bindings/ConnectOutcome";
+import type { TestReport } from "./bindings/TestReport";
+import type { HostKeyInfo } from "./bindings/HostKeyInfo";
+import type { TrustedKey } from "./bindings/TrustedKey";
+import type { SecretStatus } from "./bindings/SecretStatus";
+import type { KeyringStatus } from "./bindings/KeyringStatus";
+import type { ServerDiagnosis } from "./bindings/ServerDiagnosis";
+import type { ServerOverview } from "./bindings/ServerOverview";
+import type { ServerStateEvent } from "./bindings/ServerStateEvent";
 
 export const ACTIVITY_EVENT = "activity://event";
 export const ACTIVITY_RESYNC = "activity://resync";
 export const ENGINE_STATE = "engine://state";
+export const SERVER_STATE = "server://state";
 
 /** Normaliza cualquier error de `invoke` a `CommandError`. */
 /**
@@ -240,6 +253,28 @@ export function dockerApi(server: string) {
 export type DockerApi = ReturnType<typeof dockerApi>;
 
 const appApi = {
+  // 0.10.0: servidores. Cada orden indica su servidor de forma explícita.
+  serversList: () => call<ServerView[]>("servers_list"),
+  serverValidate: (config: ServerConfig) => call<ProfileIssue[]>("server_validate", { config }),
+  serverSave: (config: ServerConfig) => call<ServerConfig>("server_save", { config }),
+  /** Solo borra el perfil y sus datos en la aplicación; nada del servidor. */
+  serverDelete: (server: string) => call<null>("server_delete", { server, confirmed: true }),
+  /** `secret`: frase de paso o contraseña escrita ahora; solo viaja en esta llamada. */
+  serverConnect: (server: string, secret: string | null, remember: boolean) => call<ConnectOutcome>("server_connect", { server, secret, remember }),
+  serverDisconnect: (server: string) => call<null>("server_disconnect", { server }),
+  serverTest: (config: ServerConfig, secret: string | null) => call<TestReport>("server_test", { config, secret }),
+  serverHostKey: (config: ServerConfig) => call<HostKeyInfo>("server_host_key", { config }),
+  serverTrustedKeys: (config: ServerConfig) => call<TrustedKey[]>("server_trusted_keys", { config }),
+  serverTrust: (config: ServerConfig, key: HostKeyInfo, replace: boolean) => call<HostKeyInfo>("server_trust", { config, key, replace }),
+  serverSecretStatus: (server: string) => call<SecretStatus>("server_secret_status", { server }),
+  keyringStatus: () => call<KeyringStatus>("keyring_status"),
+  serverForgetSecret: (server: string) => call<number>("server_forget_secret", { server }),
+  serverDiagnose: (server: string) => call<ServerDiagnosis>("server_diagnose", { server }),
+  serversOverview: () => call<ServerOverview[]>("servers_overview"),
+  onServerState: async (handler: (e: ServerStateEvent) => void): Promise<UnlistenFn> => {
+    if (!isTauri()) return () => {};
+    return listen<ServerStateEvent>(SERVER_STATE, (e) => handler(e.payload));
+  },
   appInfo: () => call<AppInfo>("app_info"),
   /** Fase 9: versiones nuevas (solo consulta) e información del sistema. */
   updatesCheck: (source?: string) => call<UpdateCheck>("updates_check", { source: source ?? null }),
@@ -350,9 +385,10 @@ const appApi = {
 };
 
 /**
- * Hasta que la interfaz trabaje con varios servidores, las órdenes con Docker
- * van al equipo local, indicado de forma explícita.
+ * Órdenes de la aplicación (sin servidor). Las de Docker se obtienen siempre
+ * para un servidor concreto: `useApi()` dentro de su ámbito (app/server.tsx)
+ * o `dockerApi(servidor)` donde se guarda el servidor de la operación.
  */
-export const api = { ...appApi, ...dockerApi(LOCAL_SERVER) };
+export const api = appApi;
 
 export type Api = typeof api;

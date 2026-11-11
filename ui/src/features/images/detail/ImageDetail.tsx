@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useApi } from "@/app/server";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Box, Download, Eye, EyeOff, RefreshCw, Tag, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +8,6 @@ import { useContainersNav } from "@/features/containers/store";
 import { isSecretKey } from "@/features/containers/specModel";
 import { joinArgs } from "@/features/containers/shellwords";
 import { formatBytes, formatDate, shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { ImageDetails } from "@/shared/ipc/bindings/ImageDetails";
 import type { ImageLayer } from "@/shared/ipc/bindings/ImageLayer";
 import { keys } from "@/shared/query";
@@ -133,6 +133,7 @@ function Summary({ d }: { d: ImageDetails }) {
 }
 
 function Layers({ reference }: { reference: string }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const q = useQuery({ queryKey: ["image", reference, "history"], queryFn: () => api.imageHistory(reference) });
   if (q.isPending)
@@ -179,6 +180,7 @@ function Layers({ reference }: { reference: string }) {
 }
 
 export function ImageDetail({ id, name, tab }: { id: string; name: string; tab: ImageTab }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useImagesNav();

@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Download, Search, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import { Button } from "@/shared/ui/controls";
 import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { PullDialog } from "./pull/PullDialog";
@@ -14,6 +14,7 @@ const LIMITS = [10, 25, 50, 100];
 
 /** Búsqueda en Docker Hub a través del daemon (`docker search`). */
 export function SearchPage() {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const nav = useImagesNav();
   const [term, setTerm] = useState("");

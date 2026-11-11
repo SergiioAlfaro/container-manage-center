@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { ContainersView } from "../ContainersView";
 import { useContainersNav } from "../store";
 import { effectiveSpec, normalizeRef } from "./CreateWizard";
@@ -43,7 +42,7 @@ describe("normalizeRef / effectiveSpec", () => {
 describe("Asistente de creación", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     useContainersNav.setState({ page: { kind: "list" } });
   });
 

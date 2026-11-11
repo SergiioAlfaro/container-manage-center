@@ -8,6 +8,7 @@ import { Dialog } from "@/shared/ui/feedback";
 import { Field, TextInput } from "@/features/containers/create/fields";
 import { familiar, useRefCheck } from "../useRefCheck";
 import { usePulls } from "./pulls";
+import { useServerId } from "@/app/server";
 
 type AuthMode = "dockerConfig" | "anonymous" | "manual";
 
@@ -15,6 +16,7 @@ export function PullDialog({ initial = "", onClose, onStarted }: { initial?: str
   const { t } = useTranslation();
   const qc = useQueryClient();
   const start = usePulls((s) => s.start);
+  const server = useServerId();
   const [text, setText] = useState(initial);
   const [mode, setMode] = useState<AuthMode>("dockerConfig");
   const [user, setUser] = useState("");
@@ -26,7 +28,7 @@ export function PullDialog({ initial = "", onClose, onStarted }: { initial?: str
   const submit = () => {
     if (check.state !== "ok" || !manualOk) return;
     const auth = mode === "manual" ? { mode, username: user.trim(), password } : { mode };
-    void start(text.trim(), auth, () => {
+    void start(server, text.trim(), auth, () => {
       void qc.invalidateQueries({ queryKey: keys.images });
       void qc.invalidateQueries({ queryKey: keys.overview });
     });

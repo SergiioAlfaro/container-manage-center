@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Play, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { CommandError } from "@/shared/ipc/bindings/CommandError";
 import type { ContainerSpec } from "@/shared/ipc/bindings/ContainerSpec";
 import type { PortSpec } from "@/shared/ipc/bindings/PortSpec";
@@ -91,6 +91,7 @@ export function effectiveSpec(spec: ContainerSpec, t: Texts): { spec: ContainerS
 
 
 export function CreateWizard({ initial, notes, sourceName }: { initial: ContainerSpec | null; notes: string[]; sourceName: string | null }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useContainersNav();

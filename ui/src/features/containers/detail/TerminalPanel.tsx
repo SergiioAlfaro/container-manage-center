@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useApi } from "@/app/server";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
 import "@xterm/xterm/css/xterm.css";
 import { Power, TerminalSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { ShellChoice } from "@/shared/ipc/bindings/ShellChoice";
 import type { TerminalEvent } from "@/shared/ipc/bindings/TerminalEvent";
 import { Button, Segmented } from "@/shared/ui/controls";
@@ -27,6 +27,7 @@ export function decodeBase64(data: string): Uint8Array {
  * el usuario lo pide; al cerrarla se termina la shell (D-037).
  */
 export function TerminalPanel({ id, name, running }: { id: string; name: string; running: boolean }) {
+  const api = useApi();
   const { t } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
   const term = useRef<Terminal | null>(null);

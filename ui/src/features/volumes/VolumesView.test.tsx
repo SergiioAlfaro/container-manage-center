@@ -6,16 +6,15 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 
 import i18n from "@/shared/i18n";
 import { api, connected, volume, volumes } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { useEngine } from "@/features/engine/store";
 import { VolumesView } from "./VolumesView";
 import { useVolumesNav } from "./store";
 
 function reset() {
   vi.clearAllMocks();
-  useEngine.setState({ state: connected });
+  setServerState(connected);
   useVolumesNav.setState({ page: { kind: "list" } });
 }
 
@@ -108,7 +107,7 @@ describe("Lista de volúmenes", () => {
 
   it("con Docker antiguo (API < 1.42) avisa de que también elimina los que tienen nombre", async () => {
     const user = userEvent.setup();
-    useEngine.setState({ state: { ...connected, engine: { ...(connected as Extract<typeof connected, { state: "connected" }>).engine, apiVersion: "1.41" } } as typeof connected });
+    setServerState({ ...connected, engine: { ...(connected as Extract<typeof connected, { state: "connected" }>).engine, apiVersion: "1.41" } } as typeof connected);
     renderWithQuery(<VolumesView />);
     await user.click(await screen.findByRole("button", { name: "Limpiar" }));
     const dialog = screen.getByRole("dialog");

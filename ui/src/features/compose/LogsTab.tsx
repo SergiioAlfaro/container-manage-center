@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { useApi } from "@/app/server";
 import { Play, Square, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { OutputLine } from "@/shared/ipc/bindings/OutputLine";
 import type { ProjectRef } from "@/shared/ipc/bindings/ProjectRef";
 import type { RunClosed } from "@/shared/ipc/bindings/RunClosed";
@@ -15,6 +15,7 @@ type Status = "idle" | "opening" | "open" | "ended";
 
 /** `docker compose logs --follow` mientras la pestaña está abierta y siguiendo. */
 export function LogsTab({ project, services, initial }: { project: ProjectRef; services: string[]; initial?: string[] }) {
+  const api = useApi();
   const { t } = useTranslation();
   const [selected, setSelected] = useState<string[]>(initial ?? []);
   const [tail, setTail] = useState<(typeof TAILS)[number]>("100");

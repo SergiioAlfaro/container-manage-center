@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, streams, TIENDA_YAML } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { ComposeView } from "./ComposeView";
 import { useComposeRuns } from "./runs";
 import { useComposeNav } from "./store";
@@ -14,7 +13,7 @@ import { useComposeNav } from "./store";
 function reset() {
   vi.clearAllMocks();
   streams.reset();
-  useEngine.setState({ state: connected });
+  setServerState(connected);
   useComposeNav.setState({ page: { kind: "list" } });
   useComposeRuns.setState({ runs: {} });
 }

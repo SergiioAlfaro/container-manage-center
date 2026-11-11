@@ -1,18 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, dockerEvent } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { useEngine } from "@/features/engine/store";
 import type { DockerEvent } from "@/shared/ipc/bindings/DockerEvent";
 import { EventsView } from "./EventsView";
+import { queryClientFor, ServerScope } from "@/app/server";
 import { REFRESH_DELAY_MS, REFRESH_MIN_INTERVAL_MS, refreshDelay, useLiveRefresh } from "./liveRefresh";
 import { useEvents } from "./store";
 
@@ -20,7 +19,7 @@ let emit: (e: DockerEvent) => void = () => {};
 
 function reset() {
   vi.clearAllMocks();
-  useEngine.setState({ state: connected });
+  setServerState(connected);
   useEvents.setState({ live: [], pending: [], paused: false, loaded: false, tab: "live" });
   api.onDockerEvent.mockImplementation(async (h: (e: DockerEvent) => void) => {
     emit = h;
@@ -102,12 +101,13 @@ describe("Eventos: en directo", () => {
 
   it("cada evento recarga los datos afectados de toda la aplicación, agrupando ráfagas", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    const qc = new QueryClient();
+    // Los eventos del equipo local recargan la caché del equipo local (0.10.0).
+    const qc = queryClientFor("local");
     const spy = vi.spyOn(qc, "invalidateQueries");
     render(
-      <QueryClientProvider client={qc}>
+      <ServerScope server="local">
         <Live />
-      </QueryClientProvider>,
+      </ServerScope>,
     );
     await waitFor(() => expect(api.onDockerEvent).toHaveBeenCalled());
     act(() => {
@@ -128,12 +128,13 @@ describe("Eventos: en directo", () => {
 
   it("en una ráfaga larga recarga como mucho una vez por segundo y nunca pierde la última", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: false });
-    const qc = new QueryClient();
+    // Los eventos del equipo local recargan la caché del equipo local (0.10.0).
+    const qc = queryClientFor("local");
     const spy = vi.spyOn(qc, "invalidateQueries");
     render(
-      <QueryClientProvider client={qc}>
+      <ServerScope server="local">
         <Live />
-      </QueryClientProvider>,
+      </ServerScope>,
     );
     await vi.waitFor(() => expect(api.onDockerEvent).toHaveBeenCalled());
     const flushes = () => spy.mock.calls.filter((c) => JSON.stringify(c[0]!.queryKey) === '["containers"]').length;

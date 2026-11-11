@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
+import { useApi } from "@/app/server";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Link2, RefreshCw, Trash2, Unlink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
 import { formatDate, shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { NetworkDetails } from "@/shared/ipc/bindings/NetworkDetails";
 import type { NetworkMember } from "@/shared/ipc/bindings/NetworkMember";
 import { Button, CopyButton, cx } from "@/shared/ui/controls";
@@ -193,6 +193,7 @@ function Members({ d, onConnect, onDisconnect }: { d: NetworkDetails; onConnect:
 }
 
 export function NetworkDetail({ id, name, tab }: { id: string; name: string; tab: NetworkTab }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useNetworksNav();

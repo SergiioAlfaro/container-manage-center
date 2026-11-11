@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Download, Hammer, RefreshCw, Search, Sparkles, Tag, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { formatAbsolute, formatBytes, formatRelative, shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { ImageSummary } from "@/shared/ipc/bindings/ImageSummary";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
@@ -47,6 +47,7 @@ function IconAction({ label, onClick, children, danger = false }: { label: strin
 }
 
 function ImagesTable() {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const nav = useImagesNav();
   const build = useBuild((s) => s.status);

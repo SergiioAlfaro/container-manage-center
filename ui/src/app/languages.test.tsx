@@ -7,8 +7,7 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 import { api, connected } from "@/test/apiMock";
 import { App } from "./App";
 import { DEFAULT_CONFIG, useApp } from "./store";
-import { useEngine } from "@/features/engine/store";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import i18n from "@/shared/i18n";
 import { formatTimestamp, numberFormat } from "@/shared/format";
 import type { Language } from "@/shared/ipc/bindings/Language";
@@ -18,7 +17,7 @@ async function boot(language: Language = "es") {
   config.ui.language = language;
   api.configGet.mockResolvedValueOnce(config);
   useApp.setState({ section: "settings", config, saveError: null, info: null });
-  useEngine.setState({ state: connected, reconnecting: false, error: null });
+  setServerState(connected);
   await act(() => useApp.getState().init());
   renderWithQuery(<App />);
 }

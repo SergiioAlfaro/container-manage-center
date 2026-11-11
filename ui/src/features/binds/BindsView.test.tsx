@@ -6,15 +6,14 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 
 import i18n from "@/shared/i18n";
 import { api, binds, connected } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { useEngine } from "@/features/engine/store";
 import { BindsView, matchesBind, needsAttention } from "./BindsView";
 
 function reset() {
   vi.clearAllMocks();
-  useEngine.setState({ state: connected });
+  setServerState(connected);
   useApp.setState({ section: "binds" });
 }
 

@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, componentsReport, connected, removalPlan } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { DEFAULT_CONFIG, useApp } from "@/app/store";
 import { ComponentsSettings, formatKib } from "./ComponentsSettings";
 import { SettingsView } from "./SettingsView";
@@ -22,7 +21,7 @@ async function analyze() {
 describe("Configuración: desinstalación y componentes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected, reconnecting: false });
+    setServerState(connected);
     useApp.setState({ config: structuredClone(DEFAULT_CONFIG), saveError: null });
   });
 

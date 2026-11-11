@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { useApi } from "@/app/server";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, RotateCcw, Save, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { ComposeConfig } from "@/shared/ipc/bindings/ComposeConfig";
 import type { ComposeFile } from "@/shared/ipc/bindings/ComposeFile";
 import type { ProjectRef } from "@/shared/ipc/bindings/ProjectRef";
@@ -69,6 +69,7 @@ function errorCode(e: unknown): string | undefined {
 /** Edición de un archivo del proyecto. Valida con Compose (sin guardar) y no
  * sobrescribe un archivo que haya cambiado fuera de la aplicación. */
 export function FileEditor({ project, onSaved }: { project: ProjectRef; onSaved: () => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [index, setIndex] = useState(0);

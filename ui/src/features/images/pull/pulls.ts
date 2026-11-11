@@ -3,8 +3,10 @@
  * descarga continúe aunque el usuario cambie de apartado; cada una es una
  * operación real (y un registro en el panel de actividad).
  */
+import { useMemo } from "react";
 import { create } from "zustand";
-import { api } from "@/shared/ipc/client";
+import { api, dockerApi } from "@/shared/ipc/client";
+import { useServerId } from "@/app/server";
 import type { LayerProgress } from "@/shared/ipc/bindings/LayerProgress";
 import type { PullAuth } from "@/shared/ipc/bindings/PullAuth";
 import type { PullEvent } from "@/shared/ipc/bindings/PullEvent";
@@ -13,6 +15,8 @@ export type PullStatus = "starting" | "running" | "done" | "failed" | "cancelled
 
 export interface PullState {
   key: number;
+  /** Servidor en el que se descarga (0.10.0). */
+  server: string;
   reference: string;
   stream: number | null;
   status: PullStatus;
@@ -25,10 +29,10 @@ export interface PullState {
 
 interface Pulls {
   items: PullState[];
-  start: (reference: string, auth: PullAuth, onFinished?: (ok: boolean) => void) => Promise<number>;
+  start: (server: string, reference: string, auth: PullAuth, onFinished?: (ok: boolean) => void) => Promise<number>;
   cancel: (key: number) => void;
   dismiss: (key: number) => void;
-  clearFinished: () => void;
+  clearFinished: (server: string) => void;
 }
 
 let nextKey = 0;
@@ -70,10 +74,10 @@ export const usePulls = create<Pulls>((set, get) => {
 
   return {
     items: [],
-    start: async (reference, auth, onFinished) => {
+    start: async (server, reference, auth, onFinished) => {
       const key = ++nextKey;
       set((st) => ({
-        items: [{ key, reference, stream: null, status: "starting", layers: [], messages: [], summary: null, error: null, cancelRequested: false }, ...st.items],
+        items: [{ key, server, reference, stream: null, status: "starting", layers: [], messages: [], summary: null, error: null, cancelRequested: false }, ...st.items],
       }));
       const handler = (e: PullEvent) => {
         if (e.event === "progress") {
@@ -86,7 +90,7 @@ export const usePulls = create<Pulls>((set, get) => {
         }
       };
       try {
-        const stream = await api.imagePullOpen(reference, auth, handler);
+        const stream = await dockerApi(server).imagePullOpen(reference, auth, handler);
         const cur = get().items.find((i) => i.key === key);
         if (cur && (cur.status === "starting" || cur.status === "running")) {
           patch(key, { stream });
@@ -105,6 +109,13 @@ export const usePulls = create<Pulls>((set, get) => {
       if (p.stream !== null) void api.streamClose(p.stream);
     },
     dismiss: (key) => set((st) => ({ items: st.items.filter((i) => i.key !== key || i.status === "running" || i.status === "starting") })),
-    clearFinished: () => set((st) => ({ items: st.items.filter((i) => i.status === "running" || i.status === "starting") })),
+    clearFinished: (server) => set((st) => ({ items: st.items.filter((i) => i.server !== server || i.status === "running" || i.status === "starting") })),
   };
 });
+
+/** Descargas del servidor de este ámbito. */
+export function useServerPulls(): PullState[] {
+  const server = useServerId();
+  const items = usePulls((s) => s.items);
+  return useMemo(() => items.filter((i) => i.server === server), [items, server]);
+}

@@ -9,6 +9,9 @@ vi.mock("@/shared/ipc/client", () => ({
     activityClear: vi.fn(async () => {}),
     copyText: vi.fn(async () => {}),
   },
+  dockerApi: vi.fn(() => ({})),
+  LOCAL_SERVER: "local",
+  toCommandError: (e: unknown) => e,
 }));
 
 import { api } from "@/shared/ipc/client";

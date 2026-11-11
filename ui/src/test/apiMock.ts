@@ -3,6 +3,18 @@
  * prueba: nunca se importan desde código de la aplicación.
  */
 import { vi } from "vitest";
+import type { ServerView } from "@/shared/ipc/bindings/ServerView";
+import type { ServerConfig } from "@/shared/ipc/bindings/ServerConfig";
+import type { ProfileIssue } from "@/shared/ipc/bindings/ProfileIssue";
+import type { ConnectOutcome } from "@/shared/ipc/bindings/ConnectOutcome";
+import type { TestReport } from "@/shared/ipc/bindings/TestReport";
+import type { HostKeyInfo } from "@/shared/ipc/bindings/HostKeyInfo";
+import type { TrustedKey } from "@/shared/ipc/bindings/TrustedKey";
+import type { SecretStatus } from "@/shared/ipc/bindings/SecretStatus";
+import type { KeyringStatus } from "@/shared/ipc/bindings/KeyringStatus";
+import type { ServerDiagnosis } from "@/shared/ipc/bindings/ServerDiagnosis";
+import type { ServerOverview } from "@/shared/ipc/bindings/ServerOverview";
+import type { CheckId } from "@/shared/ipc/bindings/CheckId";
 import type { ConnectionState } from "@/shared/ipc/bindings/ConnectionState";
 import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";
 import type { Diagnosis } from "@/shared/ipc/bindings/Diagnosis";
@@ -836,7 +848,69 @@ export function commitPreviewOf(request: CommitRequest, over: Partial<CommitPrev
   };
 }
 
+// ------------------------------------------------------------------ 0.10.0
+
+export function localServer(over: Partial<ServerView> = {}): ServerView {
+  return { id: "local", remote: false, name: "", address: "/var/run/docker.sock", config: null, state: connected, ...over };
+}
+
+export function serverConfig(over: Partial<ServerConfig> = {}): ServerConfig {
+  return {
+    id: "srv-0123abcd",
+    name: "Producción",
+    host: "docker-a.example.com",
+    port: 22,
+    user: "deploy",
+    description: "",
+    auth: "agent",
+    keyPath: "",
+    dockerTarget: "default",
+    dockerSocket: "",
+    dockerContext: "",
+    connectTimeout: 10,
+    proxyJump: "",
+    autoConnect: false,
+    rememberSecret: false,
+    lastSeen: null,
+    ...over,
+  };
+}
+
+export function remoteServer(over: Partial<ServerConfig> = {}, state: ConnectionState = { state: "idle" }): ServerView {
+  const config = serverConfig(over);
+  return { id: config.id, remote: true, name: config.name, address: `${config.user}@${config.host}:${config.port}`, config, state };
+}
+
+export const CHECK_IDS: CheckId[] = ["resolve", "reach", "identity", "auth", "docker", "permission", "api"];
+
+export function testReportOk(): TestReport {
+  return {
+    steps: CHECK_IDS.map((id) => ({ id, status: "ok", detail: id === "api" ? "1.52" : null })),
+    presented: { keyType: "ssh-ed25519", fingerprint: "SHA256:AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/abcde" },
+    problem: null,
+    engine: { version: "29.0.1", apiVersion: "1.52", os: "Ubuntu 24.04", arch: "x86_64", rootless: false },
+    latencyMs: 12,
+  };
+}
+
 export const api = {
+  // 0.10.0: servidores.
+  serversList: vi.fn(async (): Promise<ServerView[]> => [localServer()]),
+  onServerState: vi.fn(async (_h: unknown) => () => {}),
+  serverValidate: vi.fn(async (_c: ServerConfig): Promise<ProfileIssue[]> => []),
+  serverSave: vi.fn(async (c: ServerConfig): Promise<ServerConfig> => ({ ...c, id: c.id || "srv-0123abcd" })),
+  serverDelete: vi.fn(async (_id: string) => null),
+  serverConnect: vi.fn(async (_id: string, _s: string | null, _r: boolean): Promise<ConnectOutcome> => ({ state: connected, keyringNotice: null })),
+  serverDisconnect: vi.fn(async (_id: string) => null),
+  serverTest: vi.fn(async (_c: ServerConfig, _s: string | null): Promise<TestReport> => testReportOk()),
+  serverHostKey: vi.fn(async (_c: ServerConfig): Promise<HostKeyInfo> => ({ keyType: "ssh-ed25519", fingerprint: "SHA256:AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/abcde" })),
+  serverTrustedKeys: vi.fn(async (_c: ServerConfig): Promise<TrustedKey[]> => []),
+  serverTrust: vi.fn(async (_c: ServerConfig, k: HostKeyInfo, _r: boolean): Promise<HostKeyInfo> => k),
+  serverSecretStatus: vi.fn(async (_id: string): Promise<SecretStatus> => ({ kind: null, inSession: false, stored: false, keyring: { state: "available" } })),
+  keyringStatus: vi.fn(async (): Promise<KeyringStatus> => ({ state: "available" })),
+  serverForgetSecret: vi.fn(async (_id: string) => 1),
+  serverDiagnose: vi.fn(async (id: string): Promise<ServerDiagnosis> => ({ server: localServer({ id }), report: testReportOk(), recentErrors: [] })),
+  serversOverview: vi.fn(async (): Promise<ServerOverview[]> => [{ server: localServer(), overview, error: null, updatedAt: "2026-11-11T10:00:00Z" }]),
   appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
   configSet: vi.fn(async (c: typeof DEFAULT_CONFIG) => c),
@@ -988,4 +1062,13 @@ export const api = {
   onEngineState: vi.fn(async (_h: (s: ConnectionState) => void) => () => {}),
 };
 
-export const module = { api, toCommandError: (e: unknown) => e };
+/** Servidor de cada cliente creado con `dockerApi` (para comprobar a dónde va cada orden). */
+export const boundServers: string[] = [];
+
+/** Doble de `dockerApi`: el mismo `api` de pruebas, anotando el servidor. */
+export const dockerApi = vi.fn((server: string) => {
+  boundServers.push(server);
+  return api;
+});
+
+export const module = { api, dockerApi, LOCAL_SERVER: "local", toCommandError: (e: unknown) => e };

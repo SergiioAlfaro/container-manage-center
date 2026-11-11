@@ -4,12 +4,12 @@
  * de escritura del contenedor) y qué no (volúmenes y carpetas montadas).
  */
 import { useEffect, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { HardDrive, Layers, PackagePlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
 import { useImagesNav } from "@/features/images/store";
-import { api } from "@/shared/ipc/client";
 import { renderArgv } from "@/features/activity/logic";
 import type { CommitRequest } from "@/shared/ipc/bindings/CommitRequest";
 import type { CommitResult } from "@/shared/ipc/bindings/CommitResult";
@@ -66,6 +66,7 @@ export function fullReference(r: CommitRequest): string {
 }
 
 export function CommitDialog({ id, name, onClose }: { id: string; name: string; onClose: () => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [form, setForm] = useState<CommitRequest>({ repository: "", tag: "", author: "", message: "", pause: true, replaceExisting: false });

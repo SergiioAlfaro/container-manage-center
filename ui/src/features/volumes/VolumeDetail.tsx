@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useApi } from "@/app/server";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Box, Gauge, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +7,6 @@ import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
 import { Badge } from "@/features/networks/badges";
 import { formatBytes, formatDate, shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { VolumeDetails } from "@/shared/ipc/bindings/VolumeDetails";
 import { Button, CopyButton, cx } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
@@ -106,6 +106,7 @@ function Summary({ d }: { d: VolumeDetails }) {
 }
 
 export function VolumeDetail({ name, tab }: { name: string; tab: VolumeTab }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useVolumesNav();

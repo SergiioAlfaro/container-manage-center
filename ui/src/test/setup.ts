@@ -20,6 +20,10 @@ if (!window.matchMedia) {
 
 afterEach(async () => {
   cleanup();
+  // Cada prueba empieza sin servidores conocidos ni cachés (0.10.0).
+  const { useServers, resetQueryClients } = await import("@/app/server");
+  useServers.setState({ servers: [], states: {}, selected: "local", busy: {}, keyringNotice: {}, secretPrompt: null, error: null, loaded: false });
+  resetQueryClients();
   await i18n.changeLanguage("es");
 });
 

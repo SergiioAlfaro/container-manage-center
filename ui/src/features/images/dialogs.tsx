@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tag, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatBytes, shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { ImageSummary } from "@/shared/ipc/bindings/ImageSummary";
 import type { PruneResult } from "@/shared/ipc/bindings/PruneResult";
 import type { RemoveResult } from "@/shared/ipc/bindings/RemoveResult";
@@ -11,7 +11,7 @@ import { keys } from "@/shared/query";
 import { Button } from "@/shared/ui/controls";
 import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
 import { Field, TextInput } from "@/features/containers/create/fields";
-import { usePulls } from "./pull/pulls";
+import { useServerPulls } from "./pull/pulls";
 import { familiar, useRefCheck } from "./useRefCheck";
 
 type Img = Pick<ImageSummary, "id" | "repoTags" | "usedBy" | "size">;
@@ -34,6 +34,7 @@ export function imageRef(i: Pick<ImageSummary, "id" | "repoTags">): string {
 }
 
 export function TagDialog({ image, onClose, onDone }: { image: Img; onClose: () => void; onDone: (msg: string) => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const invalidate = useInvalidate();
   const source = imageRef(image);
@@ -90,6 +91,7 @@ type RemoveMode = { kind: "tag"; tag: string } | { kind: "image" };
  * completa usa su ID. Avisa de los contenedores que la usan antes de pedir confirmación.
  */
 export function RemoveImageDialog({ image, onClose, onDone }: { image: Img; onClose: () => void; onDone: (r: RemoveResult) => void }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const invalidate = useInvalidate(false);
   const multi = image.repoTags.length > 1;
@@ -173,6 +175,7 @@ export function RemoveImageDialog({ image, onClose, onDone }: { image: Img; onCl
 }
 
 export function PruneDialog({ images, onClose, onDone }: { images: ImageSummary[]; onClose: () => void; onDone: (r: PruneResult) => void }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const invalidate = useInvalidate(false);
   const [all, setAll] = useState(false);
@@ -180,7 +183,7 @@ export function PruneDialog({ images, onClose, onDone }: { images: ImageSummary[
   const affected = images.filter((i) => i.usedBy.length === 0 && (all || i.dangling));
   const bytes = affected.reduce((a, i) => a + i.size, 0);
   // Con el almacén de containerd, limpiar hace fallar las descargas en curso (D-050).
-  const pulling = usePulls((s) => s.items.filter((p) => p.status === "starting" || p.status === "running").length);
+  const pulling = useServerPulls().filter((p) => p.status === "starting" || p.status === "running").length;
   const m = useMutation({
     mutationFn: () => api.imagesPrune(all),
     onSuccess: (r) => {

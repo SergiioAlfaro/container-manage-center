@@ -8,11 +8,11 @@
  *   original se conserva como copia y, si el nuevo falla, se vuelve a él.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Archive, Link2, PencilLine, RotateCcw, Trash2, Unlink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConnectDialog, DisconnectDialog } from "@/features/networks/dialogs";
-import { api } from "@/shared/ipc/client";
 import type { BackupRef } from "@/shared/ipc/bindings/BackupRef";
 import type { EditableConfig } from "@/shared/ipc/bindings/EditableConfig";
 import type { EditRequest } from "@/shared/ipc/bindings/EditRequest";
@@ -37,6 +37,7 @@ const RESTARTS: RestartName[] = ["no", "always", "unlessStopped", "onFailure"];
 
 
 export function EditContainer({ id, name }: { id: string; name: string }) {
+  const api = useApi();
   const { t } = useTranslation();
   const nav = useContainersNav();
   const q = useQuery({ queryKey: editKey(id), queryFn: () => api.containerEditConfig(id) });
@@ -297,6 +298,7 @@ function KindHint({ kind }: { kind: "direct" | "recreate" }) {
 }
 
 function VolumesDatalist() {
+  const api = useApi();
   const volumes = useQuery({ queryKey: ["volumesBrief"], queryFn: api.volumesBrief });
   return (
     <datalist id="dcc-volumes">
@@ -319,6 +321,7 @@ function useRefreshContainer(id: string) {
 
 /** Estado y acciones de ciclo de vida: se aplican al momento. */
 function Lifecycle({ cfg }: { cfg: EditableConfig }) {
+  const api = useApi();
   const { t } = useTranslation();
   const refresh = useRefreshContainer(cfg.id);
   const m = useMutation({ mutationFn: (a: Parameters<typeof api.containerAction>[2]) => api.containerAction(cfg.id, cfg.current.name, a), onSettled: refresh });
@@ -342,6 +345,7 @@ function Lifecycle({ cfg }: { cfg: EditableConfig }) {
 
 /** Copias que dejaron las recreaciones anteriores: restaurar o eliminar. */
 function Backups({ backups }: { backups: BackupRef[] }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
   const nav = useContainersNav();
@@ -432,6 +436,7 @@ function Backups({ backups }: { backups: BackupRef[] }) {
 
 /** Redes: conectar y desconectar se aplican al momento (operaciones directas). */
 function NetworksTab({ cfg }: { cfg: EditableConfig }) {
+  const api = useApi();
   const { t } = useTranslation();
   const refresh = useRefreshContainer(cfg.id);
   const nets = useQuery({ queryKey: keys.networks, queryFn: api.networksList });
@@ -550,6 +555,7 @@ function NetworksTab({ cfg }: { cfg: EditableConfig }) {
 
 /** Opciones que Docker no permite cambiar en un contenedor existente: solo lectura. */
 function Advanced({ cfg }: { cfg: EditableConfig }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const nav = useContainersNav();
   const yes = (b: boolean) => (b ? t("common.yes") : t("common.no"));

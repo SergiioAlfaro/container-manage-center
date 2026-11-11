@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Maximize2, Minimize2, Pencil, RotateCcw, X } from "lucide-react";
+import { Box, Maximize2, Minimize2, Pencil, RotateCcw, X, Server as ServerIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "@/shared/ui/controls";
 import { attachSession, closeSession, fitSession, focusSession, nameProblem, renameSession, reopenSession, setActive, toggleMaximize, MAX_NAME, type Session } from "./sessions";
@@ -76,7 +76,7 @@ export function TerminalPane({ session, active, maximized, canMaximize }: { sess
 
   return (
     <section
-      aria-label={t("terminals.paneLabel", { name: session.name, container: session.containerName })}
+      aria-label={t("terminals.paneLabel", { name: session.name, container: session.containerName, server: session.remote ? session.serverName : t("servers.local") })}
       data-testid="terminal-pane"
       onMouseDown={() => setActive(key)}
       onFocusCapture={() => setActive(key)}
@@ -87,6 +87,17 @@ export function TerminalPane({ session, active, maximized, canMaximize }: { sess
     >
       <header className="flex h-9 shrink-0 items-center gap-2 border-b border-white/10 px-2 text-[12.5px]">
         <Indicator session={session} />
+        <span
+          data-testid="terminal-server"
+          className={cx(
+            "flex max-w-[30%] shrink-0 items-center gap-1 rounded px-1.5 text-[11.5px] leading-[18px]",
+            session.remote ? "bg-beacon/25 text-[#e9dcff]" : "bg-white/10 text-[#b8c6d4]",
+          )}
+          title={t("terminals.server", { name: session.remote ? session.serverName : t("servers.local") })}
+        >
+          <ServerIcon size={12} aria-hidden className="shrink-0" />
+          <span className="truncate">{session.remote ? session.serverName : t("servers.local")}</span>
+        </span>
         <span className="flex min-w-0 items-center gap-1 font-mono text-[12px] text-[#d5dee7]" title={t("terminals.container", { name: session.containerName })}>
           <Box size={13} aria-hidden className="shrink-0 text-[#6f8399]" />
           <span className="truncate">{session.containerName}</span>

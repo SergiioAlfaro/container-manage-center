@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Gauge, Plus, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { Badge } from "@/features/networks/badges";
 import { formatBytes } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
@@ -34,6 +34,7 @@ function IconAction({ label, onClick, children, danger = false }: { label: strin
 }
 
 function VolumesTable() {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const nav = useVolumesNav();
   const q = useQuery({ queryKey: keys.volumes, queryFn: api.volumesList });

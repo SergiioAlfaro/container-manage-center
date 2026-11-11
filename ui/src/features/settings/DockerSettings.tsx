@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ShieldAlert, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +7,6 @@ import { useApp } from "@/app/store";
 import { explain } from "@/features/engine/diagnosis";
 import { SourceLabel } from "@/features/engine/SourceLabel";
 import { useEngine } from "@/features/engine/store";
-import { api } from "@/shared/ipc/client";
 import type { ComposeStatus } from "@/shared/ipc/bindings/ComposeStatus";
 import type { ConnectionTest } from "@/shared/ipc/bindings/ConnectionTest";
 import type { DockerMode } from "@/shared/ipc/bindings/DockerMode";
@@ -40,6 +40,7 @@ export function composeLabel(fetching: boolean, s: ComposeStatus | undefined, t:
 }
 
 export function DockerSettings() {
+  const api = useApi();
   const { t } = useTranslation();
   const docker = useApp((s) => s.config.docker);
   const updateConfig = useApp((s) => s.updateConfig);

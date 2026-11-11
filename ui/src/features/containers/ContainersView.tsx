@@ -1,10 +1,10 @@
 import { memo, useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontal, PackagePlus, PencilLine, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { formatAbsolute, formatRelative, shortId, uniquePorts } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { ContainerAction } from "@/shared/ipc/bindings/ContainerAction";
 import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";
 import { keys } from "@/shared/query";
@@ -162,6 +162,7 @@ const ContainerRow = memo(function ContainerRow({
 });
 
 function ContainersTable() {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: keys.containers, queryFn: api.containersList });

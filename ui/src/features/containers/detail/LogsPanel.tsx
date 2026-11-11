@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useApi } from "@/app/server";
 import { RotateCw, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatTimestamp, numberFormat } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { LogEvent } from "@/shared/ipc/bindings/LogEvent";
 import type { LogLine } from "@/shared/ipc/bindings/LogLine";
 import { Button, CopyButton, Switch, cx } from "@/shared/ui/controls";
@@ -27,6 +27,7 @@ export function formatTs(ts: string, lang: string): string {
 }
 
 export function LogsPanel({ id, name }: { id: string; name: string }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const [lines, setLines] = useState<LogLine[]>([]);
   const [dropped, setDropped] = useState(false);

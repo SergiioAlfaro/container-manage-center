@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { formatBytes } from "@/shared/format";
 import { Button, cx } from "@/shared/ui/controls";
 import { Spinner } from "@/shared/ui/feedback";
-import { layerProgress, overallProgress, usePulls, type PullState } from "./pulls";
+import { layerProgress, overallProgress, usePulls, useServerPulls, type PullState } from "./pulls";
+import { useServerId } from "@/app/server";
 
 function Bar({ value, label }: { value: number | null; label: string }) {
   return (
@@ -66,8 +67,10 @@ function PullRow({ p }: { p: PullState }) {
 /** Descargas en curso y recientes. */
 export function PullsPanel() {
   const { t } = useTranslation();
-  const items = usePulls((s) => s.items);
-  const clear = usePulls((s) => s.clearFinished);
+  const items = useServerPulls();
+  const server = useServerId();
+  const clearFinished = usePulls((s) => s.clearFinished);
+  const clear = () => clearFinished(server);
   if (items.length === 0) return null;
   const finished = items.some((i) => i.status !== "running" && i.status !== "starting");
   return (

@@ -1,8 +1,8 @@
 import { Suspense, lazy, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, PackagePlus, PencilLine, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { ContainerAction } from "@/shared/ipc/bindings/ContainerAction";
 import type { ContainerDetails } from "@/shared/ipc/bindings/ContainerDetails";
 import { keys } from "@/shared/query";
@@ -28,6 +28,7 @@ export function stateOf(d: ContainerDetails): string {
 }
 
 export function ContainerDetail({ id, name, tab }: { id: string; name: string; tab: DetailTab }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useContainersNav();

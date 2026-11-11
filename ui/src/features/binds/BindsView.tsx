@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { Box, FolderPlus, RefreshCw, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +8,6 @@ import { useContainersNav } from "@/features/containers/store";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { Badge } from "@/features/networks/badges";
 import { bindMount, createContainerWith, modeString } from "@/features/volumes/model";
-import { api } from "@/shared/ipc/client";
 import type { BindSummary } from "@/shared/ipc/bindings/BindSummary";
 import { keys } from "@/shared/query";
 import { Button, CopyButton, Segmented } from "@/shared/ui/controls";
@@ -101,6 +101,7 @@ function BindCard({ b }: { b: BindSummary }) {
 }
 
 function BindsList() {
+  const api = useApi();
   const { t } = useTranslation();
   const q = useQuery({ queryKey: keys.binds, queryFn: api.bindsList });
   const [filter, setFilter] = useState<BindFilter>("all");

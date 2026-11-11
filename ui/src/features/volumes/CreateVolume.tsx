@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { KeyValue } from "@/shared/ipc/bindings/KeyValue";
 import type { SpecIssue } from "@/shared/ipc/bindings/SpecIssue";
 import type { VolumePreview } from "@/shared/ipc/bindings/VolumePreview";
@@ -69,6 +69,7 @@ function KvList({ rows, onChange, field, issues, addLabel, empty, keyPh, valuePh
 
 /** Asistente de creación de volúmenes. Validación, cuerpo y comando los genera el backend. */
 export function CreateVolume() {
+  const api = useApi();
   const { t } = useTranslation();
   const nav = useVolumesNav();
   const invalidate = useInvalidateVolumes();

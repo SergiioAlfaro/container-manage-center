@@ -34,7 +34,7 @@ describe("órdenes con Docker ligadas a un servidor (0.10.0)", () => {
       ["engine_overview", "srv-bbbbbbbb"],
     ]);
     // Los argumentos propios no se pierden ni pueden sustituir al servidor.
-    expect(calls[1].args).toMatchObject({ id: "web", force: true, volumes: false, confirmed: true });
+    expect(calls[1]!.args).toMatchObject({ id: "web", force: true, volumes: false, confirmed: true });
   });
 
   it("todas las órdenes del cliente de servidor envían el servidor", async () => {
@@ -47,15 +47,18 @@ describe("órdenes con Docker ligadas a un servidor (0.10.0)", () => {
       // Argumentos de relleno: solo interesa lo que llega al backend.
       await fn("x", "x", "x", "x", "x", "x", () => {}).catch(() => {});
       expect(calls.length, name).toBe(1);
-      expect(calls[0].args?.server, name).toBe("srv-cccccccc");
+      expect(calls[0]!.args?.server, name).toBe("srv-cccccccc");
     }
   });
 
-  it("el cliente por defecto usa el equipo local de forma explícita; las órdenes de la aplicación no llevan servidor", async () => {
-    await api.containersList();
+  it("el cliente de la aplicación no tiene órdenes de Docker ni envía servidor", async () => {
+    expect("containersList" in api).toBe(false);
+    expect(Object.keys(dockerApi(LOCAL_SERVER)).every((k) => !(k in api))).toBe(true);
     await api.configGet();
-    expect(calls[0]).toMatchObject({ cmd: "containers_list", args: { server: LOCAL_SERVER } });
-    expect(calls[1].cmd).toBe("config_get");
-    expect(calls[1].args?.server).toBeUndefined();
+    await api.serverConnect("srv-aaaaaaaa", null, false);
+    expect(calls[0]!.cmd).toBe("config_get");
+    expect(calls[0]!.args?.server).toBeUndefined();
+    // Las órdenes de servidores llevan el suyo, explícito.
+    expect(calls[1]).toMatchObject({ cmd: "server_connect", args: { server: "srv-aaaaaaaa" } });
   });
 });

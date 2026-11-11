@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FilePlus2, Play, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { ComposeAction } from "@/shared/ipc/bindings/ComposeAction";
 import type { DownImages } from "@/shared/ipc/bindings/DownImages";
 import type { ProjectModel } from "@/shared/ipc/bindings/ProjectModel";
@@ -16,6 +16,7 @@ import { useRunCompose } from "./runs";
 
 /** Comando exacto que se ejecutará, calculado por el backend. */
 function useCommand(project: ProjectRef, action: ComposeAction) {
+  const api = useApi();
   const [cmd, setCmd] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const key = JSON.stringify(action);
@@ -183,6 +184,7 @@ export function DownDialog({ project, model, containers, onClose, onStarted }: {
 
 /** Añadir a la lista un proyecto que ya existe en el equipo (uno o varios archivos). */
 export function AddProjectDialog({ onClose, onAdded }: { onClose: () => void; onAdded: (name: string) => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [files, setFiles] = useState<string[]>([]);

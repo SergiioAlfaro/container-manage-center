@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { api } from "@/shared/ipc/client";
+import { api, dockerApi } from "@/shared/ipc/client";
 import type { ContainerAfter } from "@/shared/ipc/bindings/ContainerAfter";
 import type { ShellChoice } from "@/shared/ipc/bindings/ShellChoice";
 import type { TerminalEvent } from "@/shared/ipc/bindings/TerminalEvent";
@@ -25,6 +25,12 @@ export type SessionStatus = "opening" | "open" | "ended";
 
 export interface Session {
   key: number;
+  /** Servidor del contenedor (0.10.0): la sesión siempre va a ese servidor. */
+  server: string;
+  /** Nombre del servidor al abrirla (para la etiqueta; vacío = equipo local). */
+  serverName: string;
+  /** Servidor remoto. */
+  remote: boolean;
   containerId: string;
   containerName: string;
   shell: ShellChoice;
@@ -111,7 +117,7 @@ function start(key: number) {
   let ended = false;
   const current = () => runtimes.get(key) === rt && rt.generation === gen;
 
-  api
+  dockerApi(s.server)
     .terminalOpen(s.containerId, s.containerName, s.shell, rt.term.cols, rt.term.rows, (e: TerminalEvent) => {
       if (!current()) return;
       if (e.event === "output") {
@@ -146,7 +152,15 @@ function start(key: number) {
 }
 
 /** Abre una sesión nueva en un contenedor. Devuelve su clave, o `null` si se alcanzó el límite. */
-export function openSession(o: { containerId: string; containerName: string; shell: ShellChoice; name?: string }): number | null {
+export function openSession(o: {
+  server: string;
+  serverName: string;
+  remote: boolean;
+  containerId: string;
+  containerName: string;
+  shell: ShellChoice;
+  name?: string;
+}): number | null {
   const st = useTerminals.getState();
   if (st.sessions.length >= MAX_SESSIONS) return null;
   const key = ++nextKey;
@@ -173,7 +187,7 @@ export function openSession(o: { containerId: string; containerName: string; she
   };
   runtimes.set(key, rt);
   useTerminals.setState((s) => ({
-    sessions: [...s.sessions, { key, containerId: o.containerId, containerName: o.containerName, shell: o.shell, name, status: "opening", summary: null, error: null, after: null }],
+    sessions: [...s.sessions, { key, server: o.server, serverName: o.serverName, remote: o.remote, containerId: o.containerId, containerName: o.containerName, shell: o.shell, name, status: "opening", summary: null, error: null, after: null }],
     active: key,
     // Una sesión nueva se ve: si había otra maximizada, se vuelve a la cuadrícula.
     maximized: null,

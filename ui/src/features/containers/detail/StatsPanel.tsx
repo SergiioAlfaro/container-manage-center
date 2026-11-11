@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { RotateCw, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatBytes, numberFormat } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { StatsEvent } from "@/shared/ipc/bindings/StatsEvent";
 import type { StatsSample } from "@/shared/ipc/bindings/StatsSample";
 import { Button } from "@/shared/ui/controls";
@@ -41,6 +41,7 @@ function Card({ title, value, sub, children }: { title: string; value: string; s
 }
 
 export function StatsPanel({ id, name, running }: { id: string; name: string; running: boolean }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [samples, setSamples] = useState<StatsSample[]>([]);

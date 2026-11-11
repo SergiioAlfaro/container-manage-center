@@ -7,14 +7,13 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 import { api } from "@/test/apiMock";
 import { App } from "./App";
 import { DEFAULT_CONFIG, useApp } from "./store";
-import { useEngine } from "@/features/engine/store";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 const DEFAULT = DEFAULT_CONFIG;
 const configSet = api.configSet;
 
 async function boot() {
   useApp.setState({ section: "dashboard", config: structuredClone(DEFAULT), saveError: null, info: null });
-  useEngine.setState({ state: null, reconnecting: false, error: null });
+  setServerState(null);
   await act(() => useApp.getState().init());
   renderWithQuery(<App />);
 }

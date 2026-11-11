@@ -5,13 +5,12 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, imageDetails, images, streams } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { useEngine } from "@/features/engine/store";
 import { ImagesView, matchesImage } from "./ImagesView";
 import { usePulls } from "./pull/pulls";
-import { useBuild } from "./build/buildStore";
+import { useBuildStore } from "./build/buildStore";
 import { useImagesNav } from "./store";
 import { formatInstruction } from "./detail/ImageDetail";
 import { relativeTo } from "./build/BuildPage";
@@ -19,11 +18,10 @@ import { relativeTo } from "./build/BuildPage";
 function reset() {
   vi.clearAllMocks();
   streams.reset();
-  useEngine.setState({ state: connected });
+  setServerState(connected);
   useImagesNav.setState({ page: { kind: "list" } });
   usePulls.setState({ items: [] });
-  useBuild.getState().reset();
-  useBuild.setState({ status: "idle" });
+  useBuildStore.setState({ byServer: {} });
 }
 
 const row = (text: string) => screen.getByText(text).closest("tr")!;
@@ -174,7 +172,7 @@ describe("Limpieza y descargas", () => {
   beforeEach(reset);
 
   it("no deja limpiar mientras hay una descarga en curso (Docker la haría fallar, D-050)", async () => {
-    usePulls.setState({ items: [{ key: 1, reference: "python:3.13", stream: 1, status: "running", layers: [], messages: [], summary: null, error: null, cancelRequested: false }] });
+    usePulls.setState({ items: [{ key: 1, server: "local", reference: "python:3.13", stream: 1, status: "running", layers: [], messages: [], summary: null, error: null, cancelRequested: false }] });
     renderWithQuery(<ImagesView />);
     await screen.findByText("nginx:1.27");
     await userEvent.click(screen.getByRole("button", { name: "Limpiar" }));
@@ -182,7 +180,7 @@ describe("Limpieza y descargas", () => {
     expect(within(dialog).getByText(/Hay 1 descarga en curso. Espera a que termine/)).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Limpiar" })).toBeDisabled();
     // Al terminar la descarga se puede limpiar.
-    act(() => usePulls.setState({ items: [{ key: 1, reference: "python:3.13", stream: null, status: "done", layers: [], messages: [], summary: "ok", error: null, cancelRequested: false }] }));
+    act(() => usePulls.setState({ items: [{ key: 1, server: "local", reference: "python:3.13", stream: null, status: "done", layers: [], messages: [], summary: "ok", error: null, cancelRequested: false }] }));
     expect(within(dialog).queryByText(/descarga en curso/)).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Limpiar" })).toBeEnabled();
   });
@@ -344,7 +342,7 @@ describe("Construcción", () => {
     renderWithQuery(<ImagesView />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Construir" })).toBeEnabled());
     await userEvent.click(screen.getByRole("button", { name: "Construir" }));
-    await waitFor(() => expect(useBuild.getState().stream).toBe(1));
+    await waitFor(() => expect(useBuildStore.getState().byServer.local?.stream).toBe(1));
     await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(api.streamClose).toHaveBeenCalledWith(1);
     expect(await screen.findByText("Construcción cancelada")).toBeInTheDocument();

@@ -7,8 +7,7 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 import { api, connected } from "@/test/apiMock";
 import { App } from "./App";
 import { DEFAULT_CONFIG, useApp } from "./store";
-import { useEngine } from "@/features/engine/store";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 
 /** Botones sin texto visible (solo icono) que no dicen qué hacen. */
 function unnamedIconButtons(root: HTMLElement): string[] {
@@ -26,7 +25,7 @@ describe("Accesibilidad de la interacción (0.9.1)", () => {
 
   it("en todos los apartados, los botones de solo icono tienen nombre accesible y descripción emergente", async () => {
     useApp.setState({ section: "dashboard", config: structuredClone(DEFAULT_CONFIG), saveError: null, info: null });
-    useEngine.setState({ state: connected, reconnecting: false, error: null });
+    setServerState(connected);
     await act(() => useApp.getState().init());
     renderWithQuery(<App />);
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });

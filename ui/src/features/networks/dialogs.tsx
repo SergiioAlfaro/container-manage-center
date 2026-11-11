@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link2, Trash2, Unlink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { NetworkMember } from "@/shared/ipc/bindings/NetworkMember";
 import type { NetworkSummary } from "@/shared/ipc/bindings/NetworkSummary";
 import { keys } from "@/shared/query";
@@ -33,6 +33,7 @@ export function useInvalidateNetworks(details = true) {
  * programa o el CLI pueden haber cambiado las redes).
  */
 function useFreshNetworks() {
+  const api = useApi();
   const q = useQuery({ queryKey: keys.networks, queryFn: api.networksList, refetchOnMount: "always" });
   return { list: q.data, fresh: q.isFetchedAfterMount && !q.isFetching, error: q.error };
 }
@@ -65,6 +66,7 @@ function MemberList({ members }: { members: NetworkMember[] }) {
  * detenidos, que después no podrán arrancar: se avisa de ambos casos (D-047).
  */
 export function RemoveNetworkDialog({ network: initial, onClose, onDone }: { network: Net; onClose: () => void; onDone: () => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const invalidate = useInvalidateNetworks(false);
   const { list, fresh } = useFreshNetworks();
@@ -130,6 +132,7 @@ export function RemoveNetworkDialog({ network: initial, onClose, onDone }: { net
 
 /** Limpieza: estima con la lista actual qué eliminará Docker y avisa de los contenedores detenidos afectados. */
 export function PruneNetworksDialog({ onClose, onDone }: { onClose: () => void; onDone: (deleted: string[]) => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const invalidate = useInvalidateNetworks(false);
   const { list, fresh, error } = useFreshNetworks();
@@ -187,6 +190,7 @@ export function PruneNetworksDialog({ onClose, onDone }: { onClose: () => void; 
 
 /** Conectar un contenedor a la red, con alias e IP fija opcionales. */
 export function ConnectDialog({ network: initial, initialContainer, onClose, onDone }: { network: Net; initialContainer?: string; onClose: () => void; onDone: (msg: string) => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const invalidate = useInvalidateNetworks();
   const { list, fresh: netFresh } = useFreshNetworks();
@@ -285,6 +289,7 @@ export function DisconnectDialog({
   /** Es la única red del contenedor (0.9.2): se queda sin conectividad. */
   lastNetwork?: boolean;
 }) {
+  const api = useApi();
   const { t } = useTranslation();
   const invalidate = useInvalidateNetworks();
   const [force, setForce] = useState(false);

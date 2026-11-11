@@ -32,7 +32,7 @@ describe("descargas", () => {
 
   it("sigue el progreso, termina y avisa", async () => {
     const done = vi.fn();
-    await usePulls.getState().start("nginx:1.27", { mode: "dockerConfig" }, done);
+    await usePulls.getState().start("local", "nginx:1.27", { mode: "dockerConfig" }, done);
     expect(api.imagePullOpen).toHaveBeenCalledWith("nginx:1.27", { mode: "dockerConfig" }, expect.any(Function));
     streams.emit(1, { event: "progress", update: { layers: [L("Downloading", 10, 100)], messages: ["1.27: Pulling from library/nginx"] } });
     let p = usePulls.getState().items[0]!;
@@ -48,7 +48,7 @@ describe("descargas", () => {
 
   it("una descarga sin capas (Docker ya tenía el contenido) termina bien con su resumen", async () => {
     const done = vi.fn();
-    await usePulls.getState().start("127.0.0.1:5000/app:1", { mode: "anonymous" }, done);
+    await usePulls.getState().start("local", "127.0.0.1:5000/app:1", { mode: "anonymous" }, done);
     // Almacén clásico: solo mensajes generales, ninguna capa.
     streams.emit(1, { event: "progress", update: { layers: [], messages: ["1: Pulling from app", "Digest: sha256:a974", "Status: Downloaded newer image for 127.0.0.1:5000/app:1"] } });
     let p = usePulls.getState().items[0]!;
@@ -64,17 +64,17 @@ describe("descargas", () => {
   });
 
   it("cancelar cierra el flujo y queda como cancelada", async () => {
-    const key = await usePulls.getState().start("nginx", { mode: "anonymous" });
+    const key = await usePulls.getState().start("local", "nginx", { mode: "anonymous" });
     usePulls.getState().cancel(key);
     expect(api.streamClose).toHaveBeenCalledWith(1);
     expect(usePulls.getState().items[0]!.status).toBe("cancelled");
   });
 
   it("los errores de Docker se conservan tal cual", async () => {
-    await usePulls.getState().start("privada/app", { mode: "anonymous" });
+    await usePulls.getState().start("local", "privada/app", { mode: "anonymous" });
     streams.emit(1, { event: "end", closed: { end: null, error: { code: "engine.docker", message: "pull access denied for privada/app", httpStatus: 404, issues: null } } });
     expect(usePulls.getState().items[0]).toMatchObject({ status: "failed", error: "pull access denied for privada/app" });
-    usePulls.getState().clearFinished();
+    usePulls.getState().clearFinished("local");
     expect(usePulls.getState().items).toHaveLength(0);
   });
 });

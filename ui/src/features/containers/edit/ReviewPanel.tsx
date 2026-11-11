@@ -4,10 +4,10 @@
  * se muestra y se recoge la confirmación expresa del usuario.
  */
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CircleAlert, CircleCheck, CircleX, RefreshCcw, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { Change } from "@/shared/ipc/bindings/Change";
 import type { EditableConfig } from "@/shared/ipc/bindings/EditableConfig";
 import type { EditOutcome } from "@/shared/ipc/bindings/EditOutcome";
@@ -34,6 +34,7 @@ export function ReviewPanel({
   onBack: (issues?: SpecIssue[]) => void;
   onApplied?: (out: EditOutcome) => void;
 }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   // Una sola comparación al abrir la revisión (cada consulta queda en la actividad).

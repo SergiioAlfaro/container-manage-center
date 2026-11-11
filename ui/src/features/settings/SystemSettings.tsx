@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useApi } from "@/app/server";
 import { useTranslation } from "react-i18next";
 import { useEngine } from "@/features/engine/store";
 import { formatBytes } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { ComposeStatus } from "@/shared/ipc/bindings/ComposeStatus";
 import type { SystemInfo } from "@/shared/ipc/bindings/SystemInfo";
 import type { SystemOverview } from "@/shared/ipc/bindings/SystemOverview";
@@ -26,6 +26,7 @@ export function systemReport(sections: Array<[string, Line[]]>): string {
 }
 
 export function SystemSettings() {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const state = useEngine((s) => s.state);
   const connected = state?.state === "connected";

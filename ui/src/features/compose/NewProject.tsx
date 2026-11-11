@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, FilePlus2, FolderOpen, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { ComposeConfig } from "@/shared/ipc/bindings/ComposeConfig";
 import { keys } from "@/shared/query";
 import { Button } from "@/shared/ui/controls";
@@ -13,6 +13,7 @@ import { useComposeNav } from "./store";
 
 /** Crea `compose.yaml` en una carpeta, lo valida con Compose y lo añade a la lista. */
 export function NewProject() {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useComposeNav();

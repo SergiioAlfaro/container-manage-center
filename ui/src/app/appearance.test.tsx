@@ -9,8 +9,7 @@ import { api, connected } from "@/test/apiMock";
 import { apiRecord } from "@/test/fixtures";
 import { App } from "./App";
 import { DEFAULT_CONFIG, applyAppearance, useApp } from "./store";
-import { useEngine } from "@/features/engine/store";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import i18n from "@/shared/i18n";
 import type { Accent } from "@/shared/ipc/bindings/Accent";
 import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
@@ -23,7 +22,7 @@ async function boot(accent: Accent = "teal") {
   config.ui.accent = accent;
   api.configGet.mockResolvedValueOnce(config);
   useApp.setState({ section: "settings", config, saveError: null, info: null });
-  useEngine.setState({ state: connected, reconnecting: false, error: null });
+  setServerState(connected);
   await act(() => useApp.getState().init());
   renderWithQuery(<App />);
 }

@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { Link2, Plus, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { shortId } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { NetworkSummary } from "@/shared/ipc/bindings/NetworkSummary";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
@@ -34,6 +34,7 @@ function IconAction({ label, onClick, children, danger = false, disabled = false
 }
 
 function NetworksTable() {
+  const api = useApi();
   const { t } = useTranslation();
   const nav = useNetworksNav();
   const q = useQuery({ queryKey: keys.networks, queryFn: api.networksList });

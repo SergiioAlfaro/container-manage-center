@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { useQueryClient, type QueryKey } from "@tanstack/react-query";
+import type { QueryKey } from "@tanstack/react-query";
+import { LOCAL_SERVER, queryClientFor } from "@/app/server";
 import { api } from "@/shared/ipc/client";
 import { invalidationsFor } from "./model";
 import { useEvents } from "./store";
@@ -17,25 +18,27 @@ export function refreshDelay(now: number, lastFlush: number): number {
 }
 
 /** Recibe los eventos de Docker: los añade a la vista en directo y vuelve a
- *  pedir a Docker los datos afectados (actualización en tiempo real, D-057). */
+ *  pedir a Docker los datos afectados (actualización en tiempo real, D-057).
+ *  0.10.0: cada evento lleva su servidor y solo se recarga la caché de ese
+ *  servidor. */
 export function useLiveRefresh() {
-  const qc = useQueryClient();
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    const pending = new Map<string, QueryKey>();
+    const pending = new Map<string, { server: string; key: QueryKey }>();
     let timer: number | undefined;
     let lastFlush = -Infinity;
     const flush = () => {
       timer = undefined;
       lastFlush = Date.now();
-      for (const k of pending.values()) void qc.invalidateQueries({ queryKey: k });
+      for (const p of pending.values()) void queryClientFor(p.server).invalidateQueries({ queryKey: p.key });
       pending.clear();
     };
     void api
       .onDockerEvent((e) => {
         useEvents.getState().add(e);
-        for (const k of invalidationsFor(e)) pending.set(JSON.stringify(k), k);
+        const server = e.server?.id ?? LOCAL_SERVER;
+        for (const k of invalidationsFor(e)) pending.set(JSON.stringify([server, k]), { server, key: k });
         if (pending.size > 0 && timer === undefined) timer = window.setTimeout(flush, refreshDelay(Date.now(), lastFlush));
       })
       .then((un) => {
@@ -47,5 +50,5 @@ export function useLiveRefresh() {
       unlisten?.();
       if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [qc]);
+  }, []);
 }

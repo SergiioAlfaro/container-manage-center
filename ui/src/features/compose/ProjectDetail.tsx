@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Download, Eye, Hammer, ListPlus, ListX, Play, RefreshCw, RotateCw, ScrollText, Square, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
 import { Badge } from "@/features/networks/badges";
-import { api } from "@/shared/ipc/client";
 import type { ComposeProject } from "@/shared/ipc/bindings/ComposeProject";
 import type { ComposeConfig } from "@/shared/ipc/bindings/ComposeConfig";
 import type { ProjectRef } from "@/shared/ipc/bindings/ProjectRef";
@@ -18,7 +18,7 @@ import { LogsTab } from "./LogsTab";
 import { buildAction, dirOf, hasFiles, relativeTo, portLabel, refOf, serviceRows, simpleAction, upAction, type ServiceRow } from "./model";
 import { RunPanel, RunStatusLine } from "./RunPanel";
 import { StateBadge } from "./StateBadge";
-import { useComposeRuns, useRunCompose } from "./runs";
+import { useProjectRun, useRunCompose } from "./runs";
 import { useComposeNav, type ProjectTab } from "./store";
 
 const TABS: ProjectTab[] = ["services", "logs", "file", "config", "output"];
@@ -169,6 +169,7 @@ function ConfigTab({ cfg }: { cfg: ComposeConfig | undefined }) {
 type Dialog = "up" | "down" | null;
 
 export function ProjectDetail({ name, tab, logServices }: { name: string; tab: ProjectTab; logServices?: string[] }) {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const nav = useComposeNav();
@@ -184,7 +185,7 @@ export function ProjectDetail({ name, tab, logServices }: { name: string; tab: P
     refetchOnWindowFocus: false,
     staleTime: 30_000,
   });
-  const current = useComposeRuns((s) => s.runs[name]);
+  const current = useProjectRun(name);
   const busy = current?.status === "running";
   const [dialog, setDialog] = useState<Dialog>(null);
   const model = cfg.data?.model ?? null;

@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEngine } from "@/features/engine/store";
 import { formatBytes } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { VolumePruneResult } from "@/shared/ipc/bindings/VolumePruneResult";
 import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import type { VolumeUser } from "@/shared/ipc/bindings/VolumeUser";
@@ -32,6 +32,7 @@ export function useInvalidateVolumes(details = true) {
 
 /** Lista consultada a Docker al abrir el diálogo (no una copia desactualizada, D-049). */
 function useFreshVolumes() {
+  const api = useApi();
   const q = useQuery({ queryKey: keys.volumes, queryFn: api.volumesList, refetchOnMount: "always" });
   return { list: q.data, fresh: q.isFetchedAfterMount && !q.isFetching, error: q.error };
 }
@@ -63,6 +64,7 @@ function UserList({ users }: { users: VolumeUser[] }) {
  * marcha o detenido, también forzando (D-051): en ese caso no se deja continuar.
  */
 export function RemoveVolumeDialog({ volume: initial, onClose, onDone }: { volume: Pick<VolumeSummary, "name" | "containers" | "anonymous">; onClose: () => void; onDone: () => void }) {
+  const api = useApi();
   const { t } = useTranslation();
   const invalidate = useInvalidateVolumes(false);
   const { list, fresh } = useFreshVolumes();
@@ -114,6 +116,7 @@ export function RemoveVolumeDialog({ volume: initial, onClose, onDone }: { volum
 
 /** Limpieza: anónimos sin uso o, con confirmación adicional, todos los volúmenes sin uso. */
 export function PruneVolumesDialog({ onClose, onDone }: { onClose: () => void; onDone: (r: VolumePruneResult) => void }) {
+  const api = useApi();
   const { t, i18n } = useTranslation();
   const invalidate = useInvalidateVolumes(false);
   const apiVersion = useApiVersion();

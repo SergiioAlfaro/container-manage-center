@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, containers, diagnosis, disconnected } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { ContainersView, allowedActions } from "./ContainersView";
 
 const row = (name: string) => screen.getByText(name, { selector: "span" }).closest("tr")!;
@@ -23,7 +22,7 @@ describe("allowedActions", () => {
 describe("Contenedores", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected });
+    setServerState(connected);
   });
 
   it("lista los contenedores que devuelve Docker con estado, puertos y proyecto", async () => {
@@ -128,7 +127,7 @@ describe("Contenedores", () => {
   });
 
   it("sin conexión no consulta Docker y remite al diagnóstico", () => {
-    useEngine.setState({ state: disconnected(diagnosis({ kind: "noSocket" })) });
+    setServerState(disconnected(diagnosis({ kind: "noSocket" })));
     renderWithQuery(<ContainersView />);
     expect(screen.getByText("Este apartado necesita conexión con Docker")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ver diagnóstico" })).toBeInTheDocument();

@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, diagnosis, disconnected } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { ConnectionBadge } from "@/features/engine/ConnectionBadge";
 import { DashboardView } from "./DashboardView";
@@ -18,7 +17,7 @@ describe("Dashboard", () => {
   });
 
   it("con conexión muestra los datos del motor que devuelve el backend", async () => {
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     renderWithQuery(<DashboardView />);
     expect(await screen.findByText("29.9.2")).toBeInTheDocument();
     expect(screen.getByText("/var/run/docker.sock")).toBeInTheDocument();
@@ -32,16 +31,16 @@ describe("Dashboard", () => {
   });
 
   it("Actualizar vuelve a pedir los datos a Docker", async () => {
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     renderWithQuery(<DashboardView />);
     await userEvent.click(await screen.findByRole("button", { name: "Actualizar" }));
     expect(api.engineOverview).toHaveBeenCalledTimes(2);
   });
 
   it("sin conexión no pide datos y muestra el diagnóstico con instrucciones concretas", async () => {
-    useEngine.setState({
-      state: disconnected(diagnosis({ kind: "permissionDenied", permissions: { socketPath: "/var/run/docker.sock", owner: "root", group: "docker", mode: "660", userInGroup: false, groupActiveInSession: false } })),
-    });
+    setServerState(
+      disconnected(diagnosis({ kind: "permissionDenied", permissions: { socketPath: "/var/run/docker.sock", owner: "root", group: "docker", mode: "660", userInGroup: false, groupActiveInSession: false } })),
+    );
     renderWithQuery(<DashboardView />);
     expect(screen.getByRole("heading", { name: "Sin permiso para usar el socket de Docker" })).toBeInTheDocument();
     expect(screen.getByText(/root:docker con permisos 660/)).toBeInTheDocument();
@@ -54,7 +53,7 @@ describe("Dashboard", () => {
 
   it("Volver a conectar y Configurar conexión funcionan desde el diagnóstico", async () => {
     const down = disconnected(diagnosis({ kind: "daemonNotRunning", socketPath: "/var/run/docker.sock" }));
-    useEngine.setState({ state: down });
+    setServerState(down);
     // El daemon sigue caído: el backend vuelve a informar del mismo problema.
     api.engineReconnect.mockResolvedValueOnce(down);
     renderWithQuery(<DashboardView />);
@@ -67,7 +66,7 @@ describe("Dashboard", () => {
 
   it("el error de una consulta se muestra con el mensaje de Docker", async () => {
     api.engineOverview.mockRejectedValueOnce({ code: "engine.docker", message: "Error response from daemon: boom", httpStatus: 500 });
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     renderWithQuery(<DashboardView />);
     expect(await screen.findByRole("alert")).toHaveTextContent("Error response from daemon: boom");
   });
@@ -77,13 +76,13 @@ describe("ConnectionBadge", () => {
   it("refleja conectado, desconectado y conectando", () => {
     const onOpen = vi.fn();
     const c = connected as Extract<typeof connected, { state: "connected" }>;
-    useEngine.setState({ state: { ...c, engine: { ...c.engine, rootless: true } } });
+    setServerState({ ...c, engine: { ...c.engine, rootless: true } });
     const { rerender } = renderWithQuery(<ConnectionBadge onOpen={onOpen} />);
     expect(screen.getByRole("button", { name: "Conectado a /var/run/docker.sock" })).toHaveTextContent("Docker 29.9.2rootless");
-    useEngine.setState({ state: disconnected(diagnosis({ kind: "noSocket" })) });
+    setServerState(disconnected(diagnosis({ kind: "noSocket" })));
     rerender(<ConnectionBadge onOpen={onOpen} />);
     expect(screen.getByRole("button")).toHaveTextContent("Sin conexión con Docker");
-    useEngine.setState({ state: { state: "connecting" } });
+    setServerState({ state: "connecting" });
     rerender(<ConnectionBadge onOpen={onOpen} />);
     expect(screen.getByRole("button")).toHaveTextContent("Conectando con Docker…");
   });

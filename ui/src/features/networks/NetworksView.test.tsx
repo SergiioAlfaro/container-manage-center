@@ -6,16 +6,15 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 
 import i18n from "@/shared/i18n";
 import { api, connected, network, networks } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { useEngine } from "@/features/engine/store";
 import { NetworksView } from "./NetworksView";
 import { useNetworksNav } from "./store";
 
 function reset() {
   vi.clearAllMocks();
-  useEngine.setState({ state: connected });
+  setServerState(connected);
   useNetworksNav.setState({ page: { kind: "list" } });
 }
 

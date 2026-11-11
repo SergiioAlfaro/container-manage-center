@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
+import { useApi, useServerView } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { ShellChoice } from "@/shared/ipc/bindings/ShellChoice";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
@@ -13,6 +13,8 @@ const fieldClass =
 
 /** Elegir contenedor en ejecución, shell y nombre de la sesión. */
 export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
+  const api = useApi();
+  const view = useServerView();
   const { t } = useTranslation();
   const ids = { container: useId(), name: useId(), nameError: useId() };
   const list = useQuery({ queryKey: keys.containers, queryFn: api.containersList });
@@ -30,7 +32,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
 
   const submit = () => {
     if (!chosen || problem) return;
-    openSession({ containerId: chosen.id, containerName: chosen.name, shell, name: name.trim() || undefined });
+    openSession({ server: api.server, serverName: view?.remote ? view.name : "", remote: !!view?.remote, containerId: chosen.id, containerName: chosen.name, shell, name: name.trim() || undefined });
     onClose();
   };
 

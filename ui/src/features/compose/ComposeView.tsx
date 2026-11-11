@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { FilePlus2, FolderOpen, Play, RefreshCw, Search, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireConnection } from "@/features/engine/RequireConnection";
 import { composeLabel } from "@/features/settings/DockerSettings";
 import { Badge } from "@/features/networks/badges";
-import { api } from "@/shared/ipc/client";
 import { keys } from "@/shared/query";
 import { Button, Segmented } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
@@ -15,14 +15,17 @@ import { NewProject } from "./NewProject";
 import { ProjectDetail } from "./ProjectDetail";
 import { RunStatusLine } from "./RunPanel";
 import { StateBadge } from "./StateBadge";
-import { useComposeRuns, useRunCompose } from "./runs";
+import { runKey, useComposeRuns, useRunCompose } from "./runs";
+import { useServerId } from "@/app/server";
 import { useComposeNav } from "./store";
 
 function ProjectsTable() {
+  const api = useApi();
   const { t } = useTranslation();
   const nav = useComposeNav();
   const run = useRunCompose();
   const runs = useComposeRuns((s) => s.runs);
+  const server = useServerId();
   const q = useQuery({ queryKey: keys.composeProjects, queryFn: api.composeProjects });
   const [filter, setFilter] = useState<ProjectFilter>("all");
   const [query, setQuery] = useState("");
@@ -100,7 +103,7 @@ function ProjectsTable() {
             </thead>
             <tbody className="divide-y divide-line">
               {visible.map((p) => {
-                const r = runs[p.name];
+                const r = runs[runKey(server, p.name)];
                 const busy = r?.status === "running";
                 return (
                   <tr key={p.name} className="align-top">
@@ -155,6 +158,7 @@ function ProjectsTable() {
 
 /** Si Compose no está disponible, se explica cómo instalarlo (D-032). */
 function RequireCompose({ children }: { children: React.ReactNode }) {
+  const api = useApi();
   const { t } = useTranslation();
   const q = useQuery({ queryKey: keys.compose, queryFn: api.composeStatus, staleTime: 60_000 });
   if (q.isPending) {

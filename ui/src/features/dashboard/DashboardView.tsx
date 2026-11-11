@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useApi } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +8,6 @@ import { DiagnosisPanel } from "@/features/engine/DiagnosisPanel";
 import { SourceLabel } from "@/features/engine/SourceLabel";
 import { useEngine } from "@/features/engine/store";
 import { formatBytes, numberFormat } from "@/shared/format";
-import { api } from "@/shared/ipc/client";
 import type { SystemOverview } from "@/shared/ipc/bindings/SystemOverview";
 import { keys } from "@/shared/query";
 import { Button, cx } from "@/shared/ui/controls";
@@ -170,6 +170,7 @@ function Connected({ data, refetch, fetching }: { data: SystemOverview; refetch:
 }
 
 export function DashboardView() {
+  const api = useApi();
   const { t } = useTranslation();
   const { state, reconnecting, reconnect } = useEngine();
   const navigate = useApp((s) => s.navigate);

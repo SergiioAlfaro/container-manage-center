@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, commitPreviewOf, connected, editableConfig, editOutcome, editPlanOf } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useImagesNav } from "@/features/images/store";
 import type { EditRequest } from "@/shared/ipc/bindings/EditRequest";
@@ -112,7 +111,7 @@ describe("Crear imagen: validación y vista previa", () => {
 describe("Crear imagen: diálogo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected });
+    setServerState(connected);
   });
 
   it("explica qué no entra en la imagen y avisa de que el contenedor está en ejecución", async () => {
@@ -181,7 +180,7 @@ describe("Crear imagen: diálogo", () => {
 describe("Editar configuración: pantalla", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     api.containerEditConfig.mockImplementation(async () => editableConfig());
     api.containerEditPlan.mockImplementation(async (id, r) => editPlanOf(id, r));
   });
@@ -369,7 +368,7 @@ describe("Editar configuración: pantalla", () => {
 describe("Contenedores: menú de acciones de la fila", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     useContainersNav.setState({ page: { kind: "list" } });
   });
 

@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { CopyButton } from "@/shared/ui/controls";
 import { Button } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
-import { useComposeRuns, type Run } from "./runs";
+import { runKey, useComposeRuns, type Run } from "./runs";
+import { useServerId } from "@/app/server";
 
 export function RunStatusLine({ run }: { run: Run }) {
   const { t } = useTranslation();
@@ -40,7 +41,9 @@ export function RunStatusLine({ run }: { run: Run }) {
 /** Salida en vivo de la última operación de un proyecto. */
 export function RunPanel({ project }: { project: string }) {
   const { t } = useTranslation();
-  const run = useComposeRuns((s) => s.runs[project]);
+  const server = useServerId();
+  const key = runKey(server, project);
+  const run = useComposeRuns((s) => s.runs[key]);
   const stop = useComposeRuns((s) => s.stop);
   const dismiss = useComposeRuns((s) => s.dismiss);
   const box = useRef<HTMLPreElement>(null);
@@ -59,13 +62,13 @@ export function RunPanel({ project }: { project: string }) {
         <RunStatusLine run={run} />
         <div className="ml-auto flex items-center gap-1.5">
           {run.status === "running" && (
-            <Button size="sm" onClick={() => stop(project)} disabled={run.stream === null}>
+            <Button size="sm" onClick={() => stop(key)} disabled={run.stream === null}>
               <Square size={13} />
               {t("composeOps.stop")}
             </Button>
           )}
           {run.status !== "running" && (
-            <Button size="sm" variant="ghost" onClick={() => dismiss(project)}>
+            <Button size="sm" variant="ghost" onClick={() => dismiss(key)}>
               <X size={13} />
               {t("composeOps.dismiss")}
             </Button>

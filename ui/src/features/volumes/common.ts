@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/shared/ipc/client";
+import { useApi } from "@/app/server";
 import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import { keys } from "@/shared/query";
 
@@ -10,5 +10,6 @@ export function volumeLabel(v: Pick<VolumeSummary, "name" | "anonymous">): strin
 
 /** Hook compartido: tamaños bajo demanda (`docker system df --verbose`). */
 export function useVolumeSizes() {
+  const api = useApi();
   return useQuery({ queryKey: keys.volumeSizes, queryFn: api.volumeSizes, enabled: false, staleTime: Infinity });
 }

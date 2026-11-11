@@ -5,8 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import { api, connected, updateCheck } from "@/test/apiMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { DEFAULT_CONFIG, useApp } from "@/app/store";
 import { UpdatesSettings } from "./UpdatesSettings";
 import { SystemSettings, systemReport } from "./SystemSettings";
@@ -21,7 +20,7 @@ function config(over: Partial<typeof DEFAULT_CONFIG.updates> = {}) {
 describe("Configuración: actualizaciones", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected, reconnecting: false });
+    setServerState(connected);
     useApp.setState({ config: config(), saveError: null });
   });
 
@@ -85,7 +84,7 @@ describe("Configuración: actualizaciones", () => {
 describe("Configuración: sistema y restablecer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEngine.setState({ state: connected, reconnecting: false });
+    setServerState(connected);
     useApp.setState({ config: config(), saveError: null });
   });
 

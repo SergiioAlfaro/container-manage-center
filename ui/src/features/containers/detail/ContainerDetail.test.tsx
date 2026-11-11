@@ -6,8 +6,7 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 
 import { api, connected, details, streams } from "@/test/apiMock";
 import { FakeTerminal } from "@/test/xtermMock";
-import { renderWithQuery } from "@/test/render";
-import { useEngine } from "@/features/engine/store";
+import { renderWithQuery, setServerState } from "@/test/render";
 import { ContainersView } from "../ContainersView";
 import { useContainersNav } from "../store";
 import { appendCapped, MAX_LINES } from "./LogsPanel";
@@ -38,7 +37,7 @@ describe("Detalle del contenedor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     streams.reset();
-    useEngine.setState({ state: connected });
+    setServerState(connected);
     useContainersNav.setState({ page: { kind: "list" } });
   });
 

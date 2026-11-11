@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eraser, Pause, Play, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEngine } from "@/features/engine/store";
-import { api } from "@/shared/ipc/client";
 import type { EventQuery } from "@/shared/ipc/bindings/EventQuery";
 import { Button, CopyButton, Segmented, cx } from "@/shared/ui/controls";
 import { Banner, Dialog, Spinner } from "@/shared/ui/feedback";
@@ -63,6 +63,7 @@ function LiveTab() {
 }
 
 function JournalTab() {
+  const api = useApi();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const typeLabel = useTypeLabel();
@@ -151,6 +152,7 @@ function JournalTab() {
 }
 
 function DockerTab() {
+  const api = useApi();
   const { t } = useTranslation();
   const typeLabel = useTypeLabel();
   const now = () => Math.floor(Date.now() / 1000);

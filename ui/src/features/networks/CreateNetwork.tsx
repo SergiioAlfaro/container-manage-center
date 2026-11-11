@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useApi } from "@/app/server";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/shared/ipc/client";
 import type { IpamPool } from "@/shared/ipc/bindings/IpamPool";
 import type { KeyValue } from "@/shared/ipc/bindings/KeyValue";
 import type { NetworkPreview } from "@/shared/ipc/bindings/NetworkPreview";
@@ -62,6 +62,7 @@ function PoolFields({ family, pool, onChange, issues, ph }: { family: "ipv4" | "
 
 /** Asistente de creación de redes. La validación, el cuerpo y el comando los genera el backend. */
 export function CreateNetwork() {
+  const api = useApi();
   const { t } = useTranslation();
   const nav = useNetworksNav();
   const invalidate = useInvalidateNetworks();
