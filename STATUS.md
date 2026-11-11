@@ -826,7 +826,39 @@ Cuatro bloques antes de la Fase 10, sin rehacer lo validado (fases 1–9 y 0.9.1
 - **`Dialog`**: opción `wide`. **`DisconnectDialog`**: aviso opcional de «última red».
 - **Selector de idioma**: pasa de botones a lista desplegable (ocho opciones no caben). Las pruebas que lo usaban se adaptaron a la lista, sin quitar aserciones.
 
-{{PRUEBAS}}
+### Pruebas ejecutadas
+`scripts/verify-update-0.9.2.sh` completo en tres daemons. En este entorno se ejecuta como root (con `DCC_VERIFY_ALLOW_ROOT`), en Xvfb y Ubuntu 24.04.
+
+| Daemon | Resultado |
+|---|---|
+| Docker 29.9.2, con `--deb --compat --net` | **56 correctas, 0 fallos**, 3 omitidas, 1 aviso (root) |
+| Docker 26.1.3 | **48 correctas, 0 fallos**, 3 omitidas, 1 aviso |
+| Docker 24.0.7 (API 1.43) | **48 correctas, 0 fallos**, 3 omitidas, 1 aviso |
+
+| Conjunto | Resultado |
+|---|---|
+| Clippy `-D warnings`, `cargo fmt --check`, `tsc`, Vite | Correctos |
+| Rust deterministas | 483/483 (eran 444) |
+| Vitest | 328/328 (eran 275) |
+| Edición, recreación y commit contra Docker real (`live_edit`) | 8/8 en los tres daemons |
+| IPC contra Docker real | 10/10 en los tres daemons |
+| Regresión real de las fases 1–9 y de la 0.9.1 | Todo superado en los tres daemons |
+| Compose 2.26.1 (como en Debian 13) | 6/6 en los tres daemons |
+| Paquetes | `.deb` con glibc 2.39 y Depends real; `.deb` compatible con glibc 2.34 |
+| Instalación con APT del `.deb` y arranque del binario instalado | Correcto; desinstalado después |
+| Recursos de prueba al terminar | Ninguno |
+
+**Omisiones** (las mismas en los tres daemons): dos pruebas de permisos que no tienen sentido como root, y la desinstalación real con APT. Esta última no cambia en la 0.9.2 y quedó validada en la 0.9.1.
+
+**Comprobación en la aplicación real** (Xvfb, Docker 29, con capturas):
+- Morado en claro y oscuro, aplicado al momento y guardado.
+- Menú ⋯.
+- Crear imagen, con montajes excluidos, y abrirla en Imágenes.
+- Editar: pestañas, pendientes, revisión, recreación real que conserva variable secreta, volumen, carpeta y puerto, y deja la copia.
+- Activity panel e historial: todas las operaciones están, sin «secreto».
+- Euskera y portugués, y la ayuda en euskera con las 26 secciones.
+
+De esta comprobación salieron cinco correcciones (sección siguiente).
 
 ### Errores encontrados y corregidos durante el desarrollo
 - **Menú de acciones recortado** (aplicación real): dentro de la tabla con desplazamiento, el menú quedaba cortado y movía la tabla. Ahora se pinta en un portal con posición fija, se abre hacia arriba si no cabe y se cierra al desplazar.
