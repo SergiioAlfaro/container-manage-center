@@ -60,7 +60,23 @@ fn harness_with(dir: tempfile::TempDir, docker: DockerConfig) -> Harness {
     }
 }
 
+/// Invoca como la interfaz con el equipo local seleccionado: si la llamada no
+/// indica servidor, se añade `server: "local"` (la interfaz siempre lo envía).
+/// Las pruebas de aislamiento usan [`invoke_exact`].
 fn invoke(
+    h: &Harness,
+    cmd: &str,
+    body: serde_json::Value,
+) -> Result<serde_json::Value, serde_json::Value> {
+    let mut body = body;
+    if let Some(o) = body.as_object_mut() {
+        o.entry("server").or_insert_with(|| json!("local"));
+    }
+    invoke_exact(h, cmd, body)
+}
+
+/// Invoca exactamente con los argumentos dados.
+fn invoke_exact(
     h: &Harness,
     cmd: &str,
     body: serde_json::Value,
@@ -1977,7 +1993,8 @@ fn live_multiple_terminals_via_ipc() {
     let id = c["id"].as_str().unwrap().to_owned();
     let socket = tauri::async_runtime::block_on(async {
         let st = h.app.state::<AppState>();
-        st.engine
+        st.servers
+            .local
             .engine()
             .await
             .unwrap()
@@ -2072,6 +2089,7 @@ fn live_multiple_terminals_via_ipc() {
             });
         tauri::async_runtime::block_on(crate::commands::containers::terminal_open(
             h.app.state::<AppState>(),
+            "local".into(),
             id.clone(),
             Some(name.clone()),
             dcc_engine::streams::ShellChoice::Sh,
@@ -2153,4 +2171,481 @@ fn live_multiple_terminals_via_ipc() {
         execs.iter().all(|r| r["status"] == "succeeded"),
         "{execs:?}"
     );
+}
+
+// ------------------------------------------------------------ servidores (0.10.0)
+
+/// Toda orden con Docker exige indicar el servidor: sin él, la llamada se
+/// rechaza; con uno desconocido, también, y nunca se usa otro servidor.
+#[test]
+fn docker_commands_are_bound_to_an_explicit_server() {
+    let h = harness();
+    let calls: Vec<(&str, serde_json::Value)> = vec![
+        ("engine_state", json!({})),
+        ("engine_reconnect", json!({})),
+        ("engine_overview", json!({})),
+        ("compose_status", json!({})),
+        ("containers_list", json!({})),
+        ("images_list", json!({})),
+        ("networks_list", json!({})),
+        ("volumes_list", json!({})),
+        ("container_inspect", json!({ "id": "web", "name": null })),
+        (
+            "image_tag",
+            json!({ "source": "a", "repo": "b", "tag": "c" }),
+        ),
+        ("events_query", json!({ "query": {} })),
+        (
+            "container_remove",
+            json!({ "id": "web", "name": null, "force": true, "volumes": true, "confirmed": true }),
+        ),
+        (
+            "image_remove",
+            json!({ "reference": "nginx", "force": true, "confirmed": true }),
+        ),
+        ("images_prune", json!({ "all": true, "confirmed": true })),
+        (
+            "network_remove",
+            json!({ "id": "n", "name": null, "confirmed": true }),
+        ),
+    ];
+    for (cmd, args) in &calls {
+        let err = invoke_exact(&h, cmd, args.clone()).unwrap_err();
+        assert!(
+            err.to_string().contains("server"),
+            "{cmd} sin servidor debe rechazarse: {err}"
+        );
+        for bad in ["srv-0123456789abcdef", "", "LOCAL", "../local"] {
+            let mut a = args.clone();
+            a["server"] = json!(bad);
+            let err = invoke_exact(&h, cmd, a).unwrap_err();
+            assert_eq!(err["code"], "server.unknown", "{cmd} con «{bad}»: {err}");
+        }
+    }
+    // Ninguna de esas llamadas llegó a registrar una operación con Docker.
+    let recs: Vec<OperationRecord> =
+        serde_json::from_value(invoke(&h, "activity_list", json!({})).unwrap()).unwrap();
+    assert!(
+        recs.iter()
+            .all(|r| !matches!(r.transport, Transport::Api { .. })),
+        "{recs:?}"
+    );
+}
+
+fn server_cfg(name: &str, port: u16) -> serde_json::Value {
+    json!({
+        "id": "", "name": name, "host": "127.0.0.1", "port": port, "user": "nadie",
+        "description": "", "auth": "agent", "keyPath": "", "dockerTarget": "default",
+        "dockerSocket": "", "dockerContext": "", "connectTimeout": 3, "proxyJump": "",
+        "autoConnect": false, "rememberSecret": false
+    })
+}
+
+/// Un puerto local sin nadie escuchando.
+fn closed_port() -> u16 {
+    let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    l.local_addr().unwrap().port()
+}
+
+#[test]
+fn server_profiles_are_managed_without_touching_anything_else() {
+    let h = harness();
+    // Validación del asistente.
+    let issues = invoke(
+        &h,
+        "server_validate",
+        json!({ "config": server_cfg("", 22) }),
+    )
+    .unwrap();
+    assert_eq!(issues[0]["field"], "name");
+    let mut bad = server_cfg("X", 22);
+    bad["host"] = json!("-oProxyCommand=touch /tmp/pwn");
+    assert_eq!(
+        invoke(&h, "server_save", json!({ "config": bad })).unwrap_err()["code"],
+        "server.invalid"
+    );
+    // Alta.
+    let a = invoke(
+        &h,
+        "server_save",
+        json!({ "config": server_cfg("Servidor A", closed_port()) }),
+    )
+    .unwrap();
+    let id = a["id"].as_str().unwrap().to_owned();
+    assert!(id.starts_with("srv-"));
+    let list = invoke(&h, "servers_list", json!({})).unwrap();
+    assert_eq!(list[0]["id"], "local");
+    assert_eq!(list[0]["remote"], false);
+    assert_eq!(list[1]["id"], id.as_str());
+    assert_eq!(
+        list[1]["state"]["state"], "idle",
+        "un remoto no conecta solo"
+    );
+    // Conectar a un puerto cerrado: error de conexión de ese servidor; el
+    // equipo local no cambia de estado.
+    let local_before =
+        invoke(&h, "engine_state", json!({ "server": "local" })).unwrap()["state"].clone();
+    let out = invoke(
+        &h,
+        "server_connect",
+        json!({ "server": id, "secret": null, "remember": false }),
+    )
+    .unwrap();
+    assert_eq!(out["state"]["state"], "disconnected");
+    assert_eq!(out["state"]["diagnosis"]["problem"]["kind"], "remote");
+    assert_eq!(
+        out["state"]["diagnosis"]["problem"]["remote"]["kind"],
+        "sshRefused"
+    );
+    assert_eq!(
+        invoke(&h, "engine_state", json!({ "server": "local" })).unwrap()["state"],
+        local_before
+    );
+    let err = invoke(&h, "containers_list", json!({ "server": id })).unwrap_err();
+    assert_eq!(err["code"], "engine.notConnected");
+    // Eliminar exige confirmación; el equipo local no se elimina.
+    assert_eq!(
+        invoke(
+            &h,
+            "server_delete",
+            json!({ "server": id, "confirmed": false })
+        )
+        .unwrap_err()["code"],
+        "engine.notConfirmed"
+    );
+    assert_eq!(
+        invoke(
+            &h,
+            "server_delete",
+            json!({ "server": "local", "confirmed": true })
+        )
+        .unwrap_err()["code"],
+        "server.localFixed"
+    );
+    invoke(&h, "server_disconnect", json!({ "server": id })).unwrap();
+    invoke(
+        &h,
+        "server_delete",
+        json!({ "server": id, "confirmed": true }),
+    )
+    .unwrap();
+    assert_eq!(
+        invoke(&h, "servers_list", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        invoke(&h, "containers_list", json!({ "server": id })).unwrap_err()["code"],
+        "server.unknown"
+    );
+    // Lista de servidores aparte de la configuración y sin secretos.
+    let raw = std::fs::read_to_string(h.store.path().with_file_name("servers.toml")).unwrap();
+    assert!(!raw.contains("Servidor A"), "{raw}");
+    let cfg = std::fs::read_to_string(h.store.path()).unwrap();
+    assert!(!cfg.contains("srv-"), "{cfg}");
+    // Alta, cambio y baja quedan en actividad con su servidor.
+    let recs: Vec<OperationRecord> =
+        serde_json::from_value(invoke(&h, "activity_list", json!({})).unwrap()).unwrap();
+    let mine: Vec<&str> = recs
+        .iter()
+        .filter(|r| r.server.as_ref().is_some_and(|s| s.id == id))
+        .map(|r| r.kind.as_str())
+        .collect();
+    assert!(
+        mine.contains(&"server.add") && mine.contains(&"server.delete"),
+        "{mine:?}"
+    );
+}
+
+#[test]
+fn a_password_test_never_leaks_the_secret() {
+    let h = harness();
+    let mut c = server_cfg("Con contraseña", closed_port());
+    c["auth"] = json!("password");
+    let secret = "Secreto-IPC-Único-9";
+    let report = invoke(&h, "server_test", json!({ "config": c, "secret": secret })).unwrap();
+    assert_eq!(report["problem"]["kind"], "sshRefused");
+    assert_eq!(report["steps"].as_array().unwrap().len(), 7);
+    let recs = invoke(&h, "activity_list", json!({})).unwrap().to_string();
+    assert!(!recs.contains(secret));
+    assert!(!report.to_string().contains(secret));
+    for f in std::fs::read_dir(h.store.path().parent().unwrap()).unwrap() {
+        let p = f.unwrap().path();
+        if p.is_file() {
+            let body = std::fs::read(&p).unwrap();
+            assert!(
+                !String::from_utf8_lossy(&body).contains(secret),
+                "{} contiene el secreto",
+                p.display()
+            );
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LabServer {
+    user: String,
+    host: String,
+    port: u16,
+    socket: String,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LabPassword {
+    server: usize,
+    user: String,
+    password: String,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Lab {
+    key: String,
+    servers: Vec<LabServer>,
+    password: LabPassword,
+}
+
+fn docker_cli(socket: &str, args: &[&str]) -> String {
+    let out = std::process::Command::new("docker")
+        .arg("-H")
+        .arg(format!("unix://{socket}"))
+        .args(args)
+        .output()
+        .unwrap();
+    String::from_utf8_lossy(&out.stdout).trim().to_owned()
+}
+
+fn ssh_processes_for(user: &str) -> usize {
+    let out = std::process::Command::new("pgrep")
+        .args(["-f", &format!("ssh .*{user}@")])
+        .output()
+        .unwrap();
+    String::from_utf8_lossy(&out.stdout).lines().count()
+}
+
+/// Tres servidores remotos reales por SSH (Docker 29, 26 y 24) y el equipo
+/// local a la vez, por IPC como la interfaz: identidad confirmada, clave y
+/// contraseña, cada operación en su servidor, vista general, desconexión sin
+/// procesos huérfanos y eliminación de un perfil sin tocar el servidor.
+/// Necesita `DCC_DOCKER_TESTS=1`, `DCC_SSH_LAB=<lab.json>` y
+/// `DCC_TEST_ASKPASS=<dcc-askpass>`.
+#[test]
+fn live_three_remote_servers_through_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let Ok(lab) = std::env::var("DCC_SSH_LAB") else {
+        eprintln!("omitida: define DCC_SSH_LAB=<lab.json>");
+        return;
+    };
+    assert!(
+        std::env::var_os("DCC_TEST_ASKPASS").is_some(),
+        "define DCC_TEST_ASKPASS"
+    );
+    let lab: Lab = serde_json::from_str(&std::fs::read_to_string(lab).unwrap()).unwrap();
+    let keyring = std::env::var_os("DCC_KEYRING_TEST").is_some();
+    let dir = tempfile::tempdir().unwrap();
+    let h = harness_with(dir, DockerConfig::default());
+    wait_for("conexión local", || {
+        engine_state(&h)["state"] == "connected"
+    });
+
+    // Alta de los tres: A y C con clave, B con contraseña.
+    let mut ids = Vec::new();
+    for (i, s) in lab.servers.iter().enumerate() {
+        let mut c = server_cfg(&format!("Lab {}", ["A", "B", "C"][i]), s.port);
+        c["host"] = json!(s.host);
+        c["dockerTarget"] = json!("socket");
+        c["dockerSocket"] = json!(s.socket);
+        c["connectTimeout"] = json!(10);
+        if i == lab.password.server {
+            c["user"] = json!(lab.password.user);
+            c["auth"] = json!("password");
+        } else {
+            c["user"] = json!(s.user);
+            c["auth"] = json!("key");
+            c["keyPath"] = json!(lab.key);
+        }
+        let saved = invoke(&h, "server_save", json!({ "config": c })).unwrap();
+        ids.push((saved["id"].as_str().unwrap().to_owned(), saved));
+    }
+
+    // Primera conexión: identidad desconocida, sin reintentos; se confirma la
+    // huella presentada y entonces conecta. (Las claves del laboratorio no
+    // están en ~/.ssh/known_hosts: este camino se ejecuta siempre.)
+    for (i, (id, cfg)) in ids.iter().enumerate() {
+        let trusted = invoke(&h, "server_trusted_keys", json!({ "config": cfg })).unwrap();
+        assert!(trusted.as_array().unwrap().is_empty(), "{trusted}");
+        {
+            let out = invoke(
+                &h,
+                "server_connect",
+                json!({ "server": id, "secret": null, "remember": false }),
+            )
+            .unwrap();
+            assert_eq!(
+                out["state"]["diagnosis"]["problem"]["remote"]["kind"], "hostKeyUnknown",
+                "{out}"
+            );
+            let key = invoke(&h, "server_host_key", json!({ "config": cfg })).unwrap();
+            assert!(key["fingerprint"].as_str().unwrap().starts_with("SHA256:"));
+            invoke(
+                &h,
+                "server_trust",
+                json!({ "config": cfg, "key": key, "replace": false }),
+            )
+            .unwrap();
+        }
+        let secret = (i == lab.password.server).then(|| lab.password.password.clone());
+        let out = invoke(
+            &h,
+            "server_connect",
+            json!({ "server": id, "secret": secret, "remember": keyring && secret.is_some() }),
+        )
+        .unwrap();
+        assert_eq!(out["state"]["state"], "connected", "{out}");
+        assert!(out["state"]["latencyMs"].as_u64().is_some());
+    }
+    let versions: Vec<String> = ids
+        .iter()
+        .map(|(id, _)| {
+            invoke(&h, "engine_state", json!({ "server": id })).unwrap()["engine"]["apiVersion"]
+                .as_str()
+                .unwrap()
+                .to_owned()
+        })
+        .collect();
+    let distinct: std::collections::HashSet<&String> = versions.iter().collect();
+    assert_eq!(distinct.len(), 3, "tres daemons distintos: {versions:?}");
+
+    // Una operación en B ocurre solo en B.
+    let (b, _) = &ids[1];
+    let name = format!("dcc-ipc-remote-{}", std::process::id());
+    let created = invoke(
+        &h,
+        "container_create",
+        json!({ "server": b, "spec": { "name": name, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }] }, "start": true }),
+    )
+    .unwrap();
+    let cid = created["id"].as_str().unwrap().to_owned();
+    let names_on = |server: &str| -> Vec<String> {
+        invoke(&h, "containers_list", json!({ "server": server }))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c["name"].as_str().unwrap_or_default().to_owned())
+            .collect()
+    };
+    assert!(names_on(b).contains(&name));
+    for other in ["local", ids[0].0.as_str(), ids[2].0.as_str()] {
+        assert!(!names_on(other).contains(&name), "apareció en {other}");
+    }
+    assert_eq!(
+        docker_cli(
+            &lab.servers[1].socket,
+            &["inspect", "-f", "{{.State.Running}}", &cid]
+        ),
+        "true"
+    );
+    // Registrada con su servidor.
+    let recs: Vec<OperationRecord> =
+        serde_json::from_value(invoke(&h, "activity_list", json!({})).unwrap()).unwrap();
+    let create = recs
+        .iter()
+        .find(|r| r.kind == "container.create" && r.target.as_deref() == Some(name.as_str()))
+        .expect("registro de la creación");
+    assert_eq!(create.server.as_ref().unwrap().id, *b);
+    assert!(create.server.as_ref().unwrap().address.contains(":2202"));
+    assert!(!serde_json::to_string(&recs)
+        .unwrap()
+        .contains(&lab.password.password));
+
+    // Vista general: cuatro servidores, cada uno con sus datos.
+    let ov = invoke(&h, "servers_overview", json!({})).unwrap();
+    assert_eq!(ov.as_array().unwrap().len(), 4);
+    for o in ov.as_array().unwrap() {
+        assert!(o["overview"]["info"]["ncpu"].as_i64().unwrap() > 0, "{o}");
+        assert!(o["error"].is_null());
+    }
+
+    // Desconectar B: sin procesos ssh de B; los demás siguen.
+    invoke(&h, "server_disconnect", json!({ "server": b })).unwrap();
+    assert_eq!(
+        invoke(&h, "engine_state", json!({ "server": b })).unwrap()["state"],
+        "idle"
+    );
+    wait_for("sin procesos ssh de B", || {
+        ssh_processes_for(&lab.password.user) == 0
+    });
+    assert_eq!(
+        invoke(&h, "containers_list", json!({ "server": b })).unwrap_err()["code"],
+        "engine.notConnected"
+    );
+    invoke(&h, "containers_list", json!({ "server": ids[2].0 })).unwrap();
+    // El contenedor sigue en B: desconectar no toca el servidor.
+    assert_eq!(
+        docker_cli(
+            &lab.servers[1].socket,
+            &["inspect", "-f", "{{.State.Running}}", &cid]
+        ),
+        "true"
+    );
+
+    // Con keyring: se vuelve a conectar sin escribir la contraseña.
+    if keyring {
+        let st = invoke(&h, "server_secret_status", json!({ "server": b })).unwrap();
+        assert_eq!(st["stored"], true, "{st}");
+        let out = invoke(
+            &h,
+            "server_connect",
+            json!({ "server": b, "secret": null, "remember": false }),
+        )
+        .unwrap();
+        assert_eq!(out["state"]["state"], "connected", "{out}");
+        assert_eq!(
+            invoke(&h, "server_forget_secret", json!({ "server": b })).unwrap(),
+            1
+        );
+        invoke(&h, "server_disconnect", json!({ "server": b })).unwrap();
+    } else {
+        let out = invoke(
+            &h,
+            "server_connect",
+            json!({ "server": b, "secret": null, "remember": false }),
+        )
+        .unwrap();
+        assert_eq!(
+            out["state"]["diagnosis"]["problem"]["remote"]["kind"], "secretRequired",
+            "sin keyring la contraseña no se guarda: {out}"
+        );
+    }
+
+    // Eliminar el perfil de B: el contenedor sigue en el servidor.
+    invoke(
+        &h,
+        "server_delete",
+        json!({ "server": b, "confirmed": true }),
+    )
+    .unwrap();
+    assert_eq!(
+        docker_cli(
+            &lab.servers[1].socket,
+            &["inspect", "-f", "{{.State.Running}}", &cid]
+        ),
+        "true"
+    );
+    docker_cli(&lab.servers[1].socket, &["rm", "-f", &cid]);
+
+    // Al cerrar, no queda ninguna sesión.
+    tauri::async_runtime::block_on(h.app.state::<AppState>().servers.close_all());
+    for s in &lab.servers {
+        wait_for("sin procesos ssh", || ssh_processes_for(&s.user) == 0);
+    }
 }

@@ -42,6 +42,10 @@ libc = "0.2"
 flate2 = "1"
 # Abrir el perfil de GitHub del autor desde «Ayuda» (0.9.1): solo esa URL, limitada en capabilities/default.json.
 tauri-plugin-opener = "2"
+# Secretos de servidores remotos en el keyring del sistema (0.10.0, D-077): Secret
+# Service por D-Bus en Rust puro (zbus), sin bibliotecas nativas nuevas.
+secret-service = { version = "5", default-features = false, features = ["rt-tokio-crypto-rust"] }
+zeroize = "1"
 
 [dev-dependencies]
 tempfile.workspace = true

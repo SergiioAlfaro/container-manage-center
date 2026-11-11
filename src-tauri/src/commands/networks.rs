@@ -14,9 +14,12 @@ use crate::error::CmdResult;
 use crate::state::AppState;
 
 #[tauri::command]
-pub async fn networks_list(state: State<'_, AppState>) -> CmdResult<Vec<NetworkSummary>> {
-    Ok(state
-        .engine
+pub async fn networks_list(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<Vec<NetworkSummary>> {
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.list_networks(None).await })
         .await?)
 }
@@ -24,11 +27,12 @@ pub async fn networks_list(state: State<'_, AppState>) -> CmdResult<Vec<NetworkS
 #[tauri::command]
 pub async fn network_details(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
 ) -> CmdResult<NetworkDetails> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.network_details(&id, name.as_deref()).await })
         .await?)
 }
@@ -60,15 +64,16 @@ pub fn network_preview(spec: NetworkSpec) -> NetworkPreview {
 #[tauri::command]
 pub async fn network_create(
     state: State<'_, AppState>,
+    server: String,
     spec: NetworkSpec,
 ) -> CmdResult<CreatedNetwork> {
+    let mgr = state.server(&server)?;
     // La validación no necesita conexión: los errores se devuelven antes.
     let issues = spec.validate();
     if NetworkSpec::has_errors(&issues) {
         return Err(EngineError::InvalidSpec { issues }.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.create_network(&spec).await })
         .await?)
 }
@@ -77,26 +82,31 @@ pub async fn network_create(
 #[tauri::command]
 pub async fn network_remove(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
     confirmed: bool,
 ) -> CmdResult<()> {
+    let mgr = state.server(&server)?;
     if !confirmed {
         return Err(EngineError::NotConfirmed.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.remove_network(&id, name.as_deref(), true).await })
         .await?)
 }
 
 #[tauri::command]
-pub async fn networks_prune(state: State<'_, AppState>, confirmed: bool) -> CmdResult<Vec<String>> {
+pub async fn networks_prune(
+    state: State<'_, AppState>,
+    server: String,
+    confirmed: bool,
+) -> CmdResult<Vec<String>> {
+    let mgr = state.server(&server)?;
     if !confirmed {
         return Err(EngineError::NotConfirmed.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.prune_networks(None, true).await })
         .await?)
 }
@@ -107,6 +117,7 @@ pub async fn networks_prune(state: State<'_, AppState>, confirmed: bool) -> CmdR
 #[allow(clippy::too_many_arguments)]
 pub async fn network_connect(
     state: State<'_, AppState>,
+    server: String,
     network: String,
     network_name: Option<String>,
     container: String,
@@ -114,9 +125,9 @@ pub async fn network_connect(
     options: ConnectOptions,
     subnets: Vec<String>,
 ) -> CmdResult<()> {
+    let mgr = state.server(&server)?;
     options.validate(&subnets)?;
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move {
             e.connect_network(
                 &network,
@@ -135,6 +146,7 @@ pub async fn network_connect(
 #[allow(clippy::too_many_arguments)]
 pub async fn network_disconnect(
     state: State<'_, AppState>,
+    server: String,
     network: String,
     network_name: Option<String>,
     container: String,
@@ -142,11 +154,11 @@ pub async fn network_disconnect(
     force: bool,
     confirmed: bool,
 ) -> CmdResult<()> {
+    let mgr = state.server(&server)?;
     if !confirmed {
         return Err(EngineError::NotConfirmed.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move {
             e.disconnect_network(
                 &network,

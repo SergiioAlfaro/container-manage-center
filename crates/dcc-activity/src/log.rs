@@ -8,6 +8,7 @@ use parking_lot::Mutex;
 use tokio::sync::broadcast;
 use uuid::Uuid;
 
+use crate::model::ServerTag;
 use crate::model::{ActivityEvent, CapturedText, Category, OpStatus, OperationRecord, Transport};
 
 /// Límite por defecto de bytes guardados de cada salida capturada.
@@ -76,6 +77,8 @@ struct Inner {
 pub struct ActivityLog {
     inner: Arc<Mutex<Inner>>,
     tx: broadcast::Sender<ActivityEvent>,
+    /// Servidor con el que se etiquetan las operaciones de esta vista (0.10.0).
+    server: Option<ServerTag>,
 }
 
 impl Default for ActivityLog {
@@ -94,7 +97,23 @@ impl ActivityLog {
                 capture_limit: DEFAULT_CAPTURE_LIMIT,
             })),
             tx,
+            server: None,
         }
+    }
+
+    /// Vista del mismo registro que etiqueta con `server` cada operación que
+    /// empieza. Comparte almacenamiento y suscriptores con el original.
+    pub fn with_server(&self, server: ServerTag) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            tx: self.tx.clone(),
+            server: Some(server),
+        }
+    }
+
+    /// Servidor de esta vista.
+    pub fn server(&self) -> Option<&ServerTag> {
+        self.server.as_ref()
     }
 
     /// Suscripción a cambios. Un receptor lento puede perder eventos
@@ -167,6 +186,7 @@ impl ActivityLog {
             error: None,
             http_status: None,
             exit_code: None,
+            server: self.server.clone(),
         };
         let id = record.id;
         self.upsert(record);

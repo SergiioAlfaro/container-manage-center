@@ -4,6 +4,8 @@ mod commands;
 mod error;
 mod events;
 mod journal;
+mod secrets;
+mod servers;
 mod state;
 mod streams;
 mod uninstall;
@@ -20,7 +22,7 @@ pub use error::CommandError;
 pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder<R> {
     let state = state::AppState::new(store);
     let activity = state.activity.clone();
-    let engine = state.engine.clone();
+    let engine = state.servers.local.clone();
     builder
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
@@ -35,8 +37,10 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
                 // terminales…) y se espera a que terminen, para que las shells
                 // salgan y no quede ningún proceso dentro de los contenedores
                 // (0.9.1, D-063). Quedan registrados como cerrados por el usuario.
+                // También se cierran las sesiones SSH de los servidores remotos
+                // (0.10.0): no queda ningún proceso `ssh` al salir.
                 tauri::WindowEvent::CloseRequested { api, .. }
-                    if state.streams.running() > 0
+                    if (state.streams.running() > 0 || state.servers.any_remote_open())
                         && !state
                             .closing
                             .swap(true, std::sync::atomic::Ordering::SeqCst) =>
@@ -51,6 +55,9 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
                         if left > 0 {
                             tracing::warn!(left, "flujos sin terminar al cerrar la ventana");
                         }
+                        if let Some(s) = w.try_state::<state::AppState>() {
+                            s.servers.close_all().await;
+                        }
                         let _ = w.close();
                     });
                 }
@@ -61,8 +68,22 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
         .setup(move |app| {
             events::spawn_activity_bridge(app.handle().clone(), activity.clone());
             journal::spawn_history_bridge(app.handle().clone(), activity);
-            journal::spawn_events_watcher(app.handle().clone(), engine.clone());
             events::spawn_engine(app.handle().clone(), engine);
+            let handle = app.handle().clone();
+            app.state::<state::AppState>()
+                .servers
+                .set_spawner(std::sync::Arc::new(move |id, m, cancel| {
+                    events::spawn_server_tasks(handle.clone(), id, m, cancel)
+                }));
+            // Sesiones SSH que dejó una instancia anterior cerrada a la fuerza.
+            let paths = app.state::<state::AppState>().servers.ctx.paths.clone();
+            tauri::async_runtime::spawn(async move {
+                let n = dcc_engine::ssh::session::close_orphans(&paths).await;
+                if n > 0 {
+                    tracing::info!(n, "sesiones SSH huérfanas cerradas");
+                }
+            });
+            commands::servers::spawn_auto_connect(app.handle().clone());
             commands::app::spawn_startup_check(app.handle().clone());
             Ok(())
         })
@@ -79,6 +100,21 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::config::config_set,
             commands::activity::activity_list,
             commands::activity::activity_clear,
+            commands::servers::servers_list,
+            commands::servers::server_validate,
+            commands::servers::server_save,
+            commands::servers::server_delete,
+            commands::servers::server_connect,
+            commands::servers::server_disconnect,
+            commands::servers::server_test,
+            commands::servers::server_host_key,
+            commands::servers::server_trusted_keys,
+            commands::servers::server_trust,
+            commands::servers::server_secret_status,
+            commands::servers::keyring_status,
+            commands::servers::server_forget_secret,
+            commands::servers::server_diagnose,
+            commands::servers::servers_overview,
             commands::engine::engine_state,
             commands::engine::engine_reconnect,
             commands::engine::engine_test,

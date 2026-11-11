@@ -3,6 +3,9 @@
 //! Necesita `DCC_DOCKER_TESTS=1` y `DCC_SSH_LAB=<lab.json>`: tres servidores SSH
 //! (A, B y C), cada uno con su Docker Engine, preparados por
 //! `scripts/dev/remote-lab.sh`. No toca nada fuera de lo que crea.
+//!
+//! Se ejecuta con `--test-threads=1`: varias pruebas comprueban que no queda
+//! ningún proceso `ssh` hijo de la prueba, y esa cuenta es de todo el proceso.
 
 mod common;
 
@@ -854,4 +857,61 @@ async fn remote_cli_negotiates_with_head_ping_only() {
     assert_eq!(without, ours);
     drop(e);
     m.disconnect().await;
+}
+
+/// Si la aplicación terminó sin cerrar sus sesiones (cierre forzado), al
+/// arrancar se cierran solo las de instancias muertas; las de una instancia
+/// viva no se tocan.
+#[tokio::test(flavor = "multi_thread")]
+async fn orphaned_sessions_of_dead_instances_are_closed_at_startup() {
+    let Some(lab) = lab() else { return };
+    let env = Env::new();
+    env.trusted(&lab);
+    let ctx = env.ctx(fixed(None));
+    let p = profile(&lab, 2, None, key(&lab), RemoteDocker::Default);
+    dcc_engine::ssh::askpass::private_dir(&ctx.paths.runtime_dir).unwrap();
+    // PID de un proceso que ya terminó.
+    let mut gone = std::process::Command::new("true").spawn().unwrap();
+    let dead = gone.id();
+    gone.wait().unwrap();
+    // Maestra «huérfana»: desligada de esta prueba (como si su instancia
+    // hubiera muerto), con su socket de control a nombre del PID muerto.
+    let orphan_sock = ctx.paths.runtime_dir.join(format!("c-{dead}-orphan-aa"));
+    let st = std::process::Command::new("setsid")
+        .arg("-f")
+        .arg(&ctx.paths.ssh)
+        .args(dcc_engine::ssh::args::master_args(
+            &p,
+            &ctx.paths,
+            &orphan_sock,
+        ))
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .unwrap();
+    assert!(st.success());
+    let running = || {
+        std::process::Command::new("pgrep")
+            .args(["-f", &orphan_sock.display().to_string()])
+            .output()
+            .map(|o| !o.stdout.is_empty())
+            .unwrap_or(false)
+    };
+    wait_for("socket de la huérfana", 15, || orphan_sock.exists()).await;
+    // Sesión de una instancia viva (esta).
+    let live = dcc_engine::ssh::SshSession::open(&ctx, &p).await.unwrap();
+    assert!(live
+        .control_path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .starts_with(&format!("c-{}-", std::process::id())));
+
+    assert_eq!(dcc_engine::ssh::session::close_orphans(&ctx.paths).await, 1);
+    wait_for("la sesión huérfana termina", 5, || !running()).await;
+    assert!(!orphan_sock.exists());
+    assert!(live.alive().await, "la sesión viva sigue");
+    assert_eq!(dcc_engine::ssh::session::close_orphans(&ctx.paths).await, 0);
+    live.close().await;
 }

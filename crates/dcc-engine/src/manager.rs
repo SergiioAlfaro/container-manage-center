@@ -71,6 +71,15 @@ pub struct EngineManager {
     inner: Arc<Inner>,
 }
 
+impl std::fmt::Debug for EngineManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EngineManager")
+            .field("remote", &self.is_remote())
+            .field("state", &self.state())
+            .finish_non_exhaustive()
+    }
+}
+
 /// Resultado de intentar conectar con una configuración.
 pub enum Attempt {
     Connected(Box<Engine>, EngineSummary),
@@ -124,6 +133,13 @@ impl EngineManager {
         } else {
             ConnectionState::Connecting
         };
+        // Cada gestor registra sus operaciones etiquetadas con su servidor (0.10.0).
+        let activity = match &mode {
+            ConnectionMode::Ssh { profile } => {
+                activity.with_server(crate::ssh::profile::server_tag(profile))
+            }
+            _ => activity.with_server(dcc_activity::ServerTag::local()),
+        };
         let (state, _) = watch::channel(initial);
         Self {
             inner: Arc::new(Inner {
@@ -140,6 +156,11 @@ impl EngineManager {
                 ssh,
             }),
         }
+    }
+
+    /// Es el mismo gestor (no una copia de otro).
+    pub fn same(&self, other: &EngineManager) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 
     /// Servidor remoto (SSH).

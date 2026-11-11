@@ -629,7 +629,7 @@ export function composeCommand(p: ProjectRef, a: ComposeAction): string {
 // ------------------------------------------------------------------ Fase 8
 
 export function dockerEvent(over: Partial<DockerEvent> = {}): DockerEvent {
-  return { timeNano: 1_794_067_503_964_175_002, kind: "container", action: "start", actorId: "c0ffee0123456789", name: "web", attributes: { image: "nginx:1.27", name: "web" }, scope: "local", ...over };
+  return { timeNano: 1_794_067_503_964_175_002, kind: "container", action: "start", actorId: "c0ffee0123456789", name: "web", attributes: { image: "nginx:1.27", name: "web" }, scope: "local", server: null, ...over };
 }
 
 export const journalEvents: DockerEvent[] = [
@@ -656,6 +656,7 @@ export function historyEntry(over: Partial<HistoryEntry> = {}): HistoryEntry {
     error: null,
     httpStatus: null,
     exitCode: null,
+    server: null,
     ...over,
   };
 }

@@ -66,11 +66,12 @@ pub struct CreateResult {
 #[tauri::command]
 pub async fn container_create(
     state: State<'_, AppState>,
+    server: String,
     spec: ContainerSpec,
     start: bool,
 ) -> CmdResult<CreateResult> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move {
             let created = e.create_container(&spec).await?;
             let display = (!spec.name.trim().is_empty()).then(|| spec.name.trim().to_owned());
@@ -108,11 +109,12 @@ pub async fn container_create(
 #[tauri::command]
 pub async fn container_inspect(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
 ) -> CmdResult<ContainerDetails> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.inspect_container(&id, name.as_deref()).await })
         .await?)
 }
@@ -120,35 +122,46 @@ pub async fn container_inspect(
 #[tauri::command]
 pub async fn container_duplicate_spec(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
 ) -> CmdResult<DuplicateSpec> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.duplicate_spec(&id, name.as_deref()).await })
         .await?)
 }
 
 #[tauri::command]
-pub async fn image_defaults(state: State<'_, AppState>, image: String) -> CmdResult<ImageDefaults> {
-    Ok(state
-        .engine
+pub async fn image_defaults(
+    state: State<'_, AppState>,
+    server: String,
+    image: String,
+) -> CmdResult<ImageDefaults> {
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.image_defaults(&image).await })
         .await?)
 }
 
 #[tauri::command]
-pub async fn networks_brief(state: State<'_, AppState>) -> CmdResult<Vec<NetworkBrief>> {
-    Ok(state
-        .engine
+pub async fn networks_brief(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<Vec<NetworkBrief>> {
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.networks_brief().await })
         .await?)
 }
 
 #[tauri::command]
-pub async fn volumes_brief(state: State<'_, AppState>) -> CmdResult<Vec<VolumeBrief>> {
-    Ok(state
-        .engine
+pub async fn volumes_brief(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<Vec<VolumeBrief>> {
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.volumes_brief().await })
         .await?)
 }
@@ -223,15 +236,17 @@ pub enum TerminalEvent {
 #[tauri::command]
 pub async fn logs_open(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
     tail: Option<u32>,
     on_event: Channel<LogEvent>,
 ) -> CmdResult<u64> {
-    let engine = state.engine.engine().await?;
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
     let registry = state.streams.clone();
-    let manager = state.engine.clone();
-    let (sid, cancel) = registry.register(None);
+    let manager = mgr.clone();
+    let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
@@ -251,14 +266,16 @@ pub async fn logs_open(
 #[tauri::command]
 pub async fn stats_open(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
     on_event: Channel<StatsEvent>,
 ) -> CmdResult<u64> {
-    let engine = state.engine.engine().await?;
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
     let registry = state.streams.clone();
-    let manager = state.engine.clone();
-    let (sid, cancel) = registry.register(None);
+    let manager = mgr.clone();
+    let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
@@ -280,8 +297,10 @@ fn clamp_size(cols: u16, rows: u16) -> (u16, u16) {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn terminal_open(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     name: Option<String>,
     shell: ShellChoice,
@@ -289,11 +308,12 @@ pub async fn terminal_open(
     rows: u16,
     on_event: Channel<TerminalEvent>,
 ) -> CmdResult<u64> {
-    let engine = state.engine.engine().await?;
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
     let registry = state.streams.clone();
-    let manager = state.engine.clone();
+    let manager = mgr.clone();
     let (tx, rx) = mpsc::channel(256);
-    let (sid, cancel) = registry.register(Some(tx));
+    let (sid, cancel) = registry.register(&server, Some(tx));
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let b64 = base64::engine::general_purpose::STANDARD;
@@ -364,10 +384,11 @@ pub fn stream_close(state: State<'_, AppState>, stream: u64) -> bool {
 #[tauri::command]
 pub async fn container_edit_config(
     state: State<'_, AppState>,
+    server: String,
     id: String,
 ) -> CmdResult<EditableConfig> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.edit_config(&id).await })
         .await?)
 }
@@ -376,11 +397,12 @@ pub async fn container_edit_config(
 #[tauri::command]
 pub async fn container_edit_plan(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     request: EditRequest,
 ) -> CmdResult<EditPlan> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.edit_plan(&id, &request).await })
         .await?)
 }
@@ -389,12 +411,13 @@ pub async fn container_edit_plan(
 #[tauri::command]
 pub async fn container_edit_apply(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     request: EditRequest,
     options: ApplyOptions,
 ) -> CmdResult<EditOutcome> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.edit_apply(&id, &request, &options).await })
         .await?)
 }
@@ -403,15 +426,16 @@ pub async fn container_edit_apply(
 #[tauri::command]
 pub async fn container_restore_backup(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     start: bool,
     confirmed: bool,
 ) -> CmdResult<EditOutcome> {
+    let mgr = state.server(&server)?;
     if !confirmed {
         return Err(EngineError::NotConfirmed.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.restore_backup(&id, start, confirmed).await })
         .await?)
 }
@@ -420,11 +444,12 @@ pub async fn container_restore_backup(
 #[tauri::command]
 pub async fn container_commit_preview(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     request: CommitRequest,
 ) -> CmdResult<CommitPreview> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.commit_preview(&id, &request).await })
         .await?)
 }
@@ -433,11 +458,12 @@ pub async fn container_commit_preview(
 #[tauri::command]
 pub async fn container_commit(
     state: State<'_, AppState>,
+    server: String,
     id: String,
     request: CommitRequest,
 ) -> CmdResult<CommitResult> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.commit_image(&id, &request).await })
         .await?)
 }

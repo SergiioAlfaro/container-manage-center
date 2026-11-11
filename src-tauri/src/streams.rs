@@ -14,6 +14,8 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 struct Ctl {
+    /// Servidor del flujo (0.10.0).
+    server: String,
     cancel: CancellationToken,
     input: Option<mpsc::Sender<TerminalInput>>,
 }
@@ -29,13 +31,18 @@ pub struct StreamRegistry {
 }
 
 impl StreamRegistry {
-    pub fn register(&self, input: Option<mpsc::Sender<TerminalInput>>) -> (u64, CancellationToken) {
+    pub fn register(
+        &self,
+        server: &str,
+        input: Option<mpsc::Sender<TerminalInput>>,
+    ) -> (u64, CancellationToken) {
         let id = self.next.fetch_add(1, Ordering::Relaxed) + 1;
         let cancel = CancellationToken::new();
         self.running.lock().insert(id);
         self.map.lock().insert(
             id,
             Ctl {
+                server: server.to_owned(),
                 cancel: cancel.clone(),
                 input,
             },
@@ -75,6 +82,23 @@ impl StreamRegistry {
         self.map.lock().len()
     }
 
+    /// Cierra los flujos de un servidor (al desconectarlo o eliminarlo).
+    /// Devuelve cuántos.
+    pub fn close_server(&self, server: &str) -> usize {
+        let mut map = self.map.lock();
+        let ids: Vec<u64> = map
+            .iter()
+            .filter(|(_, c)| c.server == server)
+            .map(|(id, _)| *id)
+            .collect();
+        for id in &ids {
+            if let Some(ctl) = map.remove(id) {
+                ctl.cancel.cancel();
+            }
+        }
+        ids.len()
+    }
+
     /// Cierra todos los flujos (al cerrar la ventana).
     pub fn close_all(&self) {
         for (_, ctl) in self.map.lock().drain() {
@@ -108,8 +132,8 @@ mod tests {
     fn register_close_and_input() {
         let r = StreamRegistry::default();
         let (tx, _rx) = mpsc::channel(1);
-        let (a, ca) = r.register(None);
-        let (b, cb) = r.register(Some(tx));
+        let (a, ca) = r.register("local", None);
+        let (b, cb) = r.register("local", Some(tx));
         assert_ne!(a, b);
         assert!(r.input(a).is_none());
         assert!(r.input(b).is_some());
@@ -122,11 +146,25 @@ mod tests {
         assert_eq!(r.len(), 0);
     }
 
+    #[test]
+    fn closing_a_server_only_closes_its_streams() {
+        let r = StreamRegistry::default();
+        let (_, local) = r.register("local", None);
+        let (_, a1) = r.register("srv-aaaaaaaa", None);
+        let (_, a2) = r.register("srv-aaaaaaaa", None);
+        let (_, b) = r.register("srv-bbbbbbbb", None);
+        assert_eq!(r.close_server("srv-aaaaaaaa"), 2);
+        assert!(a1.is_cancelled() && a2.is_cancelled());
+        assert!(!local.is_cancelled() && !b.is_cancelled());
+        assert_eq!(r.close_server("srv-aaaaaaaa"), 0);
+        assert_eq!(r.len(), 2);
+    }
+
     #[tokio::test]
     async fn close_all_waits_for_the_tasks_to_finish() {
         let r = std::sync::Arc::new(StreamRegistry::default());
-        let (a, ca) = r.register(None);
-        let (b, cb) = r.register(None);
+        let (a, ca) = r.register("local", None);
+        let (b, cb) = r.register("srv-0123abcd", None);
         // Dos tareas que, al cancelarse, tardan en terminar (como una terminal).
         for (id, c, ms) in [(a, ca, 150u64), (b, cb, 300)] {
             let r2 = r.clone();
@@ -144,7 +182,7 @@ mod tests {
             "esperó a las dos"
         );
         // Una que no termina: se devuelve al agotar el plazo.
-        let (_c, _cc) = r.register(None);
+        let (_c, _cc) = r.register("local", None);
         assert_eq!(r.close_all_and_wait(Duration::from_millis(100)).await, 1);
     }
 }

@@ -33,10 +33,13 @@ fn registered(state: &AppState) -> Vec<ProjectRef> {
 
 /// Proyectos con contenedores (por sus etiquetas) y los añadidos por el usuario.
 #[tauri::command]
-pub async fn compose_projects(state: State<'_, AppState>) -> CmdResult<Vec<ComposeProject>> {
+pub async fn compose_projects(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<Vec<ComposeProject>> {
+    let mgr = state.server(&server)?;
     let reg = registered(&state);
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.compose_projects(&reg).await })
         .await?)
 }
@@ -55,11 +58,13 @@ pub struct UnsavedFile {
 #[tauri::command]
 pub async fn compose_config(
     state: State<'_, AppState>,
+    server: String,
     project: ProjectRef,
     unsaved: Option<UnsavedFile>,
 ) -> CmdResult<ComposeConfig> {
-    let engine = state.engine.engine().await?;
-    let cli = state.engine.compose_cli().await?;
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
+    let cli = mgr.compose_cli().await?;
     Ok(engine
         .compose_config(
             &cli,
@@ -81,12 +86,14 @@ pub struct ComposePreview {
 #[tauri::command]
 pub async fn compose_preview(
     state: State<'_, AppState>,
+    server: String,
     project: ProjectRef,
     action: ComposeAction,
 ) -> CmdResult<ComposePreview> {
+    let mgr = state.server(&server)?;
     project.validate()?;
     action.validate()?;
-    let cli = state.engine.compose_cli().await?;
+    let cli = mgr.compose_cli().await?;
     Ok(ComposePreview {
         command: action_command(&cli, &project, &action),
     })
@@ -144,17 +151,19 @@ fn closed(r: Result<dcc_engine::cli::StreamedRun, EngineError>) -> RunClosed {
 #[tauri::command]
 pub async fn compose_run_open(
     state: State<'_, AppState>,
+    server: String,
     project: ProjectRef,
     action: ComposeAction,
     confirmed: bool,
     on_event: Channel<ComposeEvent>,
 ) -> CmdResult<u64> {
-    let engine = state.engine.engine().await?;
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
     engine.compose_check(&project, &action, confirmed)?;
-    let cli = state.engine.compose_cli().await?;
+    let cli = mgr.compose_cli().await?;
     let registry = state.streams.clone();
-    let manager = state.engine.clone();
-    let (sid, cancel) = registry.register(None);
+    let manager = mgr.clone();
+    let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
@@ -175,17 +184,19 @@ pub async fn compose_run_open(
 #[tauri::command]
 pub async fn compose_logs_open(
     state: State<'_, AppState>,
+    server: String,
     project: ProjectRef,
     services: Vec<String>,
     tail: u32,
     timestamps: bool,
     on_event: Channel<ComposeEvent>,
 ) -> CmdResult<u64> {
+    let mgr = state.server(&server)?;
     project.validate()?;
-    let engine = state.engine.engine().await?;
-    let cli = state.engine.compose_cli().await?;
+    let engine = mgr.engine().await?;
+    let cli = mgr.compose_cli().await?;
     let registry = state.streams.clone();
-    let (sid, cancel) = registry.register(None);
+    let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
@@ -222,11 +233,13 @@ pub struct RegisterResult {
 #[tauri::command]
 pub async fn compose_register(
     state: State<'_, AppState>,
+    server: String,
     files: Vec<String>,
     name: Option<String>,
 ) -> CmdResult<RegisterResult> {
-    let engine = state.engine.engine().await?;
-    let cli = state.engine.compose_cli().await?;
+    let mgr = state.server(&server)?;
+    let engine = mgr.engine().await?;
+    let cli = mgr.compose_cli().await?;
     let resolved = engine.compose_resolve(&cli, &files).await?;
     let Some(model) = resolved.model else {
         return Ok(RegisterResult {

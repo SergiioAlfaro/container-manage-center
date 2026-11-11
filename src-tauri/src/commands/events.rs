@@ -33,10 +33,11 @@ pub fn events_journal(state: State<'_, AppState>, filter: EventFilter) -> EventP
 #[tauri::command]
 pub async fn events_query(
     state: State<'_, AppState>,
+    server: String,
     query: EventQuery,
 ) -> CmdResult<EventQueryResult> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.events_query(&query).await })
         .await?)
 }

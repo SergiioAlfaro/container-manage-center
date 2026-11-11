@@ -37,6 +37,9 @@ pub struct HistoryEntry {
     pub error: Option<String>,
     pub http_status: Option<u16>,
     pub exit_code: Option<i32>,
+    /// Servidor de la operación (0.10.0). Las entradas anteriores no lo tienen.
+    #[serde(default)]
+    pub server: Option<crate::model::ServerTag>,
 }
 
 /// Oculta los valores de los parámetros secretos de una ruta con query string.
@@ -142,6 +145,7 @@ impl HistoryEntry {
             error: r.error.clone(),
             http_status: r.http_status,
             exit_code: r.exit_code,
+            server: r.server.clone(),
         })
     }
 }

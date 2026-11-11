@@ -11,4 +11,5 @@ pub mod events;
 pub mod images;
 pub mod networks;
 pub mod resources;
+pub mod servers;
 pub mod volumes;

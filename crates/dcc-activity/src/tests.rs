@@ -183,3 +183,57 @@ async fn concurrent_operations_are_all_recorded() {
         100
     );
 }
+
+#[test]
+fn a_server_view_tags_its_operations_and_shares_the_log() {
+    let log = ActivityLog::new(10);
+    let tag = ServerTag {
+        id: "srv-0123abcd".into(),
+        name: "Producción A".into(),
+        address: "deploy@a.example.com:22".into(),
+        remote: true,
+    };
+    let remote = log.with_server(tag.clone());
+    let local = log.with_server(ServerTag::local());
+    let mut rx = log.subscribe();
+    let spec = |kind: &str| OperationSpec {
+        category: Category::Container,
+        kind: kind.into(),
+        target: None,
+        transport: Transport::App {
+            action: "prueba".into(),
+        },
+        request_body: None,
+        equivalent_command: None,
+    };
+    remote
+        .begin(spec("container.start"))
+        .succeed(Outcome::default());
+    local
+        .begin(spec("container.stop"))
+        .succeed(Outcome::default());
+    log.begin(spec("ui.language")).succeed(Outcome::default());
+    let snap = log.snapshot();
+    assert_eq!(snap.len(), 3, "un solo registro compartido");
+    let by_kind = |k: &str| snap.iter().find(|r| r.kind == k).unwrap().server.clone();
+    assert_eq!(by_kind("container.start"), Some(tag.clone()));
+    assert_eq!(
+        by_kind("container.stop").map(|s| s.id),
+        Some("local".to_owned())
+    );
+    assert_eq!(by_kind("ui.language"), None);
+    assert!(
+        rx.try_recv().is_ok(),
+        "los suscriptores del original reciben todo"
+    );
+    let h = crate::HistoryEntry::from_record(
+        snap.iter().find(|r| r.kind == "container.start").unwrap(),
+    )
+    .unwrap();
+    assert_eq!(h.server, Some(tag));
+    // Una entrada antigua (sin servidor) se sigue leyendo.
+    let mut v = serde_json::to_value(&h).unwrap();
+    v.as_object_mut().unwrap().remove("server");
+    let old: crate::HistoryEntry = serde_json::from_value(v).unwrap();
+    assert_eq!(old.server, None);
+}

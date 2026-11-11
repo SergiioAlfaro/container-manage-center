@@ -10,6 +10,7 @@
 
 mod config;
 pub mod journal;
+pub mod servers;
 
 use std::fs;
 use std::io::Write;
@@ -19,6 +20,7 @@ pub use config::{
     Accent, ActivityConfig, AppConfig, ComposeSettings, DockerConfig, DockerMode, Language,
     SavedProject, Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
 };
+pub use servers::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
 
 pub const APP_DIR: &str = "docker-control-center";
 pub const CONFIG_FILE: &str = "config.toml";
@@ -104,32 +106,37 @@ impl ConfigStore {
     }
 
     pub fn save(&self, config: &AppConfig) -> Result<(), StoreError> {
-        let dir = self.path.parent().ok_or(StoreError::NoConfigDir)?;
-        fs::create_dir_all(dir).map_err(|source| StoreError::Io {
-            path: dir.to_path_buf(),
-            source,
-        })?;
         let body = toml::to_string_pretty(config)?;
-        let tmp = self.path.with_extension("toml.tmp");
-        let io = |source| StoreError::Io {
-            path: tmp.clone(),
-            source,
-        };
-        {
-            let mut f = fs::File::create(&tmp).map_err(io)?;
-            f.write_all(body.as_bytes()).map_err(io)?;
-            f.sync_all().map_err(io)?;
-        }
+        write_atomic(&self.path, &body)
+    }
+}
+
+/// Escritura atómica (temporal en el mismo directorio + `rename`) con permisos 0600.
+pub(crate) fn write_atomic(path: &Path, body: &str) -> Result<(), StoreError> {
+    let dir = path.parent().ok_or(StoreError::NoConfigDir)?;
+    fs::create_dir_all(dir).map_err(|source| StoreError::Io {
+        path: dir.to_path_buf(),
+        source,
+    })?;
+    let tmp = path.with_extension("toml.tmp");
+    let io = |source| StoreError::Io {
+        path: tmp.clone(),
+        source,
+    };
+    {
+        let mut f = fs::File::create(&tmp).map_err(io)?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(&tmp, fs::Permissions::from_mode(0o600)).map_err(io)?;
         }
-        fs::rename(&tmp, &self.path).map_err(|source| StoreError::Io {
-            path: self.path.clone(),
-            source,
-        })
+        f.write_all(body.as_bytes()).map_err(io)?;
+        f.sync_all().map_err(io)?;
     }
+    fs::rename(&tmp, path).map_err(|source| StoreError::Io {
+        path: path.to_path_buf(),
+        source,
+    })
 }
 
 #[cfg(test)]

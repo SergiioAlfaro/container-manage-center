@@ -131,6 +131,10 @@ export function toCommandError(e: unknown): CommandError {
   return { code: "unknown", message: e instanceof Error ? e.message : String(e), httpStatus: null, issues: null };
 }
 
+async function callIpc<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  return call<T>(cmd, args);
+}
+
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
     throw localizeError({ code: "ipc.unavailable", message: "La interfaz se está ejecutando fuera de la aplicación de escritorio.", httpStatus: null, issues: null });
@@ -148,7 +152,94 @@ function channel<T>(handler: (e: T) => void): Channel<T> {
   return ch;
 }
 
-export const api = {
+/** Equipo local (identificador fijo del backend). */
+export const LOCAL_SERVER = "local";
+
+/**
+ * Órdenes con Docker de un servidor concreto (0.10.0). Cada llamada lleva el
+ * identificador del servidor con el que se creó: nunca depende de un
+ * «servidor actual» que pudiera cambiar mientras la operación está en curso.
+ */
+export function dockerApi(server: string) {
+  const call = <T,>(cmd: string, args: Record<string, unknown> = {}) => callIpc<T>(cmd, { ...args, server });
+  return {
+  engineState: () => call<ConnectionState>("engine_state"),
+    engineReconnect: () => call<ConnectionState>("engine_reconnect"),
+    engineOverview: () => call<SystemOverview>("engine_overview"),
+    composeStatus: () => call<ComposeStatus>("compose_status"),
+    containersList: () => call<ContainerSummary[]>("containers_list"),
+    containerAction: (id: string, name: string | null, action: ContainerAction) => call<ContainerState>("container_action", { id, name, action }),
+    containerRemove: (id: string, name: string | null, force: boolean, volumes: boolean) =>
+      call<void>("container_remove", { id, name, force, volumes, confirmed: true }),
+    imagesList: () => call<ImageSummary[]>("images_list"),
+
+    containerCreate: (spec: ContainerSpec, start: boolean) => call<CreateResult>("container_create", { spec, start }),
+    containerInspect: (id: string, name: string | null) => call<ContainerDetails>("container_inspect", { id, name }),
+    containerDuplicateSpec: (id: string, name: string | null) => call<DuplicateSpec>("container_duplicate_spec", { id, name }),
+    // 0.9.2: editar configuración, recreación segura, copia de seguridad e imagen desde contenedor.
+    containerEditConfig: (id: string) => call<EditableConfig>("container_edit_config", { id }),
+    containerEditPlan: (id: string, request: EditRequest) => call<EditPlan>("container_edit_plan", { id, request }),
+    containerEditApply: (id: string, request: EditRequest, options: ApplyOptions) => call<EditOutcome>("container_edit_apply", { id, request, options }),
+    containerRestoreBackup: (id: string, start: boolean) => call<EditOutcome>("container_restore_backup", { id, start, confirmed: true }),
+    containerCommitPreview: (id: string, request: CommitRequest) => call<CommitPreview>("container_commit_preview", { id, request }),
+    containerCommit: (id: string, request: CommitRequest) => call<CommitResult>("container_commit", { id, request }),
+    imageDefaults: (image: string) => call<ImageDefaults>("image_defaults", { image }),
+    networksBrief: () => call<NetworkBrief[]>("networks_brief"),
+    volumesBrief: () => call<VolumeBrief[]>("volumes_brief"),
+
+    /** Abre un flujo; devuelve su identificador para cerrarlo con `streamClose`. */
+    logsOpen: (id: string, name: string | null, tail: number | null, onEvent: (e: LogEvent) => void) =>
+      call<number>("logs_open", { id, name, tail, onEvent: channel(onEvent) }),
+    statsOpen: (id: string, name: string | null, onEvent: (e: StatsEvent) => void) => call<number>("stats_open", { id, name, onEvent: channel(onEvent) }),
+    terminalOpen: (id: string, name: string | null, shell: ShellChoice, cols: number, rows: number, onEvent: (e: TerminalEvent) => void) =>
+      call<number>("terminal_open", { id, name, shell, cols, rows, onEvent: channel(onEvent) }),
+    imageDetails: (reference: string) => call<ImageDetails>("image_details", { reference }),
+    imageHistory: (reference: string) => call<ImageLayer[]>("image_history", { reference }),
+    imageTag: (source: string, repo: string, tag: string) => call<string>("image_tag", { source, repo, tag }),
+    imageRemove: (reference: string, force: boolean) => call<RemoveResult>("image_remove", { reference, force, confirmed: true }),
+    imagesPrune: (all: boolean) => call<PruneResult>("images_prune", { all, confirmed: true }),
+    imagesSearch: (term: string, limit: number, officialOnly: boolean) => call<SearchResult[]>("images_search", { term, limit, officialOnly }),
+    /** Descarga en flujo. La contraseña (modo manual) solo viaja en esta llamada. */
+    imagePullOpen: (reference: string, auth: PullAuth, onEvent: (e: PullEvent) => void) => call<number>("image_pull_open", { reference, auth, onEvent: channel(onEvent) }),
+    buildOpen: (spec: BuildSpec, onEvent: (e: BuildEvent) => void) => call<number>("build_open", { spec, onEvent: channel(onEvent) }),
+
+    networksList: () => call<NetworkSummary[]>("networks_list"),
+    networkDetails: (id: string, name: string | null) => call<NetworkDetails>("network_details", { id, name }),
+    networkCreate: (spec: NetworkSpec) => call<CreatedNetwork>("network_create", { spec }),
+    networkRemove: (id: string, name: string | null) => call<void>("network_remove", { id, name, confirmed: true }),
+    networksPrune: () => call<string[]>("networks_prune", { confirmed: true }),
+    networkConnect: (network: string, networkName: string | null, container: string, containerName: string | null, options: ConnectOptions, subnets: string[]) =>
+      call<void>("network_connect", { network, networkName, container, containerName, options, subnets }),
+    networkDisconnect: (network: string, networkName: string | null, container: string, containerName: string | null, force: boolean) =>
+      call<void>("network_disconnect", { network, networkName, container, containerName, force, confirmed: true }),
+
+    volumesList: () => call<VolumeSummary[]>("volumes_list"),
+    volumeDetails: (name: string) => call<VolumeDetails>("volume_details", { name }),
+    /** Tamaños de los volúmenes (`docker system df --verbose`); puede tardar. */
+    volumeSizes: () => call<VolumeSize[]>("volume_sizes"),
+    volumeCreate: (spec: VolumeSpec) => call<VolumeSummary>("volume_create", { spec }),
+    volumeRemove: (name: string) => call<void>("volume_remove", { name, confirmed: true }),
+    volumesPrune: (all: boolean) => call<VolumePruneResult>("volumes_prune", { all, confirmed: true }),
+    bindsList: () => call<BindSummary[]>("binds_list"),
+
+    // Fase 7: Docker Compose (CLI oficial sin shell).
+    composeProjects: () => call<ComposeProject[]>("compose_projects"),
+    /** `docker compose config`; con `unsaved` valida el contenido del editor sin guardarlo. */
+    composeConfig: (project: ProjectRef, unsaved: UnsavedFile | null = null) => call<ComposeConfig>("compose_config", { project, unsaved }),
+    composePreview: (project: ProjectRef, action: ComposeAction) => call<ComposePreview>("compose_preview", { project, action }),
+    /** Acción con la salida en vivo; se detiene con `streamClose`. */
+    composeRunOpen: (project: ProjectRef, action: ComposeAction, confirmed: boolean, onEvent: (e: ComposeEvent) => void) =>
+      call<number>("compose_run_open", { project, action, confirmed, onEvent: channel(onEvent) }),
+    composeLogsOpen: (project: ProjectRef, services: string[], tail: number, timestamps: boolean, onEvent: (e: ComposeEvent) => void) =>
+      call<number>("compose_logs_open", { project, services, tail, timestamps, onEvent: channel(onEvent) }),
+    composeRegister: (files: string[], name: string | null) => call<RegisterResult>("compose_register", { files, name }),
+    eventsQuery: (query: EventQuery) => call<EventQueryResult>("events_query", { query }),
+  };
+}
+
+export type DockerApi = ReturnType<typeof dockerApi>;
+
+const appApi = {
   appInfo: () => call<AppInfo>("app_info"),
   /** Fase 9: versiones nuevas (solo consulta) e información del sistema. */
   updatesCheck: (source?: string) => call<UpdateCheck>("updates_check", { source: source ?? null }),
@@ -175,91 +266,21 @@ export const api = {
   activityList: () => call<OperationRecord[]>("activity_list"),
   activityClear: () => call<void>("activity_clear"),
 
-  engineState: () => call<ConnectionState>("engine_state"),
-  engineReconnect: () => call<ConnectionState>("engine_reconnect"),
   engineTest: (docker: DockerConfig) => call<ConnectionTest>("engine_test", { docker }),
-  engineOverview: () => call<SystemOverview>("engine_overview"),
-  composeStatus: () => call<ComposeStatus>("compose_status"),
-  containersList: () => call<ContainerSummary[]>("containers_list"),
-  containerAction: (id: string, name: string | null, action: ContainerAction) => call<ContainerState>("container_action", { id, name, action }),
-  containerRemove: (id: string, name: string | null, force: boolean, volumes: boolean) =>
-    call<void>("container_remove", { id, name, force, volumes, confirmed: true }),
-  imagesList: () => call<ImageSummary[]>("images_list"),
-
   /** Valida y traduce la especificación sin hablar con Docker. */
   containerPreview: (spec: ContainerSpec) => call<SpecPreview>("container_preview", { spec }),
-  containerCreate: (spec: ContainerSpec, start: boolean) => call<CreateResult>("container_create", { spec, start }),
-  containerInspect: (id: string, name: string | null) => call<ContainerDetails>("container_inspect", { id, name }),
-  containerDuplicateSpec: (id: string, name: string | null) => call<DuplicateSpec>("container_duplicate_spec", { id, name }),
-  // 0.9.2: editar configuración, recreación segura, copia de seguridad e imagen desde contenedor.
-  containerEditConfig: (id: string) => call<EditableConfig>("container_edit_config", { id }),
-  containerEditPlan: (id: string, request: EditRequest) => call<EditPlan>("container_edit_plan", { id, request }),
-  containerEditApply: (id: string, request: EditRequest, options: ApplyOptions) => call<EditOutcome>("container_edit_apply", { id, request, options }),
-  containerRestoreBackup: (id: string, start: boolean) => call<EditOutcome>("container_restore_backup", { id, start, confirmed: true }),
-  containerCommitPreview: (id: string, request: CommitRequest) => call<CommitPreview>("container_commit_preview", { id, request }),
-  containerCommit: (id: string, request: CommitRequest) => call<CommitResult>("container_commit", { id, request }),
-  imageDefaults: (image: string) => call<ImageDefaults>("image_defaults", { image }),
-  networksBrief: () => call<NetworkBrief[]>("networks_brief"),
-  volumesBrief: () => call<VolumeBrief[]>("volumes_brief"),
-
-  /** Abre un flujo; devuelve su identificador para cerrarlo con `streamClose`. */
-  logsOpen: (id: string, name: string | null, tail: number | null, onEvent: (e: LogEvent) => void) =>
-    call<number>("logs_open", { id, name, tail, onEvent: channel(onEvent) }),
-  statsOpen: (id: string, name: string | null, onEvent: (e: StatsEvent) => void) => call<number>("stats_open", { id, name, onEvent: channel(onEvent) }),
-  terminalOpen: (id: string, name: string | null, shell: ShellChoice, cols: number, rows: number, onEvent: (e: TerminalEvent) => void) =>
-    call<number>("terminal_open", { id, name, shell, cols, rows, onEvent: channel(onEvent) }),
   terminalInput: (stream: number, data: string) => call<void>("terminal_input", { stream, data }),
   terminalResize: (stream: number, cols: number, rows: number) => call<void>("terminal_resize", { stream, cols, rows }),
   streamClose: (stream: number) => call<boolean>("stream_close", { stream }),
 
-  imageDetails: (reference: string) => call<ImageDetails>("image_details", { reference }),
-  imageHistory: (reference: string) => call<ImageLayer[]>("image_history", { reference }),
-  imageTag: (source: string, repo: string, tag: string) => call<string>("image_tag", { source, repo, tag }),
-  imageRemove: (reference: string, force: boolean) => call<RemoveResult>("image_remove", { reference, force, confirmed: true }),
-  imagesPrune: (all: boolean) => call<PruneResult>("images_prune", { all, confirmed: true }),
-  imagesSearch: (term: string, limit: number, officialOnly: boolean) => call<SearchResult[]>("images_search", { term, limit, officialOnly }),
   /** Interpreta una referencia como Docker, sin hablar con Docker. */
   imageRefParse: (reference: string) => call<ImageRef>("image_ref_parse", { reference }),
-  /** Descarga en flujo. La contraseña (modo manual) solo viaja en esta llamada. */
-  imagePullOpen: (reference: string, auth: PullAuth, onEvent: (e: PullEvent) => void) => call<number>("image_pull_open", { reference, auth, onEvent: channel(onEvent) }),
   /** Valida y resume el contexto sin hablar con Docker. */
   buildPreview: (spec: BuildSpec) => call<BuildPreview>("build_preview", { spec }),
-  buildOpen: (spec: BuildSpec, onEvent: (e: BuildEvent) => void) => call<number>("build_open", { spec, onEvent: channel(onEvent) }),
-
-  networksList: () => call<NetworkSummary[]>("networks_list"),
-  networkDetails: (id: string, name: string | null) => call<NetworkDetails>("network_details", { id, name }),
   /** Valida la red y muestra la petición exacta sin hablar con Docker. */
   networkPreview: (spec: NetworkSpec) => call<NetworkPreview>("network_preview", { spec }),
-  networkCreate: (spec: NetworkSpec) => call<CreatedNetwork>("network_create", { spec }),
-  networkRemove: (id: string, name: string | null) => call<void>("network_remove", { id, name, confirmed: true }),
-  networksPrune: () => call<string[]>("networks_prune", { confirmed: true }),
-  networkConnect: (network: string, networkName: string | null, container: string, containerName: string | null, options: ConnectOptions, subnets: string[]) =>
-    call<void>("network_connect", { network, networkName, container, containerName, options, subnets }),
-  networkDisconnect: (network: string, networkName: string | null, container: string, containerName: string | null, force: boolean) =>
-    call<void>("network_disconnect", { network, networkName, container, containerName, force, confirmed: true }),
-
-  volumesList: () => call<VolumeSummary[]>("volumes_list"),
-  volumeDetails: (name: string) => call<VolumeDetails>("volume_details", { name }),
-  /** Tamaños de los volúmenes (`docker system df --verbose`); puede tardar. */
-  volumeSizes: () => call<VolumeSize[]>("volume_sizes"),
   /** Valida el volumen y muestra la petición exacta sin hablar con Docker. */
   volumePreview: (spec: VolumeSpec) => call<VolumePreview>("volume_preview", { spec }),
-  volumeCreate: (spec: VolumeSpec) => call<VolumeSummary>("volume_create", { spec }),
-  volumeRemove: (name: string) => call<void>("volume_remove", { name, confirmed: true }),
-  volumesPrune: (all: boolean) => call<VolumePruneResult>("volumes_prune", { all, confirmed: true }),
-  bindsList: () => call<BindSummary[]>("binds_list"),
-
-  // Fase 7: Docker Compose (CLI oficial sin shell).
-  composeProjects: () => call<ComposeProject[]>("compose_projects"),
-  /** `docker compose config`; con `unsaved` valida el contenido del editor sin guardarlo. */
-  composeConfig: (project: ProjectRef, unsaved: UnsavedFile | null = null) => call<ComposeConfig>("compose_config", { project, unsaved }),
-  composePreview: (project: ProjectRef, action: ComposeAction) => call<ComposePreview>("compose_preview", { project, action }),
-  /** Acción con la salida en vivo; se detiene con `streamClose`. */
-  composeRunOpen: (project: ProjectRef, action: ComposeAction, confirmed: boolean, onEvent: (e: ComposeEvent) => void) =>
-    call<number>("compose_run_open", { project, action, confirmed, onEvent: channel(onEvent) }),
-  composeLogsOpen: (project: ProjectRef, services: string[], tail: number, timestamps: boolean, onEvent: (e: ComposeEvent) => void) =>
-    call<number>("compose_logs_open", { project, services, tail, timestamps, onEvent: channel(onEvent) }),
-  composeRegister: (files: string[], name: string | null) => call<RegisterResult>("compose_register", { files, name }),
   composeUnregister: (name: string) => call<boolean>("compose_unregister", { name }),
   composeFileRead: (path: string) => call<ComposeFile>("compose_file_read", { path }),
   composeFileSave: (path: string, content: string, version: string) => call<ComposeFile>("compose_file_save", { path, content, version }),
@@ -269,7 +290,6 @@ export const api = {
   // Fase 8: eventos de Docker e historial de operaciones.
   eventsRecent: (filter: Partial<EventFilter> = {}) => call<EventPage>("events_recent", { filter }),
   eventsJournal: (filter: Partial<EventFilter> = {}) => call<EventPage>("events_journal", { filter }),
-  eventsQuery: (query: EventQuery) => call<EventQueryResult>("events_query", { query }),
   eventsJournalClear: () => call<null>("events_journal_clear"),
   historyList: (filter: Partial<HistoryFilter> = {}) => call<HistoryPage>("history_list", { filter }),
   historyClear: () => call<null>("history_clear"),
@@ -328,5 +348,11 @@ export const api = {
     return navigator.clipboard.writeText(text);
   },
 };
+
+/**
+ * Hasta que la interfaz trabaje con varios servidores, las órdenes con Docker
+ * van al equipo local, indicado de forma explícita.
+ */
+export const api = { ...appApi, ...dockerApi(LOCAL_SERVER) };
 
 export type Api = typeof api;

@@ -11,6 +11,32 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
+/// Servidor Docker al que pertenece una operación o un evento (0.10.0).
+/// `id` es `local` para el Docker de este equipo.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ServerTag {
+    pub id: String,
+    pub name: String,
+    /// `usuario@host:puerto` en los remotos; vacío en el local.
+    pub address: String,
+    pub remote: bool,
+}
+
+impl ServerTag {
+    pub const LOCAL_ID: &'static str = "local";
+
+    pub fn local() -> Self {
+        Self {
+            id: Self::LOCAL_ID.into(),
+            name: "Local".into(),
+            address: String::new(),
+            remote: false,
+        }
+    }
+}
+
 /// Área funcional de la operación. Se usa para filtrar en el panel de actividad.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -101,6 +127,10 @@ pub struct OperationRecord {
     pub error: Option<String>,
     pub http_status: Option<u16>,
     pub exit_code: Option<i32>,
+    /// Servidor sobre el que se ejecutó; `None` en las operaciones propias de
+    /// la aplicación (idioma, color…), que no pertenecen a ningún servidor.
+    #[serde(default)]
+    pub server: Option<ServerTag>,
 }
 
 /// Evento emitido a los suscriptores (la interfaz) cuando cambia el registro.

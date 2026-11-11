@@ -296,6 +296,16 @@ pub fn docker_host_uri(p: &SshProfile) -> String {
     format!("ssh://{}", display_address(p))
 }
 
+/// Etiqueta con la que se registran sus operaciones y eventos.
+pub fn server_tag(p: &SshProfile) -> dcc_activity::ServerTag {
+    dcc_activity::ServerTag {
+        id: p.id.clone(),
+        name: p.name.clone(),
+        address: display_address(p),
+        remote: true,
+    }
+}
+
 /// Expande `~/` con el directorio personal del usuario.
 pub fn expand_home(path: &str) -> String {
     match path.strip_prefix("~/") {

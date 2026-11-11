@@ -22,10 +22,11 @@ use crate::state::AppState;
 #[tauri::command]
 pub async fn image_details(
     state: State<'_, AppState>,
+    server: String,
     reference: String,
 ) -> CmdResult<ImageDetails> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.image_details(&reference).await })
         .await?)
 }
@@ -33,10 +34,11 @@ pub async fn image_details(
 #[tauri::command]
 pub async fn image_history(
     state: State<'_, AppState>,
+    server: String,
     reference: String,
 ) -> CmdResult<Vec<ImageLayer>> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.image_history(&reference).await })
         .await?)
 }
@@ -44,12 +46,13 @@ pub async fn image_history(
 #[tauri::command]
 pub async fn image_tag(
     state: State<'_, AppState>,
+    server: String,
     source: String,
     repo: String,
     tag: String,
 ) -> CmdResult<String> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.tag_image(&source, &repo, &tag).await })
         .await?)
 }
@@ -57,15 +60,16 @@ pub async fn image_tag(
 #[tauri::command]
 pub async fn image_remove(
     state: State<'_, AppState>,
+    server: String,
     reference: String,
     force: bool,
     confirmed: bool,
 ) -> CmdResult<RemoveResult> {
+    let mgr = state.server(&server)?;
     if !confirmed {
         return Err(EngineError::NotConfirmed.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.remove_image(&reference, force, true).await })
         .await?)
 }
@@ -73,14 +77,15 @@ pub async fn image_remove(
 #[tauri::command]
 pub async fn images_prune(
     state: State<'_, AppState>,
+    server: String,
     all: bool,
     confirmed: bool,
 ) -> CmdResult<PruneResult> {
+    let mgr = state.server(&server)?;
     if !confirmed {
         return Err(EngineError::NotConfirmed.into());
     }
-    Ok(state
-        .engine
+    Ok(mgr
         .with_engine(|e| async move { e.prune_images(all, true).await })
         .await?)
 }
@@ -88,12 +93,13 @@ pub async fn images_prune(
 #[tauri::command]
 pub async fn images_search(
     state: State<'_, AppState>,
+    server: String,
     term: String,
     limit: u32,
     official_only: bool,
 ) -> CmdResult<Vec<SearchResult>> {
-    Ok(state
-        .engine
+    let mgr = state.server(&server)?;
+    Ok(mgr
         .with_engine(|e| async move { e.search_images(&term, limit, official_only).await })
         .await?)
 }
@@ -127,16 +133,18 @@ pub enum PullEvent {
 #[tauri::command]
 pub async fn image_pull_open(
     state: State<'_, AppState>,
+    server: String,
     reference: String,
     auth: PullAuth,
     on_event: Channel<PullEvent>,
 ) -> CmdResult<u64> {
+    let mgr = state.server(&server)?;
     // Errores de formato antes de abrir nada.
     image_ref_parse(reference.clone())?;
-    let engine = state.engine.engine().await?;
+    let engine = mgr.engine().await?;
     let registry = state.streams.clone();
-    let manager = state.engine.clone();
-    let (sid, cancel) = registry.register(None);
+    let manager = mgr.clone();
+    let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
@@ -230,17 +238,19 @@ pub enum BuildEvent {
 #[tauri::command]
 pub async fn build_open(
     state: State<'_, AppState>,
+    server: String,
     spec: BuildSpec,
     on_event: Channel<BuildEvent>,
 ) -> CmdResult<u64> {
+    let mgr = state.server(&server)?;
     let issues = spec.validate(true);
     if issues.iter().any(|i| i.severity == Severity::Error) {
         return Err(EngineError::InvalidSpec { issues }.into());
     }
-    let engine = state.engine.engine().await?;
+    let engine = mgr.engine().await?;
     let registry = state.streams.clone();
-    let manager = state.engine.clone();
-    let (sid, cancel) = registry.register(None);
+    let manager = mgr.clone();
+    let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine

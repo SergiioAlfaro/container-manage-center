@@ -10,8 +10,9 @@ use crate::error::CmdResult;
 pub struct AppState {
     pub activity: ActivityLog,
     pub store: ConfigStore,
-    /// Única conexión con Docker de la aplicación (D-004).
-    pub engine: EngineManager,
+    /// Servidores: el equipo local y los remotos (0.10.0, D-078). Toda
+    /// operación con Docker indica su servidor (`AppState::server`).
+    pub servers: crate::servers::Servers,
     /// Flujos abiertos (logs, estadísticas, terminales).
     pub streams: std::sync::Arc<crate::streams::StreamRegistry>,
     config: Mutex<AppConfig>,
@@ -66,17 +67,31 @@ impl AppState {
             ),
         };
         let activity = ActivityLog::new(config.activity.max_records as usize);
-        let engine = EngineManager::new(activity.clone(), connection_mode(&config.docker));
+        let local = EngineManager::new(activity.clone(), connection_mode(&config.docker));
+        let servers = crate::servers::Servers::new(
+            local,
+            dcc_store::ServerStore::beside(store.path()),
+            activity.clone(),
+            crate::servers::ssh_paths(
+                store
+                    .path()
+                    .parent()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_default(),
+            ),
+            dcc_engine::manager::Timing::default(),
+        );
         let (journals, journal_warning) =
             crate::journal::Journals::open(crate::journal::state_dir(store.path()));
-        let startup_warning = match (warning, journal_warning) {
-            (Some(a), Some(b)) => Some(format!("{a} {b}")),
-            (a, b) => a.or(b),
-        };
+        let warnings: Vec<String> = [warning, journal_warning, servers.warning.clone()]
+            .into_iter()
+            .flatten()
+            .collect();
+        let startup_warning = (!warnings.is_empty()).then(|| warnings.join(" "));
         Self {
             activity,
             store,
-            engine,
+            servers,
             streams: Default::default(),
             config: Mutex::new(config),
             startup_warning,
@@ -84,6 +99,11 @@ impl AppState {
             last_update: Mutex::new(None),
             closing: Default::default(),
         }
+    }
+
+    /// Gestor del servidor indicado (`local` o el identificador de un perfil).
+    pub fn server(&self, id: &str) -> CmdResult<EngineManager> {
+        self.servers.get(id)
     }
 
     pub fn config(&self) -> AppConfig {

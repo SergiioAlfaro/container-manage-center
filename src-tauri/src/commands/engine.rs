@@ -12,14 +12,17 @@ use crate::error::CmdResult;
 use crate::state::{connection_mode, AppState};
 
 #[tauri::command]
-pub fn engine_state(state: State<'_, AppState>) -> ConnectionState {
-    state.engine.state()
+pub fn engine_state(state: State<'_, AppState>, server: String) -> CmdResult<ConnectionState> {
+    Ok(state.server(&server)?.state())
 }
 
 /// Vuelve a detectar y conectar (acción del usuario: queda registrada).
 #[tauri::command]
-pub async fn engine_reconnect(state: State<'_, AppState>) -> CmdResult<ConnectionState> {
-    Ok(state.engine.connect().await)
+pub async fn engine_reconnect(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<ConnectionState> {
+    Ok(state.server(&server)?.connect().await)
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -39,17 +42,19 @@ pub enum ConnectionTest {
     },
 }
 
-/// Prueba una configuración de conexión sin guardarla ni sustituir la actual.
+/// Prueba una configuración de conexión local sin guardarla ni sustituir la actual.
 #[tauri::command]
 pub async fn engine_test(
     state: State<'_, AppState>,
     docker: DockerConfig,
 ) -> CmdResult<ConnectionTest> {
     let docker = docker_normalized(docker);
-    Ok(match state.engine.test(connection_mode(&docker)).await {
-        Ok((endpoint, engine)) => ConnectionTest::Ok { endpoint, engine },
-        Err(diagnosis) => ConnectionTest::Failed { diagnosis },
-    })
+    Ok(
+        match state.servers.local.test(connection_mode(&docker)).await {
+            Ok((endpoint, engine)) => ConnectionTest::Ok { endpoint, engine },
+            Err(diagnosis) => ConnectionTest::Failed { diagnosis },
+        },
+    )
 }
 
 fn docker_normalized(d: DockerConfig) -> DockerConfig {
@@ -62,11 +67,17 @@ fn docker_normalized(d: DockerConfig) -> DockerConfig {
 }
 
 #[tauri::command]
-pub async fn engine_overview(state: State<'_, AppState>) -> CmdResult<SystemOverview> {
-    Ok(state.engine.overview().await?)
+pub async fn engine_overview(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<SystemOverview> {
+    Ok(state.server(&server)?.overview().await?)
 }
 
 #[tauri::command]
-pub async fn compose_status(state: State<'_, AppState>) -> CmdResult<ComposeStatus> {
-    Ok(state.engine.compose_status().await)
+pub async fn compose_status(
+    state: State<'_, AppState>,
+    server: String,
+) -> CmdResult<ComposeStatus> {
+    Ok(state.server(&server)?.compose_status().await)
 }

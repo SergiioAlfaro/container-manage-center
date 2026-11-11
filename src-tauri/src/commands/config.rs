@@ -21,7 +21,7 @@ pub async fn config_set<R: Runtime>(app: AppHandle<R>, config: AppConfig) -> Cmd
     .await
     .map_err(|e| CommandError::new("internal", e))??;
     if docker_changed {
-        let engine = app.state::<AppState>().engine.clone();
+        let engine = app.state::<AppState>().servers.local.clone();
         let mode = connection_mode(&saved.docker);
         tauri::async_runtime::spawn(async move {
             engine.set_mode(mode).await;

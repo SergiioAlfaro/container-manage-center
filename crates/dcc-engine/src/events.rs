@@ -59,6 +59,9 @@ pub struct DockerEvent {
     pub name: Option<String>,
     pub attributes: BTreeMap<String, String>,
     pub scope: Option<String>,
+    /// Servidor de origen (0.10.0); lo pone el motor que lo recibe.
+    #[serde(default)]
+    pub server: Option<dcc_activity::ServerTag>,
 }
 
 impl DockerEvent {
@@ -94,6 +97,7 @@ impl DockerEvent {
             actor_id,
             attributes,
             scope: v.get("scope").and_then(Value::as_str).map(str::to_owned),
+            server: None,
         })
     }
 
@@ -282,6 +286,7 @@ impl Engine {
             timeout: Some(Duration::from_secs(30)),
         };
         let dialer = self.dialer();
+        let server = self.activity().server().cloned();
         let (events, truncated) = self
             .call(
                 op,
@@ -297,7 +302,8 @@ impl Engine {
                     let mut out = std::collections::VecDeque::new();
                     let mut truncated = false;
                     while let Some(v) = r.next_json().await? {
-                        if let Some(e) = DockerEvent::from_json(&v) {
+                        if let Some(mut e) = DockerEvent::from_json(&v) {
+                            e.server = server.clone();
                             if out.len() == MAX_QUERY_EVENTS {
                                 out.pop_front();
                                 truncated = true;
@@ -386,7 +392,8 @@ impl Engine {
             };
             let err = match next {
                 Ok(Some(v)) => {
-                    if let Some(e) = DockerEvent::from_json(&v) {
+                    if let Some(mut e) = DockerEvent::from_json(&v) {
+                        e.server = self.activity().server().cloned();
                         if !on_event(e) {
                             return Ok(());
                         }

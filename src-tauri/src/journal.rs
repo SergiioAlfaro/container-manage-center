@@ -302,14 +302,22 @@ async fn until_disconnected(rx: &mut tokio::sync::watch::Receiver<ConnectionStat
 
 /// Mantiene una suscripción a los eventos de Docker mientras haya conexión:
 /// cada evento se guarda y se envía a la ventana (que actualiza lo afectado).
-pub fn spawn_events_watcher<R: Runtime>(app: AppHandle<R>, engine: EngineManager) {
+pub fn spawn_events_watcher<R: Runtime>(
+    app: AppHandle<R>,
+    engine: EngineManager,
+    stop: CancellationToken,
+) {
     tauri::async_runtime::spawn(async move {
         let mut rx = engine.subscribe();
         loop {
+            if stop.is_cancelled() {
+                return;
+            }
             // Espera a estar conectado.
             while !matches!(*rx.borrow_and_update(), ConnectionState::Connected { .. }) {
-                if rx.changed().await.is_err() {
-                    return;
+                tokio::select! {
+                    r = rx.changed() => if r.is_err() { return },
+                    _ = stop.cancelled() => return,
                 }
             }
             let Ok(e) = engine.engine().await else {
@@ -338,6 +346,10 @@ pub fn spawn_events_watcher<R: Runtime>(app: AppHandle<R>, engine: EngineManager
                     }
                 }
                 _ = until_disconnected(&mut rx2) => cancel.cancel(),
+                _ = stop.cancelled() => {
+                    cancel.cancel();
+                    return;
+                }
             }
         }
     });

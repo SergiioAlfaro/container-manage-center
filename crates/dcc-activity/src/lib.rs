@@ -15,7 +15,9 @@ pub use log::{
     capture, ActivityLog, Failure, OperationHandle, OperationSpec, Outcome, DEFAULT_CAPACITY,
     DEFAULT_CAPTURE_LIMIT,
 };
-pub use model::{ActivityEvent, CapturedText, Category, OpStatus, OperationRecord, Transport};
+pub use model::{
+    ActivityEvent, CapturedText, Category, OpStatus, OperationRecord, ServerTag, Transport,
+};
 
 #[cfg(test)]
 mod tests;

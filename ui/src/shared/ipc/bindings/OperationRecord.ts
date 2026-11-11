@@ -2,6 +2,7 @@
 import type { CapturedText } from "./CapturedText";
 import type { Category } from "./Category";
 import type { OpStatus } from "./OpStatus";
+import type { ServerTag } from "./ServerTag";
 import type { Transport } from "./Transport";
 
 export type OperationRecord = { id: string, category: Category, 
@@ -29,4 +30,9 @@ summary: string | null, stdout: CapturedText | null, stderr: CapturedText | null
 /**
  * Mensaje de error devuelto por Docker o por el sistema.
  */
-error: string | null, httpStatus: number | null, exitCode: number | null, };
+error: string | null, httpStatus: number | null, exitCode: number | null, 
+/**
+ * Servidor sobre el que se ejecutó; `None` en las operaciones propias de
+ * la aplicación (idioma, color…), que no pertenecen a ningún servidor.
+ */
+server: ServerTag | null, };

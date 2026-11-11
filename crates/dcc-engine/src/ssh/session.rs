@@ -136,9 +136,13 @@ impl SshSession {
                 .chars()
                 .rev()
                 .collect();
-        let control = paths
-            .runtime_dir
-            .join(format!("c-{short}-{}", random_hex(3)));
+        // El PID de esta instancia en el nombre: al arrancar se cierran solo las
+        // sesiones de instancias que ya no existen (`close_orphans`).
+        let control = paths.runtime_dir.join(format!(
+            "c-{}-{short}-{}",
+            std::process::id(),
+            random_hex(3)
+        ));
         let mut cmd = Command::new(&paths.ssh);
         cmd.args(master_args(p, &paths, &control))
             .stdin(Stdio::null())
@@ -418,6 +422,49 @@ impl tower_service::Service<hyper::Uri> for SshConnector {
         let s = self.session.clone();
         Box::pin(async move { s.dial().await.map(hyper_util::rt::TokioIo::new) })
     }
+}
+
+/// Cierra las conexiones maestras que dejó una instancia de la aplicación que
+/// terminó sin poder cerrarlas (p. ej. por un cierre forzado). Solo actúa
+/// sobre sockets de control del directorio privado de la aplicación cuyo PID
+/// ya no existe; nunca sobre los de otra instancia en marcha. Devuelve cuántos.
+pub async fn close_orphans(paths: &SshPaths) -> usize {
+    let Ok(dir) = std::fs::read_dir(&paths.runtime_dir) else {
+        return 0;
+    };
+    let mut closed = 0;
+    for entry in dir.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let Some(pid) = name
+            .strip_prefix("c-")
+            .and_then(|r| r.split('-').next())
+            .and_then(|p| p.parse::<i32>().ok())
+        else {
+            continue;
+        };
+        if pid <= 1 || process_alive(pid) {
+            continue;
+        }
+        let sock = entry.path();
+        let args = vec![
+            "-S".to_owned(),
+            sock.display().to_string(),
+            "-O".into(),
+            "exit".into(),
+            "--".into(),
+            "dcc-orphan".into(),
+        ];
+        let _ = super::hostkey::run(&paths.ssh, &args, Duration::from_secs(5)).await;
+        let _ = std::fs::remove_file(&sock);
+        closed += 1;
+    }
+    closed
+}
+
+fn process_alive(pid: i32) -> bool {
+    // SAFETY: kill con la señal 0 solo comprueba si el proceso existe.
+    let r = unsafe { libc::kill(pid, 0) };
+    r == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
 }
 
 #[cfg(test)]

@@ -26,6 +26,7 @@ export function apiRecord(over: Partial<OperationRecord> = {}): OperationRecord 
     error: null,
     httpStatus: 204,
     exitCode: null,
+    server: null,
     ...over,
   };
 }
