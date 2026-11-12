@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, BookOpen, ChevronRight, PackageX, RotateCcw } from "lucide-react";
 import { DEFAULT_CONFIG, useApp } from "@/app/store";
+import { LOCAL_SERVER, ServerScope } from "@/app/server";
 import type { Language } from "@/shared/ipc/bindings/Language";
 import type { Theme } from "@/shared/ipc/bindings/Theme";
 import type { Accent } from "@/shared/ipc/bindings/Accent";
@@ -81,7 +82,20 @@ function OpenRow({ label, hint, icon, onOpen, action }: { label: string; hint: s
   );
 }
 
+/**
+ * La configuración es de esta aplicación y de este equipo (conexión local con
+ * Docker, información del sistema, componentes instalados): siempre trabaja con
+ * el equipo local, aunque en el selector esté elegido un servidor remoto.
+ */
 export function SettingsView() {
+  return (
+    <ServerScope server={LOCAL_SERVER}>
+      <SettingsContent />
+    </ServerScope>
+  );
+}
+
+function SettingsContent() {
   const { t, i18n } = useTranslation();
   const { config, updateConfig } = useApp();
   const [resetting, setResetting] = useState(false);

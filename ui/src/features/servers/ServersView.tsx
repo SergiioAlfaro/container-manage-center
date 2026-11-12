@@ -105,7 +105,7 @@ function ServerList() {
         <table className="w-full min-w-[980px] text-left text-[13px]">
           <thead className="border-b border-line bg-surface-2 text-[12px] text-ink-3">
             <tr>
-              <th className="px-4 py-2 font-medium">{t("servers.columns.name")}</th>
+              <th className="min-w-[160px] px-4 py-2 font-medium">{t("servers.columns.name")}</th>
               <th className="px-3 py-2 font-medium">{t("servers.columns.address")}</th>
               <th className="px-3 py-2 font-medium">{t("servers.columns.method")}</th>
               <th className="px-3 py-2 font-medium">{t("servers.columns.status")}</th>
@@ -136,7 +136,8 @@ function ServerList() {
                     </div>
                     {s.config?.description && <p className="mt-0.5 text-[12px] text-ink-3 [overflow-wrap:anywhere]">{s.config.description}</p>}
                   </td>
-                  <td className="selectable px-3 py-2.5 font-mono text-[12px] [overflow-wrap:anywhere]">
+                  {/* Sin cortes a mitad de la dirección; si es muy larga se recorta (completa en el título y en los detalles). */}
+                  <td className="selectable max-w-[260px] truncate whitespace-nowrap px-3 py-2.5 font-mono text-[12px]" title={s.config ? displayAddress(s.config) : s.address}>
                     {s.config ? displayAddress(s.config) : s.address || "—"}
                   </td>
                   <td className="px-3 py-2.5 text-[12.5px]">{s.config ? t(`servers.auth.${s.config.auth}`) : t("servers.localSocket")}</td>

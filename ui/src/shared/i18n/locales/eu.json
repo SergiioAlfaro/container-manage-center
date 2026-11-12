@@ -306,7 +306,8 @@
       "dockerHost": "DOCKER_HOST aldagaia",
       "context": "«{{name}}» testuingurua",
       "rootless": "Erabiltzailearen Docker rootless",
-      "system": "Sistemaren socketa"
+      "system": "Sistemaren socketa",
+      "ssh": "SSH: «{{name}}» zerbitzaria"
     },
     "reconnect": "Konektatu berriro",
     "reconnecting": "Konektatzen…",
@@ -700,6 +701,7 @@
     "noRunning": "Ez dago edukiontzirik exekutatzen: abiarazi bat terminal bat irekitzeko.",
     "sessionName": "Saioaren izena",
     "nameHint": "Aukerakoa. Hutsik uzten baduzu, edukiontziaren izena erabiliko da. Gero alda dezakezu.",
+    "nameHint_server": "Aukerakoa. Hutsik uzten baduzu, zerbitzariaren izena erabiliko da. Gero alda dezakezu.",
     "nameProblem": {
       "empty": "Izenak ezin du hutsik egon.",
       "long": "Erabili gehienez {{max}} karaktere.",

@@ -306,7 +306,8 @@
       "dockerHost": "Variable DOCKER_HOST",
       "context": "Contexto «{{name}}»",
       "rootless": "Docker rootless do usuario",
-      "system": "Socket do sistema"
+      "system": "Socket do sistema",
+      "ssh": "SSH: servidor «{{name}}»"
     },
     "reconnect": "Volver conectar",
     "reconnecting": "Conectando…",
@@ -700,6 +701,7 @@
     "noRunning": "Non hai contedores en execución: inicia un para abrir un terminal.",
     "sessionName": "Nome da sesión",
     "nameHint": "Opcional. Se o deixas baleiro, úsase o nome do contedor. Podes cambialo despois.",
+    "nameHint_server": "Opcional. Se o deixas baleiro, úsase o nome do servidor. Podes cambialo despois.",
     "nameProblem": {
       "empty": "O nome non pode estar baleiro.",
       "long": "Usa como máximo {{max}} caracteres.",

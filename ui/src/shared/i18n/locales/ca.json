@@ -306,7 +306,8 @@
       "dockerHost": "Variable DOCKER_HOST",
       "context": "Context «{{name}}»",
       "rootless": "Docker rootless de l’usuari",
-      "system": "Sòcol del sistema"
+      "system": "Sòcol del sistema",
+      "ssh": "SSH: servidor «{{name}}»"
     },
     "reconnect": "Tornar a connectar",
     "reconnecting": "S’està connectant…",
@@ -700,6 +701,7 @@
     "noRunning": "No hi ha contenidors en execució: inicia’n un per obrir un terminal.",
     "sessionName": "Nom de la sessió",
     "nameHint": "Opcional. Si el deixes buit, es fa servir el nom del contenidor. El pots canviar després.",
+    "nameHint_server": "Opcional. Si el deixes buit, es fa servir el nom del servidor. El pots canviar després.",
     "nameProblem": {
       "empty": "El nom no pot estar buit.",
       "long": "Fes servir com a màxim {{max}} caràcters.",

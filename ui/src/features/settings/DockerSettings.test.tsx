@@ -8,6 +8,9 @@ import { api, connected, diagnosis } from "@/test/apiMock";
 import { renderWithQuery, setServerState } from "@/test/render";
 import { DEFAULT_CONFIG, useApp } from "@/app/store";
 import { DockerSettings } from "./DockerSettings";
+import { SettingsView } from "./SettingsView";
+import { useServers } from "@/app/server";
+import { localServer, remoteServer } from "@/test/apiMock";
 
 describe("Configuración: conexión con Docker", () => {
   beforeEach(() => {
@@ -69,5 +72,16 @@ describe("Configuración: conexión con Docker", () => {
     renderWithQuery(<DockerSettings />);
     await act(async () => userEvent.click(screen.getByRole("button", { name: "Volver a conectar" })));
     expect(api.engineReconnect).toHaveBeenCalledOnce();
+  });
+
+  it("con un servidor remoto elegido, la configuración sigue siendo la de este equipo", () => {
+    const remote = "srv-0123abcd";
+    const remoteState = { ...connected, endpoint: { socketPath: "ssh://deploy@docker-a.example.com", source: { kind: "ssh" as const, serverId: remote, name: "Producción" } } };
+    useServers.setState({ servers: [localServer(), remoteServer({ id: remote, name: "Producción" }, remoteState)], selected: remote });
+    setServerState(remoteState, remote);
+    renderWithQuery(<SettingsView />, remote);
+    expect(screen.getByText("/var/run/docker.sock")).toBeInTheDocument();
+    expect(screen.queryByText("ssh://deploy@docker-a.example.com")).not.toBeInTheDocument();
+    expect(screen.getByText("Socket del sistema")).toBeInTheDocument();
   });
 });

@@ -119,7 +119,7 @@ describe("Servidores: lista y gestión", () => {
 describe("Asistente «Añadir servidor»", () => {
   it("valida con el backend, prueba los siete pasos y guarda sin secretos", async () => {
     setServers([localServer()]);
-    api.serverValidate.mockImplementation(async (c) => (c.host.includes(" ") ? [{ field: "host", code: "hostInvalid" }] : c.name ? [] : [{ field: "name", code: "nameRequired" }]));
+    api.serverValidate.mockImplementation(async (c) => (c.host.includes(" ") ? [{ field: "host", code: "server.hostInvalid" }] : c.name ? [] : [{ field: "name", code: "server.nameRequired" }]));
     useServersNav.setState({ page: { kind: "edit", id: null } });
     renderWithQuery(<ServersView />);
     const user = userEvent.setup();
@@ -443,5 +443,32 @@ describe("Textos del equipo de Docker en un servidor remoto", () => {
     );
     expect(await screen.findByText(/^Carpetas de este equipo montadas/)).toBeInTheDocument();
     expect(text).toBe("La carpeta /srv/x no existe en este equipo.");
+  });
+});
+
+describe("Códigos de validación del motor", () => {
+  it("se traducen con su prefijo «server.» en el asistente y en el problema de perfil", async () => {
+    // Los códigos reales llevan prefijo (ProfileIssue.code = «server.keyPathInvalid»).
+    setServers([localServer()]);
+    api.serverValidate.mockImplementation(async (c) => (c.auth === "key" && !c.keyPath ? [{ field: "keyPath", code: "server.keyPathInvalid" }] : []));
+    useServersNav.setState({ page: { kind: "edit", id: null } });
+    renderWithQuery(<ServersView />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Autenticación/ }));
+    await user.click(screen.getByRole("radio", { name: "Clave privada" }));
+    // Sin tocar el campo no se muestra todavía como error.
+    expect(screen.queryByText("Indica la ruta de la clave privada.")).not.toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: /Ruta de la clave privada/ }), "x");
+    await user.clear(screen.getByRole("textbox", { name: /Ruta de la clave privada/ }));
+    expect(await screen.findByText("Indica la ruta de la clave privada.")).toBeInTheDocument();
+    expect(screen.queryByText(/servers\.issues/)).not.toBeInTheDocument();
+  });
+
+  it("un perfil no válido muestra los problemas traducidos, no los códigos", () => {
+    setServers([localServer(), remoteServer({ id: PROD, name: "Producción" }, down({ kind: "invalidProfile", codes: ["server.hostInvalid"] }))]);
+    renderWithQuery(<RemotePanel />, PROD);
+    const box = screen.getByTestId("remote-problem");
+    expect(within(box).getByText(/Host no válido/)).toBeInTheDocument();
+    expect(within(box).queryByText(/server\.hostInvalid/)).not.toBeInTheDocument();
   });
 });

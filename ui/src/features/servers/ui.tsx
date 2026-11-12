@@ -99,6 +99,10 @@ export function CheckList({ steps, running = false }: { steps: CheckStep[]; runn
 export function RemoteProblemView({ problem, config }: { problem: RemoteProblem; config: ServerConfig }) {
   const { t } = useTranslation();
   const ex = explainRemote(problem, config);
+  if (problem.kind === "invalidProfile") {
+    // Los códigos del motor («server.hostInvalid») se muestran traducidos.
+    ex.params = { ...ex.params, codes: problem.codes.map((c) => t(`servers.issues.${c.replace(/^server\./, "")}`)).join(" ") };
+  }
   return (
     <div data-testid="remote-problem" className={cx("rounded-lg border px-4 py-3.5", ex.danger ? "border-err/50 bg-err/[0.06]" : "border-line bg-surface")}>
       <h3 className={cx("flex items-center gap-2 text-[14px] font-semibold", ex.danger && "text-err")}>

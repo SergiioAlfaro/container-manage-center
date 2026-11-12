@@ -306,7 +306,8 @@
       "dockerHost": "DOCKER_HOST variable",
       "context": "Context “{{name}}”",
       "rootless": "User's rootless Docker",
-      "system": "System socket"
+      "system": "System socket",
+      "ssh": "SSH: server “{{name}}”"
     },
     "reconnect": "Reconnect",
     "reconnecting": "Connecting…",
@@ -700,6 +701,7 @@
     "noRunning": "No containers are running: start one to open a terminal.",
     "sessionName": "Session name",
     "nameHint": "Optional. If left empty the container name is used. You can change it later.",
+    "nameHint_server": "Optional. If left empty the server name is used. You can change it later.",
     "nameProblem": {
       "empty": "The name cannot be empty.",
       "long": "Use at most {{max}} characters.",

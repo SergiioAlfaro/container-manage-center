@@ -135,7 +135,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
               {t(`terminals.nameProblem.${problem}`, { max: MAX_NAME })}
             </p>
           ) : (
-            <p className="text-[12px] text-ink-3">{t("terminals.nameHint")}</p>
+            <p className="text-[12px] text-ink-3">{t("terminals.nameHint", { context: serverShell ? "server" : undefined })}</p>
           )}
         </div>
       </form>

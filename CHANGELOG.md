@@ -21,6 +21,7 @@
 - **Panel de actividad, eventos e historial**: servidor y método de conexión en cada entrada, orden equivalente (`docker --host ssh://…` o `ssh … -- …`), y filtro por servidor.
 - **Ayuda**: nueva sección «Servidores remotos por SSH» en los ocho idiomas (27 secciones).
 - **Paquete**: recomienda `openssh-client`.
+- **Corrección (edición de contenedores, 0.9.2)**: la copia de seguridad que se crea al recrear es la que mostró la revisión, aunque el usuario confirme en otro segundo (antes podía crearse con un nombre un segundo posterior).
 
 ## 0.9.2 — 2026-11-11 (actualización previa a la Fase 10)
 - **Editar configuración** de un contenedor (menú ⋯ de la lista, botón derecho y detalle; D-070):

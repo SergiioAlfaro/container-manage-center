@@ -85,7 +85,8 @@ export function ServerEditor({ id }: { id: string | null }) {
   }, [c]);
   const issueOf = (field: string, always = false) => {
     const i = issues.find((x) => x.field === field);
-    return i && (always || touched.has(field)) ? t(`servers.issues.${i.code}`) : null;
+    // Los códigos del motor llevan el prefijo «server.» (ProfileIssue.code).
+    return i && (always || touched.has(field)) ? t(`servers.issues.${i.code.replace(/^server\./, "")}`) : null;
   };
   const stepHasIssues = (s: Step) => issues.some((i) => (FIELD_STEP[i.field] ?? "general") === s);
 
@@ -230,7 +231,7 @@ export function ServerEditor({ id }: { id: string | null }) {
               <p className="mt-2 text-[12.5px] text-ink-3">{t(`servers.authHint.${c.auth}`)}</p>
             </div>
             {(c.auth === "key" || c.auth === "keyPassphrase") && (
-              <Field label={t("servers.fields.keyPath")} issue={issueOf("keyPath", true)} hint={t("servers.hints.keyPath")}>
+              <Field label={t("servers.fields.keyPath")} issue={issueOf("keyPath")} hint={t("servers.hints.keyPath")}>
                 <div className="flex gap-2">
                   <input
                     className={cx(input, "font-mono")}
@@ -277,7 +278,7 @@ export function ServerEditor({ id }: { id: string | null }) {
               <p className="mt-2 text-[12.5px] text-ink-3">{t(`servers.dockerHint.${c.dockerTarget}`)}</p>
             </div>
             {c.dockerTarget === "socket" && (
-              <Field label={t("servers.fields.dockerSocket")} issue={issueOf("dockerSocket", true)}>
+              <Field label={t("servers.fields.dockerSocket")} issue={issueOf("dockerSocket")}>
                 <input
                   className={cx(input, "font-mono")}
                   value={c.dockerSocket}
@@ -288,14 +289,14 @@ export function ServerEditor({ id }: { id: string | null }) {
               </Field>
             )}
             {c.dockerTarget === "context" && (
-              <Field label={t("servers.fields.dockerContext")} issue={issueOf("dockerContext", true)}>
+              <Field label={t("servers.fields.dockerContext")} issue={issueOf("dockerContext")}>
                 <input className={cx(input, "font-mono")} value={c.dockerContext} spellCheck={false} onChange={(e) => set("dockerContext", e.target.value)} />
               </Field>
             )}
             <details className="rounded-lg border border-line px-3.5 py-2.5">
               <summary className="cursor-pointer text-[13px] font-medium">{t("servers.editor.advanced")}</summary>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                <Field label={t("servers.fields.connectTimeout")} issue={issueOf("connectTimeout", true)} hint={t("servers.hints.connectTimeout")}>
+                <Field label={t("servers.fields.connectTimeout")} issue={issueOf("connectTimeout")} hint={t("servers.hints.connectTimeout")}>
                   <input
                     className={cx(input, "tabular-nums")}
                     type="number"
@@ -305,7 +306,7 @@ export function ServerEditor({ id }: { id: string | null }) {
                     onChange={(e) => set("connectTimeout", Number(e.target.value) || 0)}
                   />
                 </Field>
-                <Field label={t("servers.fields.proxyJump")} issue={issueOf("proxyJump", true)} hint={t("servers.hints.proxyJump")}>
+                <Field label={t("servers.fields.proxyJump")} issue={issueOf("proxyJump")} hint={t("servers.hints.proxyJump")}>
                   <input
                     className={cx(input, "font-mono")}
                     value={c.proxyJump}
