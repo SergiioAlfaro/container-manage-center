@@ -96,7 +96,7 @@ if [ "$MODE" = uninstall ]; then
   ok "Desinstalado. No se ha tocado Docker ni ningún contenedor, imagen, red o volumen."
   info "Tus datos se conservan; bórralos a mano si ya no los quieres:"
   info "  ~/.config/docker-control-center  (configuración, servidores e identidades de SSH)"
-  info "  ~/.local/share/docker-control-center  (historial)"
+  info "  ~/.local/state/docker-control-center  (historial)"
   info "  Las contraseñas recordadas están en el llavero del sistema («Docker Control Center»)."
   exit 0
 fi

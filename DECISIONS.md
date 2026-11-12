@@ -1047,3 +1047,27 @@ falla sin la corrección y pasa con ella).
 * **Cierre**: envía SIGHUP a la sesión y la shell del servidor termina. Se comprueba que no quedan ni la shell remota ni procesos `ssh` del canal.
 * **Lo que se ejecuta**: no hay ninguna orden propia; solo la shell de inicio de sesión del usuario.
 * **Registro y etiquetas**: queda en el panel de actividad con su servidor, y el panel de la terminal lo indica.
+
+## Fase 10 · Pruebas finales y distribución (1.0.0)
+
+### D-082 · El morado es el único color principal
+* **Decisión del propietario** (2026-11-12): eliminar el verde azulado como color principal y mantener el morado. Con un solo color, el selector de Configuración desaparece: un control con una sola opción no haría nada (requisito de calidad §14).
+* **Dónde**: en el sistema central de temas. Los tokens base `--beacon*` y `--focus` de `styles/app.css` son los morados en claro y oscuro (los valores que tenía la variante morada de la 0.9.2, D-072); se eliminan las reglas `data-accent`. Ningún componente tiene colores propios.
+* **Lo que no cambia**: los colores de señal (`--signal-ok/run/warn/err/off`): el verde de «en ejecución», «conectado» o «correcto» es un indicador funcional, no el color principal.
+* **Preferencias guardadas**: `Accent` solo tiene `Purple`. Al leer `config.toml`, cualquier valor de `accent` —el `"teal"` de la 0.9.2–0.10.0, uno desconocido o de otro tipo— es morado, sin invalidar el resto de la configuración ni apartarla como dañada. Se sigue escribiendo `accent = "purple"`, así que una versión anterior (0.9.2–0.10.0) lee el mismo color.
+* **Actividad**: ya no se registra un «cambio del color principal» (no puede cambiar). Los registros `ui.accent` de versiones anteriores se siguen mostrando con su texto.
+* **Logotipo e iconos**: el verde azulado del logotipo (`#14A3A8`) pasa a `#A184F2` (el acento morado para fondos oscuros, `--beacon-nav`), con la misma forma; se regeneran los iconos.
+* **Pruebas**: migración desde `teal` y valores no válidos conservando el resto; tono morado (250°–290°) de todos los tokens del acento y ausencia de los valores del verde en el código, el CSS compilado y el logotipo; colores semánticos sin cambios; contraste WCAG AA; Configuración sin selector.
+
+### D-083 · Distribución: paquete, metadatos y script de instalación
+* **Dos paquetes de la misma versión** (como en la Fase 9, D-059): el normal (Debian 13 / Ubuntu 24.04, glibc 2.39) y el compatible (compilado en Ubuntu 22.04, glibc 2.34+).
+* **Contenido del `.deb`**: programa, lanzador, iconos de 32 a 512 px en carpetas estándar de `hicolor` (el de 256 px estaba en `256x256@2`, que los escritorios no buscan), y en `/usr/share/doc/docker-control-center/` el `copyright` (formato DEP-5), `changelog.gz`, README, INSTALL, USER_GUIDE y `THIRD-PARTY.md`.
+* **Componentes de terceros**: `scripts/third-party-licenses.py` genera `packaging/THIRD-PARTY.md` desde `Cargo.lock` (solo las bibliotecas que se enlazan en el programa) y `package-lock.json` (solo los paquetes de producción); `--check` comprueba que está al día. Todas las licencias son permisivas y compatibles con GPL-3.0-or-later.
+* **Licencia y nombre**: siguen siendo provisionales (D-016), por decisión del propietario para la 1.0.0. `LICENSE` contiene el texto de la GPL-3.0. No hay fuente de actualizaciones predefinida (D-060).
+* **`scripts/install.sh`**: con el usuario normal y `sudo` solo para `apt-get`. Comprueba el sistema, elige el paquete por la glibc que declara cada uno, simula con apt, instala y comprueba **sin cambiar nada** Docker, el acceso al socket, Compose, el cliente SSH y el almacén de contraseñas. Nunca instala Docker ni cambia grupos, permisos o la configuración de SSH.
+* **`scripts/run.sh`**: abre la versión instalada o la compilación del código fuente; no se ejecuta como root.
+* **Instalación limpia**: `scripts/dev/clean-install-test.sh` (solo máquinas de prueba, como root) crea Ubuntu 24.04 y 22.04 con debootstrap y prueba instalación, arranque con un usuario normal y desinstalación. No se puede crear Debian aquí (sin acceso a sus repositorios): Debian 12 y 13 se comprueban en el equipo del propietario.
+
+### D-084 · Pasos de verificación que no ejecutan ninguna prueba
+* **Problema**: un paso que filtra pruebas por nombre (`cargo test … nombre`) termina bien aunque el filtro no coincida con nada. Al renombrar una prueba, el paso seguía «correcto» sin probar nada (pasó con `language_and_accent_changes_are_recorded_once`).
+* **Decisión**: en `scripts/verify-phase-10.sh`, los pasos con filtro usan `run_tests`, que falla si no se ha ejecutado ninguna prueba.

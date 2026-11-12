@@ -256,7 +256,7 @@ The activity panel records the opening, closing and errors of each session, but 
 
 ## 22. Activity panel and operation log {#activity}
 
-Every operation appears in the **activity panel**: time, **API** badge (request to Docker Engine through the socket), **CLI** badge (process, like `docker compose` or `apt-get`) or **APP** badge (an operation of the application itself, such as a language or color change, or the summary of a recreation whose steps appear separately), type, resource, duration and status. The main line is the equivalent command, which you can copy. Expanding an entry shows the operation actually run, the result, the error and its HTTP code if it failed, and the output of processes.
+Every operation appears in the **activity panel**: time, **API** badge (request to Docker Engine through the socket), **CLI** badge (process, like `docker compose` or `apt-get`) or **APP** badge (an operation of the application itself, such as a language change, or the summary of a recreation whose steps appear separately), type, resource, duration and status. The main line is the equivalent command, which you can copy. Expanding an entry shows the operation actually run, the result, the error and its HTTP code if it failed, and the output of processes.
 
 The **Events and logs** section shows Docker events live, the saved ones, a query to Docker for a period (`docker events --since … --until …`; Docker only keeps the last 256) and the **operation history** of this and other sessions.
 

@@ -256,7 +256,7 @@ Le panneau d’activité enregistre l’ouverture, la fermeture et les erreurs d
 
 ## 22. Panneau d’activité et journal des opérations {#activity}
 
-Chaque opération apparaît dans le **panneau d’activité** : heure, badge **API** (requête à Docker Engine par le socket), **CLI** (processus, comme `docker compose` ou `apt-get`) ou **APP** (opération de l’application elle-même, comme un changement de langue ou de couleur, ou le résumé d’une recréation dont les étapes apparaissent à part), type, ressource, durée et état. La ligne principale est la commande équivalente, que vous pouvez copier. En dépliant une entrée, vous voyez l’opération réellement exécutée, le résultat, l’erreur et son code HTTP en cas d’échec, ainsi que la sortie des processus.
+Chaque opération apparaît dans le **panneau d’activité** : heure, badge **API** (requête à Docker Engine par le socket), **CLI** (processus, comme `docker compose` ou `apt-get`) ou **APP** (opération de l’application elle-même, comme un changement de langue, ou le résumé d’une recréation dont les étapes apparaissent à part), type, ressource, durée et état. La ligne principale est la commande équivalente, que vous pouvez copier. En dépliant une entrée, vous voyez l’opération réellement exécutée, le résultat, l’erreur et son code HTTP en cas d’échec, ainsi que la sortie des processus.
 
 La rubrique **Événements et journaux** affiche les événements Docker en direct, ceux qui ont été enregistrés, une requête à Docker sur une période (`docker events --since … --until …` ; Docker ne conserve que les 256 derniers) et l’**historique des opérations** de cette session et des précédentes.
 

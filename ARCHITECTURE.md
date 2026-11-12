@@ -325,8 +325,22 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 - `shared/i18n`: `en`, `es`, `ca`, `gl`, `eu`, `fr`, `it`, `pt` en el orden del selector (D-067, D-073); `LANGUAGE_NAMES` con los endónimos.
 - `features/containers/edit/` (0.9.2, D-069, D-070): `EditContainer.tsx` (pestañas, barra de cambios pendientes, ciclo de vida, copias de seguridad, redes con los diálogos de la Fase 5, Avanzado de solo lectura), `ReviewPanel.tsx` (comparación, asistente de recreación con riesgos y confirmación, resultado paso a paso), `model.ts` (borrador y clasificación para los indicadores; decide el backend), `CommitDialog.tsx`. `create/editors.tsx` reúne los editores de puertos, montajes, memoria y clave/valor que comparten el asistente de creación y la edición.
 - `shared/ui/Menu.tsx` (0.9.2): menú de acciones accesible (botón ⋯ y botón derecho en la fila).
-- Color principal (D-072): `applyAppearance` pone `data-accent` en `<html>`; `styles/app.css` redefine solo los tokens `--beacon*` y `--focus`; `--beacon-nav` para la barra lateral; `shared/ui/terminalTheme.ts` actualiza las terminales abiertas.
+- Color principal (D-072, D-082): desde la 1.0.0 solo morado. Los tokens base `--beacon*` y `--focus` de `styles/app.css` son morados en claro y oscuro, sin variantes por atributo; `--beacon-nav` para la barra lateral; `shared/ui/terminalTheme.ts` usa el mismo morado en las terminales. Los colores de señal (`--signal-*`) son independientes.
 - `features/images/`: `store.ts` (lista, detalle, búsqueda, construcción), `pull/pulls.ts` y `build/buildStore.ts` (descargas y construcción en almacenes globales para que sigan al cambiar de apartado), `dialogs.tsx` (etiquetar, eliminar, limpiar), `useRefCheck.ts` (validación de referencias en el backend).
+
+## Distribución (Fase 10, D-083)
+
+| Pieza | Función |
+|---|---|
+| `src-tauri/tauri.conf.json` (`bundle`) | Metadatos del `.deb`: versión, descripción, `Recommends: openssh-client`, iconos y archivos de `/usr/share/doc/docker-control-center/` |
+| `scripts/deb-set-depends.sh` | Dependencias reales del binario con `dpkg-shlibdeps` (D-059) |
+| `scripts/build-deb-compat.sh` | Paquete compatible compilado en un contenedor de Ubuntu 22.04 |
+| `packaging/copyright`, `LICENSE` | Licencia (DEP-5) |
+| `scripts/third-party-licenses.py` → `packaging/THIRD-PARTY.md` | Componentes de terceros incluidos y sus licencias |
+| `scripts/install.sh` | Instalación, comprobación y desinstalación para el usuario final |
+| `scripts/run.sh` | Ejecutar la versión instalada o la compilación del código |
+| `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba) |
+| `scripts/verify-phase-10.sh` | Verificación final: regresión completa, color, paquetes e instalador |
 
 ## Pruebas
 
@@ -345,5 +359,6 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | Desinstalación real (0.9.1) | `DCC_TEST_CHROOT=… DCC_TEST_DEB=… cargo test -p docker-control-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-update-0.10.0.sh --deb --compat` | `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35 |
-| Manual | `scripts/verify-update-0.10.0.sh` | R1–R10 (solo lo que cambia en la 0.10.0) |
+| Paquete | `scripts/verify-phase-10.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
+| Instalación limpia | `scripts/dev/clean-install-test.sh` (root, máquina de pruebas) | Ubuntu 24.04 y 22.04: instalación con un usuario normal, archivos, arranque y desinstalación |
+| Manual | `scripts/verify-phase-10.sh` | F1–F8 (solo lo que cambia en la 1.0.0) |

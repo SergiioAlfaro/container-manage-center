@@ -1,6 +1,6 @@
 # Guía de usuario
 
-> Versión 0.10.0. (La nota original de la Fase 2 se conserva abajo por historia.)
+> Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)
 >
 > Versión 0.2.1 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
 > contenedores (consultar, iniciar, detener, reiniciar, pausar, reanudar y
@@ -536,7 +536,7 @@ guardar con la opción **Guardar historial** de Configuración.
 Cada operación que la aplicación ejecuta sobre Docker aparece aquí: hora,
 distintivo **API** (petición a Docker Engine por el socket), **CLI** (proceso,
 como `docker compose`) o **APP** (operación de la propia aplicación: cambio de
-idioma o de color, o el resumen de una recreación cuyos pasos aparecen aparte),
+idioma, o el resumen de una recreación cuyos pasos aparecen aparte),
 tipo de operación, recurso, duración y estado. La línea
 principal es el comando `docker` equivalente, que puedes copiar.
 
@@ -554,7 +554,7 @@ mientras haya conexión).
 
 ## Configuración
 
-- **Apariencia**: tema (Sistema, Claro, Oscuro), **color principal** (verde azulado o morado; se aplica al momento) e idioma, en este orden: English, Español (por defecto), Català, Galego, Euskara, Français, Italiano y Português. El idioma y el color se guardan y sus cambios quedan en el panel de actividad.
+- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma, en este orden: English, Español (por defecto), Català, Galego, Euskara, Français, Italiano y Português. El idioma se guarda y sus cambios quedan en el panel de actividad. El color principal es el **morado**: desde la versión 1.0.0 no se elige (el verde azulado anterior ya no existe; si lo tenías, se cambia a morado conservando el resto de tu configuración). Los indicadores de estado no cambian: verde para lo que funciona o está en marcha, ámbar para avisos y rojo para errores.
 - **Panel de actividad**: abrirlo automáticamente ante errores, número de operaciones conservadas (50–10.000) y **Guardar historial** (operaciones y eventos de Docker entre sesiones, sin secretos).
 - **Conexión con Docker**:
   - **Automático**: busca `DOCKER_HOST`, el contexto activo, tu socket rootless y el del sistema.

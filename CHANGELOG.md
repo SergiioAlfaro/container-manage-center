@@ -1,5 +1,19 @@
 # Cambios
 
+## 1.0.0 — 2026-11-12 (Fase 10: pruebas finales y distribución)
+- **Color principal: solo morado** (D-082). Se elimina el verde azulado como color principal en el sistema central de temas, en los temas claro y oscuro. Configuración ya no tiene selector de color. Si tenías el verde azulado guardado, pasa a morado conservando el resto de tus preferencias. Los indicadores de estado (verde para lo que funciona, ámbar para avisos, rojo para errores) no cambian.
+- **Logotipo e iconos en morado**, con la misma forma.
+- **Paquete** (D-083):
+  - versión 1.0.0;
+  - en `/usr/share/doc/docker-control-center/`: `copyright`, `changelog`, guía, instalación y componentes de terceros con sus licencias (`THIRD-PARTY.md`);
+  - el icono de 256 px se instala en la carpeta estándar.
+- **`scripts/install.sh`**: instalación con el usuario normal (sudo solo para apt). Elige el paquete adecuado para el sistema (normal o compatible con Debian 12/Ubuntu 22.04) y comprueba, sin cambiar nada, Docker, Compose, SSH y el almacén de contraseñas. También comprueba (`--check`) y desinstala (`--uninstall`).
+- **`scripts/run.sh`**: abre la versión instalada o la compilación del código fuente.
+- **Instalación limpia** probada en Ubuntu 24.04 y 22.04 recién creados (`scripts/dev/clean-install-test.sh`).
+- **`scripts/verify-phase-10.sh`**: verificación final con toda la regresión. Un paso que filtra pruebas falla si no ejecuta ninguna (D-084).
+- **Documentación**: README con la descripción del producto, INSTALL con el instalador, las dependencias y la desinstalación, y `LICENSE`.
+- **Versiones anteriores**: 0.9.2 y 0.10.0 validadas por el propietario.
+
 ## 0.10.0 — 2026-11-11 (actualización previa a la Fase 10: administración remota)
 - **Servidores remotos por SSH** (nuevo apartado **Servidores**, D-075–D-081):
   - Lista de servidores con nombre, dirección, usuario, puerto, método, estado (Conectado, Desconectado, Conectando, Error de autenticación, Error de conexión, Docker no disponible), versión de Docker y de la API, sistema, última conexión y latencia. El equipo local sigue como siempre («Este equipo»).

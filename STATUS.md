@@ -958,10 +958,41 @@ Ninguno conocido. Corregidos durante la verificación (cada uno con una prueba q
 
 ---
 
+## Fase 10 · Pruebas finales y distribución (1.0.0)
+
+### Objetivos (especificación original, §16 y §17)
+Pruebas completas, instalación limpia, generación de paquetes, documentación y verificación de todas las funcionalidades. Entrega: código fuente, dependencias documentadas, script de instalación, script de ejecución, paquete `.deb`, documentación de usuario y técnica, y pruebas automatizadas. Además, por petición del propietario: eliminar el verde como color principal.
+
+### Funcionalidades implementadas
+- **Color principal solo morado** (D-082):
+  - en el sistema central de temas, sin selector;
+  - migración de las preferencias guardadas (`teal` → morado, conservando el resto);
+  - logotipo e iconos en morado;
+  - colores semánticos sin cambios.
+- **Paquetes** (D-083):
+  - versión 1.0.0;
+  - `copyright` DEP-5, `changelog`, documentación y `THIRD-PARTY.md` en `/usr/share/doc/docker-control-center/`;
+  - icono de 256 px en la carpeta estándar;
+  - paquete normal y paquete compatible.
+- **`scripts/install.sh`**: instala, comprueba y desinstala. **`scripts/run.sh`**: ejecuta la aplicación.
+- **Instalación limpia reproducible**: `scripts/dev/clean-install-test.sh`.
+- **`scripts/verify-phase-10.sh`**: regresión completa, comprobaciones de la Fase 10 y pasos que fallan si no ejecutan pruebas (D-084).
+- **Documentación**: README, INSTALL (instalador, ejecución, dependencias y desinstalación), USER_GUIDE, ayuda en los ocho idiomas, ARCHITECTURE, DECISIONS (D-082–D-084), CHANGELOG y `LICENSE`.
+
+### Pruebas ejecutadas
+@@PRUEBAS-F10@@
+
+### Problemas detectados y resueltos
+@@PROBLEMAS-F10@@
+
+### Limitaciones
+@@LIMITACIONES-F10@@
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-update-0.10.0.sh --deb --net` en Debian 13 y envía `verify-update-0.10.0-report.txt`. Si el veredicto es «parte automática superada», instala el paquete 0.10.0 y realiza R1–R10 (administración remota) y, si no lo hizo, M1–M10 de la 0.9.2 (`scripts/verify-update-0.9.2.sh` las lista).
-2. Corregir lo que surja y marcar la 0.9.2 y la 0.10.0 como validadas.
-3. Fase 10: pruebas finales y distribución (necesita decidir nombre, licencia y dónde se publica). **No se ha iniciado.**
+1. El propietario ejecuta `bash scripts/verify-phase-10.sh --deb --net` en Debian 13 y envía `verify-phase-10-report.txt`. Si el veredicto es «parte automática superada», realiza F1–F8.
+2. Con su validación, la Fase 10 queda completada y el proyecto, terminado en su versión 1.0.0.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

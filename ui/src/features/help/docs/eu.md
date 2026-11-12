@@ -256,7 +256,7 @@ Jarduera-panelak saio bakoitzaren irekiera, itxiera eta erroreak erregistratzen 
 
 ## 22. Jarduera-panela eta eragiketen erregistroa {#activity}
 
-Eragiketa bakoitza **jarduera-panelean** agertzen da: ordua, **API** ikurra (Docker Enginera socketaren bidez egindako eskaera), **CLI** (prozesua, `docker compose` edo `apt-get` bezala) edo **APP** (aplikazioaren beraren eragiketa, hala nola hizkuntza- edo kolore-aldaketa bat, edo urratsak bereizita agertzen diren birsortze baten laburpena), mota, baliabidea, iraupena eta egoera. Lerro nagusia komando baliokidea da, eta kopiatu egin dezakezu. Sarrera bat zabaltzean, benetan exekutatutako eragiketa, emaitza, errorea eta haren HTTP kodea (huts egin badu) eta prozesuen irteerak ikusten dituzu.
+Eragiketa bakoitza **jarduera-panelean** agertzen da: ordua, **API** ikurra (Docker Enginera socketaren bidez egindako eskaera), **CLI** (prozesua, `docker compose` edo `apt-get` bezala) edo **APP** (aplikazioaren beraren eragiketa, hala nola hizkuntza-aldaketa bat, edo urratsak bereizita agertzen diren birsortze baten laburpena), mota, baliabidea, iraupena eta egoera. Lerro nagusia komando baliokidea da, eta kopiatu egin dezakezu. Sarrera bat zabaltzean, benetan exekutatutako eragiketa, emaitza, errorea eta haren HTTP kodea (huts egin badu) eta prozesuen irteerak ikusten dituzu.
 
 **Gertaerak eta erregistroak** atalak Dockerren gertaerak erakusten ditu zuzenean, gordetakoak, Dockerri epe bati buruz egindako kontsulta (`docker events --since … --until …`; Dockerrek azken 256ak bakarrik gordetzen ditu) eta saio honetako eta beste batzuetako **eragiketen historia**.
 

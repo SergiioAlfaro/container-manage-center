@@ -256,7 +256,7 @@ O painel de atividade regista a abertura, o fecho e os erros de cada sessão, ma
 
 ## 22. Painel de atividade e registo de operações {#activity}
 
-Cada operação aparece no **painel de atividade**: hora, distintivo **API** (pedido ao Docker Engine através do socket), **CLI** (processo, como `docker compose` ou `apt-get`) ou **APP** (operação da própria aplicação, como uma mudança de idioma ou de cor, ou o resumo de uma recriação cujos passos aparecem à parte), tipo, recurso, duração e estado. A linha principal é o comando equivalente, que pode copiar. Ao expandir uma entrada vê a operação realmente executada, o resultado, o erro e o seu código HTTP se falhar, e as saídas dos processos.
+Cada operação aparece no **painel de atividade**: hora, distintivo **API** (pedido ao Docker Engine através do socket), **CLI** (processo, como `docker compose` ou `apt-get`) ou **APP** (operação da própria aplicação, como uma mudança de idioma, ou o resumo de uma recriação cujos passos aparecem à parte), tipo, recurso, duração e estado. A linha principal é o comando equivalente, que pode copiar. Ao expandir uma entrada vê a operação realmente executada, o resultado, o erro e o seu código HTTP se falhar, e as saídas dos processos.
 
 **Eventos e registos** mostra os eventos do Docker em direto, os guardados, uma consulta ao Docker sobre um período (`docker events --since … --until …`; o Docker só guarda os últimos 256) e o **histórico de operações** desta e de outras sessões.
 

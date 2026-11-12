@@ -256,7 +256,7 @@ O panel de actividade rexistra a apertura, o peche e os erros de cada sesión, p
 
 ## 22. Panel de actividade e rexistro de operacións {#activity}
 
-Cada operación aparece no **panel de actividade**: hora, distintivo **API** (petición a Docker Engine polo socket), **CLI** (proceso, como `docker compose` ou `apt-get`) ou **APP** (operación da propia aplicación, como un cambio de idioma ou de cor, ou o resumo dunha recreación cuxos pasos aparecen á parte), tipo, recurso, duración e estado. A liña principal é a orde equivalente, que podes copiar. Ao despregar unha entrada ves a operación executada de verdade, o resultado, o erro e o seu código HTTP se fallou, e as saídas dos procesos.
+Cada operación aparece no **panel de actividade**: hora, distintivo **API** (petición a Docker Engine polo socket), **CLI** (proceso, como `docker compose` ou `apt-get`) ou **APP** (operación da propia aplicación, como un cambio de idioma, ou o resumo dunha recreación cuxos pasos aparecen á parte), tipo, recurso, duración e estado. A liña principal é a orde equivalente, que podes copiar. Ao despregar unha entrada ves a operación executada de verdade, o resultado, o erro e o seu código HTTP se fallou, e as saídas dos procesos.
 
 O apartado **Eventos e rexistros** amosa os eventos de Docker en directo, os gardados, a consulta a Docker dun período (`docker events --since … --until …`; Docker só conserva os últimos 256) e o **historial de operacións** desta e doutras sesións.
 

@@ -256,7 +256,7 @@ Il pannello attività registra l’apertura, la chiusura e gli errori di ogni se
 
 ## 22. Pannello attività e registro delle operazioni {#activity}
 
-Ogni operazione compare nel **pannello attività**: ora, contrassegno **API** (richiesta a Docker Engine tramite il socket), **CLI** (processo, come `docker compose` o `apt-get`) o **APP** (operazione dell’applicazione stessa, come un cambio di lingua o di colore, o il riepilogo di una ricreazione i cui passaggi compaiono a parte), tipo, risorsa, durata e stato. La riga principale è il comando equivalente, che puoi copiare. Espandendo una voce vedi l’operazione realmente eseguita, il risultato, l’errore e il suo codice HTTP in caso di errore, e l’output dei processi.
+Ogni operazione compare nel **pannello attività**: ora, contrassegno **API** (richiesta a Docker Engine tramite il socket), **CLI** (processo, come `docker compose` o `apt-get`) o **APP** (operazione dell’applicazione stessa, come un cambio di lingua, o il riepilogo di una ricreazione i cui passaggi compaiono a parte), tipo, risorsa, durata e stato. La riga principale è il comando equivalente, che puoi copiare. Espandendo una voce vedi l’operazione realmente eseguita, il risultato, l’errore e il suo codice HTTP in caso di errore, e l’output dei processi.
 
 La sezione **Eventi e registri** mostra gli eventi di Docker in diretta, quelli salvati, una richiesta a Docker per un periodo (`docker events --since … --until …`; Docker conserva solo gli ultimi 256) e la **cronologia delle operazioni** di questa e di altre sessioni.
 

@@ -3,29 +3,84 @@
 Plataformas soportadas: **Debian 12 o superior** y **Ubuntu 22.04 o superior** (x86_64).
 Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o rootless.
 
-## Opción A: paquete .deb
+## Opción A: paquete .deb (recomendada)
+
+Hay dos paquetes de la misma versión:
+
+| Paquete | Para |
+|---|---|
+| `docker-control-center_1.0.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.0.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+
+### Con el script de instalación
 
 ```bash
-sudo apt install ./docker-control-center_0.10.0_amd64.deb
+bash scripts/install.sh            # o: bash install.sh, junto a los paquetes
+```
+
+Ejecútalo con tu usuario normal; pide la contraseña de administrador solo para
+`apt-get`. El script:
+
+1. Comprueba el sistema (Debian, Ubuntu o derivada; amd64; versión de glibc).
+2. Busca los paquetes junto a él, en `dist/` y en las carpetas de compilación
+   (`target/release/bundle/deb`, `target/compat`) y elige el más reciente que
+   tu sistema puede ejecutar, según la glibc que declara cada paquete.
+3. Simula la instalación con apt y luego instala con
+   `sudo apt-get install ./paquete.deb`, que resuelve las dependencias.
+4. Comprueba, **sin cambiar nada**, lo que la aplicación necesita para trabajar
+   (Docker y tu acceso al socket, Docker Compose, el cliente SSH, un almacén de
+   contraseñas) y explica cómo resolver lo que falte.
+
+Opciones: `--check` (solo comprueba y elige el paquete), `--deb RUTA` (instala
+ese paquete), `--yes` (sin confirmar en apt), `--uninstall`. El script **nunca**
+instala Docker, te añade al grupo `docker`, cambia permisos del socket ni toca
+la configuración de SSH.
+
+### A mano
+
+```bash
+sudo apt install ./docker-control-center_1.0.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
 El paquete declara las versiones mínimas que necesita su binario
 (`dpkg-deb -f paquete.deb Depends`). Si tu sistema es demasiado antiguo para ese
 paquete, apt lo rechaza al instalar en vez de instalar algo que no arranca.
-La aplicación aparece en el menú como **Docker Control Center**. Se ejecuta con
-tu usuario normal: **no la ejecutes con sudo** (se niega a arrancar como root).
 
-Desinstalar: desde **Configuración › Desinstalación y componentes** (muestra
-qué se puede quitar, la simulación de APT y la orden exacta; pide la contraseña
-de administrador solo para `apt-get remove`), o a mano con
-`sudo apt remove docker-control-center`. En ambos casos se conservan tu
-configuración (`~/.config/docker-control-center/`) y el historial
-(`~/.local/state/docker-control-center/`); bórralos a mano si no los quieres.
+### Ejecutar
+
+La aplicación aparece en el menú como **Docker Control Center**; también se abre
+con `docker-control-center` o, desde el código fuente, con `bash scripts/run.sh`
+(abre la versión instalada o la compilación de `target/release`; `--build` la
+compila). Se ejecuta con tu usuario normal: **no la ejecutes con sudo** (se
+niega a arrancar como root).
+
+### Desinstalar
+
+Con `bash scripts/install.sh --uninstall`, desde **Configuración › Desinstalación
+y componentes** (muestra qué se puede quitar, la simulación de APT y la orden
+exacta; pide la contraseña de administrador solo para `apt-get remove`), o a
+mano con `sudo apt remove docker-control-center`. En todos los casos se
+conservan tu configuración y tus servidores (`~/.config/docker-control-center/`),
+el historial (`~/.local/state/docker-control-center/`) y las contraseñas
+recordadas (en el llavero del sistema); bórralos a mano si no los quieres.
 Docker, sus datos y Docker Compose no se tocan.
 
 Si al abrir la ventana aparece «La interfaz no pudo arrancar» con un mensaje
 técnico, copia ese mensaje al informar del problema.
+
+### Dependencias
+
+| Tipo | Paquetes |
+|---|---|
+| Obligatorias (las instala apt) | `libwebkit2gtk-4.1-0`, `libjavascriptcoregtk-4.1-0`, `libgtk-3-0`, `libsoup-3.0-0`, `libglib2.0-0`, `libgdk-pixbuf-2.0-0`, `libcairo2`, `libdbus-1-3`, `libgcc-s1`, `libc6` (versiones mínimas en el `Depends` del paquete) |
+| Recomendada (la instala apt) | `openssh-client`: servidores remotos |
+| Para trabajar | Docker Engine 20.10+ con acceso para tu usuario; Docker Compose v2 (`docker compose` o `docker-compose`) para el apartado Compose |
+| Opcional | Un almacén Secret Service (GNOME Keyring, KWallet) para recordar contraseñas de servidores; `pkexec` (polkit) para desinstalar desde la aplicación |
+
+Los componentes de terceros que van dentro del programa y sus licencias están en
+[packaging/THIRD-PARTY.md](packaging/THIRD-PARTY.md) (instalado en
+`/usr/share/doc/docker-control-center/`).
 
 ## Opción B: compilar desde el código fuente
 
@@ -37,6 +92,7 @@ técnico, copia ese mensaje al informar del problema.
    ```bash
    npm ci
    npx tauri build --debug --no-bundle && ./target/debug/docker-control-center
+   npx tauri build --no-bundle && bash scripts/run.sh   # compilación de producción
    npx tauri build --bundles deb   # paquete: target/release/bundle/deb/
    bash scripts/deb-set-depends.sh target/release/bundle/deb/*.deb   # dependencias reales
    ```

@@ -256,7 +256,7 @@ El tauler d’activitat registra l’obertura, el tancament i els errors de cada
 
 ## 22. Tauler d’activitat i registre d’operacions {#activity}
 
-Cada operació apareix al **tauler d’activitat**: hora, distintiu **API** (petició a Docker Engine pel sòcol), **CLI** (procés, com `docker compose` o `apt-get`) o **APP** (operació de la mateixa aplicació, com un canvi d’idioma o de color, o el resum d’una recreació els passos de la qual apareixen a part), tipus, recurs, durada i estat. La línia principal és l’ordre equivalent, que pots copiar. En desplegar una entrada veus l’operació executada de debò, el resultat, l’error i el seu codi HTTP si ha fallat, i les sortides dels processos.
+Cada operació apareix al **tauler d’activitat**: hora, distintiu **API** (petició a Docker Engine pel sòcol), **CLI** (procés, com `docker compose` o `apt-get`) o **APP** (operació de la mateixa aplicació, com un canvi d’idioma, o el resum d’una recreació els passos de la qual apareixen a part), tipus, recurs, durada i estat. La línia principal és l’ordre equivalent, que pots copiar. En desplegar una entrada veus l’operació executada de debò, el resultat, l’error i el seu codi HTTP si ha fallat, i les sortides dels processos.
 
 L’apartat **Esdeveniments i registres** mostra els esdeveniments de Docker en directe, els desats, la consulta a Docker d’un període (`docker events --since … --until …`; Docker només conserva els últims 256) i l’**historial d’operacions** d’aquesta i d’altres sessions.
 
