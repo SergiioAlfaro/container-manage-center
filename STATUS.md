@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-11
+Última actualización: 2026-11-12
 
 ## Resumen
 
 | | |
 |---|---|
-| **Fase actual** | Actualización 0.10.0 (antes de la Fase 10) |
-| **Versión** | 0.10.0 |
-| **Estado** | Implementada; pendiente de validación del propietario (también la 0.9.2) |
-| **Fases completadas (validadas)** | 1, 2, 3, 4, 5, 6, 7, 8, 9 y la actualización 0.9.1 |
-| **Fases pendientes** | 10 |
+| **Fase actual** | 10. Pruebas finales y distribución |
+| **Versión** | 1.0.0 |
+| **Estado** | En curso |
+| **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
+| **Fases pendientes** | 10 (en curso) |
 
 | Fase | Estado |
 |---|---|
@@ -24,9 +24,9 @@
 | 8. Actividad, eventos y monitorización | **Validada** (2026-11-08, Debian 13, versión 0.8.0) |
 | 9. Configuración y optimización | **Validada** (2026-11-08, Debian 13, versión 0.9.0) |
 | Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | **Validada** (confirmada por el propietario en la solicitud de la 0.9.2, 2026-11-11) |
-| Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | Implementada; pendiente de validación |
-| Actualización 0.10.0 (administración remota de servidores Docker por SSH) | Implementada; pendiente de validación |
-| 10. Pruebas finales y distribución | No iniciada |
+| Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | **Validada** (confirmada por el propietario, 2026-11-12) |
+| Actualización 0.10.0 (administración remota de servidores Docker por SSH) | **Validada** (confirmada por el propietario, 2026-11-12) |
+| 10. Pruebas finales y distribución | En curso (versión 1.0.0) |
 
 ---
 

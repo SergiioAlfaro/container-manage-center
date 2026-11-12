@@ -1,0 +1,33 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Docker Control Center
+Comment:
+ Nombre del producto y licencia provisionales, pendientes de confirmación por
+ el propietario (DECISIONS.md, D-016). «Docker» es una marca registrada de
+ Docker, Inc.; este programa no está afiliado a Docker, Inc.
+ .
+ Los componentes de terceros incluidos en el programa y sus licencias se
+ enumeran en /usr/share/doc/docker-control-center/THIRD-PARTY.md.
+
+Files: *
+Copyright: 2026 Docker Control Center
+License: GPL-3.0-or-later
+
+Files: usr/share/doc/docker-control-center/THIRD-PARTY.md
+Copyright: Ver cada componente en el propio archivo
+License: various
+ Licencias permisivas (MIT, Apache-2.0, BSD, ISC, Zlib, MPL-2.0, Unicode-3.0)
+ y, para las fuentes IBM Plex Sans y JetBrains Mono, SIL Open Font License 1.1.
+
+License: GPL-3.0-or-later
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in "/usr/share/common-licenses/GPL-3".
