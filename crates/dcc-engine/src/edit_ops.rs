@@ -50,6 +50,10 @@ pub struct ApplyOptions {
     /// Conservar en el contenedor nuevo las direcciones MAC que tiene ahora
     /// (para quien fijó una con `--mac-address`).
     pub keep_mac: bool,
+    /// Nombre de la copia de seguridad que mostró la revisión. Se usa si sigue
+    /// siendo una copia de este contenedor y está libre: así la copia que se
+    /// crea es la que el usuario vio, aunque confirme segundos después.
+    pub backup_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -512,11 +516,17 @@ impl Engine {
         validate_ref("contenedor", id)?;
         let _lock = self.locks().acquire(&format!("container:{id}"))?;
         let ctx = self.edit_context(id, true).await?;
-        let (plan, current, desired) = self.build_plan(&ctx, req, true).await?;
+        let (mut plan, current, desired) = self.build_plan(&ctx, req, true).await?;
         if plan.changes.is_empty() {
             return Err(EngineError::InvalidInput {
                 message: "no hay cambios que aplicar".into(),
             });
+        }
+        if let (Some(shown), Some(_)) = (&opts.backup_name, &plan.backup_name) {
+            let taken = ctx.list.iter().any(|o| o.name == *shown);
+            if edit::backup_origin(shown) == Some(desired.name.as_str()) && !taken {
+                plan.backup_name = Some(shown.clone());
+            }
         }
         if plan.has_errors() {
             return Err(EngineError::InvalidSpec {

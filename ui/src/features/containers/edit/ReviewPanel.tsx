@@ -43,7 +43,7 @@ export function ReviewPanel({
   const [keepMac, setKeepMac] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const apply = useMutation({
-    mutationFn: (p: EditPlan) => api.containerEditApply(cfg.id, request, { confirmRecreate: p.needsRecreate && confirmed, acceptedRisks: accepted, keepMac }),
+    mutationFn: (p: EditPlan) => api.containerEditApply(cfg.id, request, { confirmRecreate: p.needsRecreate && confirmed, acceptedRisks: accepted, keepMac, backupName: p.backupName }),
     onSuccess: (out) => onApplied?.(out),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: keys.containers });

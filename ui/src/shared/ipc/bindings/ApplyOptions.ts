@@ -16,4 +16,10 @@ acceptedRisks: Array<string>,
  * Conservar en el contenedor nuevo las direcciones MAC que tiene ahora
  * (para quien fijó una con `--mac-address`).
  */
-keepMac: boolean, };
+keepMac: boolean, 
+/**
+ * Nombre de la copia de seguridad que mostró la revisión. Se usa si sigue
+ * siendo una copia de este contenedor y está libre: así la copia que se
+ * crea es la que el usuario vio, aunque confirme segundos después.
+ */
+backupName: string | null, };

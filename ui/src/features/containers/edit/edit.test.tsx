@@ -240,7 +240,7 @@ describe("Editar configuración: pantalla", () => {
     expect(api.containerEditPlan).toHaveBeenCalledTimes(1);
     await userEvent.click(screen.getByRole("button", { name: "Aplicar cambios" }));
     expect(await screen.findByText("Cambios aplicados a web2 y comprobados.")).toBeInTheDocument();
-    expect(api.containerEditApply).toHaveBeenCalledWith("a1b2c3d4e5f6a7b8c9d0", expect.objectContaining({ name: "web2" }), { confirmRecreate: false, acceptedRisks: [], keepMac: false });
+    expect(api.containerEditApply).toHaveBeenCalledWith("a1b2c3d4e5f6a7b8c9d0", expect.objectContaining({ name: "web2" }), { confirmRecreate: false, acceptedRisks: [], keepMac: false, backupName: null });
   });
 
   it("recrear exige aceptar cada riesgo y confirmar; no se aplica nada antes", async () => {
@@ -279,7 +279,7 @@ describe("Editar configuración: pantalla", () => {
     expect(api.containerEditApply).toHaveBeenCalledWith(
       "a1b2c3d4e5f6a7b8c9d0",
       expect.objectContaining({ ports: [{ hostIp: "", hostPort: 9090, containerPort: 80, protocol: "tcp" }] }),
-      { confirmRecreate: true, acceptedRisks: ["writableLayer"], keepMac: false },
+      { confirmRecreate: true, acceptedRisks: ["writableLayer"], keepMac: false, backupName: "web-dcc-backup-20261111-120000" },
     );
     expect(screen.getAllByLabelText("Correcto")).toHaveLength(5);
     // La cabecera y «Volver al contenedor» pasan al contenedor nuevo (el ID anterior es ahora la copia).

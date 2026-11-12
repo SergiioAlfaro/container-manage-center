@@ -224,6 +224,8 @@ fn confirm(plan: &dcc_engine::edit::EditPlan) -> ApplyOptions {
         confirm_recreate: true,
         accepted_risks: plan.risks.iter().map(|r| r.code.clone()).collect(),
         keep_mac: false,
+        // Como la interfaz: la copia que se mostró en la revisión.
+        backup_name: plan.backup_name.clone(),
     }
 }
 
@@ -683,6 +685,7 @@ async fn recreation_changes_only_what_was_edited_and_keeps_data_and_a_backup() {
             confirm_recreate: true,
             accepted_risks: vec![],
             keep_mac: false,
+            backup_name: None,
         },
     ] {
         match e.edit_apply(&r.id, &req, &opts).await {
@@ -1705,6 +1708,17 @@ async fn recreation_with_rename_lists_the_backup_under_the_new_name_and_restores
         backup.starts_with(&format!("{new_name}-dcc-backup-")),
         "la copia lleva el nombre nuevo: {backup}"
     );
+    // El usuario tarda en confirmar: se cruza el cambio de segundo entre la
+    // revisión y la aplicación. La copia debe ser la que se mostró (antes se
+    // volvía a calcular con la hora de aplicar y a veces no coincidía).
+    let sub_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .subsec_millis();
+    tokio::time::sleep(std::time::Duration::from_millis(
+        u64::from(1000 - sub_ms) + 100,
+    ))
+    .await;
     let out = e.edit_apply(&id, &req, &confirm(&plan)).await.unwrap();
     assert_eq!(out.error, None, "{out:?}");
     assert!(out.recreated);
