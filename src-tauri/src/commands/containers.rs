@@ -34,6 +34,9 @@ pub struct SpecPreview {
     /// Valores de variables sensibles sustituidos por `********` en los
     /// comandos y el cuerpo mostrados (a Docker se envían completos).
     pub secrets_hidden: u32,
+    /// Riesgos para el equipo (D-086). Los altos y críticos se aceptan con su
+    /// `key` en `ContainerSpec::accepted_risks`.
+    pub risks: Vec<dcc_engine::risk::Risk>,
 }
 
 /// Valida y traduce la especificación sin cambiar nada (D-034). Las carpetas
@@ -46,6 +49,7 @@ pub async fn container_preview(
     spec: ContainerSpec,
 ) -> CmdResult<SpecPreview> {
     let mgr = state.server(&server)?;
+    let risks = spec.risks(!mgr.is_remote());
     let issues = if mgr.is_remote() {
         match mgr.engine().await {
             Ok(e) => e.spec_issues(&spec).await?,
@@ -63,6 +67,7 @@ pub async fn container_preview(
         create_command: shown.cli_command(false),
         body: serde_json::to_string_pretty(&body).unwrap_or_default(),
         secrets_hidden: hidden as u32,
+        risks,
     })
 }
 

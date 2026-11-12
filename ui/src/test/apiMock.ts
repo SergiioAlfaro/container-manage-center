@@ -2,6 +2,7 @@
  * Doble del cliente IPC para pruebas de interfaz. Los datos son fixtures de
  * prueba: nunca se importan desde código de la aplicación.
  */
+import type { HostRisk } from "@/shared/ipc/bindings/HostRisk";
 import { vi } from "vitest";
 import type { ServerView } from "@/shared/ipc/bindings/ServerView";
 import type { ServerConfig } from "@/shared/ipc/bindings/ServerConfig";
@@ -294,7 +295,18 @@ export function previewOf(spec: ContainerSpec): SpecPreview {
     ...(spec.privileged ? ["--privileged"] : []),
   ];
   const tail = [spec.image, ...spec.command].join(" ");
-  return { issues, runCommand: ["docker run --detach", ...args, tail].join(" "), createCommand: ["docker create", ...args, tail].join(" "), body: JSON.stringify({ Image: spec.image }), secretsHidden: 0 };
+  // Riesgos para el equipo (mismos códigos y claves que el motor, casos básicos).
+  const risks: HostRisk[] = [
+    ...spec.mounts
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => m.kind === "bind" && /(^|\/)docker\.sock$/.test(m.source))
+      .map(({ m, i }) => ({ code: "risk.runtimeSocket", level: "critical" as const, field: `mounts.${i}.source`, key: `risk.runtimeSocket:${m.source}`, params: { level: "critical", path: m.source, readOnly: String(m.readOnly) } })),
+    ...(spec.privileged ? [{ code: "risk.privileged", level: "critical" as const, field: "privileged", key: "risk.privileged:privileged", params: { level: "critical" } }] : []),
+    ...spec.capAdd
+      .filter((c) => c.toUpperCase().replace(/^CAP_/, "") === "NET_RAW")
+      .map(() => ({ code: "risk.capability", level: "low" as const, field: "capAdd", key: "risk.capability:NET_RAW", params: { level: "low", cap: "NET_RAW", default: "true" } })),
+  ];
+  return { issues, runCommand: ["docker run --detach", ...args, tail].join(" "), createCommand: ["docker create", ...args, tail].join(" "), body: JSON.stringify({ Image: spec.image }), secretsHidden: 0, risks };
 }
 
 export function details(over: Partial<ContainerDetails> = {}): ContainerDetails {
@@ -604,9 +616,9 @@ export const composeProjects: ComposeProject[] = [
 export const tiendaModel: ProjectModel = {
   name: "tienda",
   services: [
-    { name: "db", image: null, build: "/home/u/tienda/db", ports: [], mounts: [{ kind: "volume", source: "datos", target: "/var/lib/db", readOnly: false }], dependsOn: [], profiles: [], envKeys: ["DB_PASSWORD"], replicas: null, containerName: null },
-    { name: "extra", image: "busybox", build: null, ports: [], mounts: [], dependsOn: [], profiles: ["debug"], envKeys: [], replicas: null, containerName: null },
-    { name: "web", image: "nginx:1.27", build: null, ports: [{ published: "8080", target: "80", protocol: "tcp", hostIp: null }], mounts: [], dependsOn: ["db"], profiles: [], envKeys: ["MODE"], replicas: null, containerName: null },
+    { name: "db", image: null, build: "/home/u/tienda/db", ports: [], mounts: [{ kind: "volume", source: "datos", target: "/var/lib/db", readOnly: false }], dependsOn: [], profiles: [], envKeys: ["DB_PASSWORD"], replicas: null, containerName: null, risks: [] },
+    { name: "extra", image: "busybox", build: null, ports: [], mounts: [], dependsOn: [], profiles: ["debug"], envKeys: [], replicas: null, containerName: null, risks: [] },
+    { name: "web", image: "nginx:1.27", build: null, ports: [{ published: "8080", target: "80", protocol: "tcp", hostIp: null }], mounts: [], dependsOn: ["db"], profiles: [], envKeys: ["MODE"], replicas: null, containerName: null, risks: [] },
   ],
   networks: [{ key: "default", name: "tienda_default", external: false }],
   volumes: [
@@ -804,6 +816,10 @@ export function editPlanOf(id: string, request: EditRequest, base: EditableConfi
     issues: [],
     blockers: [],
     risks: needsRecreate && (base.sizeRw ?? 0) > 0 ? [{ code: "writableLayer", params: { bytes: String(base.sizeRw) } }] : [],
+    hostRisks: request.mounts
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => m.kind === "bind" && m.source === "/etc" && !base.current.mounts.some((c) => c.source === m.source))
+      .map(({ i }) => ({ code: "risk.credentials", level: "high" as const, field: `mounts.${i}.source`, key: "risk.credentials:/etc", params: { level: "high", path: "/etc", readOnly: "true" } })),
     notices: [],
     willStop: needsRecreate && base.status === "running",
     backupName: needsRecreate ? `${base.current.name}-dcc-backup-20261111-120000` : null,
@@ -906,7 +922,7 @@ export const api = {
   serverTest: vi.fn(async (_c: ServerConfig, _s: string | null): Promise<TestReport> => testReportOk()),
   serverHostKey: vi.fn(async (_c: ServerConfig): Promise<HostKeyInfo> => ({ keyType: "ssh-ed25519", fingerprint: "SHA256:AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/abcde" })),
   serverTrustedKeys: vi.fn(async (_c: ServerConfig): Promise<TrustedKey[]> => []),
-  serverTrust: vi.fn(async (_c: ServerConfig, k: HostKeyInfo, _r: boolean): Promise<HostKeyInfo> => k),
+  serverTrust: vi.fn(async (_c: ServerConfig, k: HostKeyInfo, _r: boolean, _j?: boolean): Promise<HostKeyInfo> => k),
   serverSecretStatus: vi.fn(async (_id: string): Promise<SecretStatus> => ({ kind: null, inSession: false, stored: false, keyring: { state: "available" } })),
   keyringStatus: vi.fn(async (): Promise<KeyringStatus> => ({ state: "available" })),
   serverForgetSecret: vi.fn(async (_id: string) => 1),
@@ -1020,8 +1036,8 @@ export const api = {
     }
     return { model: p.name === "tienda" ? tiendaModel : { ...tiendaModel, name: p.name, services: [], volumes: [], profiles: [] }, resolved: '{"name": "tienda", "services": {"db": {"environment": {"DB_PASSWORD": "s3creto"}}}}', error: null, warnings: [], command: `/usr/bin/docker compose -p ${p.name} --profile '*' config --format json` };
   }),
-  composePreview: vi.fn(async (p: ProjectRef, a: ComposeAction) => ({ command: composeCommand(p, a) })),
-  composeRunOpen: vi.fn(async (_p: ProjectRef, _a: ComposeAction, _c: boolean, h: (e: ComposeEvent) => void) =>
+  composePreview: vi.fn(async (p: ProjectRef, a: ComposeAction) => ({ command: composeCommand(p, a), risks: [] as HostRisk[] })),
+  composeRunOpen: vi.fn(async (_p: ProjectRef, _a: ComposeAction, _c: boolean, h: (e: ComposeEvent) => void, _r: string[] = []) =>
     streams.add(h, { event: "end", closed: { end: { end: "stopped" }, error: null, stderrTail: "" } }),
   ),
   composeLogsOpen: vi.fn(async (_p: ProjectRef, _s: string[], _t: number, _ts: boolean, h: (e: ComposeEvent) => void) =>

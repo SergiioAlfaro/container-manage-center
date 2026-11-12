@@ -24,7 +24,7 @@ use crate::client::Engine;
 use crate::error::EngineError;
 use crate::reference::{auth_key_for, ImageRef};
 use crate::registry_auth::{self, PullAuth};
-use crate::spec::{is_secret_key, issue, KeyValue, Severity, SpecIssue, REDACTED};
+use crate::spec::{is_secret_key, issue, KeyValue, Severity, SpecIssue};
 use crate::streams::{EndReason, StreamEnd};
 
 pub use context::ContextSummary;
@@ -207,8 +207,9 @@ impl BuildSpec {
         let mut s = self.clone();
         let mut n = 0;
         for kv in &mut s.build_args {
-            if is_secret_key(&kv.key) && !kv.value.is_empty() {
-                kv.value = REDACTED.into();
+            let shown = crate::spec::shown_value(&kv.key, &kv.value);
+            if shown != kv.value {
+                kv.value = shown;
                 n += 1;
             }
         }

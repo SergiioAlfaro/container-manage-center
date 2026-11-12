@@ -2675,3 +2675,202 @@ fn server_shell_is_only_for_known_remote_servers() {
     assert_eq!(unknown.unwrap_err().code, "server.unknown");
     assert_eq!(st().streams.running(), 0);
 }
+
+// ------------------------------------------------------------- E1 (1.1.0)
+
+/// E1 (DCC-SEC-01/03/05, D-085, D-086) contra Docker real: los riesgos altos o
+/// críticos sin aceptar se rechazan en el motor (crear, editar y Compose `up`),
+/// con aceptación se crea, y ningún valor secreto llega al panel de actividad.
+#[test]
+fn live_e1_risks_and_secrets_via_ipc() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    const FAKE: &str = "valor-ficticio-e1-ipc";
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    // Una imagen local con etiqueta y con comando (Docker no crea contenedores
+    // de una imagen sin comando ni entrypoint).
+    let images = invoke(&h, "images_list", json!({})).unwrap();
+    let image = images
+        .as_array()
+        .unwrap()
+        .iter()
+        .find_map(|i| {
+            let tag = i["repoTags"].as_array()?.first()?.as_str()?.to_owned();
+            let d = invoke(&h, "image_details", json!({ "reference": i["id"] })).ok()?;
+            let runnable = d["command"].as_array().is_some_and(|c| !c.is_empty())
+                || d["entrypoint"].as_array().is_some_and(|c| !c.is_empty());
+            runnable.then_some(tag)
+        })
+        .expect("hace falta una imagen local con etiqueta y comando");
+    let socket = "/var/run/docker.sock";
+    let name = format!("dcc-test-e1-{}", std::process::id());
+    let spec = json!({
+        "name": name, "image": image,
+        "labels": [{ "key": "dcc.test", "value": "true" }],
+        "env": [
+            { "key": "MYSQL_PWD", "value": FAKE },
+            { "key": "DATABASE_URL", "value": format!("postgres://app:{FAKE}@db/app") },
+            { "key": "TZ", "value": "UTC" }
+        ],
+        "mounts": [{ "kind": "bind", "source": socket, "target": "/var/run/docker.sock", "readOnly": true }],
+        "capAdd": ["NET_RAW"]
+    });
+
+    // 1. Socket de Docker en solo lectura sin aceptar: se rechaza sin crear nada.
+    let err = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": spec, "start": false }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "engine.risksNotAccepted", "{err}");
+    let issues = err["issues"].as_array().unwrap();
+    assert_eq!(issues.len(), 1, "NET_RAW (bajo) no exige aceptación: {err}");
+    assert_eq!(issues[0]["code"], "risk.runtimeSocket");
+    assert_eq!(issues[0]["params"]["level"], "critical");
+    let all = invoke(&h, "containers_list", json!({ "all": true })).unwrap();
+    assert!(
+        !all.to_string().contains(&name),
+        "no se ha creado ningún contenedor"
+    );
+    // Una aceptación de otro riesgo no sirve.
+    let mut wrong = spec.clone();
+    wrong["acceptedRisks"] = json!(["risk.runtimeSocket:/run/otro.sock"]);
+    let err = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": wrong, "start": false }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "engine.risksNotAccepted");
+
+    // 2. Con la aceptación explícita se crea.
+    let mut ok = spec.clone();
+    ok["acceptedRisks"] = json!([format!("risk.runtimeSocket:{socket}")]);
+    let r = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": ok, "start": false }),
+    )
+    .unwrap();
+    let id = r["id"].as_str().unwrap().to_owned();
+    struct Cleanup<'a>(&'a Harness, String, String);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = invoke(
+                self.0,
+                "container_remove",
+                json!({ "id": self.1, "name": self.2, "force": true, "volumes": true, "confirmed": true }),
+            );
+        }
+    }
+    let _c = Cleanup(&h, id.clone(), name.clone());
+
+    // 3. Edición: añadir /etc (credenciales) exige aceptación en el motor.
+    let cfg = invoke(&h, "container_edit_config", json!({ "id": id })).unwrap();
+    let mut req = cfg["current"].clone();
+    req["mounts"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "kind": "bind", "source": "/etc", "target": "/host-etc", "readOnly": true }));
+    let plan = invoke(
+        &h,
+        "container_edit_plan",
+        json!({ "id": id, "request": req }),
+    )
+    .unwrap();
+    let host_risks = plan["hostRisks"].as_array().unwrap();
+    assert_eq!(host_risks.len(), 1, "solo el montaje nuevo: {plan}");
+    assert_eq!(host_risks[0]["code"], "risk.credentials");
+    let err = invoke(
+        &h,
+        "container_edit_apply",
+        json!({ "id": id, "request": req, "options": { "confirmRecreate": true, "acceptedRisks": plan["risks"].as_array().unwrap().iter().map(|r| r["code"].clone()).collect::<Vec<_>>(), "keepMac": false } }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "engine.risksNotAccepted", "{err}");
+
+    // 4. Ningún valor secreto en el panel de actividad (cuerpo, orden
+    //    equivalente, errores) y la información útil sigue ahí.
+    let activity = invoke(&h, "activity_list", json!({})).unwrap().to_string();
+    assert!(!activity.contains(FAKE), "secreto en el panel: {activity}");
+    assert!(activity.contains("MYSQL_PWD=********"), "{activity}");
+    assert!(
+        activity.contains("postgres://app:********@db/app"),
+        "{activity}"
+    );
+    assert!(activity.contains("TZ=UTC"));
+    let inspect = invoke(&h, "container_inspect", json!({ "id": id, "name": name })).unwrap();
+    assert!(
+        inspect.to_string().contains(FAKE),
+        "a Docker se envía el valor real (solo se oculta al mostrar)"
+    );
+
+    // 5. Compose: `up` con el socket montado se rechaza antes de ejecutar nada.
+    let status = invoke(&h, "compose_status", json!({})).unwrap();
+    if status["status"] == "available" {
+        let proj_dir = tempfile::Builder::new()
+            .prefix("dcc-test-e1c-")
+            .tempdir()
+            .unwrap();
+        let pname = format!("dcc-test-e1c-{}", std::process::id());
+        let created = invoke(
+            &h,
+            "compose_file_create",
+            json!({
+                "dir": proj_dir.path().display().to_string(),
+                "content": format!("name: {pname}\nservices:\n  app:\n    image: {image}\n    labels: {{dcc.test: \"true\"}}\n    volumes:\n      - {socket}:/var/run/docker.sock:ro\n    cap_add: [SYS_ADMIN]\n  web:\n    image: {image}\n    labels: {{dcc.test: \"true\"}}\n    volumes:\n      - ./html:/usr/share/nginx/html:ro\n"),
+            }),
+        )
+        .unwrap();
+        let project = json!({ "name": pname, "files": [created["path"]], "workingDir": null, "envFiles": [] });
+        let prev = invoke(
+            &h,
+            "compose_preview",
+            json!({ "project": project, "action": { "action": "up" } }),
+        )
+        .unwrap();
+        let keys: Vec<String> = prev["risks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["key"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(
+            keys,
+            vec![
+                format!("risk.runtimeSocket:{socket}@app"),
+                "risk.capability:SYS_ADMIN@app".to_owned()
+            ],
+            "el servicio web (./html en solo lectura) no tiene riesgos: {prev}"
+        );
+        let err = invoke(&h, "compose_run_open", json!({ "project": project, "action": { "action": "up" }, "confirmed": false, "acceptedRisks": [keys[0]], "onEvent": "__CHANNEL__:91" })).unwrap_err();
+        assert_eq!(err["code"], "engine.risksNotAccepted", "{err}");
+        assert_eq!(err["issues"][0]["code"], "risk.capability");
+        let only_web = invoke(
+            &h,
+            "compose_preview",
+            json!({ "project": project, "action": { "action": "up", "services": ["web"] } }),
+        )
+        .unwrap();
+        assert!(only_web["risks"].as_array().unwrap().is_empty());
+        let after = invoke(&h, "containers_list", json!({ "all": true })).unwrap();
+        assert!(
+            !after.to_string().contains(&pname),
+            "Compose no ha creado nada"
+        );
+    } else {
+        eprintln!("Compose no disponible: parte de Compose omitida");
+    }
+}

@@ -1070,6 +1070,17 @@
       "tagInvalid": "Tag non valido: lettere, cifre, «_», «.» e «-», fino a 128 caratteri, senza iniziare con «.» o «-».",
       "tooLong": "Al massimo {{max}} caratteri.",
       "controlChars": "Non può contenere a capo né altri caratteri di controllo."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: il socket del motore dei container dà il controllo completo di Docker e, attraverso di esso, del computer. Montarlo in sola lettura non lo impedisce.",
+      "hostRoot": "Montare la radice del sistema (/) dà al container accesso a tutti i file del computer.",
+      "credentials": "{{path}} contiene credenziali del computer o dei suoi utenti (password, chiavi SSH, token), anche in sola lettura.",
+      "systemDir": "{{path}} è una cartella di sistema: il container può leggerla e, in scrittura, cambiare il funzionamento del computer.",
+      "systemBinaries": "{{path}} in scrittura permette al container di sostituire programmi o librerie del computer.",
+      "capability": "Capacità {{cap}}: estende ciò che il container può fare con il kernel del computer.",
+      "privileged": "Modalità privilegiata: il container ha accesso quasi completo al computer (dispositivi, kernel e tutte le capacità).",
+      "networkHost": "Rete del computer (host): il container vede tutti i servizi del computer, anche quelli in ascolto solo su 127.0.0.1.",
+      "hostNamespace": "Condivide lo spazio {{namespace}} con il computer."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "L’autenticazione è stata annullata: non è stato disinstallato nulla.",
     "packages_denied": "I permessi di amministratore non sono stati concessi: non è stato disinstallato nulla.",
     "packages_busy": "È già in corso una disinstallazione.",
-    "packages_notInstalled": "L’applicazione non è installata come pacchetto .deb: non c’è nulla da disinstallare con APT."
+    "packages_notInstalled": "L’applicazione non è installata come pacchetto .deb: non c’è nulla da disinstallare con APT.",
+    "engine_risksNotAccepted": "La configurazione ha rischi per il computer non accettati."
   },
   "commit": {
     "action": "Crea immagine da questo container",
@@ -2487,7 +2499,7 @@
       "user": "Utente SSH sul server.",
       "keyPath": "La chiave resta dov'è. Ad esempio ~/.ssh/id_ed25519.",
       "connectTimeout": "Tra 3 e 120 secondi.",
-      "proxyJump": "Formato utente@host:porta. Equivale a ProxyJump di SSH. ssh verifica l’identità del server intermedio con il tuo ~/.ssh/known_hosts: collegati prima una volta con «ssh -J» per confermarla."
+      "proxyJump": "Formato utente@host:porta (un solo salto). La sua identità si conferma con l’impronta, come quella del server, e deve accettare la tua chiave o il tuo agente SSH: nessuna password sul salto, che non riceve mai quella del server."
     },
     "issues": {
       "nameRequired": "Inserisci un nome.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Nome del contesto non valido.",
       "timeoutInvalid": "Deve essere tra 3 e 120 secondi.",
       "proxyJumpInvalid": "Server intermedio non valido (utente@host:porta).",
-      "idInvalid": "Identificatore del server non valido."
+      "idInvalid": "Identificatore del server non valido.",
+      "proxyJumpChain": "È supportato un solo server intermedio: l’app verifica la sua identità e quella della destinazione."
     },
     "editor": {
       "addTitle": "Aggiungi server",
@@ -2566,7 +2579,10 @@
       "inUserFile": "L'identità precedente si trova in {{file}}. L'applicazione non modifica quel file: se hai verificato la nuova impronta, rimuovi tu quella vecchia con:",
       "mismatch": "Il server ora presenta un'impronta diversa da quella mostrata. Non è stato salvato nulla: prova di nuovo la connessione.",
       "review": "Verifica identità",
-      "reviewTitle": "Identità di {{name}}"
+      "reviewTitle": "Identità di {{name}}",
+      "jumpNotice": "Server intermedio: {{jump}} (per raggiungere {{host}})",
+      "jumpUnknownBody": "È la prima volta che passi dal server intermedio {{jump}}. Verifica che questa impronta sia la sua prima di fidarti.",
+      "jumpChangedBody": "Il server intermedio {{jump}} presenta un’identità diversa da quella confermata. Può dipendere da una reinstallazione o da un attacco man-in-the-middle. Non continuare finché non l’hai verificata."
     },
     "secret": {
       "passphraseTitle": "Passphrase per {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "Impossibile connettersi",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Identità del server intermedio non confermata",
+        "body": "È la prima connessione tramite il server intermedio {{jump}}. Conferma la sua impronta ({{type}} {{fingerprint}}) prima di continuare."
+      },
+      "jumpHostKeyChanged": {
+        "title": "L’identità del server intermedio è cambiata",
+        "body": "Il server intermedio {{jump}} presenta un’identità diversa da quella confermata. Può essere un attacco man-in-the-middle: non continuare finché non l’hai verificata."
+      },
+      "jumpAuthFailed": {
+        "title": "Il server intermedio non accetta la chiave",
+        "body": "{{jump}} non ha accettato nessuna chiave né l’agente SSH. Sul server intermedio sono supportati solo chiave o agente; la password del server di destinazione non gli viene mai inviata."
+      },
+      "jumpFromSshConfig": {
+        "title": "Salto definito in ~/.ssh/config",
+        "body": "Il tuo ~/.ssh/config fa passare {{host}} per {{via}}. Con password o passphrase non ci si collega così, perché quel salto non avrebbe i controlli dell’app. Indica il server intermedio nel profilo."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Alternativa più sicura: Docker rootless per quell'utente, indicando il suo socket nel profilo.",
       "listContexts": "Controlla i contesti definiti.",
       "checkSocket": "Controlla il percorso del socket Docker nel profilo.",
-      "upgradeDocker": "Aggiorna Docker Engine sul server alla versione 20.10 o successiva."
+      "upgradeDocker": "Aggiorna Docker Engine sul server alla versione 20.10 o successiva.",
+      "verifyJumpFingerprint": "Chiedi all’amministratore l’impronta del server intermedio o verificala su di esso.",
+      "jumpUseKey": "Usa una chiave SSH o l’agente SSH per il server intermedio (la chiave del profilo va bene se l’intermedio la accetta).",
+      "tryJump": "Prova la connessione al server intermedio senza password:",
+      "jumpInProfile": "Scrivi il server intermedio in «Server intermedio» del profilo (utente@host:porta)."
     },
     "target": "Server",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "Verrà scritto in questo percorso del server (prima si verifica che il file non sia cambiato):",
       "confirmSave": "Salva sul server",
       "confirmCreate": "Crea sul server"
+    }
+  },
+  "hostRisk": {
+    "title": "Rischi per il computer",
+    "intro": "Questa configurazione dà al container accesso a parti del computer. I rischi alti e critici vanno accettati uno per uno prima di continuare; la configurazione non viene modificata.",
+    "accept": "Capisco il rischio e voglio continuare.",
+    "pending_one": "Manca da accettare {{count}} rischio.",
+    "pending_other": "Mancano da accettare {{count}} rischi.",
+    "seeBelow": "Controlla i rischi per il computer.",
+    "notAccepted": "La configurazione ha rischi per il computer non accettati (potrebbe essere cambiata): controllali e riprova.",
+    "level": {
+      "critical": "Critico",
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Basso"
     }
   }
 }

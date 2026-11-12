@@ -114,6 +114,27 @@ describe("Docker Compose: proyecto", () => {
     expect(api.composeConfig).toHaveBeenCalledWith({ name: "tienda", files: ["/home/u/tienda/compose.yaml"], workingDir: "/home/u/tienda", envFiles: [] });
   });
 
+  it("desplegar con riesgos para el equipo exige aceptarlos y los envía al motor (E1, D-086)", async () => {
+    const original = api.composePreview.getMockImplementation()!;
+    const risk = { code: "risk.runtimeSocket", level: "critical" as const, field: "services.web.volumes.0", key: "risk.runtimeSocket:/var/run/docker.sock@web", params: { level: "critical", path: "/var/run/docker.sock", readOnly: "true", service: "web" } };
+    api.composePreview.mockImplementation(async (p, a) => ({ command: `docker compose -p ${p.name} ${a.action}`, risks: a.action === "up" ? [risk] : [] }));
+    const user = userEvent.setup();
+    await open();
+    await screen.findByText("perfil debug");
+    await user.click(screen.getByRole("button", { name: "Desplegar" }));
+    const d = screen.getByRole("dialog");
+    const box = await within(d).findByTestId("host-risks");
+    expect(within(box).getByText(/web: \/var\/run\/docker\.sock: el socket del motor/)).toBeInTheDocument();
+    const deploy = within(d).getByRole("button", { name: "Desplegar" });
+    expect(deploy).toBeDisabled();
+    await user.click(within(box).getByRole("checkbox"));
+    expect(deploy).toBeEnabled();
+    await user.click(deploy);
+    await waitFor(() => expect(api.composeRunOpen).toHaveBeenCalledTimes(1));
+    expect(api.composeRunOpen.mock.calls[0]![4]).toEqual([risk.key]);
+    api.composePreview.mockImplementation(original);
+  });
+
   it("desplegar: opciones, comando exacto y salida en vivo hasta el final", async () => {
     const user = userEvent.setup();
     await open();

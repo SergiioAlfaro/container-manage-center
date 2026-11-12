@@ -251,8 +251,9 @@ export function dockerApi(server: string) {
     composeConfig: (project: ProjectRef, unsaved: UnsavedFile | null = null) => call<ComposeConfig>("compose_config", { project, unsaved }),
     composePreview: (project: ProjectRef, action: ComposeAction) => call<ComposePreview>("compose_preview", { project, action }),
     /** Acción con la salida en vivo; se detiene con `streamClose`. */
-    composeRunOpen: (project: ProjectRef, action: ComposeAction, confirmed: boolean, onEvent: (e: ComposeEvent) => void) =>
-      call<number>("compose_run_open", { project, action, confirmed, onEvent: channel(onEvent) }),
+    /** `acceptedRisks`: claves de los riesgos para el equipo aceptados (E1, D-086). */
+    composeRunOpen: (project: ProjectRef, action: ComposeAction, confirmed: boolean, onEvent: (e: ComposeEvent) => void, acceptedRisks: string[] = []) =>
+      call<number>("compose_run_open", { project, action, confirmed, acceptedRisks, onEvent: channel(onEvent) }),
     composeLogsOpen: (project: ProjectRef, services: string[], tail: number, timestamps: boolean, onEvent: (e: ComposeEvent) => void) =>
       call<number>("compose_logs_open", { project, services, tail, timestamps, onEvent: channel(onEvent) }),
     composeRegister: (files: string[], name: string | null) => call<RegisterResult>("compose_register", { files, name }),
@@ -275,7 +276,8 @@ const appApi = {
   serverTest: (config: ServerConfig, secret: string | null) => call<TestReport>("server_test", { config, secret }),
   serverHostKey: (config: ServerConfig) => call<HostKeyInfo>("server_host_key", { config }),
   serverTrustedKeys: (config: ServerConfig) => call<TrustedKey[]>("server_trusted_keys", { config }),
-  serverTrust: (config: ServerConfig, key: HostKeyInfo, replace: boolean) => call<HostKeyInfo>("server_trust", { config, key, replace }),
+  /** `jump`: la identidad es la del servidor intermedio (E1, D-087). */
+  serverTrust: (config: ServerConfig, key: HostKeyInfo, replace: boolean, jump = false) => call<HostKeyInfo>("server_trust", { config, key, replace, jump }),
   serverSecretStatus: (server: string) => call<SecretStatus>("server_secret_status", { server }),
   keyringStatus: () => call<KeyringStatus>("keyring_status"),
   serverForgetSecret: (server: string) => call<number>("server_forget_secret", { server }),

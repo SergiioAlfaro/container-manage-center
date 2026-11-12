@@ -437,6 +437,9 @@ pub struct ServiceModel {
     pub env_keys: Vec<String>,
     pub replicas: Option<u32>,
     pub container_name: Option<String>,
+    /// Riesgos para el equipo de este servicio (E1, D-086): montajes, modo
+    /// privilegiado, capacidades y red del equipo.
+    pub risks: Vec<crate::risk::Risk>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -507,6 +510,55 @@ fn resources(v: Option<&Value>, project: &str) -> Vec<ModelResource> {
         .collect()
 }
 
+/// Riesgos de un servicio de `compose config --format json` (D-086). La clave
+/// de cada riesgo incluye el servicio: aceptarlo en uno no lo acepta en otro.
+fn service_risks(service: &str, s: &Value, mounts: &[ServiceMount]) -> Vec<crate::risk::Risk> {
+    use crate::risk;
+    let field = |f: &str| format!("services.{service}.{f}");
+    let mut out = Vec::new();
+    for (i, m) in mounts.iter().enumerate() {
+        if m.kind != "bind" {
+            continue;
+        }
+        if let Some(src) = &m.source {
+            out.extend(risk::mount_risk(
+                src,
+                m.read_only,
+                false,
+                &field(&format!("volumes.{i}")),
+            ));
+        }
+    }
+    if s.get("privileged").and_then(Value::as_bool) == Some(true) {
+        out.push(risk::privileged_risk(&field("privileged")));
+    }
+    let caps: Vec<String> = s
+        .get("cap_add")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(str_of).collect())
+        .unwrap_or_default();
+    out.extend(risk::cap_risks(&caps, &field("cap_add")));
+    if let Some(n) = s.get("network_mode").and_then(str_of) {
+        out.extend(risk::network_risk(&n, &field("network_mode")));
+    }
+    for r in &mut out {
+        r.key = format!("{}@{service}", r.key);
+        r.params.insert("service".into(), service.to_owned());
+    }
+    out
+}
+
+/// Riesgos de los servicios que va a arrancar `up` (todos si `services` está
+/// vacío).
+pub fn risks_for(model: &ProjectModel, services: &[String]) -> Vec<crate::risk::Risk> {
+    model
+        .services
+        .iter()
+        .filter(|s| services.is_empty() || services.contains(&s.name))
+        .flat_map(|s| s.risks.iter().cloned())
+        .collect()
+}
+
 /// Interpreta `docker compose config --format json`.
 pub fn parse_model(json: &str) -> Result<ProjectModel, EngineError> {
     let v: Value = serde_json::from_str(json).map_err(|e| EngineError::InvalidResponse {
@@ -548,7 +600,7 @@ pub fn parse_model(json: &str) -> Result<ProjectModel, EngineError> {
                         .collect()
                 })
                 .unwrap_or_default();
-            let mounts = s
+            let mounts: Vec<ServiceMount> = s
                 .get("volumes")
                 .and_then(Value::as_array)
                 .map(|a| {
@@ -587,6 +639,7 @@ pub fn parse_model(json: &str) -> Result<ProjectModel, EngineError> {
             };
             let mut env_keys = keys_or_items(s.get("environment"));
             env_keys.sort();
+            let risks = service_risks(sname, s, &mounts);
             services.push(ServiceModel {
                 name: sname.clone(),
                 image: s.get("image").and_then(str_of),
@@ -603,6 +656,7 @@ pub fn parse_model(json: &str) -> Result<ProjectModel, EngineError> {
                     .or_else(|| s.get("scale").and_then(Value::as_u64))
                     .map(|n| n as u32),
                 container_name: s.get("container_name").and_then(str_of),
+                risks,
             });
         }
     }
@@ -944,6 +998,53 @@ pub fn logs_args_with(
 
 #[cfg(test)]
 mod tests {
+
+    /// E1 (D-086, §9.5): servicios legítimos de Compose sin riesgos; los
+    /// peligrosos, con su clave por servicio.
+    #[test]
+    fn compose_services_risks_without_false_positives() {
+        let json = r#"{"name":"demo","services":{
+          "web":{"image":"nginx:1.27","volumes":[{"type":"bind","source":"/home/ana/demo/html","target":"/usr/share/nginx/html","read_only":true},{"type":"tmpfs","target":"/tmp"}],"ports":[{"host_ip":"127.0.0.1","published":"8080","target":80,"protocol":"tcp"}],"networks":{"front":null}},
+          "db":{"image":"postgres:16","volumes":[{"type":"volume","source":"pgdata","target":"/var/lib/postgresql/data"}],"cap_drop":["ALL"],"cap_add":["CHOWN","SETUID","SETGID","DAC_READ_SEARCH_NOT"]},
+          "proxy":{"image":"traefik:3","volumes":[{"type":"bind","source":"/var/run/docker.sock","target":"/var/run/docker.sock","read_only":true}],"network_mode":"host"},
+          "tools":{"image":"busybox","privileged":true,"cap_add":["SYS_ADMIN","NET_RAW"]}
+        },"networks":{"front":{}},"volumes":{"pgdata":{}}}"#;
+        let m = parse_model(json).unwrap();
+        let of = |n: &str| {
+            m.services
+                .iter()
+                .find(|s| s.name == n)
+                .unwrap()
+                .risks
+                .clone()
+        };
+        assert!(of("web").is_empty(), "{:?}", of("web"));
+        assert!(of("db").is_empty(), "{:?}", of("db"));
+        let keys: Vec<String> = of("proxy").iter().map(|r| r.key.clone()).collect();
+        assert_eq!(
+            keys,
+            [
+                "risk.runtimeSocket:/var/run/docker.sock@proxy",
+                "risk.networkHost:host@proxy"
+            ]
+        );
+        let tools: Vec<(String, crate::risk::RiskLevel)> = of("tools")
+            .iter()
+            .map(|r| (r.code.clone(), r.level))
+            .collect();
+        use crate::risk::RiskLevel::*;
+        assert_eq!(
+            tools,
+            [
+                ("risk.privileged".to_owned(), Critical),
+                ("risk.capability".to_owned(), Critical),
+                ("risk.capability".to_owned(), Low)
+            ]
+        );
+        assert_eq!(risks_for(&m, &["web".into(), "db".into()]).len(), 0);
+        assert_eq!(risks_for(&m, &[]).len(), 5);
+    }
+
     use super::*;
 
     fn cli() -> ComposeCli {

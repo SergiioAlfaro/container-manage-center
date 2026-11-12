@@ -16,6 +16,8 @@ use dcc_activity::quote::render_argv;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::risk::{self, Risk};
+
 pub const MIB: u64 = 1024 * 1024;
 pub const GIB: u64 = 1024 * MIB;
 /// Mínimo de memoria que acepta Docker.
@@ -158,6 +160,9 @@ pub struct ContainerSpec {
     pub cap_drop: Vec<String>,
     /// `key` = nombre de host, `value` = IP (o `host-gateway`).
     pub extra_hosts: Vec<KeyValue>,
+    /// Riesgos altos o críticos que el usuario ha aceptado explícitamente
+    /// (`Risk::key`, E1, D-086). No se envía a Docker.
+    pub accepted_risks: Vec<String>,
 }
 
 // ---------------------------------------------------------------- validación
@@ -225,38 +230,49 @@ fn absolute(p: &str) -> bool {
 
 /// Rutas del equipo cuyo montaje da control sobre el sistema.
 /// Valor que sustituye a los secretos en lo que se muestra o se registra.
-pub const REDACTED: &str = "********";
+pub use dcc_activity::redact::REDACTED;
 
 /// Variables cuyo valor se oculta al mostrarlo o registrarlo (no al enviarlo a
-/// Docker). Debe coincidir con `isSecretKey` de la interfaz.
+/// Docker). Reglas únicas en `dcc_activity::redact` (E1, D-085); la interfaz
+/// usa las mismas (`ui/src/shared/secrets.ts`).
 pub fn is_secret_key(key: &str) -> bool {
-    let k = key.to_ascii_uppercase();
-    [
-        "PASSWORD",
-        "PASSWD",
-        "SECRET",
-        "TOKEN",
-        "KEY",
-        "CREDENTIAL",
-        "PRIVATE",
-    ]
-    .iter()
-    .any(|w| k.contains(w))
+    dcc_activity::redact::is_secret_name(key)
 }
 
-pub(crate) const SENSITIVE_BINDS: &[&str] = &[
-    "/",
-    "/etc",
-    "/root",
-    "/boot",
-    "/proc",
-    "/sys",
-    "/dev",
-    "/var/run/docker.sock",
-    "/run/docker.sock",
-];
+/// Valor de una variable tal como se muestra o se registra: oculto si el
+/// nombre es secreto o si contiene credenciales (URL con contraseña).
+pub fn shown_value(key: &str, value: &str) -> String {
+    dcc_activity::redact::redact_value(key, value)
+}
 
 impl ContainerSpec {
+    /// Riesgos para el equipo de esta configuración (E1, D-086): montajes,
+    /// modo privilegiado, capacidades y red del equipo. `local`: Docker está en
+    /// este equipo (se resuelven los enlaces simbólicos de los montajes).
+    pub fn risks(&self, local: bool) -> Vec<Risk> {
+        let mut out = Vec::new();
+        for (i, m) in self.mounts.iter().enumerate() {
+            if m.kind == MountKind::Bind {
+                if let Some(r) = risk::mount_risk(
+                    m.source.trim(),
+                    m.read_only,
+                    local,
+                    &format!("mounts.{i}.source"),
+                ) {
+                    out.push(r);
+                }
+            }
+        }
+        if self.privileged {
+            out.push(risk::privileged_risk("privileged"));
+        }
+        out.extend(risk::cap_risks(&self.cap_add, "capAdd"));
+        if let Some(r) = risk::network_risk(&self.network, "network") {
+            out.push(r);
+        }
+        out
+    }
+
     /// Valida la especificación. `check_fs` comprueba que existan las carpetas
     /// de los bind mounts (el daemon local ve el mismo sistema de archivos).
     pub fn validate(&self, check_fs: bool) -> Vec<SpecIssue> {
@@ -453,16 +469,6 @@ impl ContainerSpec {
                                 &[("path", s.to_owned())],
                             ));
                         }
-                        let norm = s.trim_end_matches('/');
-                        let norm = if norm.is_empty() { "/" } else { norm };
-                        if SENSITIVE_BINDS.contains(&norm) && !m.read_only {
-                            v.push(issue(
-                                Warning,
-                                format!("mounts.{i}.source"),
-                                "bind.sensitive",
-                                &[("path", norm.to_owned())],
-                            ));
-                        }
                     }
                 }
             }
@@ -496,8 +502,14 @@ impl ContainerSpec {
         if self.auto_remove && self.restart.name != RestartName::No {
             v.push(issue(Error, "autoRemove", "autoRemove.restart", &[]));
         }
-        if self.privileged {
-            v.push(issue(Warning, "privileged", "privileged", &[]));
+        // Riesgos para el equipo (E1, D-086): avisos, nunca errores.
+        for r in self.risks(check_fs) {
+            v.push(SpecIssue {
+                severity: Warning,
+                field: r.field,
+                code: r.code,
+                params: r.params,
+            });
         }
         for (field, caps) in [("capAdd", &self.cap_add), ("capDrop", &self.cap_drop)] {
             for c in caps {
@@ -667,8 +679,9 @@ impl ContainerSpec {
         let mut out = self.clone();
         let mut n = 0;
         for kv in &mut out.env {
-            if is_secret_key(&kv.key) && !kv.value.is_empty() {
-                kv.value = REDACTED.to_owned();
+            let shown = shown_value(&kv.key, &kv.value);
+            if shown != kv.value {
+                kv.value = shown;
                 n += 1;
             }
         }
@@ -1120,6 +1133,8 @@ pub fn from_inspect(c: &ContainerInspectResponse, image: Option<&ImageConfig>) -
             .into_iter()
             .filter_map(|h| h.split_once(':').map(|(a, b)| KeyValue::new(a, b)))
             .collect(),
+        // Una copia vuelve a pedir la aceptación de sus riesgos.
+        accepted_risks: Vec::new(),
     };
     notes.sort();
     notes.dedup();

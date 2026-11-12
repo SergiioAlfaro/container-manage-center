@@ -33,6 +33,10 @@ pub enum EngineError {
     /// La especificación del asistente tiene errores (no se envía nada a Docker).
     #[error("la configuración tiene {} error(es)", issues.iter().filter(|i| i.severity == crate::spec::Severity::Error).count())]
     InvalidSpec { issues: Vec<crate::spec::SpecIssue> },
+    /// La configuración tiene riesgos altos o críticos para el equipo que no se
+    /// han aceptado explícitamente (E1, D-086). No se envía nada a Docker.
+    #[error("la configuración tiene {} riesgo(s) para el equipo sin aceptar", risks.len())]
+    RisksNotAccepted { risks: Vec<crate::risk::Risk> },
     /// Ya hay otra operación en curso sobre el mismo recurso.
     #[error("ya hay una operación en curso sobre {resource}")]
     Busy { resource: String },

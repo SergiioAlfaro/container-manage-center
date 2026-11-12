@@ -1070,6 +1070,17 @@
       "tagInvalid": "Etiqueta no vàlida: lletres, xifres, «_», «.» i «-», fins a 128 caràcters, sense començar per «.» ni «-».",
       "tooLong": "Com a màxim {{max}} caràcters.",
       "controlChars": "No pot contenir salts de línia ni altres caràcters de control."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: el sòcol del motor de contenidors dona el control total de Docker i, amb ell, de l'equip. Muntar-lo només de lectura no ho impedeix.",
+      "hostRoot": "Muntar l'arrel del sistema (/) dona al contenidor accés a tots els fitxers de l'equip.",
+      "credentials": "{{path}} conté credencials de l'equip o dels seus usuaris (contrasenyes, claus SSH, testimonis), també només de lectura.",
+      "systemDir": "{{path}} és una carpeta del sistema: el contenidor la pot llegir i, amb escriptura, canviar el funcionament de l'equip.",
+      "systemBinaries": "{{path}} amb escriptura permet al contenidor substituir programes o biblioteques de l'equip.",
+      "capability": "Capacitat {{cap}}: amplia el que el contenidor pot fer amb el nucli de l'equip.",
+      "privileged": "Mode privilegiat: el contenidor té accés gairebé complet a l'equip (dispositius, nucli i totes les capacitats).",
+      "networkHost": "Xarxa de l'equip (host): el contenidor veu tots els serveis de l'equip, també els que només escolten a 127.0.0.1.",
+      "hostNamespace": "Comparteix l'espai {{namespace}} amb l'equip."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "S’ha cancel·lat l’autenticació: no s’ha desinstal·lat res.",
     "packages_denied": "No s’han concedit permisos d’administrador: no s’ha desinstal·lat res.",
     "packages_busy": "Ja hi ha una desinstal·lació en curs.",
-    "packages_notInstalled": "L’aplicació no està instal·lada com a paquet .deb: no hi ha res a desinstal·lar amb APT."
+    "packages_notInstalled": "L’aplicació no està instal·lada com a paquet .deb: no hi ha res a desinstal·lar amb APT.",
+    "engine_risksNotAccepted": "La configuració té riscos per a l'equip sense acceptar."
   },
   "commit": {
     "action": "Crear una imatge a partir d’aquest contenidor",
@@ -2487,7 +2499,7 @@
       "user": "Usuari SSH al servidor.",
       "keyPath": "La clau es queda on és. Per exemple ~/.ssh/id_ed25519.",
       "connectTimeout": "Entre 3 i 120 segons.",
-      "proxyJump": "Format usuari@host:port. Equival a ProxyJump de SSH. La identitat del servidor intermedi la comprova ssh amb el teu ~/.ssh/known_hosts: connecta’t abans una vegada amb «ssh -J» per confirmar-la."
+      "proxyJump": "Format usuari@host:port (un sol salt). La seva identitat es confirma amb l'empremta, igual que la del servidor, i ha d'acceptar la teva clau o el teu agent SSH: no s'admet contrasenya en el salt i mai no rep la del servidor."
     },
     "issues": {
       "nameRequired": "Escriu un nom.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Nom de context no vàlid.",
       "timeoutInvalid": "Ha d'estar entre 3 i 120 segons.",
       "proxyJumpInvalid": "Servidor intermedi no vàlid (usuari@amfitrió:port).",
-      "idInvalid": "Identificador de servidor no vàlid."
+      "idInvalid": "Identificador de servidor no vàlid.",
+      "proxyJumpChain": "Només s'admet un servidor intermedi: l'aplicació comprova la seva identitat i la del destí."
     },
     "editor": {
       "addTitle": "Afegeix un servidor",
@@ -2566,7 +2579,10 @@
       "inUserFile": "La identitat anterior és a {{file}}. L'aplicació no modifica aquest fitxer: si has comprovat la nova empremta, elimina l'anterior tu mateix amb:",
       "mismatch": "Ara el servidor presenta una empremta diferent de la mostrada. No s'ha desat res: torna a provar la connexió.",
       "review": "Revisa la identitat",
-      "reviewTitle": "Identitat de {{name}}"
+      "reviewTitle": "Identitat de {{name}}",
+      "jumpNotice": "Servidor intermedi: {{jump}} (per arribar a {{host}})",
+      "jumpUnknownBody": "És la primera vegada que passes pel servidor intermedi {{jump}}. Comprova que aquesta empremta és la seva abans de confiar-hi.",
+      "jumpChangedBody": "El servidor intermedi {{jump}} presenta una identitat diferent de la confirmada. Pot ser per una reinstal·lació o per un atac d'intermediari. No continuïs fins a comprovar-la."
     },
     "secret": {
       "passphraseTitle": "Frase de pas per a {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "No s'ha pogut connectar",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Identitat del servidor intermedi sense confirmar",
+        "body": "És la primera connexió amb el servidor intermedi {{jump}}. Confirma la seva empremta ({{type}} {{fingerprint}}) abans de continuar."
+      },
+      "jumpHostKeyChanged": {
+        "title": "La identitat del servidor intermedi ha canviat",
+        "body": "El servidor intermedi {{jump}} presenta una identitat diferent de la confirmada. Pot ser un atac d'intermediari: no continuïs fins a comprovar-la."
+      },
+      "jumpAuthFailed": {
+        "title": "El servidor intermedi no accepta la clau",
+        "body": "{{jump}} no ha acceptat cap clau ni l'agent SSH. Al servidor intermedi només s'admet clau o agent; la contrasenya del servidor de destí no se li envia mai."
+      },
+      "jumpFromSshConfig": {
+        "title": "Salt definit a ~/.ssh/config",
+        "body": "El teu ~/.ssh/config fa passar {{host}} per {{via}}. Amb contrasenya o frase de pas no es connecta així, perquè aquest salt no tindria les comprovacions de l'aplicació. Indica el servidor intermedi al perfil."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Alternativa més segura: Docker rootless per a aquest usuari, indicant el seu sòcol al perfil.",
       "listContexts": "Comprova els contextos definits.",
       "checkSocket": "Comprova el camí del sòcol de Docker al perfil.",
-      "upgradeDocker": "Actualitza Docker Engine al servidor a la versió 20.10 o posterior."
+      "upgradeDocker": "Actualitza Docker Engine al servidor a la versió 20.10 o posterior.",
+      "verifyJumpFingerprint": "Demana a l'administrador l'empremta del servidor intermedi o comprova-la en ell.",
+      "jumpUseKey": "Fes servir una clau SSH o l'agent SSH per al servidor intermedi (la clau del perfil serveix si l'intermedi l'accepta).",
+      "tryJump": "Prova la connexió amb el servidor intermedi sense contrasenya:",
+      "jumpInProfile": "Escriu el servidor intermedi a «Servidor intermedi» del perfil (usuari@host:port)."
     },
     "target": "Servidor",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "S'escriurà en aquest camí del servidor (abans es comprova que el fitxer no ha canviat):",
       "confirmSave": "Desa al servidor",
       "confirmCreate": "Crea al servidor"
+    }
+  },
+  "hostRisk": {
+    "title": "Riscos per a l'equip",
+    "intro": "Aquesta configuració dona al contenidor accés a parts de l'equip. Els riscos alts i crítics s'han d'acceptar un per un abans de continuar; la configuració no es canvia.",
+    "accept": "Entenc el risc i vull continuar.",
+    "pending_one": "Falta acceptar {{count}} risc.",
+    "pending_other": "Falten per acceptar {{count}} riscos.",
+    "seeBelow": "Revisa els riscos per a l'equip.",
+    "notAccepted": "La configuració té riscos per a l'equip sense acceptar (pot haver canviat): revisa'ls i torna-ho a provar.",
+    "level": {
+      "critical": "Crític",
+      "high": "Alt",
+      "medium": "Mitjà",
+      "low": "Baix"
     }
   }
 }

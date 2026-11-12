@@ -13,6 +13,7 @@ import { keys } from "@/shared/query";
 import { Button, CopyButton, cx } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
 import { DownDialog, UpDialog } from "./dialogs";
+import { needsAcceptance } from "@/shared/ui/HostRisks";
 import { FileEditor } from "./FileEditor";
 import { LogsTab } from "./LogsTab";
 import { buildAction, dirOf, hasFiles, relativeTo, portLabel, refOf, serviceRows, simpleAction, upAction, type ServiceRow } from "./model";
@@ -36,7 +37,7 @@ function Icon({ label, onClick, disabled, children }: { label: string; onClick: 
   );
 }
 
-function ServicesTable({ project, rows, busy, canUp }: { project: ProjectRef; rows: ServiceRow[]; busy: boolean; canUp: boolean }) {
+function ServicesTable({ project, rows, busy, canUp, onUpWithRisks }: { project: ProjectRef; rows: ServiceRow[]; busy: boolean; canUp: boolean; onUpWithRisks: (service: string) => void }) {
   const dir = project.workingDir ?? (project.files[0] ? dirOf(project.files[0]) : null);
   const { t } = useTranslation();
   const run = useRunCompose();
@@ -96,7 +97,7 @@ function ServicesTable({ project, rows, busy, canUp }: { project: ProjectRef; ro
               <td className="px-3 py-2">
                 <div className="flex justify-end gap-0.5">
                   {r.state === "notCreated" ? (
-                    <Icon label={t("composeDetail.upService", { name: r.name })} disabled={busy || !canUp} onClick={() => void run(project, upAction({ services: [r.name] }))}>
+                    <Icon label={t("composeDetail.upService", { name: r.name })} disabled={busy || !canUp} onClick={() => (r.model?.risks.some(needsAcceptance) ? onUpWithRisks(r.name) : void run(project, upAction({ services: [r.name] })))}>
                       <Play size={15} />
                     </Icon>
                   ) : r.running === r.containers.length ? (
@@ -188,6 +189,8 @@ export function ProjectDetail({ name, tab, logServices }: { name: string; tab: P
   const current = useProjectRun(name);
   const busy = current?.status === "running";
   const [dialog, setDialog] = useState<Dialog>(null);
+  // Desplegar un servicio con riesgos para el equipo pasa por el diálogo (D-086).
+  const [upServices, setUpServices] = useState<string[]>([]);
   const model = cfg.data?.model ?? null;
   const rows = serviceRows(model, p?.containers ?? []);
   const canUp = files && !!model;
@@ -363,7 +366,7 @@ export function ProjectDetail({ name, tab, logServices }: { name: string; tab: P
                   <Spinner size={13} /> {t("composeDetail.loadingModel")}
                 </p>
               )}
-              <ServicesTable project={refOf(p)} rows={rows} busy={busy} canUp={canUp} />
+              <ServicesTable project={refOf(p)} rows={rows} busy={busy} canUp={canUp} onUpWithRisks={(svc) => (setUpServices([svc]), setDialog("up"))} />
             </>
           )}
           {tab === "logs" && <LogsTab key={(logServices ?? []).join(",")} project={refOf(p)} services={rows.filter((r) => r.containers.length > 0).map((r) => r.name)} initial={logServices} />}
@@ -373,7 +376,7 @@ export function ProjectDetail({ name, tab, logServices }: { name: string; tab: P
         </div>
       )}
 
-      {dialog === "up" && ref && <UpDialog project={ref} model={model} onClose={() => setDialog(null)} onStarted={() => nav.setTab("output")} />}
+      {dialog === "up" && ref && <UpDialog project={ref} model={model} initialServices={upServices} onClose={() => (setDialog(null), setUpServices([]))} onStarted={() => nav.setTab("output")} />}
       {dialog === "down" && ref && p && <DownDialog project={ref} model={model} containers={p.total} onClose={() => setDialog(null)} onStarted={() => nav.setTab("output")} />}
     </div>
   );

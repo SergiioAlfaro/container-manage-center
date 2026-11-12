@@ -1070,6 +1070,17 @@
       "tagInvalid": "Etiqueta non válida: letras, números, «_», «.» e «-», ata 128 caracteres, sen comezar por «.» nin «-».",
       "tooLong": "Como máximo {{max}} caracteres.",
       "controlChars": "Non pode conter saltos de liña nin outros caracteres de control."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: o socket do motor de contedores dá o control total de Docker e, con el, do equipo. Montalo só de lectura non o impide.",
+      "hostRoot": "Montar a raíz do sistema (/) dálle ao contedor acceso a todos os ficheiros do equipo.",
+      "credentials": "{{path}} contén credenciais do equipo ou dos seus usuarios (contrasinais, chaves SSH, tokens), tamén só de lectura.",
+      "systemDir": "{{path}} é un cartafol do sistema: o contedor pode lelo e, con escritura, cambiar o funcionamento do equipo.",
+      "systemBinaries": "{{path}} con escritura permite ao contedor substituír programas ou bibliotecas do equipo.",
+      "capability": "Capacidade {{cap}}: amplía o que o contedor pode facer co núcleo do equipo.",
+      "privileged": "Modo privilexiado: o contedor ten acceso case completo ao equipo (dispositivos, núcleo e todas as capacidades).",
+      "networkHost": "Rede do equipo (host): o contedor ve todos os servizos do equipo, tamén os que só escoitan en 127.0.0.1.",
+      "hostNamespace": "Comparte o espazo {{namespace}} co equipo."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "Cancelouse a autenticación: non se desinstalou nada.",
     "packages_denied": "Non se concederon permisos de administración: non se desinstalou nada.",
     "packages_busy": "Xa hai unha desinstalación en curso.",
-    "packages_notInstalled": "A aplicación non está instalada como paquete .deb: non hai nada que desinstalar con APT."
+    "packages_notInstalled": "A aplicación non está instalada como paquete .deb: non hai nada que desinstalar con APT.",
+    "engine_risksNotAccepted": "A configuración ten riscos para o equipo sen aceptar."
   },
   "commit": {
     "action": "Crear unha imaxe a partir deste contedor",
@@ -2487,7 +2499,7 @@
       "user": "Usuario SSH no servidor.",
       "keyPath": "A chave queda onde está. Por exemplo ~/.ssh/id_ed25519.",
       "connectTimeout": "Entre 3 e 120 segundos.",
-      "proxyJump": "Formato usuario@host:porto. Equivale a ProxyJump de SSH. A identidade do servidor intermedio compróbaa ssh co teu ~/.ssh/known_hosts: conéctate antes unha vez con «ssh -J» para confirmala."
+      "proxyJump": "Formato usuario@host:porto (un só salto). A súa identidade confírmase coa pegada, igual que a do servidor, e debe aceptar a túa chave ou o teu axente SSH: non se admite contrasinal no salto e nunca recibe o do servidor."
     },
     "issues": {
       "nameRequired": "Escribe un nome.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Nome de contexto non válido.",
       "timeoutInvalid": "Debe estar entre 3 e 120 segundos.",
       "proxyJumpInvalid": "Servidor intermedio non válido (usuario@anfitrión:porto).",
-      "idInvalid": "Identificador de servidor non válido."
+      "idInvalid": "Identificador de servidor non válido.",
+      "proxyJumpChain": "Só se admite un servidor intermedio: a aplicación comproba a súa identidade e a do destino."
     },
     "editor": {
       "addTitle": "Engadir servidor",
@@ -2566,7 +2579,10 @@
       "inUserFile": "A identidade anterior está en {{file}}. A aplicación non modifica ese ficheiro: se comprobaches a nova pegada, quita ti a anterior con:",
       "mismatch": "O servidor presenta agora unha pegada distinta da amosada. Non se gardou nada: volve probar a conexión.",
       "review": "Revisar identidade",
-      "reviewTitle": "Identidade de {{name}}"
+      "reviewTitle": "Identidade de {{name}}",
+      "jumpNotice": "Servidor intermedio: {{jump}} (para chegar a {{host}})",
+      "jumpUnknownBody": "É a primeira vez que pasas polo servidor intermedio {{jump}}. Comproba que esta pegada é a súa antes de confiar nela.",
+      "jumpChangedBody": "O servidor intermedio {{jump}} presenta unha identidade distinta da confirmada. Pode deberse a unha reinstalación ou a un ataque de intermediario. Non sigas ata comprobala."
     },
     "secret": {
       "passphraseTitle": "Frase de paso para {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "Non se puido conectar",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Identidade do servidor intermedio sen confirmar",
+        "body": "É a primeira conexión co servidor intermedio {{jump}}. Confirma a súa pegada ({{type}} {{fingerprint}}) antes de seguir."
+      },
+      "jumpHostKeyChanged": {
+        "title": "A identidade do servidor intermedio cambiou",
+        "body": "O servidor intermedio {{jump}} presenta unha identidade distinta da confirmada. Pode ser un ataque de intermediario: non sigas ata comprobala."
+      },
+      "jumpAuthFailed": {
+        "title": "O servidor intermedio non acepta a chave",
+        "body": "{{jump}} non aceptou ningunha chave nin o axente SSH. No servidor intermedio só se admite chave ou axente; o contrasinal do servidor de destino nunca se lle envía."
+      },
+      "jumpFromSshConfig": {
+        "title": "Salto definido en ~/.ssh/config",
+        "body": "O teu ~/.ssh/config fai pasar {{host}} por {{via}}. Con contrasinal ou frase de paso non se conecta así, porque ese salto non tería as comprobacións da aplicación. Indica o servidor intermedio no perfil."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Alternativa máis segura: Docker rootless para ese usuario, indicando o seu socket no perfil.",
       "listContexts": "Comproba os contextos definidos.",
       "checkSocket": "Comproba a ruta do socket de Docker no perfil.",
-      "upgradeDocker": "Actualiza Docker Engine no servidor á versión 20.10 ou posterior."
+      "upgradeDocker": "Actualiza Docker Engine no servidor á versión 20.10 ou posterior.",
+      "verifyJumpFingerprint": "Pídelle ao administrador a pegada do servidor intermedio ou compróbaa nel.",
+      "jumpUseKey": "Usa unha chave SSH ou o axente SSH para o servidor intermedio (a chave do perfil serve se o intermedio a acepta).",
+      "tryJump": "Proba a conexión co servidor intermedio sen contrasinal:",
+      "jumpInProfile": "Escribe o servidor intermedio en «Servidor intermedio» do perfil (usuario@host:porto)."
     },
     "target": "Servidor",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "Escribirase nesta ruta do servidor (antes compróbase que o ficheiro non cambiou):",
       "confirmSave": "Gardar no servidor",
       "confirmCreate": "Crear no servidor"
+    }
+  },
+  "hostRisk": {
+    "title": "Riscos para o equipo",
+    "intro": "Esta configuración dálle ao contedor acceso a partes do equipo. Os riscos altos e críticos hai que aceptalos un a un antes de continuar; a configuración non se cambia.",
+    "accept": "Entendo o risco e quero continuar.",
+    "pending_one": "Falta aceptar {{count}} risco.",
+    "pending_other": "Faltan por aceptar {{count}} riscos.",
+    "seeBelow": "Revisa os riscos para o equipo.",
+    "notAccepted": "A configuración ten riscos para o equipo sen aceptar (pode ter cambiado): revísaos e téntao de novo.",
+    "level": {
+      "critical": "Crítico",
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Baixo"
     }
   }
 }

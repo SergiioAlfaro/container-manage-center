@@ -30,6 +30,7 @@ pub mod pull;
 pub mod reference;
 pub mod registry_auth;
 pub mod resources;
+pub mod risk;
 pub mod spec;
 pub mod ssh;
 pub mod streams;

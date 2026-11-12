@@ -164,3 +164,48 @@ describe("Asistente de creación", () => {
     expect(useContainersNav.getState().page.kind).toBe("create");
   });
 });
+
+describe("Riesgos para el equipo (E1, D-086)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setServerState(connected);
+    useContainersNav.setState({ page: { kind: "list" } });
+  });
+
+  it("el modo privilegiado exige aceptar el riesgo antes de crear, y se envía la aceptación", async () => {
+    await openWizard();
+    await userEvent.type(screen.getByLabelText("Imagen"), "nginx:1.27");
+    await userEvent.click(screen.getByRole("tab", { name: "Avanzado" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: /^Modo privilegiado\s*--privileged/ }));
+    const box = await screen.findByTestId("host-risks");
+    expect(within(box).getByText("Riesgos para el equipo")).toBeInTheDocument();
+    expect(within(box).getByText("Crítico")).toBeInTheDocument();
+    expect(within(box).getByText(/Falta aceptar 1 riesgo/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Crear e iniciar" })).toBeDisabled();
+    await userEvent.click(within(box).getByLabelText(/Modo privilegiado: el contenedor tiene acceso casi completo/));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Crear e iniciar" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Crear e iniciar" }));
+    expect(api.containerCreate).toHaveBeenCalledWith(expect.objectContaining({ privileged: true, acceptedRisks: ["risk.privileged:privileged"] }), true);
+  });
+
+  it("si el motor rechaza riesgos sin aceptar, se explica sin crear nada", async () => {
+    api.containerCreate.mockRejectedValueOnce({ code: "engine.risksNotAccepted", message: "x", httpStatus: null, issues: [] });
+    await openWizard();
+    await userEvent.type(screen.getByLabelText("Imagen"), "nginx:1.27");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Crear" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
+    expect(await screen.findByText(/riesgos para el equipo sin aceptar/)).toBeInTheDocument();
+  });
+
+  it("un riesgo bajo (NET_RAW) se muestra sin exigir aceptación", async () => {
+    await openWizard();
+    await userEvent.type(screen.getByLabelText("Imagen"), "nginx:1.27");
+    await userEvent.click(screen.getByRole("tab", { name: "Avanzado" }));
+    const add = screen.getByLabelText("Añadir capacidades");
+    await userEvent.type(add, "NET_RAW");
+    const box = await screen.findByTestId("host-risks");
+    expect(within(box).getByText("Bajo")).toBeInTheDocument();
+    expect(within(box).queryByRole("checkbox")).toBeNull();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Crear e iniciar" })).toBeEnabled());
+  });
+});

@@ -1070,6 +1070,17 @@
       "tagInvalid": "Etiketa baliogabea: letrak, zenbakiak, «_», «.» eta «-», gehienez 128 karaktere, «.» edo «-» batekin hasi gabe.",
       "tooLong": "Gehienez {{max}} karaktere.",
       "controlChars": "Ezin du lerro-jauzirik edo beste kontrol-karaktererik izan."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: edukiontzi-motorraren socketak Dockerren kontrol osoa ematen du, eta harekin ekipoarena. Irakurtzeko soilik muntatzeak ez du hori eragozten.",
+      "hostRoot": "Sistemaren erroa (/) muntatzeak ekipoko fitxategi guztietarako sarbidea ematen dio edukiontziari.",
+      "credentials": "{{path}} karpetak ekipoaren edo bere erabiltzaileen kredentzialak ditu (pasahitzak, SSH gakoak, tokenak), baita irakurtzeko soilik ere.",
+      "systemDir": "{{path}} sistemako karpeta bat da: edukiontziak irakur dezake eta, idazteko baimenarekin, ekipoaren funtzionamendua alda dezake.",
+      "systemBinaries": "{{path}} idazteko baimenarekin, edukiontziak ekipoko programak edo liburutegiak ordez ditzake.",
+      "capability": "{{cap}} gaitasuna: edukiontziak ekipoaren nukleoarekin egin dezakeena zabaltzen du.",
+      "privileged": "Modu pribilegiatua: edukiontziak ia sarbide osoa du ekipora (gailuak, nukleoa eta gaitasun guztiak).",
+      "networkHost": "Ekipoaren sarea (host): edukiontziak ekipoko zerbitzu guztiak ikusten ditu, baita 127.0.0.1-en soilik entzuten dutenak ere.",
+      "hostNamespace": "{{namespace}} espazioa ekipoarekin partekatzen du."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "Autentifikazioa bertan behera utzi da: ez da ezer desinstalatu.",
     "packages_denied": "Ez da administratzaile-baimenik eman: ez da ezer desinstalatu.",
     "packages_busy": "Dagoeneko desinstalazio bat dago abian.",
-    "packages_notInstalled": "Aplikazioa ez dago .deb pakete gisa instalatuta: ez dago ezer APTrekin desinstalatzeko."
+    "packages_notInstalled": "Aplikazioa ez dago .deb pakete gisa instalatuta: ez dago ezer APTrekin desinstalatzeko.",
+    "engine_risksNotAccepted": "Konfigurazioak onartu gabeko arriskuak ditu ekipoarentzat."
   },
   "commit": {
     "action": "Sortu irudia edukiontzi honetatik",
@@ -2487,7 +2499,7 @@
       "user": "SSH erabiltzailea zerbitzarian.",
       "keyPath": "Gakoa dagoen tokian geratzen da. Adibidez ~/.ssh/id_ed25519.",
       "connectTimeout": "3 eta 120 segundo artean.",
-      "proxyJump": "Formatua: erabiltzailea@host:ataka. SSHren ProxyJump-en baliokidea. Tarteko zerbitzariaren identitatea ssh-k egiaztatzen du zure ~/.ssh/known_hosts fitxategiarekin: konektatu lehenago behin «ssh -J» erabiliz hura berresteko."
+      "proxyJump": "Formatua erabiltzailea@ostalaria:ataka (jauzi bakarra). Haren identitatea hatz-markarekin berresten da, zerbitzariarena bezala, eta zure gakoa edo SSH agentea onartu behar ditu: jauzian ez da pasahitzik onartzen eta ez du inoiz zerbitzariaren pasahitza jasotzen."
     },
     "issues": {
       "nameRequired": "Idatzi izen bat.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Testuinguru-izen baliogabea.",
       "timeoutInvalid": "3 eta 120 segundo artean egon behar du.",
       "proxyJumpInvalid": "Tarteko zerbitzari baliogabea (erabiltzailea@ostalaria:ataka).",
-      "idInvalid": "Zerbitzari-identifikatzaile baliogabea."
+      "idInvalid": "Zerbitzari-identifikatzaile baliogabea.",
+      "proxyJumpChain": "Tarteko zerbitzari bakarra onartzen da: aplikazioak haren eta helmugaren identitatea egiaztatzen ditu."
     },
     "editor": {
       "addTitle": "Gehitu zerbitzaria",
@@ -2566,7 +2579,10 @@
       "inUserFile": "Aurreko identitatea {{file}} fitxategian dago. Aplikazioak ez du fitxategi hori aldatzen: hatz-marka berria egiaztatu baduzu, kendu zeuk zaharra komando honekin:",
       "mismatch": "Zerbitzariak orain erakutsitakoaren desberdina den hatz-marka bat aurkezten du. Ez da ezer gorde: probatu berriro konexioa.",
       "review": "Berrikusi identitatea",
-      "reviewTitle": "{{name}} zerbitzariaren identitatea"
+      "reviewTitle": "{{name}} zerbitzariaren identitatea",
+      "jumpNotice": "Tarteko zerbitzaria: {{jump}} ({{host}} zerbitzarira iristeko)",
+      "jumpUnknownBody": "{{jump}} tarteko zerbitzaritik igarotzen zaren lehen aldia da. Egiaztatu hatz-marka hau berea dela konfiantza eman aurretik.",
+      "jumpChangedBody": "{{jump}} tarteko zerbitzariak berretsitakoaren desberdina den identitatea aurkezten du. Berrinstalazio bat edo bitartekari-eraso bat izan daiteke. Ez jarraitu egiaztatu arte."
     },
     "secret": {
       "passphraseTitle": "{{name}} zerbitzariaren pasaesaldia",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "Ezin izan da konektatu",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Tarteko zerbitzariaren identitatea berretsi gabe",
+        "body": "{{jump}} tarteko zerbitzariarekin lehen konexioa da. Berretsi haren hatz-marka ({{type}} {{fingerprint}}) jarraitu aurretik."
+      },
+      "jumpHostKeyChanged": {
+        "title": "Tarteko zerbitzariaren identitatea aldatu da",
+        "body": "{{jump}} tarteko zerbitzariak berretsitakoaren desberdina den identitatea aurkezten du. Bitartekari-eraso bat izan daiteke: ez jarraitu egiaztatu arte."
+      },
+      "jumpAuthFailed": {
+        "title": "Tarteko zerbitzariak ez du gakoa onartzen",
+        "body": "{{jump}} zerbitzariak ez du gakorik ez SSH agenterik onartu. Tarteko zerbitzarian gakoa edo agentea soilik onartzen dira; helmuga-zerbitzariaren pasahitza ez zaio inoiz bidaltzen."
+      },
+      "jumpFromSshConfig": {
+        "title": "Jauzia ~/.ssh/config fitxategian definituta",
+        "body": "Zure ~/.ssh/config fitxategiak {{host}} {{via}} bidez pasarazten du. Pasahitzarekin edo pasaesaldiarekin ez da horrela konektatzen, jauzi horrek ez lituzkeelako aplikazioaren egiaztapenak izango. Adierazi tarteko zerbitzaria profilean."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Aukera seguruagoa: Docker rootless erabiltzaile horrentzat, bere socketa profilean adierazita.",
       "listContexts": "Egiaztatu definitutako testuinguruak.",
       "checkSocket": "Egiaztatu Dockerren socketaren bide-izena profilean.",
-      "upgradeDocker": "Eguneratu Docker Engine zerbitzarian 20.10 bertsiora edo berriago batera."
+      "upgradeDocker": "Eguneratu Docker Engine zerbitzarian 20.10 bertsiora edo berriago batera.",
+      "verifyJumpFingerprint": "Eskatu administratzaileari tarteko zerbitzariaren hatz-marka edo egiaztatu hartan bertan.",
+      "jumpUseKey": "Erabili SSH gako bat edo SSH agentea tarteko zerbitzarirako (profileko gakoak balio du tartekoak onartzen badu).",
+      "tryJump": "Probatu tarteko zerbitzariarekiko konexioa pasahitzik gabe:",
+      "jumpInProfile": "Idatzi tarteko zerbitzaria profileko «Tarteko zerbitzaria» eremuan (erabiltzailea@ostalaria:ataka)."
     },
     "target": "Zerbitzaria",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "Zerbitzariko bide-izen honetan idatziko da (lehenik egiaztatzen da fitxategia ez dela aldatu):",
       "confirmSave": "Gorde zerbitzarian",
       "confirmCreate": "Sortu zerbitzarian"
+    }
+  },
+  "hostRisk": {
+    "title": "Ekipoarentzako arriskuak",
+    "intro": "Konfigurazio honek ekipoaren zatietarako sarbidea ematen dio edukiontziari. Arrisku altuak eta kritikoak banan-banan onartu behar dira jarraitu aurretik; konfigurazioa ez da aldatzen.",
+    "accept": "Arriskua ulertzen dut eta jarraitu nahi dut.",
+    "pending_one": "Arrisku {{count}} onartzeko dago.",
+    "pending_other": "{{count}} arrisku onartzeko daude.",
+    "seeBelow": "Berrikusi ekipoarentzako arriskuak.",
+    "notAccepted": "Konfigurazioak onartu gabeko arriskuak ditu ekipoarentzat (aldatu egin daiteke): berrikusi eta saiatu berriro.",
+    "level": {
+      "critical": "Kritikoa",
+      "high": "Altua",
+      "medium": "Ertaina",
+      "low": "Baxua"
     }
   }
 }

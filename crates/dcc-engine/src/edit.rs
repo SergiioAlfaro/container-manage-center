@@ -23,8 +23,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::spec::{
-    format_bytes_cli, format_cpus, is_secret_key, issue, ContainerSpec, KeyValue, MountKind,
-    MountSpec, PortSpec, Protocol, RestartName, RestartSpec, Severity, SpecIssue, REDACTED,
+    format_bytes_cli, format_cpus, issue, ContainerSpec, KeyValue, MountKind, MountSpec, PortSpec,
+    Protocol, RestartName, RestartSpec, Severity, SpecIssue,
 };
 
 /// Etiqueta donde se guarda la descripción escrita por el usuario.
@@ -194,6 +194,10 @@ pub struct EditPlan {
     /// Motivos (códigos) por los que la recreación no se puede hacer con seguridad.
     pub blockers: Vec<Risk>,
     pub risks: Vec<Risk>,
+    /// Riesgos para el equipo que **añade** el cambio (montajes nuevos, E1,
+    /// D-086). Los altos y críticos se aceptan con su `key` en
+    /// `ApplyOptions::accepted_risks`.
+    pub host_risks: Vec<crate::risk::Risk>,
     /// Avisos que no requieren aceptación (códigos).
     pub notices: Vec<Risk>,
     /// La recreación detiene el contenedor (está en ejecución).
@@ -570,11 +574,7 @@ fn mount_text(m: &MountSpec) -> String {
 }
 
 fn shown_env(kv: &KeyValue) -> String {
-    if is_secret_key(&kv.key) && !kv.value.is_empty() {
-        REDACTED.to_owned()
-    } else {
-        kv.value.clone()
-    }
+    crate::spec::shown_value(&kv.key, &kv.value)
 }
 
 fn opt_text<T>(v: Option<T>, f: impl Fn(T) -> String) -> String {
@@ -1370,8 +1370,9 @@ pub fn redacted_body(body: &ContainerCreateBody) -> ContainerCreateBody {
     if let Some(env) = b.env.as_mut() {
         for e in env.iter_mut() {
             if let Some((k, v)) = e.split_once('=') {
-                if is_secret_key(k) && !v.is_empty() {
-                    *e = format!("{k}={REDACTED}");
+                let shown = crate::spec::shown_value(k, v);
+                if shown != v {
+                    *e = format!("{k}={shown}");
                 }
             }
         }

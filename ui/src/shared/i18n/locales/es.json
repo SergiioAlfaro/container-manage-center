@@ -1070,6 +1070,17 @@
       "tagInvalid": "Etiqueta no válida: letras, números, «_», «.» y «-», hasta 128 caracteres, sin empezar por «.» ni «-».",
       "tooLong": "Como máximo {{max}} caracteres.",
       "controlChars": "No puede contener saltos de línea ni otros caracteres de control."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: el socket del motor de contenedores da control total de Docker y, con él, del equipo. Montarlo en solo lectura no lo impide.",
+      "hostRoot": "Montar la raíz del sistema (/) da al contenedor acceso a todos los archivos del equipo.",
+      "credentials": "{{path}} contiene credenciales del equipo o de sus usuarios (contraseñas, claves SSH, tokens), también en solo lectura.",
+      "systemDir": "{{path}} es una carpeta del sistema: el contenedor puede leerla y, con escritura, cambiar el funcionamiento del equipo.",
+      "systemBinaries": "{{path}} con escritura permite al contenedor sustituir programas o bibliotecas del equipo.",
+      "capability": "Capacidad {{cap}}: amplía lo que el contenedor puede hacer con el núcleo del equipo.",
+      "privileged": "Modo privilegiado: el contenedor tiene acceso casi completo al equipo (dispositivos, núcleo y todas las capacidades).",
+      "networkHost": "Red del equipo (host): el contenedor ve todos los servicios del equipo, también los que solo escuchan en 127.0.0.1.",
+      "hostNamespace": "Comparte el espacio {{namespace}} con el equipo."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "Se canceló la autenticación: no se ha desinstalado nada.",
     "packages_denied": "No se concedieron permisos de administrador: no se ha desinstalado nada.",
     "packages_busy": "Ya hay una desinstalación en curso.",
-    "packages_notInstalled": "La aplicación no está instalada como paquete .deb: no hay nada que desinstalar con APT."
+    "packages_notInstalled": "La aplicación no está instalada como paquete .deb: no hay nada que desinstalar con APT.",
+    "engine_risksNotAccepted": "La configuración tiene riesgos para el equipo sin aceptar."
   },
   "commit": {
     "action": "Crear imagen a partir de este contenedor",
@@ -2487,7 +2499,7 @@
       "user": "Usuario SSH en el servidor.",
       "keyPath": "La clave se queda donde está. Por ejemplo ~/.ssh/id_ed25519.",
       "connectTimeout": "Entre 3 y 120 segundos.",
-      "proxyJump": "Formato usuario@host:puerto. Equivale a ProxyJump de SSH. La identidad del servidor intermedio la comprueba ssh con tu ~/.ssh/known_hosts: conéctate antes una vez con «ssh -J» para confirmarla."
+      "proxyJump": "Formato usuario@host:puerto (un solo salto). Su identidad se confirma con su huella, igual que la del servidor, y debe aceptar tu clave o tu agente SSH: no se admite contraseña en el salto y nunca recibe la del servidor."
     },
     "issues": {
       "nameRequired": "Escribe un nombre.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Nombre de contexto no válido.",
       "timeoutInvalid": "Debe estar entre 3 y 120 segundos.",
       "proxyJumpInvalid": "Servidor intermedio no válido (usuario@host:puerto).",
-      "idInvalid": "Identificador de servidor no válido."
+      "idInvalid": "Identificador de servidor no válido.",
+      "proxyJumpChain": "Solo se admite un servidor intermedio: la aplicación comprueba su identidad y la del destino."
     },
     "editor": {
       "addTitle": "Añadir servidor",
@@ -2566,7 +2579,10 @@
       "inUserFile": "La identidad anterior está en {{file}}. La aplicación no modifica ese archivo: si has comprobado la nueva huella, quita la anterior tú mismo con:",
       "mismatch": "El servidor presenta ahora otra huella distinta de la mostrada. No se ha guardado nada: vuelve a probar la conexión.",
       "review": "Revisar identidad",
-      "reviewTitle": "Identidad de {{name}}"
+      "reviewTitle": "Identidad de {{name}}",
+      "jumpNotice": "Servidor intermedio: {{jump}} (para llegar a {{host}})",
+      "jumpUnknownBody": "Es la primera vez que pasas por el servidor intermedio {{jump}}. Comprueba que esta huella es la suya antes de confiar en ella.",
+      "jumpChangedBody": "El servidor intermedio {{jump}} presenta una identidad distinta de la que se confirmó. Puede deberse a una reinstalación o a un ataque de intermediario. No sigas hasta comprobarla."
     },
     "secret": {
       "passphraseTitle": "Frase de paso para {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "No se pudo conectar",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Identidad del servidor intermedio sin confirmar",
+        "body": "Es la primera conexión con el servidor intermedio {{jump}}. Confirma su huella ({{type}} {{fingerprint}}) antes de seguir."
+      },
+      "jumpHostKeyChanged": {
+        "title": "La identidad del servidor intermedio ha cambiado",
+        "body": "El servidor intermedio {{jump}} presenta una identidad distinta de la confirmada. Puede ser un ataque de intermediario: no sigas hasta comprobarla."
+      },
+      "jumpAuthFailed": {
+        "title": "El servidor intermedio no acepta la clave",
+        "body": "{{jump}} no ha aceptado ninguna clave ni el agente SSH. En el servidor intermedio solo se admite clave o agente; la contraseña del servidor de destino nunca se le envía."
+      },
+      "jumpFromSshConfig": {
+        "title": "Salto definido en ~/.ssh/config",
+        "body": "Tu ~/.ssh/config hace pasar {{host}} por {{via}}. Con contraseña o frase de paso no se conecta así, porque ese salto no tendría las comprobaciones de la aplicación. Indica el servidor intermedio en el perfil."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Alternativa más segura: Docker rootless para ese usuario, indicando su socket en el perfil.",
       "listContexts": "Comprueba los contextos definidos.",
       "checkSocket": "Comprueba la ruta del socket de Docker en el perfil.",
-      "upgradeDocker": "Actualiza Docker Engine en el servidor a la versión 20.10 o posterior."
+      "upgradeDocker": "Actualiza Docker Engine en el servidor a la versión 20.10 o posterior.",
+      "verifyJumpFingerprint": "Pide al administrador la huella del servidor intermedio o compruébala en él.",
+      "jumpUseKey": "Usa una clave SSH o el agente SSH para el servidor intermedio (la misma clave del perfil sirve si el intermedio la acepta).",
+      "tryJump": "Prueba la conexión con el servidor intermedio sin contraseña:",
+      "jumpInProfile": "Escribe el servidor intermedio en «Servidor intermedio» del perfil (usuario@host:puerto)."
     },
     "target": "Servidor",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "Se escribirá en esta ruta del servidor (se comprueba antes que el archivo no ha cambiado):",
       "confirmSave": "Guardar en el servidor",
       "confirmCreate": "Crear en el servidor"
+    }
+  },
+  "hostRisk": {
+    "title": "Riesgos para el equipo",
+    "intro": "Esta configuración da al contenedor acceso a partes del equipo. Los riesgos altos y críticos hay que aceptarlos uno a uno antes de continuar; la configuración no se cambia.",
+    "accept": "Entiendo el riesgo y quiero continuar.",
+    "pending_one": "Falta aceptar {{count}} riesgo.",
+    "pending_other": "Faltan por aceptar {{count}} riesgos.",
+    "seeBelow": "Revisa los riesgos para el equipo.",
+    "notAccepted": "La configuración tiene riesgos para el equipo sin aceptar (puede haber cambiado): revísalos y vuelve a intentarlo.",
+    "level": {
+      "critical": "Crítico",
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Bajo"
     }
   }
 }

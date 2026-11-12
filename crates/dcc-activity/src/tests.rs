@@ -237,3 +237,90 @@ fn a_server_view_tags_its_operations_and_shares_the_log() {
     let old: crate::HistoryEntry = serde_json::from_value(v).unwrap();
     assert_eq!(old.server, None);
 }
+
+/// E1 (DCC-SEC-05): ningún valor secreto llega al panel ni al historial, por
+/// ninguno de los campos de una operación, y la información útil se conserva.
+#[test]
+fn secrets_never_reach_records_events_or_history() {
+    const V: &str = "valor-ficticio-e1";
+    let log = ActivityLog::new(10);
+    let mut rx = log.subscribe();
+    let body = format!(
+        r#"{{"Image":"mariadb:11","Env":["MYSQL_PWD={V}","TZ=UTC","DATABASE_URL=mysql://app:{V}@db/app"]}}"#
+    );
+    let h = log.begin(OperationSpec {
+        category: Category::Container,
+        kind: "container.create".into(),
+        target: Some("db".into()),
+        transport: Transport::Api {
+            method: "POST".into(),
+            path: format!("/build?t=a&buildargs=%7B%22NPM_TOKEN%22%3A%22{V}%22%2C%22VERSION%22%3A%221.0%22%7D&token={V}"),
+            endpoint: "/var/run/docker.sock".into(),
+        },
+        request_body: Some(body),
+        equivalent_command: Some(quote::render_argv(
+            "docker",
+            &["run", "-e", &format!("DB_PASS={V}"), "-e", "TZ=UTC", "mariadb:11"],
+        )),
+    });
+    let h2 = log.begin(OperationSpec {
+        category: Category::Compose,
+        kind: "compose.config".into(),
+        target: None,
+        transport: Transport::Cli {
+            program: "docker".into(),
+            args: vec![
+                "login".into(),
+                "--password".into(),
+                V.into(),
+                "-e".into(),
+                format!("REDIS_AUTH={V}"),
+            ],
+        },
+        request_body: None,
+        equivalent_command: None,
+    });
+    h.fail(Failure {
+        error: format!(
+            "Error response from daemon: pull https://u:{V}@reg.example/v2/: unauthorized"
+        ),
+        stdout: Some(format!("SMTP_PASS={V}\n")),
+        stderr: Some(format!("      MYSQL_ROOT_PASSWORD: {V}\n")),
+        http_status: Some(500),
+        exit_code: None,
+    });
+    h2.succeed(Outcome {
+        summary: Some(format!("PGPASS={V}")),
+        stdout: Some(format!(
+            "-----BEGIN RSA PRIVATE KEY-----\n{V}\n-----END RSA PRIVATE KEY-----\n"
+        )),
+        ..Default::default()
+    });
+    let snapshot = serde_json::to_string(&log.snapshot()).unwrap();
+    assert!(!snapshot.contains(V), "{snapshot}");
+    let mut events = String::new();
+    while let Ok(e) = rx.try_recv() {
+        events.push_str(&serde_json::to_string(&e).unwrap());
+    }
+    assert!(!events.is_empty());
+    assert!(!events.contains(V), "{events}");
+    let history: Vec<_> = log
+        .snapshot()
+        .iter()
+        .filter_map(history::HistoryEntry::from_record)
+        .collect();
+    assert!(!serde_json::to_string(&history).unwrap().contains(V));
+    // Lo útil para diagnosticar sigue visible.
+    for kept in [
+        "MYSQL_PWD=",
+        "TZ=UTC",
+        "reg.example/v2/",
+        "unauthorized",
+        "VERSION",
+        "mariadb:11",
+        "MYSQL_ROOT_PASSWORD: ",
+        "BEGIN RSA PRIVATE KEY",
+    ] {
+        assert!(snapshot.contains(kept), "falta «{kept}»: {snapshot}");
+    }
+}

@@ -25,7 +25,7 @@ import { Banner, Dialog, Spinner } from "@/shared/ui/feedback";
 import { ICONS, STATE_DOT, allowedActions } from "../containerUi";
 import { KvEditor, MemField, MountsEditor, PortsEditor } from "../create/editors";
 import { Field, Group, IssueList, Select, TextInput } from "../create/fields";
-import { isSecretKey, issuesFor } from "../specModel";
+import { isSecretEntry, issuesFor } from "../specModel";
 import { useContainersNav } from "../store";
 import { EDIT_TABS, pendingByTab, pendingChanges, tabOfIssue, textsOf, withTexts, type EditTab, type Texts } from "./model";
 import { ReviewPanel } from "./ReviewPanel";
@@ -232,7 +232,7 @@ function Editor({ cfg, onApplied }: { cfg: EditableConfig; onApplied: (now: { id
                 <p className="mt-1 text-ink-3">{t("edit.imageEnvHint")}</p>
                 <ul className="selectable mt-2 space-y-0.5 font-mono text-[12px] text-ink-2">
                   {cfg.imageEnv.map((e) => (
-                    <li key={e.key}>{isSecretKey(e.key) ? `${e.key}=••••••` : `${e.key}=${e.value}`}</li>
+                    <li key={e.key}>{isSecretEntry(e.key, e.value) ? `${e.key}=••••••` : `${e.key}=${e.value}`}</li>
                   ))}
                 </ul>
               </details>

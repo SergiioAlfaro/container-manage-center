@@ -242,11 +242,28 @@ pub async fn server_test(
 pub async fn server_host_key(
     state: State<'_, AppState>,
     config: ServerConfig,
+    jump: Option<bool>,
 ) -> CmdResult<HostKeyInfo> {
     let c = with_id(config);
-    hostkey::presented(&state.servers.ctx.paths, &profile_of(&c))
+    let p = target_profile(&c, jump.unwrap_or(false))?;
+    hostkey::presented(&state.servers.ctx.paths, &p)
         .await
         .map_err(remote_error)
+}
+
+/// Perfil del destino o, con `jump`, del servidor intermedio (E1, D-087): su
+/// identidad se confirma y se guarda igual que la del destino.
+fn target_profile(c: &ServerConfig, jump: bool) -> CmdResult<dcc_engine::ssh::profile::SshProfile> {
+    let p = profile_of(c);
+    if !jump {
+        return Ok(p);
+    }
+    dcc_engine::ssh::profile::jump_profile(&p).ok_or_else(|| {
+        CommandError::new(
+            "server.noJump",
+            "el perfil no tiene un servidor intermedio válido",
+        )
+    })
 }
 
 /// Identidades guardadas para el servidor (propias y de `~/.ssh/known_hosts`).
@@ -268,26 +285,34 @@ pub async fn server_trust(
     config: ServerConfig,
     key: HostKeyInfo,
     replace: bool,
+    jump: Option<bool>,
 ) -> CmdResult<HostKeyInfo> {
     let c = with_id(config);
-    let p = profile_of(&c);
+    let jump = jump.unwrap_or(false);
+    let p = target_profile(&c, jump)?;
     let r = hostkey::trust(&state.servers.ctx.paths, &p, &key, replace).await;
     match r {
         Ok(k) => {
             let log = state.activity.with_server(tag_for(&c));
             let h = log.begin(dcc_activity::OperationSpec {
                 category: dcc_activity::Category::System,
-                kind: if replace {
-                    "server.hostKeyReplace".into()
-                } else {
-                    "server.hostKeyTrust".into()
+                kind: match (jump, replace) {
+                    (false, true) => "server.hostKeyReplace".into(),
+                    (false, false) => "server.hostKeyTrust".into(),
+                    (true, true) => "server.jumpHostKeyReplace".into(),
+                    (true, false) => "server.jumpHostKeyTrust".into(),
                 },
-                target: Some(c.name.clone()),
+                target: Some(if jump {
+                    format!("{} (intermedio {})", c.name, c.proxy_jump)
+                } else {
+                    c.name.clone()
+                }),
                 transport: dcc_activity::Transport::App {
-                    action: if replace {
-                        "Sustitución de la identidad del servidor (revisada por el usuario)".into()
-                    } else {
-                        "Confianza en la identidad del servidor (huella confirmada)".into()
+                    action: match (jump, replace) {
+                        (false, true) => "Sustitución de la identidad del servidor (revisada por el usuario)".into(),
+                        (false, false) => "Confianza en la identidad del servidor (huella confirmada)".into(),
+                        (true, true) => "Sustitución de la identidad del servidor intermedio (revisada por el usuario)".into(),
+                        (true, false) => "Confianza en la identidad del servidor intermedio (huella confirmada)".into(),
                     },
                 },
                 request_body: None,
@@ -532,7 +557,7 @@ pub fn spawn_auto_connect<R: Runtime>(app: AppHandle<R>) {
         tauri::async_runtime::spawn(async move {
             let state = app.state::<AppState>();
             if let Err(e) = connect_server(&state, &id, None, false).await {
-                tracing::warn!(server = %id, error = %e, "no se pudo conectar al abrir");
+                tracing::warn!(server = %id, error = %dcc_activity::redact::redact_text(&e.to_string()), "no se pudo conectar al abrir");
             }
         });
     }

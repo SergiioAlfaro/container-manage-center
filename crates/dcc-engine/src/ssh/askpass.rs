@@ -26,8 +26,34 @@ use super::Secret;
 pub const SOCKET_ENV: &str = "DCC_ASKPASS_SOCKET";
 const MAX_PROMPT: usize = 4096;
 
-/// ¿Es esta la pregunta que corresponde al secreto?
-pub fn prompt_matches(kind: SecretKind, prompt: &str) -> bool {
+/// A quién corresponde el secreto (E1, DCC-SEC-02, D-087): el usuario y los
+/// nombres del servidor de destino (el del perfil y el efectivo de
+/// `~/.ssh/config`) y, para una frase de paso, la ruta de la clave.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptTarget {
+    pub user: String,
+    pub hosts: Vec<String>,
+    pub key_path: Option<String>,
+}
+
+/// `usuario@host` de una pregunta de OpenSSH (`ana@srv's password:` o
+/// `(ana@srv) Password:`), si lo tiene.
+fn prompt_identity(prompt: &str) -> Option<(String, String)> {
+    let at = prompt.find('@')?;
+    let start = prompt[..at]
+        .rfind(|c: char| c.is_whitespace() || c == '(')
+        .map_or(0, |i| i + 1);
+    let rest = &prompt[at + 1..];
+    let end = rest
+        .find(|c: char| c.is_whitespace() || c == '\'' || c == ')')
+        .unwrap_or(rest.len());
+    Some((prompt[start..at].to_owned(), rest[..end].to_owned()))
+}
+
+/// ¿Es esta la pregunta que corresponde al secreto? Si la pregunta nombra a
+/// otro usuario o servidor (p. ej. un servidor intermedio), o a otra clave, no
+/// se responde: el secreto del destino nunca va a otro sitio.
+pub fn prompt_matches(kind: SecretKind, prompt: &str, target: &PromptTarget) -> bool {
     let p = prompt.to_lowercase();
     // Preguntas de sí/no (identidad del servidor, confirmaciones): nunca.
     if p.contains("yes/no")
@@ -38,8 +64,32 @@ pub fn prompt_matches(kind: SecretKind, prompt: &str) -> bool {
         return false;
     }
     match kind {
-        SecretKind::Passphrase => p.contains("passphrase"),
-        SecretKind::Password => p.contains("password") && !p.contains("passphrase"),
+        SecretKind::Passphrase => {
+            if !p.contains("passphrase") {
+                return false;
+            }
+            // `Enter passphrase for key '/ruta': `
+            let quoted = prompt.split('\'').nth(1);
+            match (quoted, &target.key_path) {
+                (Some(path), Some(expected)) => path == expected,
+                (Some(_), None) => false,
+                (None, _) => true,
+            }
+        }
+        SecretKind::Password => {
+            if !p.contains("password") || p.contains("passphrase") {
+                return false;
+            }
+            match prompt_identity(prompt) {
+                Some((user, host)) => {
+                    user == target.user
+                        && target.hosts.iter().any(|h| h.eq_ignore_ascii_case(&host))
+                }
+                // `Password:` sin destino: solo la pide el `ssh` del destino
+                // (el del salto no tiene askpass ni pide contraseñas).
+                None => true,
+            }
+        }
     }
 }
 
@@ -71,6 +121,7 @@ impl AskpassServer {
         kind: SecretKind,
         secret: Secret,
         max_answers: usize,
+        target: PromptTarget,
     ) -> std::io::Result<Self> {
         private_dir(dir)?;
         let name = format!("askpass-{}.sock", random_hex(12));
@@ -107,7 +158,7 @@ impl AskpassServer {
                     }
                 }
                 let prompt = String::from_utf8_lossy(&buf);
-                if prompt_matches(kind, &prompt) {
+                if prompt_matches(kind, &prompt, &target) {
                     let _ = stream.write_all(secret.as_bytes()).await;
                     answered += 1;
                 }
@@ -175,31 +226,74 @@ fn ask(socket: &Path, prompt: &str) -> Option<Secret> {
 mod tests {
     use super::*;
 
+    fn target() -> PromptTarget {
+        PromptTarget {
+            user: "dcca".into(),
+            hosts: vec!["127.0.0.1".into(), "srv.example".into()],
+            key_path: Some("/home/a/.ssh/id_ed25519".into()),
+        }
+    }
+
     #[test]
     fn only_the_expected_prompt_gets_an_answer() {
+        let t = target();
         assert!(prompt_matches(
             SecretKind::Passphrase,
-            "Enter passphrase for key '/home/a/.ssh/id_ed25519': "
+            "Enter passphrase for key '/home/a/.ssh/id_ed25519': ",
+            &t
         ));
         assert!(!prompt_matches(
             SecretKind::Passphrase,
-            "dcca@127.0.0.1's password: "
+            "Enter passphrase for key '/home/a/.ssh/otra': ",
+            &t
+        ));
+        assert!(!prompt_matches(
+            SecretKind::Passphrase,
+            "dcca@127.0.0.1's password: ",
+            &t
         ));
         assert!(prompt_matches(
             SecretKind::Password,
-            "dcca@127.0.0.1's password: "
+            "dcca@127.0.0.1's password: ",
+            &t
         ));
-        assert!(prompt_matches(SecretKind::Password, "Password: "));
+        assert!(prompt_matches(
+            SecretKind::Password,
+            "dcca@SRV.example's password: ",
+            &t
+        ));
+        assert!(prompt_matches(
+            SecretKind::Password,
+            "(dcca@srv.example) Password: ",
+            &t
+        ));
+        assert!(prompt_matches(SecretKind::Password, "Password: ", &t));
         assert!(!prompt_matches(
             SecretKind::Password,
-            "Enter passphrase for key 'x': "
+            "Enter passphrase for key 'x': ",
+            &t
         ));
         for q in [
             "Are you sure you want to continue connecting (yes/no/[fingerprint])? ",
             "Allow use of key? (yes/no) password",
         ] {
-            assert!(!prompt_matches(SecretKind::Password, q), "{q}");
-            assert!(!prompt_matches(SecretKind::Passphrase, q), "{q}");
+            assert!(!prompt_matches(SecretKind::Password, q, &t), "{q}");
+            assert!(!prompt_matches(SecretKind::Passphrase, q, &t), "{q}");
+        }
+    }
+
+    /// DCC-SEC-02: la pregunta de otro servidor (el intermedio) o de otro
+    /// usuario nunca recibe la contraseña del destino.
+    #[test]
+    fn a_jump_host_prompt_never_gets_the_target_secret() {
+        let t = target();
+        for q in [
+            "bastion@jump.example's password: ",
+            "dcca@jump.example's password: ",
+            "root@127.0.0.1's password: ",
+            "(dcca@jump.example) Password: ",
+        ] {
+            assert!(!prompt_matches(SecretKind::Password, q, &t), "{q}");
         }
     }
 
@@ -207,10 +301,19 @@ mod tests {
     async fn serves_the_secret_only_for_its_prompt_and_at_most_twice() {
         let dir = tempfile::tempdir().unwrap();
         let rt = dir.path().join("rt");
-        let server =
-            AskpassServer::start(&rt, SecretKind::Password, Secret::new("s3cr3t ñ".into()), 2)
-                .await
-                .unwrap();
+        let server = AskpassServer::start(
+            &rt,
+            SecretKind::Password,
+            Secret::new("s3cr3t ñ".into()),
+            2,
+            PromptTarget {
+                user: "a".into(),
+                hosts: vec!["b".into()],
+                key_path: None,
+            },
+        )
+        .await
+        .unwrap();
         let sock = server.socket().to_owned();
         use std::os::unix::fs::MetadataExt;
         assert_eq!(std::fs::metadata(&rt).unwrap().mode() & 0o777, 0o700);
@@ -232,6 +335,11 @@ mod tests {
                 .unwrap()
                 .as_deref(),
             Some("")
+        );
+        assert_eq!(
+            q("a@jump's password: ").await.unwrap().as_deref(),
+            Some(""),
+            "otro servidor: sin respuesta"
         );
         assert_eq!(
             q("a@b's password: ").await.unwrap().as_deref(),

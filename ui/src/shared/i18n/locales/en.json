@@ -1070,6 +1070,17 @@
       "tagInvalid": "Invalid tag: letters, digits, “_”, “.” and “-”, up to 128 characters, not starting with “.” or “-”.",
       "tooLong": "At most {{max}} characters.",
       "controlChars": "It cannot contain line breaks or other control characters."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: the container engine socket gives full control of Docker and, through it, of the host. Mounting it read-only does not prevent this.",
+      "hostRoot": "Mounting the system root (/) gives the container access to every file on the host.",
+      "credentials": "{{path}} contains credentials of the host or its users (passwords, SSH keys, tokens), even when mounted read-only.",
+      "systemDir": "{{path}} is a system folder: the container can read it and, with write access, change how the host works.",
+      "systemBinaries": "{{path}} with write access lets the container replace programs or libraries on the host.",
+      "capability": "Capability {{cap}}: extends what the container can do with the host kernel.",
+      "privileged": "Privileged mode: the container gets almost full access to the host (devices, kernel and all capabilities).",
+      "networkHost": "Host network: the container sees every service on the host, including those that only listen on 127.0.0.1.",
+      "hostNamespace": "Shares the {{namespace}} namespace with the host."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "Authentication was cancelled: nothing has been uninstalled.",
     "packages_denied": "Administrator permissions were not granted: nothing has been uninstalled.",
     "packages_busy": "An uninstall is already in progress.",
-    "packages_notInstalled": "The application is not installed as a .deb package: there is nothing to uninstall with APT."
+    "packages_notInstalled": "The application is not installed as a .deb package: there is nothing to uninstall with APT.",
+    "engine_risksNotAccepted": "The configuration has risks to the host that have not been accepted."
   },
   "commit": {
     "action": "Create image from this container",
@@ -2487,7 +2499,7 @@
       "user": "SSH user on the server.",
       "keyPath": "The key stays where it is. For example ~/.ssh/id_ed25519.",
       "connectTimeout": "Between 3 and 120 seconds.",
-      "proxyJump": "Format user@host:port. Same as SSH ProxyJump. ssh checks the jump server’s identity against your ~/.ssh/known_hosts: connect once with “ssh -J” first to confirm it."
+      "proxyJump": "Format user@host:port (a single hop). Its identity is confirmed by its fingerprint, like the server's, and it must accept your key or SSH agent: passwords are not supported on the jump host and it never receives the server's password."
     },
     "issues": {
       "nameRequired": "Enter a name.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Invalid context name.",
       "timeoutInvalid": "Must be between 3 and 120 seconds.",
       "proxyJumpInvalid": "Invalid jump host (user@host:port).",
-      "idInvalid": "Invalid server identifier."
+      "idInvalid": "Invalid server identifier.",
+      "proxyJumpChain": "Only one jump host is supported: the app checks its identity and the target's."
     },
     "editor": {
       "addTitle": "Add server",
@@ -2566,7 +2579,10 @@
       "inUserFile": "The previous identity is in {{file}}. The application does not modify that file: if you have checked the new fingerprint, remove the old one yourself with:",
       "mismatch": "The server now presents a different fingerprint from the one shown. Nothing was saved: test the connection again.",
       "review": "Review identity",
-      "reviewTitle": "Identity of {{name}}"
+      "reviewTitle": "Identity of {{name}}",
+      "jumpNotice": "Jump host: {{jump}} (to reach {{host}})",
+      "jumpUnknownBody": "This is the first time you go through the jump host {{jump}}. Check that this fingerprint is its own before trusting it.",
+      "jumpChangedBody": "The jump host {{jump}} presents an identity different from the one confirmed. It may be due to a reinstall or a man-in-the-middle attack. Do not continue until you have checked it."
     },
     "secret": {
       "passphraseTitle": "Passphrase for {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "Could not connect",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Jump host identity not confirmed",
+        "body": "This is the first connection through the jump host {{jump}}. Confirm its fingerprint ({{type}} {{fingerprint}}) before continuing."
+      },
+      "jumpHostKeyChanged": {
+        "title": "The jump host identity has changed",
+        "body": "The jump host {{jump}} presents an identity different from the confirmed one. It may be a man-in-the-middle attack: do not continue until you have checked it."
+      },
+      "jumpAuthFailed": {
+        "title": "The jump host does not accept the key",
+        "body": "{{jump}} accepted no key and not the SSH agent. Only a key or the agent is supported on the jump host; the target server's password is never sent to it."
+      },
+      "jumpFromSshConfig": {
+        "title": "Jump defined in ~/.ssh/config",
+        "body": "Your ~/.ssh/config routes {{host}} through {{via}}. With a password or passphrase the app does not connect that way, because that jump would not have the app's checks. Set the jump host in the profile."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Safer alternative: rootless Docker for that user, entering its socket in the profile.",
       "listContexts": "Check the defined contexts.",
       "checkSocket": "Check the Docker socket path in the profile.",
-      "upgradeDocker": "Upgrade Docker Engine on the server to version 20.10 or later."
+      "upgradeDocker": "Upgrade Docker Engine on the server to version 20.10 or later.",
+      "verifyJumpFingerprint": "Ask the administrator for the jump host's fingerprint or check it on that host.",
+      "jumpUseKey": "Use an SSH key or the SSH agent for the jump host (the profile's key works if the jump host accepts it).",
+      "tryJump": "Test the connection to the jump host without a password:",
+      "jumpInProfile": "Enter the jump host under “Jump host” in the profile (user@host:port)."
     },
     "target": "Server",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "It will be written to this path on the server (it is first checked that the file has not changed):",
       "confirmSave": "Save on the server",
       "confirmCreate": "Create on the server"
+    }
+  },
+  "hostRisk": {
+    "title": "Risks to the host",
+    "intro": "This configuration gives the container access to parts of the host. High and critical risks must be accepted one by one before continuing; the configuration is not changed.",
+    "accept": "I understand the risk and want to continue.",
+    "pending_one": "{{count}} risk still needs to be accepted.",
+    "pending_other": "{{count}} risks still need to be accepted.",
+    "seeBelow": "Review the risks to the host.",
+    "notAccepted": "The configuration has risks to the host that have not been accepted (it may have changed): review them and try again.",
+    "level": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
     }
   }
 }

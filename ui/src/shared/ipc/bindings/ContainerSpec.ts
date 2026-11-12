@@ -24,4 +24,9 @@ network: string, ports: Array<PortSpec>, publishAll: boolean, mounts: Array<Moun
 /**
  * `key` = nombre de host, `value` = IP (o `host-gateway`).
  */
-extraHosts: Array<KeyValue>, };
+extraHosts: Array<KeyValue>, 
+/**
+ * Riesgos altos o críticos que el usuario ha aceptado explícitamente
+ * (`Risk::key`, E1, D-086). No se envía a Docker.
+ */
+acceptedRisks: Array<string>, };

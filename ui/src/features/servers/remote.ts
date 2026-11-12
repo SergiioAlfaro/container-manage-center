@@ -115,6 +115,31 @@ export function explainRemote(p: RemoteProblem, c: ServerConfig): RemoteExplanat
           p.inUserFile ? { key: "removeUserKey", command: `ssh-keygen -R '${hostPattern(c)}'`, where: "local" } : { key: "replaceInApp" },
         ],
       };
+    // E1 (D-087): el servidor intermedio se verifica como el destino.
+    case "jumpHostKeyUnknown":
+      return {
+        problem: "jumpHostKeyUnknown",
+        params: { jump: p.jump, fingerprint: p.presented?.fingerprint ?? "", type: p.presented?.keyType ?? "" },
+        check: "identity",
+        steps: [{ key: "verifyJumpFingerprint", command: "ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub", where: "server" }, { key: "trustIfMatches" }],
+      };
+    case "jumpHostKeyChanged":
+      return {
+        problem: "jumpHostKeyChanged",
+        params: { jump: p.jump, fingerprint: p.presented?.fingerprint ?? "", type: p.presented?.keyType ?? "", file: p.file ?? "" },
+        check: "identity",
+        danger: true,
+        steps: [{ key: "doNotConnect" }, { key: "askAdmin" }, { key: "verifyJumpFingerprint", command: "ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub", where: "server" }, p.inUserFile ? { key: "removeUserKey", command: `ssh-keygen -R '${p.jump.replace(/^.*@/, "")}'`, where: "local" } : { key: "replaceInApp" }],
+      };
+    case "jumpAuthFailed":
+      return {
+        problem: "jumpAuthFailed",
+        params: { jump: p.jump, methods: p.methods ?? "" },
+        check: "auth",
+        steps: [{ key: "jumpUseKey" }, { key: "agentKeys", command: "ssh-add -l", where: "local" }, { key: "tryJump", command: `ssh -o BatchMode=yes ${p.jump.includes(":") && !p.jump.includes("[") ? `-p ${p.jump.split(":").pop()} ${p.jump.replace(/:\d+$/, "")}` : p.jump} true`, where: "local" }, retry],
+      };
+    case "jumpFromSshConfig":
+      return { problem: "jumpFromSshConfig", params: { via: p.via, host }, check: "reach", steps: [{ key: "jumpInProfile" }, { key: "editProfile" }] };
     case "authFailed":
       return {
         problem: c.auth === "password" ? "authFailedPassword" : c.auth === "agent" ? "authFailedAgent" : "authFailedKey",

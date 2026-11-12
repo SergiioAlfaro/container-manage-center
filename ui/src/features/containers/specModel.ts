@@ -1,4 +1,5 @@
 /** Utilidades del asistente: especificación vacía, problemas por pestaña y secretos. */
+import { isSecretEntry, isSecretName } from "@/shared/secrets";
 import type { ContainerSpec } from "@/shared/ipc/bindings/ContainerSpec";
 import type { SpecIssue } from "@/shared/ipc/bindings/SpecIssue";
 
@@ -30,6 +31,7 @@ export function emptySpec(): ContainerSpec {
     capAdd: [],
     capDrop: [],
     extraHosts: [],
+    acceptedRisks: [],
   };
 }
 
@@ -55,11 +57,12 @@ export function issuesFor(issues: SpecIssue[], field: string, exact = true): Spe
   return issues.filter((i) => (exact ? i.field === field : i.field === field || i.field.startsWith(`${field}.`)));
 }
 
-const SECRET = /(PASSWORD|PASSWD|SECRET|TOKEN|KEY|CREDENTIAL|PRIVATE)/i;
-/** Variables cuyo valor se oculta por defecto en la interfaz (no en Docker). */
+/** Variables cuyo valor se oculta por defecto en la interfaz (no en Docker).
+ *  Reglas comunes en `@/shared/secrets` (E1, D-085). */
 export function isSecretKey(key: string): boolean {
-  return SECRET.test(key);
+  return isSecretName(key);
 }
+export { isSecretEntry };
 
 /** Bytes → número + unidad para los campos de memoria. */
 export type MemUnit = "m" | "g";

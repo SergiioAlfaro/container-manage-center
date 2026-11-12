@@ -324,6 +324,22 @@ impl Engine {
             issues.extend(self.missing_bind_issues(&new_binds).await?);
         }
         let changed = |f: &str| changes.iter().any(|x| x.field == f);
+        // Riesgos para el equipo de los montajes que añade el cambio (D-086).
+        // Lo que el contenedor ya tenía no se vuelve a pedir.
+        let host_risks: Vec<crate::risk::Risk> = desired
+            .mounts
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| m.kind == crate::spec::MountKind::Bind && !current.mounts.contains(m))
+            .filter_map(|(i, m)| {
+                crate::risk::mount_risk(
+                    m.source.trim(),
+                    m.read_only,
+                    !remote,
+                    &format!("mounts.{i}.source"),
+                )
+            })
+            .collect();
 
         if changed("name")
             && ctx
@@ -488,6 +504,7 @@ impl Engine {
             issues,
             blockers,
             risks,
+            host_risks,
             notices,
             backup_name: backup,
             image_ref,
@@ -532,6 +549,13 @@ impl Engine {
             return Err(EngineError::InvalidSpec {
                 issues: plan.issues,
             });
+        }
+        let missing: Vec<_> = crate::risk::unaccepted(&plan.host_risks, &opts.accepted_risks)
+            .into_iter()
+            .cloned()
+            .collect();
+        if !missing.is_empty() {
+            return Err(EngineError::RisksNotAccepted { risks: missing });
         }
         if !plan.needs_recreate {
             return Ok(self.apply_direct(&ctx.c, &plan, &current, &desired).await);

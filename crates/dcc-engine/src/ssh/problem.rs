@@ -51,6 +51,33 @@ pub enum RemoteProblem {
         /// Está en `~/.ssh/known_hosts` (la aplicación no lo modifica).
         in_user_file: bool,
     },
+    /// Identidad del **servidor intermedio** desconocida (E1, D-087): se
+    /// confirma su huella como la del destino.
+    JumpHostKeyUnknown {
+        /// `usuario@host:puerto` del salto, tal como está en el perfil.
+        jump: String,
+        presented: Option<HostKeyInfo>,
+    },
+    /// La identidad del servidor intermedio cambió.
+    JumpHostKeyChanged {
+        jump: String,
+        presented: Option<HostKeyInfo>,
+        file: Option<String>,
+        in_user_file: bool,
+    },
+    /// El servidor intermedio no acepta la clave o el agente. La autenticación
+    /// por contraseña en el salto no se admite (D-087).
+    JumpAuthFailed {
+        jump: String,
+        methods: Option<String>,
+    },
+    /// `~/.ssh/config` hace pasar este servidor por otro (`ProxyJump` o
+    /// `ProxyCommand`) y el perfil usa contraseña o frase de paso: no se
+    /// conecta, porque ese salto no tendría las reglas de la aplicación y
+    /// podría pedir el secreto (D-087). Hay que indicarlo en el perfil.
+    JumpFromSshConfig {
+        via: String,
+    },
     /// Usuario, clave, frase o contraseña no aceptados.
     AuthFailed {
         methods: Option<String>,
@@ -102,6 +129,10 @@ impl RemoteProblem {
                 | RemoteProblem::InvalidProfile { .. }
                 | RemoteProblem::HostKeyUnknown { .. }
                 | RemoteProblem::HostKeyChanged { .. }
+                | RemoteProblem::JumpHostKeyUnknown { .. }
+                | RemoteProblem::JumpHostKeyChanged { .. }
+                | RemoteProblem::JumpAuthFailed { .. }
+                | RemoteProblem::JumpFromSshConfig { .. }
                 | RemoteProblem::AuthFailed { .. }
                 | RemoteProblem::SecretRequired { .. }
                 | RemoteProblem::KeyUnreadable { .. }

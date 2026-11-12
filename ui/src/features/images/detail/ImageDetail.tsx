@@ -5,7 +5,7 @@ import { ArrowLeft, Box, Download, Eye, EyeOff, RefreshCw, Tag, Trash2 } from "l
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
-import { isSecretKey } from "@/features/containers/specModel";
+import { isSecretEntry } from "@/features/containers/specModel";
 import { joinArgs } from "@/features/containers/shellwords";
 import { formatBytes, formatDate, shortId } from "@/shared/format";
 import type { ImageDetails } from "@/shared/ipc/bindings/ImageDetails";
@@ -62,7 +62,7 @@ const none = <span className="text-ink-3">—</span>;
 function Summary({ d }: { d: ImageDetails }) {
   const { t, i18n } = useTranslation();
   const [reveal, setReveal] = useState(false);
-  const secrets = d.env.filter((e) => isSecretKey(e.key)).length;
+  const secrets = d.env.filter((e) => isSecretEntry(e.key, e.value)).length;
   const labels = Object.entries(d.labels).sort(([a], [b]) => a.localeCompare(b));
   // Sin fecha, Docker envía la fecha cero de Go (0001-01-01T00:00:00Z).
   const created = d.created && !d.created.startsWith("0001-01-01") ? new Date(d.created) : null;
@@ -109,7 +109,7 @@ function Summary({ d }: { d: ImageDetails }) {
           <ul className="selectable space-y-0.5 font-mono text-[12px] [overflow-wrap:anywhere]">
             {d.env.map((e, i) => (
               <li key={`${e.key}-${i}`}>
-                <span className="text-ink-2">{e.key}</span>={isSecretKey(e.key) && !reveal ? <span className="text-ink-3">••••••••</span> : e.value}
+                <span className="text-ink-2">{e.key}</span>={isSecretEntry(e.key, e.value) && !reveal ? <span className="text-ink-3">••••••••</span> : e.value}
               </li>
             ))}
           </ul>

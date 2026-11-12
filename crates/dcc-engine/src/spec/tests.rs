@@ -74,6 +74,7 @@ fn full() -> ContainerSpec {
         cap_add: vec!["NET_ADMIN".into()],
         cap_drop: vec!["ALL".into()],
         extra_hosts: vec![KeyValue::new("api.local", "10.0.0.5")],
+        accepted_risks: vec![],
     }
 }
 
@@ -82,7 +83,8 @@ fn full() -> ContainerSpec {
 #[test]
 fn minimal_spec_is_valid() {
     assert!(codes(&base()).is_empty());
-    assert!(codes(&full()).is_empty(), "{:?}", codes(&full()));
+    // NET_ADMIN es una capacidad peligrosa: aviso, no error (D-086).
+    assert_eq!(codes(&full()), vec!["capAdd:risk.capability"]);
 }
 
 #[test]
@@ -184,7 +186,7 @@ fn mounts_are_validated() {
         "mounts.4.target:mount.targetInvalid",
         "mounts.5.target:mount.targetInvalid",
         "mounts.7.target:mount.targetDuplicate",
-        "mounts.8.source:bind.sensitive",
+        "mounts.8.source:risk.runtimeSocket",
     ] {
         assert!(c.contains(&want.to_string()), "falta {want} en {c:?}");
     }
@@ -194,12 +196,33 @@ fn mounts_are_validated() {
         ..base()
     };
     assert!(s.validate(false).is_empty());
-    // Montaje sensible en solo lectura: sin aviso.
+    // E1 (D-086): /etc en solo lectura sigue exponiendo credenciales (aviso),
+    // y el socket de Docker en solo lectura sigue dando control total.
     let s = ContainerSpec {
-        mounts: vec![m(MountKind::Bind, "/etc", "/host-etc", true)],
+        mounts: vec![
+            m(MountKind::Bind, "/etc", "/host-etc", true),
+            m(
+                MountKind::Bind,
+                "/var/run/docker.sock",
+                "/var/run/docker.sock",
+                true,
+            ),
+            m(MountKind::Bind, "/etc/nginx", "/etc/nginx", true),
+        ],
         ..base()
     };
-    assert!(codes(&s).is_empty());
+    let c: Vec<String> = s
+        .validate(false)
+        .into_iter()
+        .map(|i| format!("{}:{}", i.field, i.code))
+        .collect();
+    assert_eq!(
+        c,
+        vec![
+            "mounts.0.source:risk.credentials",
+            "mounts.1.source:risk.runtimeSocket"
+        ]
+    );
 }
 
 #[test]
@@ -230,7 +253,8 @@ fn resources_restart_and_security_are_validated() {
         "memoryBytes:memory.min",
         "memoryReservationBytes:memory.reservationAboveLimit",
         "autoRemove:autoRemove.restart",
-        "privileged:privileged",
+        "privileged:risk.privileged",
+        "capAdd:risk.capability",
         "capAdd:cap.invalid",
         "extraHosts.0.key:host.invalid",
         "extraHosts.0.value:ip.invalid",
@@ -243,7 +267,7 @@ fn resources_restart_and_security_are_validated() {
     let sev = s.validate(true);
     assert!(sev
         .iter()
-        .any(|i| i.code == "privileged" && i.severity == Severity::Warning));
+        .any(|i| i.code == "risk.privileged" && i.severity == Severity::Warning));
     assert!(sev
         .iter()
         .any(|i| i.code == "env.duplicate" && i.severity == Severity::Warning));
@@ -544,4 +568,99 @@ fn redacted_hides_secret_values_only() {
     // La especificación original no cambia.
     assert_eq!(spec.env[0].value, "s3creto");
     assert!(is_secret_key("my_private_key") && !is_secret_key("PATH"));
+}
+
+/// E1 (D-086, PROJECT_EVOLUTION_PLAN §9.5): configuraciones legítimas
+/// habituales sin riesgos altos ni críticos (sin falsos positivos), y las
+/// peligrosas equivalentes sí los tienen.
+#[test]
+fn legitimate_configurations_have_no_host_risks() {
+    let bind = |s: &str, t: &str, ro: bool| MountSpec {
+        kind: MountKind::Bind,
+        source: s.into(),
+        target: t.into(),
+        read_only: ro,
+    };
+    let vol = |s: &str, t: &str| MountSpec {
+        kind: MountKind::Volume,
+        source: s.into(),
+        target: t.into(),
+        read_only: false,
+    };
+    let legit = [
+        // nginx con su contenido en solo lectura.
+        ContainerSpec {
+            mounts: vec![bind("/home/ana/web/html", "/usr/share/nginx/html", true)],
+            ports: vec![PortSpec {
+                host_ip: "127.0.0.1".into(),
+                host_port: Some(8080),
+                container_port: 80,
+                protocol: Protocol::Tcp,
+            }],
+            ..base()
+        },
+        // PostgreSQL con un volumen con nombre.
+        ContainerSpec {
+            image: "postgres:16".into(),
+            mounts: vec![vol("pgdata", "/var/lib/postgresql/data")],
+            ..base()
+        },
+        // Una aplicación con la carpeta del proyecto con escritura.
+        ContainerSpec {
+            mounts: vec![
+                bind("/home/ana/proyecto", "/app", false),
+                bind("/etc/localtime", "/etc/localtime", true),
+            ],
+            ..base()
+        },
+        // Mínimas capacidades.
+        ContainerSpec {
+            cap_drop: vec!["ALL".into()],
+            cap_add: vec!["NET_BIND_SERVICE".into()],
+            read_only_rootfs: true,
+            ..base()
+        },
+        // Red propia.
+        ContainerSpec {
+            network: "backend".into(),
+            ..base()
+        },
+    ];
+    for s in &legit {
+        let risks = s.risks(false);
+        assert!(
+            risks.iter().all(|r| !r.level.needs_acceptance()),
+            "falso positivo: {risks:?}"
+        );
+        assert!(risks.is_empty(), "sin ningún aviso: {risks:?}");
+    }
+    let dangerous = [
+        ContainerSpec {
+            mounts: vec![bind("/var/run/docker.sock", "/var/run/docker.sock", true)],
+            ..base()
+        },
+        ContainerSpec {
+            privileged: true,
+            ..base()
+        },
+        ContainerSpec {
+            cap_drop: vec!["ALL".into()],
+            cap_add: vec!["SYS_ADMIN".into()],
+            ..base()
+        },
+        ContainerSpec {
+            network: "host".into(),
+            ..base()
+        },
+        ContainerSpec {
+            mounts: vec![bind("/home/ana/.ssh", "/root/.ssh", true)],
+            ..base()
+        },
+    ];
+    for s in &dangerous {
+        assert!(
+            s.risks(false).iter().any(|r| r.level.needs_acceptance()),
+            "debería exigir aceptación: {s:?}"
+        );
+    }
 }

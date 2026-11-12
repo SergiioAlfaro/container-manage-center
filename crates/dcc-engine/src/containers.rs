@@ -417,6 +417,16 @@ impl Engine {
         if crate::spec::ContainerSpec::has_errors(&issues) {
             return Err(EngineError::InvalidSpec { issues });
         }
+        // Los riesgos altos o críticos exigen aceptación explícita; se
+        // recalculan aquí para que la interfaz no pueda saltarse el aviso (D-086).
+        let risks = spec.risks(self.ssh_session().is_none());
+        let missing: Vec<_> = crate::risk::unaccepted(&risks, &spec.accepted_risks)
+            .into_iter()
+            .cloned()
+            .collect();
+        if !missing.is_empty() {
+            return Err(EngineError::RisksNotAccepted { risks: missing });
+        }
         let (name, body) = spec.to_create_body();
         // Lo que queda en el registro de actividad no incluye los secretos.
         let (shown, _) = spec.redacted();

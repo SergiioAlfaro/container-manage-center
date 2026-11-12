@@ -1070,6 +1070,17 @@
       "tagInvalid": "Etiqueta inválida: letras, números, «_», «.» e «-», até 128 carateres, sem começar por «.» nem «-».",
       "tooLong": "No máximo {{max}} carateres.",
       "controlChars": "Não pode conter quebras de linha nem outros carateres de controlo."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}}: o socket do motor de contentores dá controlo total do Docker e, através dele, do computador. Montá-lo só de leitura não o impede.",
+      "hostRoot": "Montar a raiz do sistema (/) dá ao contentor acesso a todos os ficheiros do computador.",
+      "credentials": "{{path}} contém credenciais do computador ou dos seus utilizadores (palavras-passe, chaves SSH, tokens), mesmo só de leitura.",
+      "systemDir": "{{path}} é uma pasta do sistema: o contentor pode lê-la e, com escrita, alterar o funcionamento do computador.",
+      "systemBinaries": "{{path}} com escrita permite ao contentor substituir programas ou bibliotecas do computador.",
+      "capability": "Capacidade {{cap}}: alarga o que o contentor pode fazer com o núcleo do computador.",
+      "privileged": "Modo privilegiado: o contentor tem acesso quase completo ao computador (dispositivos, núcleo e todas as capacidades).",
+      "networkHost": "Rede do computador (host): o contentor vê todos os serviços do computador, incluindo os que só escutam em 127.0.0.1.",
+      "hostNamespace": "Partilha o espaço {{namespace}} com o computador."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "A autenticação foi cancelada: não foi desinstalado nada.",
     "packages_denied": "Não foram concedidas permissões de administrador: não foi desinstalado nada.",
     "packages_busy": "Já há uma desinstalação em curso.",
-    "packages_notInstalled": "A aplicação não está instalada como pacote .deb: não há nada para desinstalar com o APT."
+    "packages_notInstalled": "A aplicação não está instalada como pacote .deb: não há nada para desinstalar com o APT.",
+    "engine_risksNotAccepted": "A configuração tem riscos para o computador por aceitar."
   },
   "commit": {
     "action": "Criar imagem a partir deste contentor",
@@ -2487,7 +2499,7 @@
       "user": "Utilizador SSH no servidor.",
       "keyPath": "A chave fica onde está. Por exemplo ~/.ssh/id_ed25519.",
       "connectTimeout": "Entre 3 e 120 segundos.",
-      "proxyJump": "Formato utilizador@host:porta. Equivale a ProxyJump do SSH. A identidade do servidor intermédio é verificada pelo ssh com o seu ~/.ssh/known_hosts: ligue-se antes uma vez com «ssh -J» para a confirmar."
+      "proxyJump": "Formato utilizador@host:porta (um só salto). A sua identidade confirma-se pela impressão digital, como a do servidor, e tem de aceitar a sua chave ou o seu agente SSH: não é suportada palavra-passe no salto e nunca recebe a do servidor."
     },
     "issues": {
       "nameRequired": "Escreva um nome.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Nome de contexto inválido.",
       "timeoutInvalid": "Deve estar entre 3 e 120 segundos.",
       "proxyJumpInvalid": "Servidor intermédio inválido (utilizador@anfitrião:porta).",
-      "idInvalid": "Identificador de servidor inválido."
+      "idInvalid": "Identificador de servidor inválido.",
+      "proxyJumpChain": "Só é suportado um servidor intermédio: a aplicação verifica a sua identidade e a do destino."
     },
     "editor": {
       "addTitle": "Adicionar servidor",
@@ -2566,7 +2579,10 @@
       "inUserFile": "A identidade anterior está em {{file}}. A aplicação não modifica esse ficheiro: se verificou a nova impressão digital, remova a anterior com:",
       "mismatch": "O servidor apresenta agora uma impressão digital diferente da mostrada. Nada foi guardado: teste novamente a ligação.",
       "review": "Rever identidade",
-      "reviewTitle": "Identidade de {{name}}"
+      "reviewTitle": "Identidade de {{name}}",
+      "jumpNotice": "Servidor intermédio: {{jump}} (para chegar a {{host}})",
+      "jumpUnknownBody": "É a primeira vez que passa pelo servidor intermédio {{jump}}. Verifique que esta impressão digital é a dele antes de confiar.",
+      "jumpChangedBody": "O servidor intermédio {{jump}} apresenta uma identidade diferente da confirmada. Pode dever-se a uma reinstalação ou a um ataque de intermediário. Não continue até a verificar."
     },
     "secret": {
       "passphraseTitle": "Frase-passe para {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "Não foi possível ligar",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Identidade do servidor intermédio por confirmar",
+        "body": "É a primeira ligação através do servidor intermédio {{jump}}. Confirme a sua impressão digital ({{type}} {{fingerprint}}) antes de continuar."
+      },
+      "jumpHostKeyChanged": {
+        "title": "A identidade do servidor intermédio mudou",
+        "body": "O servidor intermédio {{jump}} apresenta uma identidade diferente da confirmada. Pode ser um ataque de intermediário: não continue até a verificar."
+      },
+      "jumpAuthFailed": {
+        "title": "O servidor intermédio não aceita a chave",
+        "body": "{{jump}} não aceitou nenhuma chave nem o agente SSH. No servidor intermédio só são suportados chave ou agente; a palavra-passe do servidor de destino nunca lhe é enviada."
+      },
+      "jumpFromSshConfig": {
+        "title": "Salto definido em ~/.ssh/config",
+        "body": "O seu ~/.ssh/config faz passar {{host}} por {{via}}. Com palavra-passe ou frase-passe a aplicação não se liga assim, porque esse salto não teria as suas verificações. Indique o servidor intermédio no perfil."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Alternativa mais segura: Docker rootless para esse utilizador, indicando o seu socket no perfil.",
       "listContexts": "Verifique os contextos definidos.",
       "checkSocket": "Verifique o caminho do socket do Docker no perfil.",
-      "upgradeDocker": "Atualize o Docker Engine no servidor para a versão 20.10 ou posterior."
+      "upgradeDocker": "Atualize o Docker Engine no servidor para a versão 20.10 ou posterior.",
+      "verifyJumpFingerprint": "Peça ao administrador a impressão digital do servidor intermédio ou verifique-a nele.",
+      "jumpUseKey": "Use uma chave SSH ou o agente SSH para o servidor intermédio (a chave do perfil serve se o intermédio a aceitar).",
+      "tryJump": "Teste a ligação ao servidor intermédio sem palavra-passe:",
+      "jumpInProfile": "Escreva o servidor intermédio em «Servidor intermédio» do perfil (utilizador@host:porta)."
     },
     "target": "Servidor",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "Será escrito neste caminho do servidor (primeiro verifica-se que o ficheiro não mudou):",
       "confirmSave": "Guardar no servidor",
       "confirmCreate": "Criar no servidor"
+    }
+  },
+  "hostRisk": {
+    "title": "Riscos para o computador",
+    "intro": "Esta configuração dá ao contentor acesso a partes do computador. Os riscos altos e críticos têm de ser aceites um a um antes de continuar; a configuração não é alterada.",
+    "accept": "Compreendo o risco e quero continuar.",
+    "pending_one": "Falta aceitar {{count}} risco.",
+    "pending_other": "Faltam aceitar {{count}} riscos.",
+    "seeBelow": "Reveja os riscos para o computador.",
+    "notAccepted": "A configuração tem riscos para o computador por aceitar (pode ter mudado): reveja-os e tente novamente.",
+    "level": {
+      "critical": "Crítico",
+      "high": "Alto",
+      "medium": "Médio",
+      "low": "Baixo"
     }
   }
 }

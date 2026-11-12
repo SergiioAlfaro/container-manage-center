@@ -1,5 +1,16 @@
 # Cambios
 
+## 1.1.0 — 2026-11-12 (evolución, Etapa 1: correcciones de seguridad prioritarias)
+Hallazgos de `docs/security/SECURITY_AUDIT.md` corregidos y comprobados con pruebas.
+- **Riesgos para el equipo** (DCC-SEC-01 y DCC-SEC-03, D-086): reglas únicas para crear, editar, desplegar con Compose y la pantalla de directorios vinculados.
+  - El **socket de Docker** (o de containerd o Podman) se marca como crítico **también en solo lectura**; antes no avisaba.
+  - Se detectan rutas sin normalizar (`//etc`), enlaces simbólicos (con Docker local), carpetas con credenciales (`/etc`, `/root`, `/home`, `~/.ssh`, `~/.docker`…) y del sistema.
+  - Capacidades peligrosas (`ALL`, `SYS_ADMIN`, `SYS_PTRACE`, `NET_ADMIN`, `DAC_OVERRIDE`, `NET_RAW`…), modo privilegiado y red del equipo.
+  - Los riesgos altos y críticos se aceptan uno a uno; el motor lo comprueba otra vez y rechaza la operación si falta alguno. Sin avisos en las configuraciones habituales legítimas.
+- **Secretos** (DCC-SEC-05, D-085): ocultación centralizada en el panel de actividad, el historial, la orden equivalente, las salidas, los errores y los registros de la aplicación. Ahora también `MYSQL_PWD`, `DB_PASS`, `PGPASS`, `REDIS_AUTH`, `SMTP_PASS`, la contraseña de cualquier URL o DSN, las claves privadas PEM, `Authorization` y `--password`/`--token`. Los registros de los contenedores y las terminales no se alteran.
+- **Servidor intermedio** (DCC-SEC-02, D-087): el salto tiene las mismas reglas que el servidor. Su huella se confirma y se guarda en la lista de la aplicación, solo admite clave o agente y nunca recibe la contraseña del servidor (antes, con `ssh -J`, podía recibirla). Un solo salto.
+- **Verificación**: `scripts/verify-evolution-1.1.0.sh`, con toda la regresión de las fases 1–10 y las pruebas de la Etapa 1. El laboratorio SSH de desarrollo permite usar el servidor A como intermedio.
+
 ## 1.0.0 — 2026-11-12 (Fase 10: pruebas finales y distribución)
 - **Color principal: solo morado** (D-082). Se elimina el verde azulado como color principal en el sistema central de temas, en los temas claro y oscuro. Configuración ya no tiene selector de color. Si tenías el verde azulado guardado, pasa a morado conservando el resto de tus preferencias. Los indicadores de estado (verde para lo que funciona, ámbar para avisos, rojo para errores) no cambian.
 - **Logotipo e iconos en morado**, con la misma forma.

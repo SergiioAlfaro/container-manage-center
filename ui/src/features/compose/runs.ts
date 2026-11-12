@@ -44,7 +44,7 @@ export function runKey(server: string, project: string): string {
 interface RunsState {
   /** Por `runKey(servidor, proyecto)`. */
   runs: Record<string, Run>;
-  start: (server: string, project: ProjectRef, action: ComposeAction, confirmed: boolean, onEnd?: (r: Run) => void) => Promise<void>;
+  start: (server: string, project: ProjectRef, action: ComposeAction, confirmed: boolean, onEnd?: (r: Run) => void, acceptedRisks?: string[]) => Promise<void>;
   stop: (key: string) => void;
   dismiss: (key: string) => void;
 }
@@ -52,7 +52,7 @@ interface RunsState {
 /** Última operación de cada proyecto (sigue viva aunque se cambie de pantalla). */
 export const useComposeRuns = create<RunsState>((set, get) => ({
   runs: {},
-  start: async (server, project, action, confirmed, onEnd) => {
+  start: async (server, project, action, confirmed, onEnd, acceptedRisks = []) => {
     const name = runKey(server, project.name);
     if (get().runs[name]?.status === "running") return;
     const docker = dockerApi(server);
@@ -80,7 +80,7 @@ export const useComposeRuns = create<RunsState>((set, get) => ({
           const done = get().runs[name];
           if (done && onEnd) onEnd(done);
         }
-      });
+      }, acceptedRisks);
       patch((r) => (r.status === "running" ? { stream: id } : {}));
     } catch (e) {
       patch({ status: "error", error: (e as { message: string }).message, stream: null });
@@ -105,13 +105,20 @@ export function useRunCompose() {
   const qc = useQueryClient();
   const server = useServerId();
   const start = useComposeRuns((s) => s.start);
-  return (project: ProjectRef, action: ComposeAction, confirmed = false) =>
-    start(server, project, action, confirmed, () => {
-      for (const k of [keys.composeProjects, keys.containers, keys.overview, keys.volumes, keys.networks, keys.images, keys.binds]) {
-        void qc.invalidateQueries({ queryKey: k });
-      }
-      void qc.invalidateQueries({ queryKey: ["composeConfig", project.name] });
-    });
+  return (project: ProjectRef, action: ComposeAction, confirmed = false, acceptedRisks: string[] = []) =>
+    start(
+      server,
+      project,
+      action,
+      confirmed,
+      () => {
+        for (const k of [keys.composeProjects, keys.containers, keys.overview, keys.volumes, keys.networks, keys.images, keys.binds]) {
+          void qc.invalidateQueries({ queryKey: k });
+        }
+        void qc.invalidateQueries({ queryKey: ["composeConfig", project.name] });
+      },
+      acceptedRisks,
+    );
 }
 
 /** Operación de un proyecto en el servidor de este ámbito. */

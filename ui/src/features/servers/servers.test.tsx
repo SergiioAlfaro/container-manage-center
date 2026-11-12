@@ -166,8 +166,28 @@ describe("Asistente «Añadir servidor»", () => {
     expect(within(review).getByTestId("fingerprint")).toHaveTextContent(presented.fingerprint);
     expect(api.serverTrust).not.toHaveBeenCalled();
     await user.click(within(review).getByRole("button", { name: "La huella coincide: confiar" }));
-    expect(api.serverTrust).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: PROD }), presented, false);
+    expect(api.serverTrust).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: PROD }), presented, false, false);
     await waitFor(() => expect(api.serverTest).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("Servidor intermedio (E1, D-087)", () => {
+  it("la huella del intermedio se confirma aparte y se guarda como la del intermedio", async () => {
+    setServers([localServer()]);
+    const presented = { keyType: "ssh-ed25519", fingerprint: "SHA256:Salto0123456789abcdefghijklmnopqrstuvwxyzABC" };
+    api.serverTest.mockResolvedValueOnce({ ...testReportOk(), problem: { kind: "jumpHostKeyUnknown", jump: "ops@bastion:2222", presented }, engine: null, steps: CHECK_IDS.map((id, i) => ({ id, status: i < 2 ? "skipped" : i === 2 ? "failed" : "notRun", detail: null })) });
+    useServersNav.setState({ page: { kind: "edit", id: PROD } });
+    setServers([localServer(), remoteServer({ id: PROD, name: "Producción", proxyJump: "ops@bastion:2222" })]);
+    renderWithQuery(<ServersView />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Probar conexión/ }));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Probar conexión" }).at(-1)).toBeEnabled());
+    await user.click(screen.getAllByRole("button", { name: "Probar conexión" }).at(-1)!);
+    const review = await screen.findByTestId("identity-review");
+    expect(within(review).getByTestId("identity-jump")).toHaveTextContent("Servidor intermedio: ops@bastion:2222");
+    expect(within(review).getByTestId("fingerprint")).toHaveTextContent(presented.fingerprint);
+    await user.click(within(review).getByRole("button", { name: "La huella coincide: confiar" }));
+    expect(api.serverTrust).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: PROD }), presented, false, true);
   });
 });
 
@@ -183,7 +203,7 @@ describe("Identidad cambiada", () => {
     expect(replace).toBeDisabled();
     await userEvent.click(within(review).getByRole("checkbox"));
     await userEvent.click(replace);
-    expect(api.serverTrust).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: PROD }), presented, true);
+    expect(api.serverTrust).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: PROD }), presented, true, false);
   });
 
   it("si la clave anterior está en ~/.ssh/known_hosts no la toca: muestra la orden", () => {

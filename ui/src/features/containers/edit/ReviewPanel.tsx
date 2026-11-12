@@ -20,6 +20,7 @@ import { formatBytes } from "@/shared/format";
 import { Button, CopyButton, cx } from "@/shared/ui/controls";
 import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { IssueList } from "../create/fields";
+import { HostRisks, allAccepted } from "@/shared/ui/HostRisks";
 import { useContainersNav } from "../store";
 import { OutcomeBanner, editKey } from "./shared";
 
@@ -91,7 +92,9 @@ export function ReviewPanel({
   const p = plan.data;
   const errors = p.issues.filter((i) => i.severity === "error");
   const risksOk = p.risks.every((r) => accepted.includes(r.code));
-  const canApply = errors.length === 0 && p.changes.length > 0 && (!p.needsRecreate || (p.blockers.length === 0 && risksOk && confirmed));
+  // Riesgos para el equipo que añade el cambio (E1, D-086).
+  const hostOk = allAccepted(p.hostRisks, accepted);
+  const canApply = errors.length === 0 && p.changes.length > 0 && hostOk && (!p.needsRecreate || (p.blockers.length === 0 && risksOk && confirmed));
   const macChoice = p.notices.some((n) => n.code === "macChoice");
 
   return (
@@ -111,6 +114,8 @@ export function ReviewPanel({
       )}
 
       <Comparison plan={p} />
+
+      <HostRisks risks={p.hostRisks} accepted={accepted} onChange={setAccepted} />
 
       {p.needsRecreate && (
         <section className="space-y-3 rounded-xl border border-line p-4" aria-labelledby="recreate-title">

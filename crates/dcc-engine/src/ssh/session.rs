@@ -20,7 +20,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, ReadBuf};
 use tokio::process::{Child, ChildStdin, ChildStdout, Command};
 
 use super::args::{channel_args, control_args, master_args};
-use super::askpass::{private_dir, random_hex, AskpassServer, SOCKET_ENV};
+use super::askpass::{private_dir, random_hex, AskpassServer, PromptTarget, SOCKET_ENV};
 use super::hostkey::{run, Run};
 use super::problem::{classify_ssh, RemoteProblem};
 use super::profile::{expand_home, validate, SshProfile};
@@ -78,12 +78,31 @@ impl std::fmt::Debug for SshSession {
     }
 }
 
+/// Nombre efectivo del destino según `ssh -G` (`HostName` de `~/.ssh/config`):
+/// es el que OpenSSH pone en la pregunta de la contraseña.
+async fn effective_hostname(paths: &SshPaths, p: &SshProfile) -> Option<String> {
+    let r = super::hostkey::run(
+        &paths.ssh,
+        &super::args::effective_config_args(p),
+        std::time::Duration::from_secs(5),
+    )
+    .await
+    .ok()?;
+    r.stdout
+        .lines()
+        .find_map(|l| l.strip_prefix("hostname "))
+        .map(|h| h.trim().to_owned())
+}
+
 /// Variables de entorno de un `ssh`: askpass si hace falta y nada heredado que
 /// pueda alterar la autenticación.
 fn ssh_env(c: &mut Command, paths: &SshPaths, askpass: Option<&Path>) {
     c.env_remove("SSH_ASKPASS")
         .env_remove("SSH_ASKPASS_REQUIRE")
-        .env_remove(SOCKET_ENV);
+        .env_remove(SOCKET_ENV)
+        // OpenSSH ejecuta `ProxyCommand` con `$SHELL -c`: el del servidor
+        // intermedio está entrecomillado para un shell POSIX (D-087).
+        .env("SHELL", "/bin/sh");
     if let Some(sock) = askpass {
         c.env("SSH_ASKPASS", &paths.askpass)
             .env("SSH_ASKPASS_REQUIRE", "force")
@@ -119,8 +138,20 @@ impl SshSession {
                     .secrets
                     .secret(&p.id, kind)
                     .ok_or(RemoteProblem::SecretRequired { secret: kind })?;
+                // Solo se responde a las preguntas de este destino (D-087).
+                let mut hosts = vec![p.host.clone()];
+                if let Some(h) = effective_hostname(&paths, p).await {
+                    if !hosts.contains(&h) {
+                        hosts.push(h);
+                    }
+                }
+                let target = PromptTarget {
+                    user: p.user.clone(),
+                    hosts,
+                    key_path: p.auth.key_path().map(expand_home),
+                };
                 Some(
-                    AskpassServer::start(&paths.runtime_dir, kind, secret, ASKPASS_ANSWERS)
+                    AskpassServer::start(&paths.runtime_dir, kind, secret, ASKPASS_ANSWERS, target)
                         .await
                         .map_err(|e| RemoteProblem::Other {
                             message: e.to_string(),

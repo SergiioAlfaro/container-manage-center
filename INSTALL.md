@@ -9,8 +9,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.0.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.0.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `docker-control-center_1.1.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.1.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -39,7 +39,7 @@ la configuración de SSH.
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.0.0_amd64.deb
+sudo apt install ./docker-control-center_1.1.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -184,7 +184,7 @@ Desde **Servidores** se administran servidores Docker remotos por **SSH**, a la 
 | Permisos | El usuario SSH puede usar el socket de Docker (grupo `docker`, Docker rootless o un socket propio indicado en el perfil). |
 | Docker Compose | Opcional: `docker compose` (plugin) o `docker-compose` v2 en el servidor. |
 | Utilidades | `stat`, `base64`, `find`, `dd`, `mv`, `chmod` (coreutils y findutils de GNU), para los archivos Compose y las carpetas vinculadas. |
-| Servidor intermedio (opcional) | Con `ProxyJump`, su huella debe estar ya en tu `~/.ssh/known_hosts` (conéctate una vez con `ssh -J`): `ssh` la comprueba con tu configuración y rechaza una desconocida o cambiada. Debe permitir el reenvío (`AllowTcpForwarding`). |
+| Servidor intermedio (opcional) | Un solo salto (`usuario@host:puerto`). Su huella se confirma en la aplicación como la del servidor (1.1.0). Solo admite clave SSH o agente SSH, no contraseña. Debe permitir el reenvío hacia el servidor (`AllowTcpForwarding`). |
 
 Pertenecer al grupo `docker` del servidor equivale a tener acceso de **root** en él. Docker rootless, con su socket indicado en el perfil, es la alternativa más segura.
 

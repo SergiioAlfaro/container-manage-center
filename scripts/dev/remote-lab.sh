@@ -46,6 +46,9 @@ up)
     [ -f $d/host_ed25519 ] || ssh-keygen -q -t ed25519 -N '' -f $d/host_ed25519
     sock=""; [ $u = b ] && sock="SetEnv DOCKER_HOST=unix:///run/dcc-b/docker.sock"
     [ $u = c ] && sock="SetEnv DOCKER_HOST=unix:///run/dcc-c/docker.sock"
+    # A hace también de servidor intermedio (ProxyJump, 1.1.0): solo hacia B y C.
+    fwd="AllowTcpForwarding no"; [ $u = a ] && fwd="AllowTcpForwarding local
+PermitOpen 127.0.0.1:2202 127.0.0.1:2203"
     cat > $d/sshd_config <<C
 Port 220$i
 ListenAddress 127.0.0.1
@@ -58,7 +61,7 @@ KbdInteractiveAuthentication no
 UsePAM yes
 PermitRootLogin no
 X11Forwarding no
-AllowTcpForwarding no
+$fwd
 $sock
 Match User dccnope
   SetEnv PATH=/nonexistent

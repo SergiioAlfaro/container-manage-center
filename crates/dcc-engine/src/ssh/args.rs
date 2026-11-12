@@ -8,7 +8,7 @@
 
 use std::path::Path;
 
-use super::profile::{expand_home, RemoteDocker, SshAuth, SshProfile};
+use super::profile::{expand_home, parse_jump, RemoteDocker, SshAuth, SshProfile};
 use super::SshPaths;
 
 /// Intervalo de comprobación de que el servidor sigue vivo.
@@ -186,15 +186,115 @@ pub fn base_args(p: &SshProfile, paths: &SshPaths, policy: &HostKeyPolicy) -> Ve
             opt(&mut v, "NumberOfPasswordPrompts=1");
         }
     }
-    if !p.options.proxy_jump.is_empty() {
-        v.push("-J".into());
-        v.push(p.options.proxy_jump.clone());
+    if let Some(cmd) = proxy_command(p, paths) {
+        opt(&mut v, format!("ProxyCommand={cmd}"));
     }
     v.push("-p".into());
     v.push(p.port.to_string());
     v.push("-l".into());
     v.push(p.user.clone());
     v
+}
+
+/// Argumentos del `ssh` que abre el servidor intermedio (E1, DCC-SEC-02,
+/// D-087), sin el programa ni el destino. Con `ssh -J`, OpenSSH solo pasa al
+/// salto `-l`, `-p` y `-v`: ni la comprobación estricta de la identidad ni el
+/// `known_hosts` de la aplicación. Aquí el salto recibe las mismas reglas que
+/// el destino y **solo** se autentica con clave o agente (`BatchMode`): nunca
+/// pide contraseñas ni usa el askpass, así que el secreto del destino no
+/// puede llegarle.
+pub fn jump_args(p: &SshProfile, paths: &SshPaths) -> Option<Vec<String>> {
+    let j = parse_jump(&p.options.proxy_jump)?;
+    let mut v = Vec::new();
+    opt(&mut v, "StrictHostKeyChecking=yes");
+    opt(
+        &mut v,
+        format!("UserKnownHostsFile={}", known_hosts_value(paths)),
+    );
+    opt(&mut v, "UpdateHostKeys=no");
+    opt(&mut v, "BatchMode=yes");
+    opt(&mut v, "PasswordAuthentication=no");
+    opt(&mut v, "KbdInteractiveAuthentication=no");
+    opt(
+        &mut v,
+        format!("ConnectTimeout={}", p.options.connect_timeout),
+    );
+    opt(
+        &mut v,
+        format!("ServerAliveInterval={SERVER_ALIVE_INTERVAL}"),
+    );
+    opt(&mut v, format!("ServerAliveCountMax={SERVER_ALIVE_COUNT}"));
+    opt(&mut v, "ForwardAgent=no");
+    opt(&mut v, "ForwardX11=no");
+    opt(&mut v, "ClearAllForwardings=yes");
+    opt(&mut v, "PermitLocalCommand=no");
+    opt(&mut v, "ControlMaster=no");
+    opt(&mut v, "ControlPath=none");
+    opt(&mut v, "ProxyCommand=none");
+    opt(&mut v, "ProxyJump=none");
+    opt(&mut v, "LogLevel=ERROR");
+    // La clave del perfil (sin frase de paso) también vale para el salto; las
+    // del agente y las de `~/.ssh/config` se siguen probando.
+    if let SshAuth::Key { path } = &p.auth {
+        v.push("-i".into());
+        v.push(expand_home(path));
+    }
+    if let Some(port) = j.port {
+        v.push("-p".into());
+        v.push(port.to_string());
+    }
+    if let Some(user) = &j.user {
+        v.push("-l".into());
+        v.push(user.clone());
+    }
+    Some(v)
+}
+
+/// Comprobación de la autenticación en el servidor intermedio: se pide un
+/// reenvío a un puerto cerrado del propio salto (`-W 127.0.0.1:1`). No se
+/// ejecuta ninguna orden en él y basta para saber si aceptó la clave o el
+/// agente (`-v`: `Authenticated to …`).
+pub fn jump_probe_args(p: &SshProfile, paths: &SshPaths) -> Option<Vec<String>> {
+    let j = parse_jump(&p.options.proxy_jump)?;
+    let mut v = jump_args(p, paths)?;
+    drop_opt(&mut v, &["LogLevel="]);
+    v.extend([
+        "-v".to_owned(),
+        "-T".into(),
+        "-W".into(),
+        "127.0.0.1:1".into(),
+        "--".into(),
+        j.host,
+    ]);
+    Some(v)
+}
+
+/// `ProxyCommand` que sustituye a `-J` (D-087). OpenSSH lo ejecuta con un
+/// shell (`$SHELL -c`; la aplicación fija `SHELL=/bin/sh` en sus procesos `ssh`)
+/// tras sustituir `%h`/`%p`: cada argumento va entrecomillado y los `%` de lo
+/// que no es nuestro se escapan como `%%`. El proceso del salto se lanza sin
+/// las variables del askpass.
+pub fn proxy_command(p: &SshProfile, paths: &SshPaths) -> Option<String> {
+    let j = parse_jump(&p.options.proxy_jump)?;
+    let args = jump_args(p, paths)?;
+    let esc = |s: &str| shell_quote(s).replace('%', "%%");
+    // OpenSSH ya antepone `exec` al ejecutarlo.
+    let mut parts: Vec<String> = vec![
+        "/usr/bin/env".into(),
+        "-u".into(),
+        "SSH_ASKPASS".into(),
+        "-u".into(),
+        super::askpass::SOCKET_ENV.into(),
+        "SSH_ASKPASS_REQUIRE=never".into(),
+        esc(&paths.ssh.display().to_string()),
+    ];
+    parts.extend(args.iter().map(|a| esc(a)));
+    parts.push("-W".into());
+    // Lo sustituye OpenSSH por el destino (`[%h]` admite IPv6).
+    parts.push("'[%h]:%p'".into());
+    parts.push("--".into());
+    parts.push(esc(&j.host));
+    Some(parts.join(" "))
 }
 
 /// Conexión maestra: autentica y queda a la espera de canales.
@@ -517,9 +617,21 @@ mod tests {
         let mut p = profile(SshAuth::Agent);
         p.options.proxy_jump = "bastion@jump.example.com:2200".into();
         let v = base_args(&p, &paths(), &HostKeyPolicy::Strict);
-        assert!(v
-            .windows(2)
-            .any(|w| w == ["-J", "bastion@jump.example.com:2200"]));
+        assert!(!v.contains(&"-J".to_owned()), "sin -J (D-087)");
+        let pc = v
+            .iter()
+            .find(|a| a.starts_with("ProxyCommand="))
+            .expect("ProxyCommand");
+        for want in [
+            "/usr/bin/env -u SSH_ASKPASS -u DCC_ASKPASS_SOCKET SSH_ASKPASS_REQUIRE=never /usr/bin/ssh",
+            "StrictHostKeyChecking=yes",
+            "BatchMode=yes",
+            "PasswordAuthentication=no",
+            "UserKnownHostsFile=/home/ana/.config/docker-control-center/known_hosts /home/ana/.ssh/known_hosts",
+            "-p 2200 -l bastion -W '[%h]:%p' -- jump.example.com",
+        ] {
+            assert!(pc.contains(want), "falta {want:?} en {pc}");
+        }
         let c = identity_probe_args(&p, &paths(), &HostKeyPolicy::CaptureInto("/tmp/x".into()));
         assert!(
             has(&c, "StrictHostKeyChecking=accept-new") && has(&c, "UserKnownHostsFile=/tmp/x")
@@ -544,6 +656,71 @@ mod tests {
             "PreferredAuthentications=password,keyboard-interactive"
         ));
         assert!(has(&k, "PreferredAuthentications=none"));
+    }
+
+    /// El `ProxyCommand` pasa por la sustitución de `%` de OpenSSH y por
+    /// `sh -c`: el salto recibe exactamente los argumentos previstos y no
+    /// hereda el askpass (DCC-SEC-02).
+    #[test]
+    fn proxy_command_roundtrips_through_ssh_tokens_and_a_real_shell() {
+        let d = tempfile::tempdir().unwrap();
+        let fake = d.path().join("ssh 100%");
+        std::fs::write(
+            &fake,
+            "#!/bin/sh\nprintf '%s\\n' \"$@\"\necho \"askpass=${SSH_ASKPASS:-}|${DCC_ASKPASS_SOCKET:-}|${SSH_ASKPASS_REQUIRE:-}\"\n",
+        )
+        .unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let mut ps = paths();
+        ps.ssh = fake.clone();
+        ps.app_known_hosts = "/home/ana maría/kh%x".into();
+        let mut p = profile(SshAuth::Key {
+            path: "/home/ana/.ssh/id it's".into(),
+        });
+        p.options.proxy_jump = "ops@[fe80::1]:2200".into();
+        let cmd = proxy_command(&p, &ps).unwrap();
+        // Sustitución de OpenSSH: %h, %p y %% (como en sshconnect.c).
+        let expanded = format!(
+            "exec {}",
+            cmd.replace("%%", "\u{0}")
+                .replace("%h", "destino.example")
+                .replace("%p", "22")
+                .replace('\u{0}', "%")
+        );
+        let out = std::process::Command::new("/bin/sh")
+            .arg("-c")
+            .arg(&expanded)
+            .env("SSH_ASKPASS", "/usr/bin/docker-control-center")
+            .env("SSH_ASKPASS_REQUIRE", "force")
+            .env("DCC_ASKPASS_SOCKET", "/run/x.sock")
+            .output()
+            .unwrap();
+        let text = String::from_utf8(out.stdout).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert!(
+            lines.contains(
+                &"UserKnownHostsFile=\"/home/ana maría/kh%x\" /home/ana/.ssh/known_hosts"
+            ),
+            "{text}"
+        );
+        assert!(lines.contains(&"/home/ana/.ssh/id it's"), "{text}");
+        let tail = &lines[lines.len() - 5..];
+        assert_eq!(
+            tail,
+            [
+                "-W",
+                "[destino.example]:22",
+                "--",
+                "fe80::1",
+                "askpass=||never"
+            ],
+            "{text}"
+        );
+        assert!(
+            lines.windows(2).any(|w| w == ["-p", "2200"])
+                && lines.windows(2).any(|w| w == ["-l", "ops"])
+        );
     }
 
     #[test]

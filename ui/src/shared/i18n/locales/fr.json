@@ -1070,6 +1070,17 @@
       "tagInvalid": "Étiquette non valide : lettres, chiffres, « _ », « . » et « - », jusqu’à 128 caractères, sans commencer par « . » ni « - ».",
       "tooLong": "{{max}} caractères au maximum.",
       "controlChars": "Elle ne peut pas contenir de sauts de ligne ni d’autres caractères de contrôle."
+    },
+    "risk": {
+      "runtimeSocket": "{{path}} : le socket du moteur de conteneurs donne le contrôle total de Docker et, par lui, de la machine. Le monter en lecture seule ne l’empêche pas.",
+      "hostRoot": "Monter la racine du système (/) donne au conteneur l’accès à tous les fichiers de la machine.",
+      "credentials": "{{path}} contient des identifiants de la machine ou de ses utilisateurs (mots de passe, clés SSH, jetons), même en lecture seule.",
+      "systemDir": "{{path}} est un dossier système : le conteneur peut le lire et, en écriture, modifier le fonctionnement de la machine.",
+      "systemBinaries": "{{path}} en écriture permet au conteneur de remplacer des programmes ou des bibliothèques de la machine.",
+      "capability": "Capacité {{cap}} : étend ce que le conteneur peut faire avec le noyau de la machine.",
+      "privileged": "Mode privilégié : le conteneur a un accès quasi complet à la machine (périphériques, noyau et toutes les capacités).",
+      "networkHost": "Réseau de la machine (host) : le conteneur voit tous les services de la machine, y compris ceux qui n’écoutent que sur 127.0.0.1.",
+      "hostNamespace": "Partage l’espace {{namespace}} avec la machine."
     }
   },
   "dupNotes": {
@@ -2134,7 +2145,8 @@
     "packages_cancelled": "L’authentification a été annulée : rien n’a été désinstallé.",
     "packages_denied": "Les autorisations d’administrateur n’ont pas été accordées : rien n’a été désinstallé.",
     "packages_busy": "Une désinstallation est déjà en cours.",
-    "packages_notInstalled": "L’application n’est pas installée comme paquet .deb : il n’y a rien à désinstaller avec APT."
+    "packages_notInstalled": "L’application n’est pas installée comme paquet .deb : il n’y a rien à désinstaller avec APT.",
+    "engine_risksNotAccepted": "La configuration comporte des risques pour la machine non acceptés."
   },
   "commit": {
     "action": "Créer une image à partir de ce conteneur",
@@ -2487,7 +2499,7 @@
       "user": "Utilisateur SSH sur le serveur.",
       "keyPath": "La clé reste où elle est. Par exemple ~/.ssh/id_ed25519.",
       "connectTimeout": "Entre 3 et 120 secondes.",
-      "proxyJump": "Format utilisateur@hôte:port. Équivaut à ProxyJump de SSH. ssh vérifie l’identité du serveur intermédiaire avec votre ~/.ssh/known_hosts : connectez-vous d’abord une fois avec « ssh -J » pour la confirmer."
+      "proxyJump": "Format utilisateur@hôte:port (un seul rebond). Son identité est confirmée par son empreinte, comme celle du serveur, et il doit accepter votre clé ou votre agent SSH : aucun mot de passe sur le rebond, et il ne reçoit jamais celui du serveur."
     },
     "issues": {
       "nameRequired": "Saisissez un nom.",
@@ -2503,7 +2515,8 @@
       "contextInvalid": "Nom de contexte non valide.",
       "timeoutInvalid": "Doit être compris entre 3 et 120 secondes.",
       "proxyJumpInvalid": "Serveur de rebond non valide (utilisateur@hôte:port).",
-      "idInvalid": "Identifiant de serveur non valide."
+      "idInvalid": "Identifiant de serveur non valide.",
+      "proxyJumpChain": "Un seul serveur intermédiaire est pris en charge : l’application vérifie son identité et celle de la destination."
     },
     "editor": {
       "addTitle": "Ajouter un serveur",
@@ -2566,7 +2579,10 @@
       "inUserFile": "L'identité précédente se trouve dans {{file}}. L'application ne modifie pas ce fichier : si vous avez vérifié la nouvelle empreinte, supprimez l'ancienne vous-même avec :",
       "mismatch": "Le serveur présente maintenant une empreinte différente de celle affichée. Rien n'a été enregistré : testez de nouveau la connexion.",
       "review": "Vérifier l'identité",
-      "reviewTitle": "Identité de {{name}}"
+      "reviewTitle": "Identité de {{name}}",
+      "jumpNotice": "Serveur intermédiaire : {{jump}} (pour atteindre {{host}})",
+      "jumpUnknownBody": "C’est la première fois que vous passez par le serveur intermédiaire {{jump}}. Vérifiez que cette empreinte est bien la sienne avant de lui faire confiance.",
+      "jumpChangedBody": "Le serveur intermédiaire {{jump}} présente une identité différente de celle confirmée. Cela peut venir d’une réinstallation ou d’une attaque de l’homme du milieu. Ne continuez pas avant de l’avoir vérifiée."
     },
     "secret": {
       "passphraseTitle": "Phrase secrète pour {{name}}",
@@ -2699,6 +2715,22 @@
       "other": {
         "title": "Connexion impossible",
         "body": "{{message}}"
+      },
+      "jumpHostKeyUnknown": {
+        "title": "Identité du serveur intermédiaire non confirmée",
+        "body": "C’est la première connexion via le serveur intermédiaire {{jump}}. Confirmez son empreinte ({{type}} {{fingerprint}}) avant de continuer."
+      },
+      "jumpHostKeyChanged": {
+        "title": "L’identité du serveur intermédiaire a changé",
+        "body": "Le serveur intermédiaire {{jump}} présente une identité différente de celle confirmée. Il peut s’agir d’une attaque de l’homme du milieu : ne continuez pas avant de l’avoir vérifiée."
+      },
+      "jumpAuthFailed": {
+        "title": "Le serveur intermédiaire n’accepte pas la clé",
+        "body": "{{jump}} n’a accepté aucune clé ni l’agent SSH. Seuls une clé ou l’agent sont pris en charge sur le serveur intermédiaire ; le mot de passe du serveur de destination ne lui est jamais envoyé."
+      },
+      "jumpFromSshConfig": {
+        "title": "Rebond défini dans ~/.ssh/config",
+        "body": "Votre ~/.ssh/config fait passer {{host}} par {{via}}. Avec un mot de passe ou une phrase de passe, l’application ne se connecte pas ainsi, car ce rebond n’aurait pas ses vérifications. Indiquez le serveur intermédiaire dans le profil."
       }
     },
     "fix": {
@@ -2740,7 +2772,11 @@
       "rootlessOption": "Alternative plus sûre : Docker rootless pour cet utilisateur, en indiquant son socket dans le profil.",
       "listContexts": "Vérifiez les contextes définis.",
       "checkSocket": "Vérifiez le chemin du socket Docker dans le profil.",
-      "upgradeDocker": "Mettez à jour Docker Engine sur le serveur vers la version 20.10 ou ultérieure."
+      "upgradeDocker": "Mettez à jour Docker Engine sur le serveur vers la version 20.10 ou ultérieure.",
+      "verifyJumpFingerprint": "Demandez à l’administrateur l’empreinte du serveur intermédiaire ou vérifiez-la sur celui-ci.",
+      "jumpUseKey": "Utilisez une clé SSH ou l’agent SSH pour le serveur intermédiaire (la clé du profil convient si l’intermédiaire l’accepte).",
+      "tryJump": "Testez la connexion au serveur intermédiaire sans mot de passe :",
+      "jumpInProfile": "Saisissez le serveur intermédiaire dans « Serveur intermédiaire » du profil (utilisateur@hôte:port)."
     },
     "target": "Serveur",
     "paths": {
@@ -2761,6 +2797,21 @@
       "body": "Il sera écrit à ce chemin sur le serveur (on vérifie d'abord que le fichier n'a pas changé) :",
       "confirmSave": "Enregistrer sur le serveur",
       "confirmCreate": "Créer sur le serveur"
+    }
+  },
+  "hostRisk": {
+    "title": "Risques pour la machine",
+    "intro": "Cette configuration donne au conteneur l’accès à des parties de la machine. Les risques élevés et critiques doivent être acceptés un par un avant de continuer ; la configuration n’est pas modifiée.",
+    "accept": "Je comprends le risque et je veux continuer.",
+    "pending_one": "Il reste {{count}} risque à accepter.",
+    "pending_other": "Il reste {{count}} risques à accepter.",
+    "seeBelow": "Vérifiez les risques pour la machine.",
+    "notAccepted": "La configuration comporte des risques pour la machine non acceptés (elle a peut-être changé) : vérifiez-les et réessayez.",
+    "level": {
+      "critical": "Critique",
+      "high": "Élevé",
+      "medium": "Moyen",
+      "low": "Faible"
     }
   }
 }

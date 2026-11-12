@@ -13,26 +13,30 @@ import { Button, CopyButton, Segmented } from "@/shared/ui/controls";
 import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
 import { downAction, removableVolumes, upAction, validProjectName } from "./model";
 import { useRunCompose } from "./runs";
+import type { HostRisk } from "@/shared/ipc/bindings/HostRisk";
+import { HostRisks, allAccepted, stillAccepted } from "@/shared/ui/HostRisks";
 import { ServerPathInput, useIsRemote } from "@/features/servers/paths";
 
 /** Comando exacto que se ejecutará, calculado por el backend. */
 function useCommand(project: ProjectRef, action: ComposeAction) {
   const api = useApi();
   const [cmd, setCmd] = useState<string | null>(null);
+  const [risks, setRisks] = useState<HostRisk[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const key = JSON.stringify(action);
   useEffect(() => {
     let live = true;
+    setCmd(null);
     api
       .composePreview(project, action)
-      .then((p) => live && (setCmd(p.command), setErr(null)))
-      .catch((e) => live && (setCmd(null), setErr((e as { message: string }).message)));
+      .then((p) => live && (setCmd(p.command), setRisks(p.risks), setErr(null)))
+      .catch((e) => live && (setCmd(null), setRisks([]), setErr((e as { message: string }).message)));
     return () => {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.name, key]);
-  return { cmd, err };
+  return { cmd, err, risks };
 }
 
 function CommandBox({ cmd, err }: { cmd: string | null; err: string | null }) {
@@ -76,17 +80,19 @@ function Toggles<T extends string>({ items, selected, onChange, label }: { items
 }
 
 /** Desplegar (`up --detach`) con sus opciones. */
-export function UpDialog({ project, model, onClose, onStarted }: { project: ProjectRef; model: ProjectModel | null; onClose: () => void; onStarted: () => void }) {
+export function UpDialog({ project, model, onClose, onStarted, initialServices = [] }: { project: ProjectRef; model: ProjectModel | null; onClose: () => void; onStarted: () => void; initialServices?: string[] }) {
   const { t } = useTranslation();
   const run = useRunCompose();
-  const [services, setServices] = useState<string[]>([]);
+  const [services, setServices] = useState<string[]>(initialServices);
+  const [accepted, setAccepted] = useState<string[]>([]);
   const [profiles, setProfiles] = useState<string[]>([]);
   const [build, setBuild] = useState(false);
   const [pull, setPull] = useState<PullPolicy>("missing");
   const [forceRecreate, setForceRecreate] = useState(false);
   const [removeOrphans, setRemoveOrphans] = useState(false);
   const action = upAction({ services, profiles, build, pull, forceRecreate, removeOrphans });
-  const { cmd, err } = useCommand(project, action);
+  const { cmd, err, risks } = useCommand(project, action);
+  const kept = stillAccepted(risks, accepted);
   const canBuild = model?.services.some((s) => s.build) ?? false;
   return (
     <Dialog
@@ -97,9 +103,9 @@ export function UpDialog({ project, model, onClose, onStarted }: { project: Proj
           <Button onClick={onClose}>{t("containers.cancel")}</Button>
           <Button
             variant="primary"
-            disabled={!cmd}
+            disabled={!cmd || !allAccepted(risks, kept)}
             onClick={() => {
-              void run(project, action);
+              void run(project, action, false, kept);
               onStarted();
               onClose();
             }}
@@ -130,6 +136,7 @@ export function UpDialog({ project, model, onClose, onStarted }: { project: Proj
       {canBuild && <Checkbox checked={build} onChange={setBuild} label={t("composeOps.build")} hint={t("composeOps.buildHint")} />}
       <Checkbox checked={forceRecreate} onChange={setForceRecreate} label={t("composeOps.forceRecreate")} />
       <Checkbox checked={removeOrphans} onChange={setRemoveOrphans} label={t("composeOps.removeOrphans")} hint={t("composeOps.removeOrphansHint")} />
+      <HostRisks risks={risks} accepted={kept} onChange={setAccepted} showService />
       <CommandBox cmd={cmd} err={err} />
     </Dialog>
   );

@@ -217,6 +217,77 @@ pub fn valid_proxy_jump(j: &str) -> bool {
         })
 }
 
+/// Servidor intermedio de un perfil (E1, D-087). Se admite **un** salto: la
+/// identidad de cada salto se verifica con el `known_hosts` de la aplicación y
+/// eso solo se puede ofrecer de forma fiable para el primero.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JumpHost {
+    /// Usuario del salto; sin él, el de `~/.ssh/config` o el del equipo (como `ssh -J`).
+    pub user: Option<String>,
+    pub host: String,
+    /// Puerto del salto; sin él, el de `~/.ssh/config` o el 22.
+    pub port: Option<u16>,
+}
+
+impl JumpHost {
+    /// `usuario@host:puerto` tal como se muestra.
+    pub fn display(&self) -> String {
+        let host = if self.host.contains(':') {
+            format!("[{}]", self.host)
+        } else {
+            self.host.clone()
+        };
+        let mut s = match &self.user {
+            Some(u) => format!("{u}@{host}"),
+            None => host,
+        };
+        if let Some(p) = self.port {
+            s.push_str(&format!(":{p}"));
+        }
+        s
+    }
+}
+
+/// Interpreta un único salto `[usuario@]host[:puerto]` (IPv6 entre corchetes).
+pub fn parse_jump(j: &str) -> Option<JumpHost> {
+    if j.contains(',') || !valid_proxy_jump(j) {
+        return None;
+    }
+    let (user, rest) = match j.split_once('@') {
+        Some((u, r)) => (Some(u.to_owned()), r),
+        None => (None, j),
+    };
+    let (host, port) = if let Some(r) = rest.strip_prefix('[') {
+        let (h, p) = r.split_once(']')?;
+        (h, p.strip_prefix(':'))
+    } else {
+        match rest.rsplit_once(':') {
+            Some((h, p)) if !h.contains(':') => (h, Some(p)),
+            _ => (rest, None),
+        }
+    };
+    Some(JumpHost {
+        user,
+        host: host.to_owned(),
+        port: port.and_then(|p| p.parse().ok()),
+    })
+}
+
+/// Perfil con el que se comprueba la identidad del servidor intermedio (se
+/// conecta directamente a él). No sirve para autenticarse en el destino.
+pub fn jump_profile(p: &SshProfile) -> Option<SshProfile> {
+    let j = parse_jump(&p.options.proxy_jump)?;
+    let mut jp = p.clone();
+    jp.host = j.host;
+    jp.port = j.port.unwrap_or(22);
+    if let Some(u) = j.user {
+        jp.user = u;
+    }
+    jp.auth = SshAuth::Agent;
+    jp.options.proxy_jump = String::new();
+    Some(jp)
+}
+
 /// Valida el perfil completo (también se valida en cada conexión).
 pub fn validate(p: &SshProfile) -> Vec<ProfileIssue> {
     let mut out = Vec::new();
@@ -265,6 +336,10 @@ pub fn validate(p: &SshProfile) -> Vec<ProfileIssue> {
     }
     if !p.options.proxy_jump.is_empty() && !valid_proxy_jump(&p.options.proxy_jump) {
         out.push(issue("proxyJump", "proxyJumpInvalid"));
+    } else if p.options.proxy_jump.contains(',') {
+        // Varios saltos encadenados: no se puede verificar la identidad de
+        // cada uno con las reglas de la aplicación (D-087).
+        out.push(issue("proxyJump", "proxyJumpChain"));
     }
     if !valid_server_id(&p.id) {
         out.push(issue("id", "idInvalid"));
@@ -420,19 +495,58 @@ mod tests {
         p.options.connect_timeout = 1;
         assert_eq!(codes(&p), ["server.timeoutInvalid"]);
         p.options.connect_timeout = 10;
-        for ok in [
-            "bastion.example.com",
-            "ops@bastion:2222",
-            "a@b:22,c@d",
-            "[fe80::1]:22",
-        ] {
+        for ok in ["bastion.example.com", "ops@bastion:2222", "[fe80::1]:22"] {
             p.options.proxy_jump = ok.into();
             assert!(codes(&p).is_empty(), "{ok}");
         }
+        // E1 (D-087): un solo salto.
+        p.options.proxy_jump = "a@b:22,c@d".into();
+        assert_eq!(codes(&p), ["server.proxyJumpChain"]);
         for bad in ["-oProxyCommand=x", "a b", "u@h:0", "u@h:x", "ROOT@h"] {
             p.options.proxy_jump = bad.into();
             assert_eq!(codes(&p), ["server.proxyJumpInvalid"], "{bad}");
         }
+    }
+
+    #[test]
+    fn jump_hosts_are_parsed_and_profiled() {
+        assert_eq!(
+            parse_jump("ops@bastion:2222"),
+            Some(JumpHost {
+                user: Some("ops".into()),
+                host: "bastion".into(),
+                port: Some(2222)
+            })
+        );
+        assert_eq!(
+            parse_jump("[fe80::1]:22"),
+            Some(JumpHost {
+                user: None,
+                host: "fe80::1".into(),
+                port: Some(22)
+            })
+        );
+        assert_eq!(parse_jump("bastion").unwrap().display(), "bastion");
+        assert_eq!(
+            parse_jump("u@[fe80::1]:2").unwrap().display(),
+            "u@[fe80::1]:2"
+        );
+        assert!(parse_jump("a,b").is_none());
+        let mut p = base();
+        p.auth = SshAuth::Password;
+        assert!(jump_profile(&p).is_none());
+        p.options.proxy_jump = "ops@bastion:2222".into();
+        let j = jump_profile(&p).unwrap();
+        assert_eq!(
+            (j.host.as_str(), j.port, j.user.as_str()),
+            ("bastion", 2222, "ops")
+        );
+        assert_eq!(
+            j.auth,
+            SshAuth::Agent,
+            "el salto nunca usa el secreto del destino"
+        );
+        assert!(j.options.proxy_jump.is_empty());
     }
 
     #[test]

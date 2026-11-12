@@ -47,6 +47,7 @@ fn command(program: &Path, args: &[String]) -> Command {
         .env_remove("SSH_ASKPASS")
         .env_remove("SSH_ASKPASS_REQUIRE")
         .env_remove(super::askpass::SOCKET_ENV)
+        .env("SHELL", "/bin/sh")
         .kill_on_drop(true);
     c
 }

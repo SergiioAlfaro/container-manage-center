@@ -1443,3 +1443,152 @@ async fn bind_folders_are_checked_on_the_server() {
     drop(e);
     m.disconnect().await;
 }
+
+// ------------------------------------------------------- E1: servidor intermedio
+
+/// Líneas nuevas del registro de un sshd del laboratorio desde `from` bytes.
+fn sshd_log_since(s: &Server, from: u64) -> String {
+    let log = Path::new(&s.host_key).with_file_name("sshd.log");
+    let all = std::fs::read(&log).unwrap_or_default();
+    String::from_utf8_lossy(&all[(from as usize).min(all.len())..]).into_owned()
+}
+
+fn sshd_log_len(s: &Server) -> u64 {
+    std::fs::metadata(Path::new(&s.host_key).with_file_name("sshd.log"))
+        .map(|m| m.len())
+        .unwrap_or(0)
+}
+
+/// E1 (DCC-SEC-02, D-087): el servidor intermedio se comprueba con las mismas
+/// reglas que el destino (huella confirmada en el `known_hosts` de la
+/// aplicación), solo se autentica con clave o agente y nunca recibe el secreto
+/// del destino.
+#[tokio::test(flavor = "multi_thread")]
+async fn proxy_jump_checks_both_identities_and_never_shares_the_target_secret() {
+    let Some(lab) = lab() else { return };
+    let log = ActivityLog::new(500);
+    let a = lab.servers[0].clone();
+    let jump = format!("{}@{}:{}", a.user, a.host, a.port);
+
+    // 1. Destino C con clave a través de A (clave): primero la huella del
+    //    salto, después la del destino, y conecta.
+    let env = Env::new();
+    let ctx = env.ctx(fixed(None));
+    let mut p = profile(
+        &lab,
+        2,
+        None,
+        key(&lab),
+        RemoteDocker::Socket {
+            path: lab.servers[2].socket.clone(),
+        },
+    );
+    p.options.proxy_jump = jump.clone();
+    let r = dcc_engine::ssh::connect::test(&ctx, &p, &log).await;
+    let fa = real_fingerprint(&a);
+    match &r.problem {
+        Some(RemoteProblem::JumpHostKeyUnknown { jump: j, presented }) => {
+            assert_eq!(j, &jump);
+            assert_eq!(
+                presented.as_ref().map(|k| &k.fingerprint),
+                Some(&fa.fingerprint)
+            );
+        }
+        other => panic!("se esperaba la huella del salto: {other:?}"),
+    }
+    assert_eq!(status(&r, CheckId::Identity), CheckStatus::Failed);
+    assert!(
+        !env.known().exists()
+            || std::fs::read_to_string(env.known())
+                .unwrap()
+                .trim()
+                .is_empty()
+    );
+    let jp = dcc_engine::ssh::profile::jump_profile(&p).unwrap();
+    hostkey::trust(&ctx.paths, &jp, &fa, false)
+        .await
+        .expect("confiar en el salto");
+    let r = dcc_engine::ssh::connect::test(&ctx, &p, &log).await;
+    let fc = real_fingerprint(&lab.servers[2]);
+    match &r.problem {
+        Some(RemoteProblem::HostKeyUnknown { presented }) => {
+            assert_eq!(
+                presented.as_ref().map(|k| &k.fingerprint),
+                Some(&fc.fingerprint)
+            );
+        }
+        other => panic!("se esperaba la huella del destino (por el salto): {other:?}"),
+    }
+    hostkey::trust(&ctx.paths, &p, &fc, false)
+        .await
+        .expect("confiar en el destino por el salto");
+    let r = dcc_engine::ssh::connect::test(&ctx, &p, &log).await;
+    assert!(r.problem.is_none(), "{:?}", r.problem);
+    assert!(r.engine.is_some());
+
+    // 2. Una identidad del salto distinta de la confirmada: se rechaza.
+    let env2 = Env::new();
+    let other = env2.dir.path().join("otra");
+    let st = std::process::Command::new("ssh-keygen")
+        .args(["-q", "-t", "ed25519", "-N", "", "-f"])
+        .arg(&other)
+        .status()
+        .unwrap();
+    assert!(st.success());
+    let pubkey = std::fs::read_to_string(other.with_extension("pub")).unwrap();
+    let mut it = pubkey.split_whitespace();
+    let (t, k) = (it.next().unwrap(), it.next().unwrap());
+    std::fs::write(env2.known(), format!("[{}]:{} {t} {k}\n", a.host, a.port)).unwrap();
+    let ctx2 = env2.ctx(fixed(None));
+    let r = dcc_engine::ssh::connect::test(&ctx2, &p, &log).await;
+    assert!(
+        matches!(r.problem, Some(RemoteProblem::JumpHostKeyChanged { .. })),
+        "{:?}",
+        r.problem
+    );
+
+    // 3. Destino B con contraseña a través de A sin clave para el salto: el
+    //    salto no admite contraseña, la del destino no se pide al llavero y A
+    //    no recibe ningún intento de contraseña.
+    let env3 = Env::new();
+    env3.trusted(&lab);
+    let secrets = fixed(Some(&lab.password.password));
+    let ctx3 = env3.ctx(secrets.clone());
+    let mut pb = profile(
+        &lab,
+        lab.password.server,
+        Some(&lab.password.user),
+        SshAuth::Password,
+        RemoteDocker::Socket {
+            path: lab.servers[lab.password.server].socket.clone(),
+        },
+    );
+    pb.options.proxy_jump = jump.clone();
+    let before = sshd_log_len(&a);
+    let r = dcc_engine::ssh::connect::test(&ctx3, &pb, &log).await;
+    assert!(
+        matches!(&r.problem, Some(RemoteProblem::JumpAuthFailed { jump: j, .. }) if j == &jump),
+        "{:?}",
+        r.problem
+    );
+    assert_eq!(status(&r, CheckId::Auth), CheckStatus::Failed);
+    assert_eq!(
+        secrets.asked(),
+        0,
+        "el secreto del destino ni siquiera se lee"
+    );
+    let seen = sshd_log_since(&a, before);
+    assert!(
+        !seen.contains("password for"),
+        "el salto no ha recibido ninguna contraseña:\n{seen}"
+    );
+
+    // 4. La sesión real (sin la comprobación previa) tampoco entrega la
+    //    contraseña al salto: falla en el salto y A no ve contraseñas.
+    let before = sshd_log_len(&a);
+    let s = dcc_engine::ssh::SshSession::open(&ctx3, &pb).await;
+    assert!(s.is_err(), "sin clave para el salto no hay sesión");
+    let seen = sshd_log_since(&a, before);
+    assert!(!seen.contains("password for"), "{seen}");
+    wait_for("sin procesos ssh", 10, || ssh_children() == 0).await;
+}

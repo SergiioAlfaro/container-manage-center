@@ -10,6 +10,40 @@ use uuid::Uuid;
 
 use crate::model::ServerTag;
 use crate::model::{ActivityEvent, CapturedText, Category, OpStatus, OperationRecord, Transport};
+use crate::redact::{redact_api_path, redact_args, redact_text};
+
+/// Texto que se guarda o se emite: siempre sin secretos (E1, D-085).
+fn clean(s: String) -> String {
+    match redact_text(&s) {
+        std::borrow::Cow::Borrowed(_) => s,
+        std::borrow::Cow::Owned(o) => o,
+    }
+}
+
+/// Salida capturada sin secretos y recortada a `limit` bytes. Primero se oculta
+/// y después se recorta, para no partir un secreto y dejar media parte visible.
+fn clean_capture(s: String, limit: usize) -> CapturedText {
+    capture(clean(s), limit)
+}
+
+fn clean_transport(t: Transport) -> Transport {
+    match t {
+        Transport::Api {
+            method,
+            path,
+            endpoint,
+        } => Transport::Api {
+            method,
+            path: redact_api_path(&path, false),
+            endpoint,
+        },
+        Transport::Cli { program, args } => Transport::Cli {
+            program,
+            args: redact_args(&args),
+        },
+        other => other,
+    }
+}
 
 /// Límite por defecto de bytes guardados de cada salida capturada.
 pub const DEFAULT_CAPTURE_LIMIT: usize = 64 * 1024;
@@ -172,10 +206,10 @@ impl ActivityLog {
             id: Uuid::new_v4(),
             category: spec.category,
             kind: spec.kind,
-            target: spec.target,
-            transport: spec.transport,
-            request_body: spec.request_body.map(|b| capture(b, limit)),
-            equivalent_command: spec.equivalent_command,
+            target: spec.target.map(clean),
+            transport: clean_transport(spec.transport),
+            request_body: spec.request_body.map(|b| clean_capture(b, limit)),
+            equivalent_command: spec.equivalent_command.map(clean),
             status: OpStatus::Running,
             started_at: Utc::now(),
             finished_at: None,
@@ -251,9 +285,9 @@ impl OperationHandle {
         self.done = true;
         self.log.finish(self.id, |r, limit| {
             r.status = OpStatus::Succeeded;
-            r.summary = outcome.summary;
-            r.stdout = outcome.stdout.map(|s| capture(s, limit));
-            r.stderr = outcome.stderr.map(|s| capture(s, limit));
+            r.summary = outcome.summary.map(clean);
+            r.stdout = outcome.stdout.map(|s| clean_capture(s, limit));
+            r.stderr = outcome.stderr.map(|s| clean_capture(s, limit));
             r.http_status = outcome.http_status;
             r.exit_code = outcome.exit_code;
         });
@@ -263,9 +297,9 @@ impl OperationHandle {
         self.done = true;
         self.log.finish(self.id, |r, limit| {
             r.status = OpStatus::Failed;
-            r.error = Some(failure.error);
-            r.stdout = failure.stdout.map(|s| capture(s, limit));
-            r.stderr = failure.stderr.map(|s| capture(s, limit));
+            r.error = Some(clean(failure.error));
+            r.stdout = failure.stdout.map(|s| clean_capture(s, limit));
+            r.stderr = failure.stderr.map(|s| clean_capture(s, limit));
             r.http_status = failure.http_status;
             r.exit_code = failure.exit_code;
         });
@@ -279,9 +313,9 @@ impl OperationHandle {
         self.done = true;
         self.log.finish(self.id, |r, limit| {
             r.status = OpStatus::Cancelled;
-            r.error = Some(failure.error);
-            r.stdout = failure.stdout.map(|s| capture(s, limit));
-            r.stderr = failure.stderr.map(|s| capture(s, limit));
+            r.error = Some(clean(failure.error));
+            r.stdout = failure.stdout.map(|s| clean_capture(s, limit));
+            r.stderr = failure.stderr.map(|s| clean_capture(s, limit));
             r.exit_code = failure.exit_code;
         });
     }

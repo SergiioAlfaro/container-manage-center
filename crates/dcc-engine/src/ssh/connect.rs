@@ -8,10 +8,12 @@ use std::time::{Duration, Instant};
 use dcc_activity::ActivityLog;
 use tokio::io::AsyncReadExt;
 
-use super::args::{effective_config_args, remote_docker};
+use super::args::{effective_config_args, jump_probe_args, remote_docker};
 use super::hostkey;
 use super::problem::{classify_docker, classify_ssh, RemoteProblem};
-use super::profile::{display_address, docker_host_uri, validate, SshProfile};
+use super::profile::{
+    display_address, docker_host_uri, jump_profile, parse_jump, validate, SshProfile,
+};
 use super::{
     pending_steps, set_step, CheckId, CheckStatus, CheckStep, HostKeyInfo, SshContext, SshSession,
 };
@@ -151,6 +153,91 @@ async fn reach(
     Ok(())
 }
 
+/// Identidad y autenticación del servidor intermedio (E1, DCC-SEC-02, D-087).
+async fn check_jump(
+    ctx: &SshContext,
+    p: &SshProfile,
+    jp: &SshProfile,
+    steps: &mut [CheckStep],
+) -> Result<(), RemoteProblem> {
+    let jump = p.options.proxy_jump.clone();
+    match hostkey::check(&ctx.paths, jp).await {
+        Ok(_) => {}
+        Err(RemoteProblem::HostKeyUnknown { presented }) => {
+            let presented = match presented {
+                Some(k) => Some(k),
+                None => hostkey::presented(&ctx.paths, jp).await.ok(),
+            };
+            set_step(
+                steps,
+                CheckId::Identity,
+                CheckStatus::Failed,
+                presented
+                    .as_ref()
+                    .map(|k| format!("{jump}: {}", k.fingerprint)),
+            );
+            return Err(RemoteProblem::JumpHostKeyUnknown { jump, presented });
+        }
+        Err(RemoteProblem::HostKeyChanged {
+            presented, file, ..
+        }) => {
+            let in_user_file = file
+                .as_deref()
+                .is_some_and(|f| std::path::Path::new(f) == ctx.paths.user_known_hosts);
+            set_step(
+                steps,
+                CheckId::Identity,
+                CheckStatus::Failed,
+                Some(jump.clone()),
+            );
+            return Err(RemoteProblem::JumpHostKeyChanged {
+                jump,
+                presented,
+                file,
+                in_user_file,
+            });
+        }
+        Err(other) => {
+            set_step(steps, CheckId::Reach, CheckStatus::Failed, Some(jump));
+            return Err(other);
+        }
+    }
+    // Autenticación en el salto: solo clave o agente, sin preguntar nada.
+    let Some(j) = parse_jump(&jump) else {
+        return Ok(());
+    };
+    let Some(clean) = jump_probe_args(p, &ctx.paths) else {
+        return Ok(());
+    };
+    let timeout = Duration::from_secs(u64::from(p.options.connect_timeout) + 10);
+    let r = hostkey::run(&ctx.paths.ssh, &clean, timeout).await?;
+    if r.stderr.contains("Authenticated to ") {
+        return Ok(());
+    }
+    if r.stderr.contains("Permission denied")
+        || r.stderr.contains("Too many authentication failures")
+    {
+        set_step(
+            steps,
+            CheckId::Auth,
+            CheckStatus::Failed,
+            Some(jump.clone()),
+        );
+        let methods = r.stderr.lines().find_map(|l| {
+            l.split_once("Permission denied (")
+                .map(|(_, m)| m.trim_end_matches(").").to_owned())
+        });
+        return Err(RemoteProblem::JumpAuthFailed { jump, methods });
+    }
+    set_step(steps, CheckId::Reach, CheckStatus::Failed, Some(jump));
+    Err(classify_ssh(
+        r.code,
+        &r.stderr,
+        &j.host,
+        j.port.unwrap_or(22),
+    ))
+}
+
 /// Clasifica por qué no responde Docker, preguntando al CLI remoto.
 async fn docker_problem(session: &SshSession, fallback: String) -> RemoteProblem {
     let mut argv = remote_docker(&session.profile().docker);
@@ -198,7 +285,21 @@ async fn run_steps(
         return Err(RemoteProblem::SshMissing);
     }
     let eff = effective(ctx, p).await;
+    // Un salto que viene de `~/.ssh/config` no tendría las reglas de la
+    // aplicación y podría pedir el secreto del destino (D-087).
+    if p.options.proxy_jump.is_empty() && p.auth.secret_kind().is_some() {
+        if let Some(via) = &eff.via {
+            set_step(steps, CheckId::Reach, CheckStatus::Failed, None);
+            return Err(RemoteProblem::JumpFromSshConfig { via: via.clone() });
+        }
+    }
     reach(p, &eff, steps).await?;
+
+    // 3a. Servidor intermedio: su identidad (con las mismas reglas que el
+    //     destino) y que acepta la clave o el agente (D-087).
+    if let Some(jp) = jump_profile(p) {
+        check_jump(ctx, p, &jp, steps).await?;
+    }
 
     // 3. Identidad.
     match hostkey::check(&ctx.paths, p).await {

@@ -16,18 +16,29 @@ import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { hostPattern } from "./remote";
 import { HostKeyBox } from "./ui";
 
-type Problem = Extract<RemoteProblem, { kind: "hostKeyUnknown" | "hostKeyChanged" }>;
+type Problem = Extract<RemoteProblem, { kind: "hostKeyUnknown" | "hostKeyChanged" | "jumpHostKeyUnknown" | "jumpHostKeyChanged" }>;
 
+/** Identidad por confirmar: la del destino o la del servidor intermedio (E1, D-087). */
 export function isIdentityProblem(p: RemoteProblem | null | undefined): p is Problem {
-  return p?.kind === "hostKeyUnknown" || p?.kind === "hostKeyChanged";
+  return p?.kind === "hostKeyUnknown" || p?.kind === "hostKeyChanged" || p?.kind === "jumpHostKeyUnknown" || p?.kind === "jumpHostKeyChanged";
+}
+
+/** `[host]:puerto` del servidor intermedio, como en known_hosts. */
+function jumpPattern(jump: string): string {
+  const hostPort = jump.replace(/^[^@]*@/, "");
+  const m = /^\[(.+)\]:(\d+)$/.exec(hostPort) ?? /^([^:]+):(\d+)$/.exec(hostPort);
+  if (!m) return hostPort.replace(/^\[|\]$/g, "");
+  return m[2] === "22" ? m[1]! : `[${m[1]}]:${m[2]}`;
 }
 
 export function IdentityReview({ config, problem, onTrusted }: { config: ServerConfig; problem: Problem; onTrusted: () => void }) {
   const { t } = useTranslation();
-  const changed = problem.kind === "hostKeyChanged";
+  const jump = problem.kind === "jumpHostKeyUnknown" || problem.kind === "jumpHostKeyChanged" ? problem.jump : null;
+  const changed = problem.kind === "hostKeyChanged" || problem.kind === "jumpHostKeyChanged";
   const [checked, setChecked] = useState(false);
+  const pattern = jump ? jumpPattern(jump) : hostPattern(config);
   const trust = useMutation({
-    mutationFn: () => api.serverTrust(config, problem.presented!, changed),
+    mutationFn: () => api.serverTrust(config, problem.presented!, changed, jump !== null),
     onSuccess: onTrusted,
   });
   const err = trust.error ? toCommandError(trust.error) : null;
@@ -42,8 +53,15 @@ export function IdentityReview({ config, problem, onTrusted }: { config: ServerC
         {changed ? <ShieldAlert size={17} aria-hidden /> : <ShieldCheck size={17} aria-hidden className="text-beacon-strong" />}
         {t(changed ? "servers.hostKey.changedTitle" : "servers.hostKey.unknownTitle")}
       </h3>
+      {jump && (
+        <p className="rounded-md bg-surface-2 px-3 py-2 text-[13px] font-medium" data-testid="identity-jump">
+          {t("servers.hostKey.jumpNotice", { jump, host: config.host })}
+        </p>
+      )}
       <p className="text-[13px] text-ink-2">
-        {t(changed ? "servers.hostKey.changedBody" : "servers.hostKey.unknownBody", { host: config.host, port: config.port })}
+        {jump
+          ? t(changed ? "servers.hostKey.jumpChangedBody" : "servers.hostKey.jumpUnknownBody", { jump })
+          : t(changed ? "servers.hostKey.changedBody" : "servers.hostKey.unknownBody", { host: config.host, port: config.port })}
       </p>
       {problem.presented ? (
         <HostKeyBox info={problem.presented} tone={changed ? "danger" : "neutral"} />
@@ -58,7 +76,7 @@ export function IdentityReview({ config, problem, onTrusted }: { config: ServerC
         </div>
       </div>
 
-      {changed && problem.kind === "hostKeyChanged" && problem.inUserFile ? (
+      {changed && (problem.kind === "hostKeyChanged" || problem.kind === "jumpHostKeyChanged") && problem.inUserFile ? (
         <div className="space-y-2">
           <Banner tone="warn">
             {t("servers.hostKey.inUserFile", {
@@ -66,8 +84,8 @@ export function IdentityReview({ config, problem, onTrusted }: { config: ServerC
             })}
           </Banner>
           <div className="flex items-center gap-2 rounded-md bg-code px-2.5 py-1.5">
-            <code className="selectable min-w-0 flex-1 font-mono text-[12.5px]">{`ssh-keygen -R '${hostPattern(config)}'`}</code>
-            <CopyButton text={`ssh-keygen -R '${hostPattern(config)}'`} compact />
+            <code className="selectable min-w-0 flex-1 font-mono text-[12.5px]">{`ssh-keygen -R '${pattern}'`}</code>
+            <CopyButton text={`ssh-keygen -R '${pattern}'`} compact />
           </div>
         </div>
       ) : (

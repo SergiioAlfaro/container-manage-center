@@ -12,9 +12,10 @@ import type { SpecIssue } from "@/shared/ipc/bindings/SpecIssue";
 import type { SpecPreview } from "@/shared/ipc/bindings/SpecPreview";
 import { keys } from "@/shared/query";
 import { Button, CopyButton, Segmented, cx } from "@/shared/ui/controls";
+import { HostRisks, allAccepted, stillAccepted } from "@/shared/ui/HostRisks";
 import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { joinArgs, splitArgs } from "../shellwords";
-import { WIZARD_TABS, bytesFrom, emptySpec, isSecretKey, issuesFor, tabOf, toMemField, type MemUnit, type WizardTab } from "../specModel";
+import { WIZARD_TABS, bytesFrom, emptySpec, isSecretEntry, issuesFor, tabOf, toMemField, type MemUnit, type WizardTab } from "../specModel";
 import { useContainersNav, type Notice } from "../store";
 import { Field, Group, IssueList, Select, TextInput, useIssueText } from "./fields";
 import { KvEditor, MemField, MountsEditor, PortsEditor } from "./editors";
@@ -109,6 +110,8 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
   const [serverIssues, setServerIssues] = useState<SpecIssue[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<"run" | "create" | "body">("run");
+  // Riesgos para el equipo aceptados uno a uno (E1, D-086).
+  const [acceptedRisks, setAcceptedRisks] = useState<string[]>([]);
 
   const set = <K extends keyof ContainerSpec>(k: K, v: ContainerSpec[K]) => setSpec((s) => ({ ...s, [k]: v }));
   const setText = <K extends keyof Texts>(k: K, v: Texts[K]) => setTexts((x) => ({ ...x, [k]: v }));
@@ -134,6 +137,8 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
   }, [eff.spec]);
 
   const issues = useMemo(() => [...eff.issues, ...(serverIssues ?? preview?.issues ?? [])], [eff.issues, serverIssues, preview]);
+  const risks = preview?.risks ?? [];
+  const kept = stillAccepted(risks, acceptedRisks);
   const errors = issues.filter((i) => i.severity === "error");
   const of = (field: string) => issuesFor(issues, field);
 
@@ -153,7 +158,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
   const d = localImage ? defaults.data : undefined;
 
   const create = useMutation({
-    mutationFn: ({ start }: { start: boolean }) => api.containerCreate(eff.spec, start),
+    mutationFn: ({ start }: { start: boolean }) => api.containerCreate({ ...eff.spec, acceptedRisks: kept }, start),
     onMutate: () => setFailure(null),
     onSuccess: (r) => {
       void qc.invalidateQueries({ queryKey: keys.containers });
@@ -168,7 +173,8 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
         setServerIssues(err.issues);
         const first = err.issues.find((i) => i.severity === "error");
         if (first) setTab(tabOf(first.field));
-      } else setFailure(err.message);
+      } else if (err.code === "engine.risksNotAccepted") setFailure(t("hostRisk.notAccepted"));
+      else setFailure(err.message);
     },
   });
 
@@ -176,7 +182,9 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
     const own = issues.filter((i) => tabOf(i.field) === tb);
     return { errors: own.filter((i) => i.severity === "error").length, warnings: own.filter((i) => i.severity === "warning").length };
   };
-  const canCreate = errors.length === 0 && preview !== null && !create.isPending;
+  // Los riesgos para el equipo se muestran aparte, con su aceptación.
+  const listed = issues.filter((i) => !i.code.startsWith("risk."));
+  const canCreate = errors.length === 0 && preview !== null && !create.isPending && allAccepted(risks, kept);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -272,8 +280,9 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                       <summary className="cursor-pointer text-ink-2">{t("create.imageEnv", { count: d.env.length })}</summary>
                       <ul className="selectable mt-2 space-y-0.5 font-mono text-[12px] text-ink-2">
                         {d.env.map((e) => {
-                          const [k] = e.split("=", 1);
-                          return <li key={e}>{isSecretKey(k ?? "") ? `${k}=••••••` : e}</li>;
+                          const i = e.indexOf("=");
+                          const k = i < 0 ? e : e.slice(0, i);
+                          return <li key={e}>{isSecretEntry(k, i < 0 ? "" : e.slice(i + 1)) ? `${k}=••••••` : e}</li>;
                         })}
                       </ul>
                     </details>
@@ -471,11 +480,11 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
 
           <div className="rounded-xl border border-line bg-surface px-4 py-3">
             <h3 className="text-[13px] font-semibold">{t("create.review")}</h3>
-            {issues.length === 0 ? (
-              <p className="mt-1 text-[12.5px] text-ok">{preview ? t("create.noIssues") : t("create.previewing")}</p>
+            {listed.length === 0 ? (
+              <p className="mt-1 text-[12.5px] text-ok">{preview ? (risks.length === 0 ? t("create.noIssues") : t("hostRisk.seeBelow")) : t("create.previewing")}</p>
             ) : (
               <ul className="mt-1.5 space-y-1">
-                {issues.map((i, n) => (
+                {listed.map((i, n) => (
                   <li key={`${i.field}-${i.code}-${n}`}>
                     <button
                       type="button"
@@ -490,6 +499,8 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
               </ul>
             )}
           </div>
+
+          <HostRisks risks={risks} accepted={kept} onChange={setAcceptedRisks} />
 
           {failure && (
             <Banner tone="error" onDismiss={() => setFailure(null)} dismissLabel={t("common.dismiss")}>

@@ -59,11 +59,19 @@ detiene con un aviso de posible **suplantación**; solo se acepta la nueva con
 **Revisar identidad** y una confirmación expresa. La aplicación usa su propia
 lista de huellas y nunca modifica tu `~/.ssh/known_hosts`.
 
-Con un **servidor intermedio** (`ProxyJump`), la identidad del intermedio la
-comprueba `ssh` con tu `~/.ssh/known_hosts` y tu configuración de SSH: si no la
-conoce o ha cambiado, la conexión se rechaza (la aplicación nunca la acepta por
-su cuenta). Conéctate antes una vez en un terminal con
-`ssh -J usuario@intermedio usuario@servidor` para comprobarla y guardarla.
+Con un **servidor intermedio** (`ProxyJump`, formato `usuario@host:puerto`,
+un solo salto), la aplicación lo trata con las mismas reglas que al servidor
+(1.1.0):
+- **Probar conexión** pide primero confirmar la **huella del intermedio** (el
+  aviso lo indica) y después la del servidor. Las dos se guardan en la lista de
+  huellas de la aplicación; un cambio en cualquiera detiene la conexión.
+- El intermedio solo admite **clave SSH o agente SSH** (la clave del perfil, si
+  no tiene frase de paso, también se le ofrece). Si solo admite contraseña, la
+  conexión se detiene con un aviso: la contraseña del servidor **nunca** se
+  envía al intermedio.
+- Si el salto está en tu `~/.ssh/config` (`ProxyJump` o `ProxyCommand`) y el
+  perfil usa contraseña o frase de paso, la aplicación no se conecta así:
+  indica el servidor intermedio en el perfil.
 
 ### Credenciales
 
@@ -170,12 +178,30 @@ El asistente tiene seis pestañas; solo la imagen es obligatoria:
   aplicación no ejecuta ese comando: usa la API, y la operación queda en el
   panel de actividad.
 - **Revisión** lista los errores (en rojo, impiden crear) y las advertencias (en
-  ámbar: puertos privilegiados, carpetas delicadas montadas con escritura, modo
-  privilegiado…). Cada pestaña muestra cuántos errores tiene; pulsa un problema
-  para ir a su campo.
-- Los valores de variables como `PASSWORD`, `TOKEN` o `SECRET` se ocultan en
-  pantalla y en el panel de actividad (`********`), pero Docker los recibe
-  completos y cualquiera con acceso a Docker puede leerlos.
+  ámbar, como los puertos privilegiados). Cada pestaña muestra cuántos errores
+  tiene; pulsa un problema para ir a su campo.
+- **Riesgos para el equipo** (1.1.0) lista lo que da al contenedor acceso al
+  equipo, con su nivel (crítico, alto, medio o bajo):
+  - el **socket de Docker** (o de containerd o Podman) montado, **también en
+    solo lectura**: `:ro` no impide usar la API, y con ella se puede controlar
+    el equipo;
+  - la raíz `/`, carpetas con credenciales (`/etc`, `/root`, `/home`, `~/.ssh`,
+    `~/.docker`…), carpetas del sistema (`/proc`, `/sys`, `/dev`,
+    `/var/lib/docker`…) o programas del sistema con escritura;
+  - el **modo privilegiado**, capacidades como `ALL`, `SYS_ADMIN`,
+    `SYS_PTRACE`, `NET_ADMIN`, `DAC_OVERRIDE` o `NET_RAW`, y la red del equipo
+    (`host`).
+  Los riesgos **altos y críticos** hay que aceptarlos uno a uno («Entiendo el
+  riesgo y quiero continuar») antes de poder crear; la configuración no se
+  cambia. La aplicación vuelve a comprobarlo al crear, así que si la
+  configuración cambia hay que volver a aceptarlos. Una carpeta de tu proyecto
+  o un volumen con nombre no producen ningún aviso.
+- Los valores secretos se ocultan en pantalla, en el panel de actividad, en el
+  historial y en la orden equivalente (`********`): variables cuyo nombre
+  contiene `PASSWORD`, `TOKEN`, `SECRET`, `KEY`… o termina en `PASS`, `PWD`,
+  `AUTH` o `DSN` (`MYSQL_PWD`, `DB_PASS`, `PGPASS`, `REDIS_AUTH`…), y la
+  contraseña de cualquier URL (`postgres://app:********@db/app`). Docker los
+  recibe completos y cualquiera con acceso a Docker puede leerlos.
 - **Crear** crea el contenedor sin iniciarlo; **Crear e iniciar** también lo
   inicia. Si se crea pero no puede iniciarse (p. ej. un puerto ocupado), el
   detalle muestra el error de Docker y el contenedor queda creado.
@@ -234,6 +260,11 @@ confirmas.
   funciona;
 - si algo falla, elimina el nuevo (sin sus volúmenes), devuelve el nombre al
   original y lo vuelve a iniciar.
+
+Si el cambio **añade** un montaje con riesgo para el equipo (por ejemplo `/etc`
+o el socket de Docker), la revisión lo muestra en **Riesgos para el equipo** y
+hay que aceptarlo antes de aplicar. Los riesgos que el contenedor ya tenía no
+se vuelven a pedir.
 
 Nunca se borran volúmenes, carpetas ni imágenes. La copia queda detenida en
 **General › Copias de seguridad**, desde donde puedes **Restaurar** (el actual
@@ -443,7 +474,11 @@ servicios.
 - **Desplegar** (`docker compose up --detach`): todos los servicios o los
   elegidos, perfiles, construir antes, descargar imágenes (si faltan, siempre o
   nunca), volver a crear los contenedores y eliminar huérfanos. El diálogo
-  muestra el comando exacto.
+  muestra el comando exacto y, si algún servicio monta el socket de Docker o
+  carpetas delicadas, usa el modo privilegiado, capacidades peligrosas o la red
+  del equipo, sus **riesgos para el equipo** con el nombre del servicio: los
+  altos y críticos hay que aceptarlos para desplegar (también al desplegar un
+  solo servicio desde su fila).
 - **Iniciar, Detener, Reiniciar** actúan sobre todos los contenedores del
   proyecto, también los de servicios con perfil. **Descargar imágenes** y
   **Construir** preparan las imágenes sin desplegar.
@@ -545,6 +580,13 @@ Al desplegar una entrada ves la **operación ejecutada** de verdad (por ejemplo
 equivalente (con la aclaración de que es orientativo cuando se usó la API), el
 resultado, el error de Docker y su código HTTP si falló, y las salidas de los
 procesos CLI.
+
+Los valores secretos (contraseñas, tokens, claves privadas, la contraseña de
+una URL) se ocultan con `********` antes de guardarse o mostrarse, en todos
+esos campos y en el historial; el nombre de la variable y el resto del mensaje
+siguen visibles. Los **registros de los contenedores** y la **salida de las
+terminales** se muestran tal cual: son datos de tus contenedores y la
+aplicación no los modifica.
 
 Para no llenar el panel, las comprobaciones automáticas de la conexión (cada
 10 s) no se registran una a una; sí se registra la comprobación que detecta una

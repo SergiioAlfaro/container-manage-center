@@ -93,7 +93,7 @@ pub fn spawn_startup_check<R: Runtime>(app: AppHandle<R>) {
         tokio::time::sleep(STARTUP_CHECK_DELAY).await;
         let r = run_check(&cfg.source).await;
         if let Err(e) = &r {
-            tracing::info!(error = %e, "comprobación de actualizaciones al iniciar");
+            tracing::info!(error = %dcc_activity::redact::redact_text(&e.to_string()), "comprobación de actualizaciones al iniciar");
         }
         let outcome = UpdateOutcome {
             check: r.as_ref().ok().cloned(),

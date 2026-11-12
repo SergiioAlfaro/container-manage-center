@@ -80,21 +80,16 @@ pub struct BindSummary {
     pub containers: Vec<BindUser>,
 }
 
+/// Riesgo de una carpeta del equipo en la pantalla de directorios vinculados.
+/// Mismas reglas que el asistente y la edición (`crate::risk`, D-086): sin
+/// saber cómo la monta cada contenedor, se evalúa como montaje con escritura.
 pub fn risk_of(path: &str) -> Option<BindRisk> {
-    let p = path.trim_end_matches('/');
-    let p = if p.is_empty() { "/" } else { p };
-    if p.ends_with("/docker.sock") || p == "docker.sock" {
-        return Some(BindRisk::DockerSocket);
-    }
-    if p == "/" {
-        return Some(BindRisk::HostRoot);
-    }
-    if crate::spec::SENSITIVE_BINDS.contains(&p)
-        || ["/usr", "/bin", "/sbin", "/lib", "/lib64", "/var/lib/docker"].contains(&p)
-    {
-        return Some(BindRisk::System);
-    }
-    None
+    let r = crate::risk::mount_risk(path, false, false, "source")?;
+    Some(match r.code.as_str() {
+        "risk.runtimeSocket" => BindRisk::DockerSocket,
+        "risk.hostRoot" => BindRisk::HostRoot,
+        _ => BindRisk::System,
+    })
 }
 
 pub fn host_path_info(path: &str) -> HostPathInfo {
@@ -387,10 +382,14 @@ mod tests {
         assert_eq!(risk_of("/"), Some(BindRisk::HostRoot));
         assert_eq!(risk_of("/etc/"), Some(BindRisk::System));
         assert_eq!(risk_of("/var/lib/docker"), Some(BindRisk::System));
+        // E1 (D-086): sin saber cómo se monta, se evalúa con escritura, y una
+        // carpeta de /etc con escritura cambia la configuración del equipo.
+        assert_eq!(risk_of("/etc/nginx"), Some(BindRisk::System));
+        assert_eq!(risk_of("//etc"), Some(BindRisk::System));
+        assert_eq!(risk_of("/home/ana/.ssh"), Some(BindRisk::System));
         assert_eq!(
-            risk_of("/etc/nginx"),
-            None,
-            "una subcarpeta concreta no se marca"
+            risk_of("/run/containerd/containerd.sock"),
+            Some(BindRisk::DockerSocket)
         );
         assert_eq!(risk_of("/home/ana/proyecto"), None);
     }

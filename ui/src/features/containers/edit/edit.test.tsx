@@ -243,6 +243,27 @@ describe("Editar configuración: pantalla", () => {
     expect(api.containerEditApply).toHaveBeenCalledWith("a1b2c3d4e5f6a7b8c9d0", expect.objectContaining({ name: "web2" }), { confirmRecreate: false, acceptedRisks: [], keepMac: false, backupName: null });
   });
 
+  it("un montaje nuevo con riesgo para el equipo exige aceptarlo (E1, D-086)", async () => {
+    api.containerEditPlan.mockImplementationOnce(async (id, r) => ({
+      ...editPlanOf(id, r),
+      hostRisks: [{ code: "risk.credentials", level: "high", field: "mounts.2.source", key: "risk.credentials:/etc", params: { level: "high", path: "/etc", readOnly: "true" } }],
+    }));
+    await open();
+    await userEvent.clear(screen.getByLabelText("Nombre"));
+    await userEvent.type(screen.getByLabelText("Nombre"), "web2");
+    await userEvent.click(screen.getByRole("button", { name: "Revisar cambios" }));
+    const box = await screen.findByTestId("host-risks");
+    expect(within(box).getByText(/\/etc contiene credenciales del equipo/)).toBeInTheDocument();
+    const apply = screen.getByRole("button", { name: "Aplicar cambios" });
+    expect(apply).toBeDisabled();
+    await userEvent.click(within(box).getByRole("checkbox"));
+    expect(apply).toBeEnabled();
+    await userEvent.click(apply);
+    await waitFor(() =>
+      expect(api.containerEditApply).toHaveBeenCalledWith("a1b2c3d4e5f6a7b8c9d0", expect.objectContaining({ name: "web2" }), expect.objectContaining({ acceptedRisks: ["risk.credentials:/etc"] })),
+    );
+  });
+
   it("recrear exige aceptar cada riesgo y confirmar; no se aplica nada antes", async () => {
     api.containerEditApply.mockResolvedValueOnce(
       editOutcome({

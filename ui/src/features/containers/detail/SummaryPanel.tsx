@@ -5,7 +5,7 @@ import { formatBytes, formatDate, shortId, uniquePorts } from "@/shared/format";
 import type { ContainerDetails } from "@/shared/ipc/bindings/ContainerDetails";
 import { cx } from "@/shared/ui/controls";
 import { joinArgs } from "../shellwords";
-import { isSecretKey } from "../specModel";
+import { isSecretEntry } from "../specModel";
 
 function Section({ title, children, count }: { title: string; children: ReactNode; count?: number }) {
   return (
@@ -45,7 +45,7 @@ export function SummaryPanel({ d }: { d: ContainerDetails }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [reveal, setReveal] = useState(false);
-  const secrets = d.env.filter((e) => isSecretKey(e.key)).length;
+  const secrets = d.env.filter((e) => isSecretEntry(e.key, e.value)).length;
   const ports = d.ports.filter((p) => p.publicPort !== null);
   const exposed = d.ports.filter((p) => p.publicPort === null);
   const yes = t("common.yes");
@@ -129,7 +129,7 @@ export function SummaryPanel({ d }: { d: ContainerDetails }) {
             {d.env.map((e, i) => (
               <li key={`${e.key}-${i}`}>
                 <span className="text-ink-2">{e.key}</span>=
-                {isSecretKey(e.key) && !reveal ? <span className="text-ink-3" aria-label={t("detail.hidden")}>••••••••</span> : e.value}
+                {isSecretEntry(e.key, e.value) && !reveal ? <span className="text-ink-3" aria-label={t("detail.hidden")}>••••••••</span> : e.value}
               </li>
             ))}
           </ul>

@@ -98,6 +98,9 @@ pub async fn compose_config(
 pub struct ComposePreview {
     /// Comando exacto que se ejecutará.
     pub command: String,
+    /// Riesgos para el equipo de los servicios que arrancaría `up` (D-086).
+    /// Los altos y críticos se aceptan con su `key` al ejecutar.
+    pub risks: Vec<dcc_engine::risk::Risk>,
 }
 
 /// Comando exacto de una acción, sin ejecutarla. Valida la entrada.
@@ -112,8 +115,14 @@ pub async fn compose_preview(
     project.validate()?;
     action.validate()?;
     let cli = mgr.compose_cli().await?;
+    let risks = mgr
+        .engine()
+        .await?
+        .compose_up_risks(&cli, &project, &action)
+        .await?;
     Ok(ComposePreview {
         command: action_command(&cli, &project, &action),
+        risks,
     })
 }
 
@@ -173,6 +182,7 @@ pub async fn compose_run_open(
     project: ProjectRef,
     action: ComposeAction,
     confirmed: bool,
+    accepted_risks: Option<Vec<String>>,
     on_event: Channel<ComposeEvent>,
 ) -> CmdResult<u64> {
     let mgr = state.server(&server)?;
@@ -182,6 +192,20 @@ pub async fn compose_run_open(
     let missing = engine.files_missing(&project.files).await?;
     engine.compose_check(&project, &action, confirmed, &missing)?;
     let cli = mgr.compose_cli().await?;
+    // `up` con riesgos altos o críticos sin aceptar no se ejecuta (D-086): se
+    // recalculan aquí, no se confía en lo que diga la interfaz.
+    let risks = engine.compose_up_risks(&cli, &project, &action).await?;
+    let missing_risks: Vec<_> =
+        dcc_engine::risk::unaccepted(&risks, accepted_risks.as_deref().unwrap_or_default())
+            .into_iter()
+            .cloned()
+            .collect();
+    if !missing_risks.is_empty() {
+        return Err(EngineError::RisksNotAccepted {
+            risks: missing_risks,
+        }
+        .into());
+    }
     let registry = state.streams.clone();
     let manager = mgr.clone();
     let (sid, cancel) = registry.register(&server, None);

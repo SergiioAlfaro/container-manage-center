@@ -11,6 +11,7 @@ use bollard::models::{
 
 use super::*;
 use crate::spec::MIB;
+use crate::spec::REDACTED;
 
 fn inspect() -> ContainerInspectResponse {
     let id = "0123456789abcdef0123456789abcdef".to_string();

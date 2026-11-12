@@ -13,4 +13,8 @@ file: string | null,
 /**
  * Está en `~/.ssh/known_hosts` (la aplicación no lo modifica).
  */
-inUserFile: boolean, } | { "kind": "authFailed", methods: string | null, } | { "kind": "secretRequired", secret: SecretKind, } | { "kind": "keyUnreadable", path: string, } | { "kind": "dockerMissing" } | { "kind": "dockerNotRunning", message: string, } | { "kind": "socketDenied", message: string, } | { "kind": "contextMissing", name: string, } | { "kind": "notDocker", message: string, } | { "kind": "apiTooOld", apiVersion: string, minimum: string, } | { "kind": "connectionLost" } | { "kind": "other", message: string, };
+inUserFile: boolean, } | { "kind": "jumpHostKeyUnknown", 
+/**
+ * `usuario@host:puerto` del salto, tal como está en el perfil.
+ */
+jump: string, presented: HostKeyInfo | null, } | { "kind": "jumpHostKeyChanged", jump: string, presented: HostKeyInfo | null, file: string | null, inUserFile: boolean, } | { "kind": "jumpAuthFailed", jump: string, methods: string | null, } | { "kind": "jumpFromSshConfig", via: string, } | { "kind": "authFailed", methods: string | null, } | { "kind": "secretRequired", secret: SecretKind, } | { "kind": "keyUnreadable", path: string, } | { "kind": "dockerMissing" } | { "kind": "dockerNotRunning", message: string, } | { "kind": "socketDenied", message: string, } | { "kind": "contextMissing", name: string, } | { "kind": "notDocker", message: string, } | { "kind": "apiTooOld", apiVersion: string, minimum: string, } | { "kind": "connectionLost" } | { "kind": "other", message: string, };

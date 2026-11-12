@@ -42,9 +42,17 @@ pub struct HistoryEntry {
     pub server: Option<crate::model::ServerTag>,
 }
 
-/// Oculta los valores de los parámetros secretos de una ruta con query string.
+/// Oculta los valores de los parámetros secretos de una ruta con query string
+/// (historial: todos los valores de `buildargs`).
 /// Para `buildargs` (un objeto JSON) se conservan los nombres de los argumentos.
 pub fn redact_path(path: &str) -> String {
+    redact_path_with(path, true)
+}
+
+/// Igual que [`redact_path`]; con `all_buildargs = false` (panel de actividad)
+/// solo se ocultan los argumentos con nombre secreto o con credenciales. Los
+/// parámetros con nombre secreto (`?token=…`) se ocultan siempre.
+pub fn redact_path_with(path: &str, all_buildargs: bool) -> String {
     let Some((base, query)) = path.split_once('?') else {
         return path.to_owned();
     };
@@ -52,6 +60,9 @@ pub fn redact_path(path: &str) -> String {
         .split('&')
         .map(|kv| {
             let (k, v) = kv.split_once('=').unwrap_or((kv, ""));
+            if crate::redact::is_secret_name(k) && !v.is_empty() {
+                return format!("{k}={}", percent_encode(HIDDEN));
+            }
             if !SECRET_QUERY_PARAMS.contains(&k) {
                 return kv.to_owned();
             }
@@ -61,8 +72,21 @@ pub fn redact_path(path: &str) -> String {
             ) {
                 Ok(m) => {
                     let masked: serde_json::Map<String, serde_json::Value> = m
-                        .keys()
-                        .map(|k| (k.clone(), serde_json::Value::String(HIDDEN.into())))
+                        .iter()
+                        .map(|(name, value)| {
+                            let shown = match value.as_str() {
+                                Some(s) if !all_buildargs => {
+                                    let r = crate::redact::redact_value(name, s);
+                                    if r == s {
+                                        value.clone()
+                                    } else {
+                                        serde_json::Value::String(HIDDEN.into())
+                                    }
+                                }
+                                _ => serde_json::Value::String(HIDDEN.into()),
+                            };
+                            (name.clone(), shown)
+                        })
                         .collect();
                     serde_json::Value::Object(masked).to_string()
                 }

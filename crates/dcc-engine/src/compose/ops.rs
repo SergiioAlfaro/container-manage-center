@@ -427,6 +427,26 @@ impl Engine {
         Ok(out)
     }
 
+    /// Riesgos para el equipo de los servicios que arrancaría `up` (E1, D-086),
+    /// a partir de la configuración resuelta por Compose. Otras acciones no
+    /// crean contenedores: sin riesgos. Si la configuración no es válida, `up`
+    /// fallará igualmente y no hay riesgos que mostrar.
+    pub async fn compose_up_risks(
+        &self,
+        cli: &ComposeCli,
+        project: &ProjectRef,
+        action: &ComposeAction,
+    ) -> Result<Vec<crate::risk::Risk>, EngineError> {
+        let ComposeAction::Up { services, .. } = action else {
+            return Ok(Vec::new());
+        };
+        let cfg = self.compose_config(cli, project, None).await?;
+        Ok(cfg
+            .model
+            .map(|m| super::project::risks_for(&m, services))
+            .unwrap_or_default())
+    }
+
     /// Comprobaciones previas de una acción, sin ejecutar nada (también las usa
     /// la interfaz para responder de inmediato antes de abrir la salida en vivo).
     /// `missing`: archivos del proyecto que no existen donde está el proyecto

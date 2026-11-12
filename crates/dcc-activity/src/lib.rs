@@ -9,6 +9,7 @@ pub mod history;
 mod log;
 mod model;
 pub mod quote;
+pub mod redact;
 
 pub use history::HistoryEntry;
 pub use log::{

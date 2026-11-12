@@ -5,8 +5,8 @@ este equipo y en servidores remotos por SSH: contenedores, imágenes, redes,
 volúmenes, directorios vinculados y proyectos Docker Compose, mostrando en todo
 momento las operaciones reales que se ejecutan.
 
-**Versión 1.0.0** (Fase 10: pruebas finales y distribución). Tauri 2 · Rust ·
-React · TypeScript · bollard.
+**Versión 1.1.0** (evolución, Etapa 1: correcciones de seguridad prioritarias).
+Tauri 2 · Rust · React · TypeScript · bollard.
 
 ## Qué hace
 
@@ -45,7 +45,7 @@ bash scripts/install.sh --check  # solo comprueba el sistema
 bash scripts/install.sh --uninstall
 ```
 
-O directamente: `sudo apt install ./docker-control-center_1.0.0_amd64.deb`.
+O directamente: `sudo apt install ./docker-control-center_1.1.0_amd64.deb`.
 Después se abre desde el menú de aplicaciones o con `docker-control-center`
 (desde el código fuente: `bash scripts/run.sh`). Requisitos, acceso a Docker,
 compilación y diagnóstico en [INSTALL.md](INSTALL.md).
@@ -60,12 +60,14 @@ compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 | [DECISIONS.md](DECISIONS.md) | Decisiones técnicas |
 | [STATUS.md](STATUS.md) | Estado del proyecto, fases y resultados de las pruebas |
 | [CHANGELOG.md](CHANGELOG.md) | Cambios de cada versión |
+| [docs/roadmap/PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md) | Plan de evolución (etapas E0–E6) |
+| [docs/security/](docs/security/) | Auditoría de seguridad, plan de corrección y lista de comprobación |
 | [packaging/THIRD-PARTY.md](packaging/THIRD-PARTY.md) | Componentes de terceros y sus licencias |
 
 ## Comprobación
 
 ```bash
-bash scripts/verify-phase-10.sh --deb   # regresión completa, paquete y comprobaciones de la Fase 10
+bash scripts/verify-evolution-1.1.0.sh --deb   # regresión completa, paquete y comprobaciones de la Etapa 1
 cargo run -q -p dcc-engine --bin dcc-diagnose   # diagnóstico de la conexión con Docker
 ```
 
