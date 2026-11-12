@@ -192,13 +192,7 @@
     "resetConfirmBody": "Le thème, la langue, le panneau d’activité, l’historique et les mises à jour reprennent leurs valeurs par défaut. La connexion à Docker, les projets Compose et l’historique déjà enregistré ne sont pas modifiés.",
     "maintenance": "Maintenance et aide",
     "open": "Ouvrir",
-    "back": "Paramètres",
-    "accent": "Couleur principale",
-    "accentHint": "Appliquée immédiatement aux boutons, à la sélection, aux indicateurs et à la navigation.",
-    "accentOptions": {
-      "teal": "Bleu canard",
-      "purple": "Violet"
-    }
+    "back": "Paramètres"
   },
   "common": {
     "dismiss": "Fermer l’avis",

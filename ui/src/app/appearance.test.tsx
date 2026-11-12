@@ -11,15 +11,15 @@ import { App } from "./App";
 import { DEFAULT_CONFIG, applyAppearance, useApp } from "./store";
 import { renderWithQuery, setServerState } from "@/test/render";
 import i18n from "@/shared/i18n";
-import type { Accent } from "@/shared/ipc/bindings/Accent";
 import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
 import { ActivityPanel } from "@/features/activity/ActivityPanel";
 import { useActivity } from "@/features/activity/store";
 import { EMPTY_FILTER } from "@/features/activity/logic";
 
-async function boot(accent: Accent = "teal") {
+async function boot(saved?: string) {
   const config = structuredClone(DEFAULT_CONFIG);
-  config.ui.accent = accent;
+  // Configuración guardada por una versión anterior (p. ej. «teal», ya migrada por el backend o no).
+  if (saved) (config.ui as { accent: string }).accent = saved;
   api.configGet.mockResolvedValueOnce(config);
   useApp.setState({ section: "settings", config, saveError: null, info: null });
   setServerState(connected);
@@ -27,62 +27,48 @@ async function boot(accent: Accent = "teal") {
   renderWithQuery(<App />);
 }
 
-describe("Color principal (0.9.2)", () => {
+describe("Color principal (1.0.0, D-082): solo morado", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     api.configSet.mockImplementation(async (c) => c);
   });
   afterEach(async () => {
     await act(() => i18n.changeLanguage("es"));
-    document.documentElement.dataset.accent = "teal";
   });
 
-  it("por defecto se mantiene el color existente (verde azulado)", () => {
-    expect(DEFAULT_CONFIG.ui.accent).toBe("teal");
+  it("el valor predeterminado es el morado", () => {
+    expect(DEFAULT_CONFIG.ui.accent).toBe("purple");
   });
 
-  it("elegir morado se aplica al momento, sin reiniciar, y se guarda", async () => {
+  it("Configuración ya no ofrece elegir el color principal (ni el verde)", async () => {
     await boot();
-    const group = await screen.findByRole("radiogroup", { name: "Color principal" });
-    expect(within(group).getAllByRole("radio").map((r) => r.textContent)).toEqual(["Verde azulado", "Morado"]);
-    expect(within(group).getByRole("radio", { name: "Verde azulado" })).toHaveAttribute("aria-checked", "true");
-    expect(document.documentElement.dataset.accent).toBe("teal");
-    await userEvent.click(within(group).getByRole("radio", { name: "Morado" }));
-    expect(document.documentElement.dataset.accent).toBe("purple");
-    expect(api.configSet).toHaveBeenLastCalledWith(expect.objectContaining({ ui: expect.objectContaining({ accent: "purple" }) }));
-    expect(within(group).getByRole("radio", { name: "Morado" })).toHaveAttribute("aria-checked", "true");
-    // Se navega con el teclado como cualquier grupo de opciones.
-    within(group).getByRole("radio", { name: "Morado" }).focus();
-    await userEvent.keyboard("{ArrowLeft}");
-    expect(document.documentElement.dataset.accent).toBe("teal");
+    expect(await screen.findByRole("heading", { level: 1, name: "Configuración" })).toBeInTheDocument();
+    expect(await screen.findByRole("radiogroup", { name: "Tema" })).toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Color principal" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Verde azulado/)).not.toBeInTheDocument();
+    expect(document.querySelector("[data-swatch]")).toBeNull();
+    // Cambiar otras preferencias no introduce ningún color distinto del morado.
+    await userEvent.click(screen.getByRole("radio", { name: "Oscuro" }));
+    expect(api.configSet).toHaveBeenLastCalledWith(expect.objectContaining({ ui: expect.objectContaining({ theme: "dark", accent: "purple" }) }));
   });
 
-  it("el color guardado se aplica al abrir la aplicación (persistencia), en los dos temas", async () => {
-    await boot("purple");
-    expect(document.documentElement.dataset.accent).toBe("purple");
-    applyAppearance({ ...DEFAULT_CONFIG, ui: { ...DEFAULT_CONFIG.ui, theme: "dark", accent: "purple" } });
+  it("una configuración antigua con el verde no lo aplica: los tokens son los morados", async () => {
+    await boot("teal");
+    // El atributo que activaba el verde azulado ya no se usa.
+    expect(document.documentElement.dataset.accent).toBeUndefined();
+    applyAppearance({ ...DEFAULT_CONFIG, ui: { ...DEFAULT_CONFIG.ui, theme: "dark" } });
     expect(document.documentElement.dataset.theme).toBe("dark");
-    expect(document.documentElement.dataset.accent).toBe("purple");
+    expect(document.documentElement.dataset.accent).toBeUndefined();
   });
 
-  it("si no se puede guardar, se informa y se vuelve al color anterior", async () => {
-    await boot();
-    api.configSet.mockRejectedValueOnce({ code: "store.io", message: "Disco lleno" });
-    await userEvent.click(within(await screen.findByRole("radiogroup", { name: "Color principal" })).getByRole("radio", { name: "Morado" }));
-    expect(await screen.findByText(/Disco lleno/)).toBeInTheDocument();
-    expect(document.documentElement.dataset.accent).toBe("teal");
-  });
-
-  it("las terminales abiertas cambian de color sin reiniciarse", () => {
-    const term = { options: { theme: terminalTheme("teal") } } as unknown as Terminal;
+  it("las terminales usan el morado, también tras aplicar la apariencia", () => {
+    expect(terminalTheme().cursor).toBe("#a184f2");
+    const term = { options: { theme: terminalTheme() } } as unknown as Terminal;
     const untrack = trackTerminal(term);
-    applyAppearance({ ...DEFAULT_CONFIG, ui: { ...DEFAULT_CONFIG.ui, accent: "purple" } });
+    applyAppearance({ ...DEFAULT_CONFIG, ui: { ...DEFAULT_CONFIG.ui, theme: "light" } });
     expect(term.options.theme?.cursor).toBe("#a184f2");
-    applyAppearance({ ...DEFAULT_CONFIG, ui: { ...DEFAULT_CONFIG.ui, accent: "teal" } });
-    expect(term.options.theme?.cursor).toBe("#25b0b3");
+    expect(term.options.theme?.selectionBackground).toBe("#a184f255");
     untrack();
-    applyAppearance({ ...DEFAULT_CONFIG, ui: { ...DEFAULT_CONFIG.ui, accent: "purple" } });
-    expect(term.options.theme?.cursor).toBe("#25b0b3");
   });
 });
 

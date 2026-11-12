@@ -35,7 +35,7 @@ Para actualizar, instala o paquete novo da mesma forma: consérvanse a túa conf
 
 Non cómpre configurar nada para comezar: a conexión con Docker é automática. En **Configuración** podes escoller:
 
-- O **tema** (Sistema, Claro ou Escuro), a **cor principal** (verde azulado ou morado) e o **idioma**.
+- O **tema** (Sistema, Claro ou Escuro) e o **idioma**. A cor principal é o morado.
 - Se o panel de actividade se abre só cando falla unha operación e cantas operacións conserva.
 - Se se garda o historial de operacións e eventos entre sesións.
 - Un socket concreto de Docker, se non queres a detección automática.
@@ -264,7 +264,7 @@ O historial garda que se fixo, cando e con que resultado, pero nunca o corpo das
 
 ## 23. Configuración, temas e idiomas {#settings}
 
-- **Aparencia**: tema (Sistema, Claro, Escuro), **cor principal** (verde azulado ou **morado**; aplícase ao momento nos botóns, na selección, nos indicadores e na navegación) e idioma, nesta orde: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Cada idioma aparece co seu propio nome. O idioma e a cor gárdanse, mantéñense ao volver abrir a aplicación e os seus cambios quedan no panel de actividade.
+- **Aparencia**: tema (Sistema, Claro, Escuro) e idioma, nesta orde: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Cada idioma aparece co seu propio nome. O idioma gárdase, mantense ao volver abrir a aplicación e os seus cambios quedan no panel de actividade. A cor principal é o **morado** (desde a versión 1.0.0 non se pode escoller outra; se tiñas o verde azulado, cámbiase a morado sen perder o resto da configuración).
 - **Panel de actividade**: abrilo ante erros, operacións conservadas (50–10 000) e **Gardar o historial entre sesións**.
 - **Conexión con Docker** e comprobación de **Docker Compose**.
 - **Actualizacións**: onde se publican as versións e **Comprobar agora**. A aplicación nunca descarga nin instala nada.

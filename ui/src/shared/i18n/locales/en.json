@@ -192,13 +192,7 @@
     "resetConfirmBody": "Theme, language, activity panel, history and update settings go back to their defaults. The Docker connection, Compose projects and the history already saved are not changed.",
     "maintenance": "Maintenance and help",
     "open": "Open",
-    "back": "Settings",
-    "accent": "Primary color",
-    "accentHint": "Applied immediately to buttons, selection, indicators and navigation.",
-    "accentOptions": {
-      "teal": "Teal",
-      "purple": "Purple"
-    }
+    "back": "Settings"
   },
   "common": {
     "dismiss": "Dismiss notice",

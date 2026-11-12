@@ -35,7 +35,7 @@ Pour mettre à jour, installez le nouveau paquet de la même façon : votre conf
 
 Il n’y a rien à configurer pour commencer : la connexion à Docker est automatique. Dans **Paramètres**, vous pouvez choisir :
 
-- Le **thème** (Système, Clair ou Sombre), la **couleur principale** (bleu canard ou violet) et la **langue**.
+- Le **thème** (Système, Clair ou Sombre) et la **langue**. La couleur principale est le violet.
 - Si le panneau d’activité s’ouvre seul lorsqu’une opération échoue et combien d’opérations il conserve.
 - Si l’historique des opérations et des événements est conservé entre les sessions.
 - Un socket Docker précis, si vous ne voulez pas la détection automatique.
@@ -264,7 +264,7 @@ L’historique enregistre ce qui a été fait, quand et avec quel résultat, mai
 
 ## 23. Paramètres, thèmes et langues {#settings}
 
-- **Apparence** : thème (Système, Clair, Sombre), **couleur principale** (bleu canard ou **violet** ; appliquée immédiatement aux boutons, à la sélection, aux indicateurs et à la navigation) et langue, dans cet ordre : **English**, **Español** (par défaut), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** et **Português**. Chaque langue apparaît sous son propre nom. La langue et la couleur sont enregistrées, conservées à la réouverture de l’application, et leurs changements apparaissent dans le panneau d’activité.
+- **Apparence** : thème (Système, Clair, Sombre) et langue, dans cet ordre : **English**, **Español** (par défaut), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** et **Português**. Chaque langue apparaît sous son propre nom. La langue est enregistrée, conservée à la réouverture de l’application, et ses changements apparaissent dans le panneau d’activité. La couleur principale est le **violet** (depuis la version 1.0.0, aucune autre ne peut être choisie ; si vous aviez le bleu canard, il passe au violet sans perdre le reste de vos réglages).
 - **Panneau d’activité** : l’ouvrir en cas d’erreur, opérations conservées (50–10 000) et **Conserver l’historique entre les sessions**.
 - **Connexion à Docker** et vérification de **Docker Compose**.
 - **Mises à jour** : où les versions sont publiées et **Vérifier maintenant**. L’application ne télécharge ni n’installe jamais rien.

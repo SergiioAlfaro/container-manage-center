@@ -192,13 +192,7 @@
     "resetConfirmBody": "Gaia, hizkuntza, jarduera-panela, historia eta eguneratzeak hasierako balioetara itzultzen dira. Dockerrekiko konexioa, Compose proiektuak eta lehendik gordetako historia ez dira aldatzen.",
     "maintenance": "Mantentzea eta laguntza",
     "open": "Ireki",
-    "back": "Konfigurazioa",
-    "accent": "Kolore nagusia",
-    "accentHint": "Berehala aplikatzen da botoietan, hautapenean, adierazleetan eta nabigazioan.",
-    "accentOptions": {
-      "teal": "Berde urdinxka",
-      "purple": "Morea"
-    }
+    "back": "Konfigurazioa"
   },
   "common": {
     "dismiss": "Itxi abisua",

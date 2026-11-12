@@ -35,7 +35,7 @@ Para atualizar, instale o novo pacote da mesma forma: a sua configuração e o h
 
 Não é preciso configurar nada para começar: a ligação ao Docker é automática. Em **Definições** pode escolher:
 
-- O **tema** (Sistema, Claro ou Escuro), a **cor principal** (verde-azulado ou roxo) e o **idioma**.
+- O **tema** (Sistema, Claro ou Escuro) e o **idioma**. A cor principal é o roxo.
 - Se o painel de atividade se abre sozinho quando uma operação falha, e quantas operações guarda.
 - Se o histórico de operações e eventos é guardado entre sessões.
 - Um socket do Docker concreto, se não quiser a deteção automática.
@@ -264,7 +264,7 @@ O histórico guarda o que foi feito, quando e com que resultado, mas nunca o cor
 
 ## 23. Definições, temas e idiomas {#settings}
 
-- **Aspeto**: tema (Sistema, Claro, Escuro), **cor principal** (verde-azulado ou **roxo**; aplica-se de imediato aos botões, à seleção, aos indicadores e à navegação) e idioma, por esta ordem: **English**, **Español** (predefinido), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Cada idioma aparece com o seu próprio nome. O idioma e a cor são guardados, mantêm-se ao voltar a abrir a aplicação e as suas mudanças ficam no painel de atividade.
+- **Aspeto**: tema (Sistema, Claro, Escuro) e idioma, por esta ordem: **English**, **Español** (predefinido), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Cada idioma aparece com o seu próprio nome. O idioma é guardado, mantém-se ao voltar a abrir a aplicação e as suas mudanças ficam no painel de atividade. A cor principal é o **roxo** (desde a versão 1.0.0 não é possível escolher outra; se tinha o verde-azulado, muda para roxo sem perder o resto da configuração).
 - **Painel de atividade**: abrir perante erros, operações guardadas (50–10 000) e **Guardar histórico entre sessões**.
 - **Ligação ao Docker** e verificação do **Docker Compose**.
 - **Atualizações**: onde são publicadas as versões e **Verificar agora**. A aplicação nunca transfere nem instala nada.

@@ -8,10 +8,10 @@
   <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#hull)"/>
   <rect x="64" y="64" width="896" height="896" rx="208" fill="none" stroke="#2C3E52" stroke-width="12"/>
   <!-- Línea de flotación -->
-  <path d="M190 690 H834" stroke="#14A3A8" stroke-width="28" stroke-linecap="round"/>
+  <path d="M190 690 H834" stroke="#A184F2" stroke-width="28" stroke-linecap="round"/>
   <!-- Contenedores apilados -->
   <g stroke="#121B26" stroke-width="10">
-    <rect x="232" y="510" width="270" height="150" rx="18" fill="#14A3A8"/>
+    <rect x="232" y="510" width="270" height="150" rx="18" fill="#A184F2"/>
     <rect x="522" y="510" width="270" height="150" rx="18" fill="#E3B341"/>
     <rect x="377" y="340" width="270" height="150" rx="18" fill="#D2DDE7"/>
   </g>

@@ -35,7 +35,7 @@ Per aggiornare, installa il nuovo pacchetto allo stesso modo: la configurazione 
 
 Per iniziare non serve configurare nulla: la connessione a Docker è automatica. In **Impostazioni** puoi scegliere:
 
-- Il **tema** (Sistema, Chiaro o Scuro), il **colore principale** (verde acqua o viola) e la **lingua**.
+- Il **tema** (Sistema, Chiaro o Scuro) e la **lingua**. Il colore principale è il viola.
 - Se il pannello attività si apre da solo quando un’operazione non riesce e quante operazioni conserva.
 - Se la cronologia delle operazioni e degli eventi viene conservata tra una sessione e l’altra.
 - Un socket di Docker specifico, se non vuoi il rilevamento automatico.
@@ -264,7 +264,7 @@ La cronologia salva che cosa è stato fatto, quando e con quale esito, ma mai il
 
 ## 23. Impostazioni, temi e lingue {#settings}
 
-- **Aspetto**: tema (Sistema, Chiaro, Scuro), **colore principale** (verde acqua o **viola**; si applica subito a pulsanti, selezione, indicatori e navigazione) e lingua, in questo ordine: **English**, **Español** (predefinita), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Ogni lingua compare con il proprio nome. Lingua e colore vengono salvati, mantenuti alla successiva apertura dell’applicazione e le loro modifiche restano nel pannello attività.
+- **Aspetto**: tema (Sistema, Chiaro, Scuro) e lingua, in questo ordine: **English**, **Español** (predefinita), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Ogni lingua compare con il proprio nome. La lingua viene salvata, mantenuta alla successiva apertura dell’applicazione e le sue modifiche restano nel pannello attività. Il colore principale è il **viola** (dalla versione 1.0.0 non se ne può scegliere un altro; se avevi il verde acqua, passa al viola senza perdere il resto delle impostazioni).
 - **Pannello attività**: aprirlo in caso di errore, operazioni conservate (50–10.000) e **Conserva la cronologia tra le sessioni**.
 - **Connessione a Docker** e verifica di **Docker Compose**.
 - **Aggiornamenti**: dove vengono pubblicate le versioni e **Controlla ora**. L’applicazione non scarica né installa mai nulla.

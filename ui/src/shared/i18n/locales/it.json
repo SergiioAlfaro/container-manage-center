@@ -192,13 +192,7 @@
     "resetConfirmBody": "Tema, lingua, pannello attività, cronologia e aggiornamenti tornano ai valori predefiniti. La connessione a Docker, i progetti Compose e la cronologia già salvata non vengono modificati.",
     "maintenance": "Manutenzione e guida",
     "open": "Apri",
-    "back": "Impostazioni",
-    "accent": "Colore principale",
-    "accentHint": "Si applica subito a pulsanti, selezione, indicatori e navigazione.",
-    "accentOptions": {
-      "teal": "Verde acqua",
-      "purple": "Viola"
-    }
+    "back": "Impostazioni"
   },
   "common": {
     "dismiss": "Chiudi avviso",

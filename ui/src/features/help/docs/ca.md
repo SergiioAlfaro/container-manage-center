@@ -35,7 +35,7 @@ Per actualitzar, instal·la el paquet nou de la mateixa manera: es conserven la 
 
 No cal configurar res per començar: la connexió amb Docker és automàtica. A **Configuració** pots triar:
 
-- El **tema** (Sistema, Clar o Fosc), el **color principal** (verd blavós o morat) i l’**idioma**.
+- El **tema** (Sistema, Clar o Fosc) i l’**idioma**. El color principal és el morat.
 - Si el tauler d’activitat s’obre sol quan una operació falla i quantes operacions conserva.
 - Si es desa l’historial d’operacions i esdeveniments entre sessions.
 - Un sòcol concret de Docker, si no vols la detecció automàtica.
@@ -264,7 +264,7 @@ L’historial desa què s’ha fet, quan i amb quin resultat, però mai el cos d
 
 ## 23. Configuració, temes i idiomes {#settings}
 
-- **Aparença**: tema (Sistema, Clar, Fosc), **color principal** (verd blavós o **morat**; s’aplica a l’instant als botons, la selecció, els indicadors i la navegació) i idioma, en aquest ordre: **English**, **Español** (predeterminat), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** i **Português**. Cada idioma apareix amb el seu propi nom. L’idioma i el color es desen, es mantenen en tornar a obrir l’aplicació i els seus canvis queden al tauler d’activitat.
+- **Aparença**: tema (Sistema, Clar, Fosc) i idioma, en aquest ordre: **English**, **Español** (predeterminat), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** i **Português**. Cada idioma apareix amb el seu propi nom. L’idioma es desa, es manté en tornar a obrir l’aplicació i els seus canvis queden al tauler d’activitat. El color principal és el **morat** (des de la versió 1.0.0 no se’n pot triar cap altre; si tenies el verd blavós, es canvia a morat sense perdre la resta de la configuració).
 - **Tauler d’activitat**: obrir-lo davant d’errors, operacions conservades (50–10 000) i **Desar l’historial entre sessions**.
 - **Connexió amb Docker** i comprovació de **Docker Compose**.
 - **Actualitzacions**: on es publiquen les versions i **Comprovar ara**. L’aplicació no baixa ni instal·la mai res.

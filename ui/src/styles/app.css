@@ -2,9 +2,15 @@
 
 /*
  * Identidad visual "casco y baliza".
- * - Niebla (fondo), casco (barra lateral), baliza (acento verde azulado).
+ * - Niebla (fondo), casco (barra lateral), baliza (acento morado).
  * - Colores de señal para el estado de las operaciones.
  * Todas las superficies se definen como tokens para el tema claro y oscuro.
+ *
+ * Color principal (D-072, D-082): desde la 1.0.0 el único es el morado; el
+ * verde azulado original ya no existe. Todos los componentes usan los tokens
+ * --beacon*, así que no hay reglas por componente. Los colores de señal
+ * (--signal-*: éxito, ejecución, aviso, error) no dependen del color
+ * principal. Contrastes (WCAG): ver styles/accent.test.ts.
  */
 
 :root {
@@ -24,12 +30,12 @@
   --hull-ink: #c9d4df;
   --hull-ink-dim: #8194a7;
 
-  --beacon: #0d8287;
-  --beacon-strong: #0a6b6f;
-  --beacon-soft: rgb(13 130 135 / 0.11);
+  --beacon: #7046d4;
+  --beacon-strong: #5a32b3;
+  --beacon-soft: rgb(112 70 212 / 0.11);
   --beacon-ink: #ffffff;
   /* Acento sobre el casco (barra lateral, siempre oscura): 0.9.2, D-072. */
-  --beacon-nav: #25b0b3;
+  --beacon-nav: #a184f2;
 
   --signal-ok: #2b8a57;
   --signal-run: #2a74b0;
@@ -41,7 +47,7 @@
   --log-rule: #e2e8ee;
   --code-bg: #e9eef2;
 
-  --focus: #2a74b0;
+  --focus: #6a3fd0;
   --shadow-panel: -18px 0 40px -28px rgb(17 28 40 / 0.45);
   color-scheme: light;
 }
@@ -63,11 +69,11 @@
   --hull-ink: #c3cfdb;
   --hull-ink-dim: #6f8399;
 
-  --beacon: #25b0b3;
-  --beacon-strong: #4cc6c8;
-  --beacon-soft: rgb(37 176 179 / 0.14);
-  --beacon-ink: #071317;
-  --beacon-nav: #4cc6c8;
+  --beacon: #a184f2;
+  --beacon-strong: #bba6f7;
+  --beacon-soft: rgb(161 132 242 / 0.15);
+  --beacon-ink: #140b2b;
+  --beacon-nav: #bba6f7;
 
   --signal-ok: #4fb57c;
   --signal-run: #5b9fd6;
@@ -79,32 +85,9 @@
   --log-rule: #1d2b39;
   --code-bg: #0b141c;
 
-  --focus: #5b9fd6;
+  --focus: #b49cf7;
   --shadow-panel: -18px 0 40px -24px rgb(0 0 0 / 0.7);
   color-scheme: dark;
-}
-
-/*
- * Color principal morado (0.9.2, D-072). Solo cambian los tokens del acento;
- * todos los componentes los usan, así que no hay reglas por componente.
- * Contrastes (WCAG): ver styles/accent.test.ts.
- */
-:root[data-accent="purple"] {
-  --beacon: #7046d4;
-  --beacon-strong: #5a32b3;
-  --beacon-soft: rgb(112 70 212 / 0.11);
-  --beacon-ink: #ffffff;
-  --beacon-nav: #a184f2;
-  --focus: #6a3fd0;
-}
-
-:root[data-theme="dark"][data-accent="purple"] {
-  --beacon: #a184f2;
-  --beacon-strong: #bba6f7;
-  --beacon-soft: rgb(161 132 242 / 0.15);
-  --beacon-ink: #140b2b;
-  --beacon-nav: #bba6f7;
-  --focus: #b49cf7;
 }
 
 @theme inline {

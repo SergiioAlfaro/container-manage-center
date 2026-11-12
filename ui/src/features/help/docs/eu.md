@@ -35,7 +35,7 @@ Eguneratzeko, instalatu pakete berria modu berean: zure konfigurazioa eta histor
 
 Ez da ezer konfiguratu behar hasteko: Dockerrekiko konexioa automatikoa da. **Konfigurazioa** atalean hauek aukera ditzakezu:
 
-- **Gaia** (Sistemarena, Argia edo Iluna), **kolore nagusia** (berde urdinxka edo morea) eta **hizkuntza**.
+- **Gaia** (Sistemarena, Argia edo Iluna) eta **hizkuntza**. Kolore nagusia morea da.
 - Jarduera-panela bere kabuz irekitzen den eragiketa batek huts egiten duenean, eta zenbat eragiketa gordetzen dituen.
 - Eragiketen eta gertaeren historia saioen artean gordetzen den.
 - Dockerren socket zehatz bat, detekzio automatikoa nahi ez baduzu.
@@ -264,7 +264,7 @@ Historiak zer egin zen, noiz eta zer emaitzarekin gordetzen du, baina inoiz ez e
 
 ## 23. Konfigurazioa, gaiak eta hizkuntzak {#settings}
 
-- **Itxura**: gaia (Sistemarena, Argia, Iluna), **kolore nagusia** (berde urdinxka edo **morea**; berehala aplikatzen da botoietan, hautapenean, adierazleetan eta nabigazioan) eta hizkuntza, ordena honetan: **English**, **Español** (lehenetsia), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** eta **Português**. Hizkuntza bakoitza bere izenarekin agertzen da. Hizkuntza eta kolorea gorde egiten dira, aplikazioa berriro irekitzean mantentzen dira, eta haien aldaketak jarduera-panelean geratzen dira.
+- **Itxura**: gaia (Sistemarena, Argia, Iluna) eta hizkuntza, ordena honetan: **English**, **Español** (lehenetsia), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** eta **Português**. Hizkuntza bakoitza bere izenarekin agertzen da. Hizkuntza gorde egiten da, aplikazioa berriro irekitzean mantentzen da, eta haren aldaketak jarduera-panelean geratzen dira. Kolore nagusia **morea** da (1.0.0 bertsiotik ezin da beste bat aukeratu; berde urdinxka bazenuen, morera aldatzen da gainerako konfigurazioa galdu gabe).
 - **Jarduera-panela**: erroreen aurrean irekitzea, gordetako eragiketak (50–10 000) eta **Gorde historia saioen artean**.
 - **Dockerrekiko konexioa** eta **Docker Composeren** egiaztapena.
 - **Eguneratzeak**: bertsioak non argitaratzen diren eta **Egiaztatu orain**. Aplikazioak ez du inoiz ezer deskargatzen edo instalatzen.

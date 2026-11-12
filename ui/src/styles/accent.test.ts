@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Color principal (0.9.2, D-072): los contrastes se calculan con la fórmula de
- * WCAG 2.x a partir de los tokens reales de app.css, para los dos colores y
- * los dos temas. Umbrales: 4.5:1 para texto y 3:1 para elementos de interfaz
+ * Color principal (0.9.2, D-072; 1.0.0, D-082: solo morado): los contrastes se
+ * calculan con la fórmula de WCAG 2.x a partir de los tokens reales de
+ * app.css, en los dos temas. Umbrales: 4.5:1 para texto y 3:1 para elementos de interfaz
  * (bordes, indicadores, iconos y anillo de foco).
  */
 const css = readFileSync(resolve(__dirname, "app.css"), "utf8");
@@ -39,11 +39,20 @@ const contrast = (a: Rgba, b: Rgba) => {
 const light = block(":root");
 const dark = { ...light, ...block(':root[data-theme="dark"]') };
 const THEMES = {
-  "verde azulado · claro": light,
-  "verde azulado · oscuro": dark,
-  "morado · claro": { ...light, ...block(':root[data-accent="purple"]') },
-  "morado · oscuro": { ...dark, ...block(':root[data-accent="purple"]'), ...block(':root[data-theme="dark"][data-accent="purple"]') },
+  "morado · claro": light,
+  "morado · oscuro": dark,
 };
+
+/** Tono (0–360) de un color opaco. */
+function hue([r, g, b]: Rgba): number {
+  const [R, G, B] = [r / 255, g / 255, b / 255];
+  const max = Math.max(R, G, B);
+  const d = max - Math.min(R, G, B);
+  if (d === 0) return 0;
+  const h = max === R ? ((G - B) / d) % 6 : max === G ? (B - R) / d + 2 : (R - G) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+const ACCENT_TOKENS = ["--beacon", "--beacon-strong", "--beacon-soft", "--beacon-nav", "--focus"];
 
 describe("color principal: contraste WCAG", () => {
   it.each(Object.entries(THEMES))("%s", (_name, t) => {
@@ -63,11 +72,38 @@ describe("color principal: contraste WCAG", () => {
     expect(contrast(c("--beacon-nav"), c("--hull-3"))).toBeGreaterThanOrEqual(3);
   });
 
-  it("el morado solo redefine tokens del acento (sin reglas por componente)", () => {
-    for (const sel of [':root[data-accent="purple"]', ':root[data-theme="dark"][data-accent="purple"]']) {
-      expect(Object.keys(block(sel)).sort(), sel).toEqual(["--beacon", "--beacon-ink", "--beacon-nav", "--beacon-soft", "--beacon-strong", "--focus"]);
+  it("no queda ningún verde como color principal: los tokens del acento son morados", () => {
+    for (const [name, t] of Object.entries(THEMES)) {
+      for (const token of ACCENT_TOKENS) {
+        const h = hue(parse(t[token]!));
+        // Morado/violeta: entre 250° y 290°. El verde azulado original estaba en ~182°.
+        expect(h, `${name} ${token}`).toBeGreaterThanOrEqual(250);
+        expect(h, `${name} ${token}`).toBeLessThanOrEqual(290);
+      }
     }
-    expect(css.match(/data-accent/g)).toHaveLength(2);
+    // Ni selectores por color ni los valores del verde azulado anterior.
+    expect(css).not.toMatch(/data-accent/);
+    for (const old of ["#0d8287", "#0a6b6f", "#25b0b3", "#4cc6c8", "13 130 135", "37 176 179"]) expect(css.toLowerCase()).not.toContain(old);
+  });
+
+  it("los colores semánticos (éxito, ejecución, aviso, error) no cambian", () => {
+    expect(Object.fromEntries(["--signal-ok", "--signal-run", "--signal-warn", "--signal-err", "--signal-off"].map((k) => [k, light[k]]))).toEqual({
+      "--signal-ok": "#2b8a57",
+      "--signal-run": "#2a74b0",
+      "--signal-warn": "#b7821b",
+      "--signal-err": "#bf412e",
+      "--signal-off": "#8794a2",
+    });
+    expect(Object.fromEntries(["--signal-ok", "--signal-run", "--signal-warn", "--signal-err", "--signal-off"].map((k) => [k, dark[k]]))).toEqual({
+      "--signal-ok": "#4fb57c",
+      "--signal-run": "#5b9fd6",
+      "--signal-warn": "#d9a63c",
+      "--signal-err": "#e0664f",
+      "--signal-off": "#6c7d8f",
+    });
+    // El éxito sigue siendo verde (es un indicador funcional, no el color principal).
+    expect(hue(parse(light["--signal-ok"]!))).toBeGreaterThan(90);
+    expect(hue(parse(light["--signal-ok"]!))).toBeLessThan(160);
   });
 
   it("la barra lateral usa el token propio del casco, no el acento general", () => {

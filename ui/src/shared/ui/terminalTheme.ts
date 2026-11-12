@@ -2,17 +2,14 @@ import type { ITheme, Terminal } from "@xterm/xterm";
 
 /**
  * Colores de las terminales (detalle del contenedor y apartado «Terminales»).
- * El fondo es siempre oscuro; el cursor y la selección siguen el color
- * principal (0.9.2, D-072). Son los valores de `--beacon-nav`, que es el
- * acento pensado para fondos oscuros.
+ * El fondo es siempre oscuro; el cursor y la selección usan el color
+ * principal morado (D-072, D-082): el valor de `--beacon-nav`, que es el
+ * acento pensado para fondos oscuros. Desde la 1.0.0 no hay otro color.
  */
-const CURSOR: Record<string, string> = {
-  teal: "#25b0b3",
-  purple: "#a184f2",
-};
+const CURSOR = "#a184f2";
 
-export function terminalTheme(accent: string = document.documentElement.dataset.accent ?? "teal"): ITheme {
-  const cursor = CURSOR[accent] ?? CURSOR.teal!;
+export function terminalTheme(): ITheme {
+  const cursor = CURSOR;
   return {
     background: "#0b1219",
     foreground: "#d5dee7",

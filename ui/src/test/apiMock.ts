@@ -123,7 +123,7 @@ export const SYSTEM_INFO: SystemInfo = {
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
 const DEFAULT_CONFIG: AppConfig = {
   version: 1,
-  ui: { theme: "system", language: "es", accent: "teal", sidebarCollapsed: false },
+  ui: { theme: "system", language: "es", accent: "purple", sidebarCollapsed: false },
   activity: { panelOpen: false, openOnError: true, maxRecords: 500, keepHistory: true },
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },

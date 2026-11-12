@@ -100,7 +100,7 @@ describe("traducciones", () => {
     const distinct = ["sections.containers.title", "components.title", "help.github", "errorCodes.engine_notConnected", "edit.action", "commit.action"];
     // Textos que coinciden legítimamente entre lenguas cercanas («Cancelar» en es/gl/pt,
     // «Novo terminal» en gl/pt…): cambian, pero no son únicos por idioma.
-    const shared = ["terminals.new", "common.cancel", "settings.accent"];
+    const shared = ["terminals.new", "common.cancel", "settings.themeOptions.dark"];
     const seen = new Map<string, Set<string>>();
     const fingerprints = new Set<string>();
     for (const l of LANGUAGES) {

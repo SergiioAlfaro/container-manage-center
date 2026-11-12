@@ -35,7 +35,7 @@ Para actualizar, instala el paquete nuevo de la misma forma: se conservan tu con
 
 No hace falta configurar nada para empezar: la conexión con Docker es automática. En **Configuración** puedes elegir:
 
-- El **tema** (Sistema, Claro u Oscuro), el **color principal** (verde azulado o morado) y el **idioma**.
+- El **tema** (Sistema, Claro u Oscuro) y el **idioma**. El color principal es el morado.
 - Si el panel de actividad se abre solo cuando una operación falla y cuántas operaciones conserva.
 - Si se guarda el historial de operaciones y eventos entre sesiones.
 - Un socket concreto de Docker, si no quieres la detección automática.
@@ -264,7 +264,7 @@ El historial guarda qué se hizo, cuándo y con qué resultado, pero nunca el cu
 
 ## 23. Configuración, temas e idiomas {#settings}
 
-- **Apariencia**: tema (Sistema, Claro, Oscuro), **color principal** (verde azulado o **morado**; se aplica al momento a botones, selección, indicadores y navegación) e idioma, por este orden: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** y **Português**. Cada idioma aparece con su propio nombre. El idioma y el color se guardan, se mantienen al volver a abrir la aplicación y sus cambios quedan en el panel de actividad.
+- **Apariencia**: tema (Sistema, Claro, Oscuro) e idioma, por este orden: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** y **Português**. Cada idioma aparece con su propio nombre. El idioma se guarda, se mantiene al volver a abrir la aplicación y sus cambios quedan en el panel de actividad. El color principal es el **morado** (desde la versión 1.0.0 no se puede elegir otro; si tenías el verde azulado, se cambia a morado sin perder el resto de la configuración).
 - **Panel de actividad**: abrirlo ante errores, operaciones conservadas (50–10 000) y **Guardar el historial entre sesiones**.
 - **Conexión con Docker** y comprobación de **Docker Compose**.
 - **Actualizaciones**: dónde se publican las versiones y **Comprobar ahora**. La aplicación nunca descarga ni instala nada.

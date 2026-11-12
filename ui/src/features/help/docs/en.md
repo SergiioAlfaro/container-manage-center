@@ -35,7 +35,7 @@ To update, install the new package the same way: your settings and your history 
 
 You do not need to configure anything to get started: the Docker connection is automatic. In **Settings** you can choose:
 
-- The **theme** (System, Light or Dark), the **primary color** (teal or purple) and the **language**.
+- The **theme** (System, Light or Dark) and the **language**. The primary color is purple.
 - Whether the activity panel opens by itself when an operation fails and how many operations it keeps.
 - Whether the history of operations and events is saved between sessions.
 - A specific Docker socket, if you do not want automatic detection.
@@ -264,7 +264,7 @@ The history saves what was done, when and with what result, but never the reques
 
 ## 23. Settings, themes and languages {#settings}
 
-- **Appearance**: theme (System, Light, Dark), **primary color** (teal or **purple**; applied immediately to buttons, selection, indicators and navigation) and language, in this order: **English**, **Español** (default), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** and **Português**. Each language appears under its own name. The language and color are saved, kept when you reopen the application, and their changes are recorded in the activity panel.
+- **Appearance**: theme (System, Light, Dark) and language, in this order: **English**, **Español** (default), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** and **Português**. Each language appears under its own name. The language is saved, kept when you reopen the application, and its changes are recorded in the activity panel. The primary color is **purple** (since version 1.0.0 no other can be chosen; if you had teal, it changes to purple without losing the rest of your settings).
 - **Activity panel**: open it on errors, operations kept (50–10,000) and **Keep the history between sessions**.
 - **Docker connection** and the **Docker Compose** check.
 - **Updates**: where versions are published and **Check now**. The application never downloads or installs anything.

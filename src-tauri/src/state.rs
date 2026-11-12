@@ -135,15 +135,8 @@ impl AppState {
                 new.ui.language.code(),
             );
         }
-        if cur.ui.accent != new.ui.accent {
-            record_preference(
-                &self.activity,
-                "ui.accent",
-                "Cambio del color principal",
-                cur.ui.accent.code(),
-                new.ui.accent.code(),
-            );
-        }
+        // El color principal ya no se puede cambiar (1.0.0, D-082): solo morado.
+        // Los registros «ui.accent» de versiones anteriores siguen en el historial.
         *cur = new.clone();
         Ok((new, docker_changed))
     }
@@ -182,12 +175,11 @@ mod tests {
     }
 
     #[test]
-    fn language_and_accent_changes_are_recorded_once() {
+    fn language_changes_are_recorded_once() {
         let dir = tempfile::tempdir().unwrap();
         let state = AppState::new(ConfigStore::at(dir.path().join("config.toml")));
         let mut c = state.config();
         c.ui.language = dcc_store::Language::Eu;
-        c.ui.accent = dcc_store::Accent::Purple;
         state.replace_config(c.clone()).unwrap();
         // Guardar lo mismo otra vez no añade registros.
         state.replace_config(c).unwrap();
@@ -198,10 +190,7 @@ mod tests {
             .collect();
         assert_eq!(
             got,
-            [
-                ("ui.accent".to_string(), Some("teal → purple".to_string())),
-                ("ui.language".to_string(), Some("es → eu".to_string())),
-            ]
+            [("ui.language".to_string(), Some("es → eu".to_string()))]
         );
         assert!(recs.iter().all(
             |r| matches!(r.transport, dcc_activity::Transport::App { .. })

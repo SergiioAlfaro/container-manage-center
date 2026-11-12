@@ -66,21 +66,31 @@ impl Language {
     }
 }
 
-/// Color principal de la interfaz (0.9.2, D-072).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+/// Color principal de la interfaz (0.9.2, D-072; 1.0.0, D-082).
+///
+/// Desde la 1.0.0 el único color principal es el morado: el verde azulado
+/// original ya no se puede elegir. Se sigue guardando (`accent = "purple"`) para
+/// que una versión anterior lea el mismo color. Al leer, **cualquier** valor
+/// guardado —el `"teal"` de la 0.9.2–0.10.0, uno desconocido o uno con otro
+/// tipo— se convierte en morado sin invalidar el resto de la configuración.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum Accent {
-    /// Verde azulado, el color original de la aplicación.
     #[default]
-    Teal,
     Purple,
+}
+
+impl<'de> Deserialize<'de> for Accent {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        serde::de::IgnoredAny::deserialize(d)?;
+        Ok(Self::Purple)
+    }
 }
 
 impl Accent {
     pub fn code(self) -> &'static str {
         match self {
-            Self::Teal => "teal",
             Self::Purple => "purple",
         }
     }
@@ -102,7 +112,7 @@ impl Default for UiConfig {
         Self {
             theme: Theme::System,
             language: Language::Es,
-            accent: Accent::Teal,
+            accent: Accent::Purple,
             sidebar_collapsed: false,
         }
     }

@@ -9,7 +9,6 @@ import gl from "./locales/gl.json";
 import eu from "./locales/eu.json";
 import pt from "./locales/pt.json";
 import type { Language } from "@/shared/ipc/bindings/Language";
-import type { Accent } from "@/shared/ipc/bindings/Accent";
 
 /** Orden del selector de idioma (0.9.2): inglés primero. */
 export const LANGUAGES: Language[] = ["en", "es", "ca", "gl", "eu", "fr", "it", "pt"];
@@ -29,9 +28,6 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   it: "Italiano",
   pt: "Português",
 };
-
-/** Colores principales disponibles (0.9.2). */
-export const ACCENTS: Accent[] = ["teal", "purple"];
 
 void i18n.use(initReactI18next).init({
   resources: {

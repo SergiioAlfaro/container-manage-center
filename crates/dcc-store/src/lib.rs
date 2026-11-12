@@ -193,24 +193,52 @@ mod tests {
         let codes: Vec<&str> = Language::ORDER.iter().map(|l| l.code()).collect();
         assert_eq!(codes, ["en", "es", "ca", "gl", "eu", "fr", "it", "pt"]);
         let (_d, s) = store();
+        // El valor predeterminado es el morado y así se guarda.
+        assert_eq!(AppConfig::default().ui.accent, Accent::Purple);
         s.save(&AppConfig::default()).unwrap();
-        // Un archivo anterior a la 0.9.2 (sin `accent`) usa el color original.
-        fs::write(s.path(), "version = 1\n[ui]\nlanguage = \"gl\"\n").unwrap();
-        let c = s.load().unwrap().config;
-        assert_eq!((c.ui.language, c.ui.accent), (Language::Gl, Accent::Teal));
-        let mut c = AppConfig::default();
-        c.ui.accent = Accent::Purple;
-        s.save(&c).unwrap();
         assert!(fs::read_to_string(s.path())
             .unwrap()
             .contains("accent = \"purple\""));
         assert_eq!(s.load().unwrap().config.ui.accent, Accent::Purple);
-        // Un valor desconocido no se acepta como otro color.
-        fs::write(s.path(), "version = 1\n[ui]\naccent = \"pink\"\n").unwrap();
-        assert!(s
-            .load()
-            .map(|l| l.config.ui.accent != Accent::Purple)
-            .unwrap_or(true));
+        // Un archivo anterior a la 0.9.2 (sin `accent`) también usa el morado.
+        fs::write(s.path(), "version = 1\n[ui]\nlanguage = \"gl\"\n").unwrap();
+        let c = s.load().unwrap().config;
+        assert_eq!((c.ui.language, c.ui.accent), (Language::Gl, Accent::Purple));
+    }
+
+    /// 1.0.0 (D-082): el verde azulado ya no existe como color principal.
+    #[test]
+    fn saved_green_accent_migrates_to_purple_keeping_the_rest() {
+        let (_d, s) = store();
+        fs::create_dir_all(s.path().parent().unwrap()).unwrap();
+        for accent in ["\"teal\"", "\"pink\"", "\"\"", "3", "true"] {
+            let toml = format!(
+                "version = 1\n[ui]\ntheme = \"dark\"\nlanguage = \"eu\"\naccent = {accent}\nsidebarCollapsed = true\n[activity]\nmaxRecords = 321\n"
+            );
+            fs::write(s.path(), &toml).unwrap();
+            let loaded = s.load().unwrap();
+            let c = loaded.config;
+            assert_eq!(c.ui.accent, Accent::Purple, "{accent}");
+            // El resto de preferencias se conserva: no se trata como archivo dañado.
+            assert_eq!(
+                (c.ui.theme, c.ui.language, c.ui.sidebar_collapsed),
+                (Theme::Dark, Language::Eu, true),
+                "{accent}"
+            );
+            assert_eq!(c.activity.max_records, 321, "{accent}");
+            assert!(loaded.warning.is_none(), "{accent}");
+            assert!(
+                !s.path().with_extension("toml.corrupt").exists(),
+                "{accent}"
+            );
+            // Al guardar queda el morado: el verde no vuelve.
+            s.save(&c).unwrap();
+            let text = fs::read_to_string(s.path()).unwrap();
+            assert!(
+                text.contains("accent = \"purple\"") && !text.contains("teal"),
+                "{accent}"
+            );
+        }
     }
 
     #[test]

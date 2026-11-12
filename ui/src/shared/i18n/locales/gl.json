@@ -192,13 +192,7 @@
     "resetConfirmBody": "O tema, o idioma, o panel de actividade, o historial e as actualizacións volven aos seus valores iniciais. A conexión con Docker, os proxectos Compose e o historial xa gardado non cambian.",
     "maintenance": "Mantemento e axuda",
     "open": "Abrir",
-    "back": "Configuración",
-    "accent": "Cor principal",
-    "accentHint": "Aplícase ao momento nos botóns, na selección, nos indicadores e na navegación.",
-    "accentOptions": {
-      "teal": "Verde azulado",
-      "purple": "Morado"
-    }
+    "back": "Configuración"
   },
   "common": {
     "dismiss": "Pechar o aviso",

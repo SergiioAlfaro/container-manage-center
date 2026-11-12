@@ -192,13 +192,7 @@
     "resetConfirmBody": "El tema, l’idioma, el tauler d’activitat, l’historial i les actualitzacions tornen als valors inicials. La connexió amb Docker, els projectes Compose i l’historial ja desat no canvien.",
     "maintenance": "Manteniment i ajuda",
     "open": "Obrir",
-    "back": "Configuració",
-    "accent": "Color principal",
-    "accentHint": "S’aplica a l’instant als botons, la selecció, els indicadors i la navegació.",
-    "accentOptions": {
-      "teal": "Verd blavós",
-      "purple": "Morat"
-    }
+    "back": "Configuració"
   },
   "common": {
     "dismiss": "Tancar l’avís",

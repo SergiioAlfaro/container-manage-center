@@ -74,12 +74,12 @@ describe("Idiomas: ocho idiomas (0.9.1 francés e italiano; 0.9.2 catalán, gall
   it("los caracteres especiales se muestran tal cual (ç, ã, ·, ñ)", async () => {
     await boot("pt");
     expect(await screen.findByRole("heading", { level: 1, name: "Configuração" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Roxo" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Escuro" })).toBeInTheDocument();
     await act(() => i18n.changeLanguage("ca"));
     expect(i18n.t("common.cancel")).toBe("Cancel·lar");
     expect(i18n.t("sections.settings.title")).toBe("Configuració");
     await act(() => i18n.changeLanguage("es"));
-    expect(i18n.t("settings.accentOptions.teal")).toBe("Verde azulado");
+    expect(i18n.t("settings.themeOptions.dark")).toBe("Oscuro");
     expect(screen.getByRole("option", { name: "Português" })).toBeInTheDocument();
   });
 
