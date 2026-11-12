@@ -346,12 +346,12 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
-| Rust unitarias | `cargo test` | 27 actividad · 301 motor · 36 configuración · 124 aplicación (0.10.0) |
+| Rust unitarias | `cargo test` | 27 actividad · 301 motor · 37 configuración · 124 aplicación (1.0.0) |
 | Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 75: incluye las de actualizaciones (servidor local, límites, redirecciones; HTTPS real solo con `DCC_NET_TESTS=1`) y la de la Fase 9 por IPC; ocho contra Docker real (inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose; eventos) |
 | Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
 | Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
 | Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p dcc-engine --test events_interrupted` | 3 |
-| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 374 |
+| Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 376 |
 | Administración remota contra servidores SSH reales (0.10.0) | `DCC_DOCKER_TESTS=1 DCC_SSH_LAB=lab.json cargo test -p dcc-engine --test live_ssh -- --test-threads=1`; IPC con `DCC_TEST_ASKPASS`; las suites de recursos con `DCC_SSH_TEST=usuario@host:puerto` (laboratorio de `scripts/dev/remote-lab.sh`, solo en una máquina de pruebas) | 12 + 1 IPC; contenedores, imágenes, redes, volúmenes, terminales, edición y eventos repetidos por SSH |
 | Llavero real (0.10.0) | `DCC_KEYRING_TEST=1` dentro de una sesión D-Bus con un llavero temporal | 1 |
 | Edición, recreación y commit contra Docker real (0.9.2) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |

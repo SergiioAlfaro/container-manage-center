@@ -8,9 +8,9 @@
 |---|---|
 | **Fase actual** | 10. Pruebas finales y distribución |
 | **Versión** | 1.0.0 |
-| **Estado** | En curso |
+| **Estado** | Implementada y verificada; pendiente de la validación del propietario (F1–F8) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Fases pendientes** | 10 (en curso) |
+| **Fases pendientes** | Validación de la 10 |
 
 | Fase | Estado |
 |---|---|
@@ -26,7 +26,7 @@
 | Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | **Validada** (confirmada por el propietario en la solicitud de la 0.9.2, 2026-11-11) |
 | Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | **Validada** (confirmada por el propietario, 2026-11-12) |
 | Actualización 0.10.0 (administración remota de servidores Docker por SSH) | **Validada** (confirmada por el propietario, 2026-11-12) |
-| 10. Pruebas finales y distribución | En curso (versión 1.0.0) |
+| 10. Pruebas finales y distribución | Implementada (versión 1.0.0); pendiente de validación |
 
 ---
 
@@ -980,13 +980,49 @@ Pruebas completas, instalación limpia, generación de paquetes, documentación 
 - **Documentación**: README, INSTALL (instalador, ejecución, dependencias y desinstalación), USER_GUIDE, ayuda en los ocho idiomas, ARCHITECTURE, DECISIONS (D-082–D-084), CHANGELOG y `LICENSE`.
 
 ### Pruebas ejecutadas
-@@PRUEBAS-F10@@
+Ejecutadas en Ubuntu 24.04 con `scripts/verify-phase-10.sh` (registros completos de cada paso):
+
+| Entorno | Resultado |
+|---|---|
+| Docker 29.9.2 + laboratorio SSH (`--deb --compat --net --ssh-lab`) | **96 correctas, 0 fallos**, 4 omitidas justificadamente |
+| Docker 26.1.3 | **64 correctas, 0 fallos**, 5 omitidas justificadamente |
+| Docker 24.0.7 | **64 correctas, 0 fallos**, 5 omitidas justificadamente |
+| Compose 2.26.1 (en los tres) | 6/6 |
+
+- **Deterministas.** 562 pruebas Rust: 27 de actividad, 301 del motor, 37 de configuración, 124 de la aplicación, más protocolo e IPC. 372 de interfaz en la verificación y 376 con las cuatro de estados de los botones añadidas después. Clippy sin avisos y formato correcto. Ningún paso con filtro se quedó sin ejecutar pruebas (D-084).
+- **Fase 10.**
+  - Migración del color (`teal`, desconocido o de otro tipo → morado, conservando el resto).
+  - Interfaz en morado (tono de los tokens, contraste AA, colores semánticos sin cambios, sin selector, terminales).
+  - Sin verde en el código, en `dist/` ni en el logotipo.
+  - `THIRD-PARTY.md` al día; scripts sin avisos de shellcheck.
+  - Paquetes: versión, contenido, iconos estándar y lanzador válido.
+  - `install.sh --check` elige el paquete correcto.
+- **Regresión.** Todas las suites contra Docker real de las fases 1–9, 0.9.1, 0.9.2 y 0.10.0.
+  - SSH: `live_ssh` 12/12, IPC con tres servidores con y sin llavero real.
+  - Contenedores, imágenes, redes, volúmenes, terminales, edición y eventos repetidos por SSH.
+  - Sin restos en ningún servidor.
+- **Instalación limpia** (`scripts/dev/clean-install-test.sh`), en Ubuntu 24.04 y 22.04 recién creados, con un usuario normal: 0 fallos en los dos. En 22.04 el instalador elige solo el paquete compatible.
+- **Actualización real de 0.10.0 a 1.0.0** con `accent = "teal"` guardado: la interfaz pasa a morado y conserva tema, idioma y número de operaciones.
+- **Revisión visual del paquete instalado** (claro y oscuro):
+  - hover del botón principal, anillo de foco morado, pestaña y apartado seleccionados;
+  - botones deshabilitados atenuados;
+  - indicadores semánticos verde, ámbar y rojo;
+  - logotipo morado.
+
+  El estado de carga dura demasiado poco aquí para capturarlo: lo cubren las pruebas de los botones.
 
 ### Problemas detectados y resueltos
-@@PROBLEMAS-F10@@
+- **Pasos de verificación sin pruebas** (D-084): un paso con filtro de nombre pasaba aunque no ejecutara nada. Al renombrar una prueba de la 0.9.2, el paso habría seguido «correcto». Ahora falla.
+- **Icono de 256 px** en `hicolor/256x256@2`, una carpeta que los escritorios no buscan (desde la Fase 1): ahora en `hicolor/256x256`.
+- **Instalador**: indicaba `~/.local/share` como carpeta del historial; es `~/.local/state`.
+- **Prueba de instalación limpia**: la raíz del sistema de prueba se creaba con permisos 0700 y el usuario normal no podía entrar. Era un fallo del script de prueba, no del instalador.
+- **Daemon de Docker detenido** en el entorno de desarrollo durante la compilación compatible: se reinició y se repitió.
 
 ### Limitaciones
-@@LIMITACIONES-F10@@
+- **Debian 12 y 13 sin probar aquí**: no hay acceso a sus repositorios. Se comprueban en el equipo del propietario con `verify-phase-10.sh` y F1–F8; Ubuntu 22.04 y 24.04 sí se han probado desde cero.
+- **Licencia y nombre del producto provisionales** (D-016), sin fuente de actualizaciones predefinida (D-060). Mantenedor del paquete: «Docker Control Center», sin dirección de contacto.
+- **Tamaño de la interfaz**: el JavaScript principal ocupa 1.301 kB; se mantiene el aviso de Vite de más de 500 kB.
+- **Traducciones**: se recomienda la revisión por hablantes nativos (ca, gl, eu, fr, it, pt).
 
 ---
 

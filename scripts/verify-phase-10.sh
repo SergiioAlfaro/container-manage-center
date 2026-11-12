@@ -380,7 +380,7 @@ else
   skip "Llavero real: faltan dbus-run-session o gnome-keyring-daemon (sudo apt install dbus gnome-keyring); lo cubre la comprobación manual R3"
 fi
 run_tests "1.0.0 · Color principal: una configuración con el verde («teal»), un valor desconocido o de otro tipo pasa a morado conservando el resto de preferencias, sin marcar el archivo como dañado; al guardar queda el morado (D-082)" cargo test --locked -p dcc-store saved_green_accent_migrates_to_purple_keeping_the_rest
-run_tests "1.0.0 · Color principal en la interfaz: tokens del acento morados en claro y oscuro (tono 250°–290°), sin los valores del verde, contraste WCAG AA, colores semánticos sin cambios, Configuración sin selector, terminales en morado (D-082)" npx vitest run ui/src/styles/accent.test.ts ui/src/app/appearance.test.tsx
+run_tests "1.0.0 · Color principal en la interfaz: tokens del acento morados en claro y oscuro (tono 250°–290°), sin los valores del verde, contraste WCAG AA, colores semánticos sin cambios, Configuración sin selector, terminales en morado, estados de los botones (hover, active, foco, deshabilitado, cargando) con los tokens del tema (D-082)" npx vitest run ui/src/styles/accent.test.ts ui/src/app/appearance.test.tsx ui/src/shared/ui/controls.test.tsx
 # El verde no está en el código de la interfaz, en el CSS compilado ni en el logotipo.
 GREEN_RE='#0d8287|#0a6b6f|#25b0b3|#4cc6c8|#14a3a8|13 130 135|37 176 179|data-accent'
 GREEN_SRC=$(grep -rliE "$GREEN_RE" ui/src packaging src-tauri/icons --include='*.ts' --include='*.tsx' --include='*.css' --include='*.svg' 2>/dev/null | grep -vE '\.test\.tsx?$' || true)
