@@ -914,13 +914,47 @@ Administrar el Docker de otros equipos Linux por SSH, a la vez que el local y co
 - **`EngineManager`**: constructor remoto, `same()` y `Debug`.
 
 ### Pruebas ejecutadas
-@@PRUEBAS-0.10.0@@
+Ejecutadas con `scripts/verify-update-0.10.0.sh` (registros completos de cada paso) en Ubuntu 24.04 con Docker 29.9.2, 26.1.3 y 24.0.7, Compose 5.6.1 y, aparte, Compose 2.26.1:
+
+| Entorno | Resultado |
+|---|---|
+| Docker 29.9.2 + laboratorio SSH (`--deb --compat --net --ssh-lab`) | 84 correctas, 0 fallos, 4 omitidas justificadamente |
+| Docker 26.1.3 | 59 correctas, 0 fallos, 5 omitidas justificadamente |
+| Docker 24.0.7 | 59 correctas, 0 fallos, 5 omitidas justificadamente |
+| Compose 2.26.1 (en los tres) | 6/6 |
+
+- **Laboratorio SSH.** Tres servidores `sshd` reales: A = Docker 29.9.2, B = 26.1.3, C = 24.0.7, cada uno con su usuario.
+  - `live_ssh` 12/12 (huellas, identidad cambiada, `~/.ssh/known_hosts` intacto, clave, frase y contraseña, problemas de Docker, tres servidores aislados, conexión perdida y recuperada, CLI remoto, sesiones huérfanas, Compose remoto, shell SSH, carpetas del servidor).
+  - IPC con tres servidores, sin llavero y con un llavero real temporal.
+  - Las suites de contenedores, imágenes, redes, volúmenes, terminales, edición y eventos, repetidas por SSH.
+  - No quedan procesos ssh ni recursos de prueba en ningún servidor.
+- **Deterministas.** 561 pruebas Rust y 374 de interfaz; clippy y formato limpios.
+- **Revisión visual.** Paquete instalado con los tres servidores del laboratorio: asistente y huella, siete comprobaciones, vista general, borrado remoto con confirmación, panel de actividad, shell SSH, fallo de un servidor y su diagnóstico, temas, color e idiomas.
+- **Omisiones (justificadas).**
+  - Dos pruebas de permisos que no aplican como root.
+  - Sin laboratorio, las pruebas reales por SSH (en Docker 26 y 24 solo se ejecutan con el laboratorio de la pasada de Docker 29).
+  - La prueba IPC del laboratorio en 5.3, porque se ejecuta en 5.4.
+  - La desinstalación real con APT, que necesita un chroot y no cambia.
 
 ### Limitaciones y observaciones
-@@LIMITACIONES-0.10.0@@
+- **Servidor intermedio (`ProxyJump`).** OpenSSH comprueba su identidad con el `~/.ssh/known_hosts` y la configuración del usuario.
+  - Una huella desconocida o cambiada se rechaza (comprobado), pero la aplicación no la muestra ni la confirma.
+  - Hay que conectarse antes una vez con `ssh -J`.
+  - No se ha probado una conexión completa a través de un intermedio: el laboratorio no permite el reenvío.
+- **Docker 20.10–23.x.** Se acepta por versión de API (mínimo 1.41), pero solo se han probado 24.0.7, 26.1.3 y 29.9.2.
+- **Rutas del servidor.** En un servidor remoto se escriben a mano (no hay explorador de archivos remoto). Solo se editan archivos Compose: no hay transferencia general de archivos.
+- **Credenciales recordadas.** Solo en almacenes compatibles con Secret Service.
+- **Mensajes técnicos.** El detalle de algunos errores del motor está en español sea cual sea el idioma de la interfaz, como en versiones anteriores.
+- **Tamaño de la interfaz.** El paquete principal ocupa 1.302 kB (≈1.127 kB en la 0.9.2), sobre todo por los textos de los ocho idiomas. Se mantiene el aviso de Vite de más de 500 kB.
+- **Traducciones.** Se recomienda que hablantes nativos revisen los textos nuevos en catalán, gallego, euskera, francés, italiano y portugués.
+- **Pruebas por SSH en tu equipo.** El script solo las ejecuta con un laboratorio (`--ssh-lab`, que se monta solo en una máquina de pruebas). En tu equipo se validan con R1–R10.
 
 ### Errores conocidos
-@@ERRORES-0.10.0@@
+Ninguno conocido. Corregidos durante la verificación (cada uno con una prueba que fallaba sin la corrección):
+- La copia de seguridad de una recreación podía crearse con otro nombre si se confirmaba en otro segundo. Era el fallo intermitente de `live_edit`.
+- Avisos del asistente sin traducir: los códigos llevan el prefijo `server.`.
+- Configuración → Conexión con Docker mostraba la conexión del servidor remoto elegido.
+- Origen `ssh` sin traducir y textos y estilos menores de la lista y de la shell SSH.
 
 ---
 
