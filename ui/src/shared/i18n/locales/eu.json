@@ -2493,7 +2493,7 @@
       "user": "SSH erabiltzailea zerbitzarian.",
       "keyPath": "Gakoa dagoen tokian geratzen da. Adibidez ~/.ssh/id_ed25519.",
       "connectTimeout": "3 eta 120 segundo artean.",
-      "proxyJump": "Formatua: erabiltzailea@ostalaria:ataka. SSHren ProxyJump-en baliokidea."
+      "proxyJump": "Formatua: erabiltzailea@host:ataka. SSHren ProxyJump-en baliokidea. Tarteko zerbitzariaren identitatea ssh-k egiaztatzen du zure ~/.ssh/known_hosts fitxategiarekin: konektatu lehenago behin «ssh -J» erabiliz hura berresteko."
     },
     "issues": {
       "nameRequired": "Idatzi izen bat.",

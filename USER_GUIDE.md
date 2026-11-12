@@ -59,6 +59,12 @@ detiene con un aviso de posible **suplantación**; solo se acepta la nueva con
 **Revisar identidad** y una confirmación expresa. La aplicación usa su propia
 lista de huellas y nunca modifica tu `~/.ssh/known_hosts`.
 
+Con un **servidor intermedio** (`ProxyJump`), la identidad del intermedio la
+comprueba `ssh` con tu `~/.ssh/known_hosts` y tu configuración de SSH: si no la
+conoce o ha cambiado, la conexión se rechaza (la aplicación nunca la acepta por
+su cuenta). Conéctate antes una vez en un terminal con
+`ssh -J usuario@intermedio usuario@servidor` para comprobarla y guardarla.
+
 ### Credenciales
 
 La frase de la clave o la contraseña se piden al conectar. Si marcas

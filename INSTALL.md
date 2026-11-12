@@ -128,6 +128,7 @@ Desde **Servidores** se administran servidores Docker remotos por **SSH**, a la 
 | Permisos | El usuario SSH puede usar el socket de Docker (grupo `docker`, Docker rootless o un socket propio indicado en el perfil). |
 | Docker Compose | Opcional: `docker compose` (plugin) o `docker-compose` v2 en el servidor. |
 | Utilidades | `stat`, `base64`, `find`, `dd`, `mv`, `chmod` (coreutils y findutils de GNU), para los archivos Compose y las carpetas vinculadas. |
+| Servidor intermedio (opcional) | Con `ProxyJump`, su huella debe estar ya en tu `~/.ssh/known_hosts` (conéctate una vez con `ssh -J`): `ssh` la comprueba con tu configuración y rechaza una desconocida o cambiada. Debe permitir el reenvío (`AllowTcpForwarding`). |
 
 Pertenecer al grupo `docker` del servidor equivale a tener acceso de **root** en él. Docker rootless, con su socket indicado en el perfil, es la alternativa más segura.
 

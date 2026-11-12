@@ -2493,7 +2493,7 @@
       "user": "Usuario SSH no servidor.",
       "keyPath": "A chave queda onde está. Por exemplo ~/.ssh/id_ed25519.",
       "connectTimeout": "Entre 3 e 120 segundos.",
-      "proxyJump": "Formato usuario@anfitrión:porto. Equivale a ProxyJump de SSH."
+      "proxyJump": "Formato usuario@host:porto. Equivale a ProxyJump de SSH. A identidade do servidor intermedio compróbaa ssh co teu ~/.ssh/known_hosts: conéctate antes unha vez con «ssh -J» para confirmala."
     },
     "issues": {
       "nameRequired": "Escribe un nome.",
