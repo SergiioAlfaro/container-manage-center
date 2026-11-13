@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Genera SHA256SUMS en la carpeta de una publicación (E2, DCC-SEC-09, D-092).
 # Uso: bash scripts/release-sums.sh CARPETA
-# Incluye los .deb (también los de compat/) y los .tar.gz, con rutas relativas
+# Incluye los .deb (el compatible va en la misma carpeta, con el nombre
+# …_amd64-compat-debian12-ubuntu2204.deb; también se admite compat/) y los .tar.gz, con rutas relativas
 # a la carpeta, que es lo que comprueba install.sh. Después:
 #   (cd CARPETA && sha256sum -c SHA256SUMS)
 # La firma (gpg --detach-sign SHA256SUMS) necesita la clave del propietario y

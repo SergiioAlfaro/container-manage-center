@@ -37,7 +37,7 @@ for r in "${RELEASES[@]}"; do
   cp /etc/resolv.conf "$D/etc/resolv.conf"
   for m in proc sys dev dev/pts; do mount --bind "/$m" "$D/$m" && mounts=("$m" "${mounts[@]}"); done
   chroot "$D" bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -q && apt-get install -y -q sudo && useradd -m -s /bin/bash tester && echo "tester ALL=(ALL) NOPASSWD: /usr/bin/apt-get" > /etc/sudoers.d/tester && chmod 440 /etc/sudoers.d/tester' >>"$LOG" 2>&1 || { bad "preparar $r"; cleanup; continue; }
-  mkdir -p "$D/home/tester/release"; cp "$REL"/install.sh "$REL"/*.deb "$D/home/tester/release/"; chroot "$D" chown -R tester: /home/tester/release
+  mkdir -p "$D/home/tester/release"; cp "$REL"/install.sh "$REL"/*.deb "$D/home/tester/release/"; [ -f "$REL/SHA256SUMS" ] && cp "$REL/SHA256SUMS" "$D/home/tester/release/"; chroot "$D" chown -R tester: /home/tester/release
   if chroot "$D" su - tester -c "bash ~/release/install.sh --yes" >>"$LOG" 2>&1; then pass "install.sh como usuario normal"; else bad "install.sh"; fi
   grep -E "Paquete elegido" "$LOG" | tail -1 | sed 's/^ */  /'
   V=$(chroot "$D" dpkg-query -W -f='${Version}' docker-control-center 2>/dev/null)

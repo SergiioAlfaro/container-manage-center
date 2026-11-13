@@ -1118,12 +1118,12 @@ Entorno de desarrollo (Ubuntu 24.04 en contenedor, WebKitGTK 2.52, Xvfb), 2026-1
 | Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` (laboratorio de tres servidores) | **117 correctas, 0 fallos**, 4 omitidas justificadamente, 1 aviso (ejecución como root) |
 | Docker 26.1.3 (API 1.45) | — | **86 correctas, 0 fallos**, 5 omitidas |
 | Docker 24.0.7 (API 1.43) | — | **86 correctas, 0 fallos**, 5 omitidas |
-| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | COMPAT_RESULT |
+| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | Correcto (glibc ≥ 2.34, `openssh-client` recomendado) |
 
 - Pruebas de Rust: 603 superadas, 0 fallidas. Vitest 5.1.0: 43 archivos y 389 pruebas superadas. `cargo fmt`, `clippy -D warnings`, `tsc` y ESLint (0 errores, 13 avisos de `exhaustive-deps` anteriores) correctos. `cargo deny check` y `npm audit` (producción y desarrollo): sin hallazgos.
 - Pasos propios de la 1.2.0: 17 correctos (deterministas, interfaz, ACL real de Tauri, servidor real por SSH, binario de publicación y `install.sh`).
 - Compose 2.26.1: pruebas reales correctas con los tres daemons. Sin recursos de prueba restantes.
-- Instalación limpia: CLEAN_RESULT
+- Instalación limpia de los `.deb` 1.2.0 (`scripts/dev/clean-install-test.sh`) en Ubuntu 24.04 (paquete normal) y 22.04 (compatible): `install.sh` como usuario normal comprueba `SHA256SUMS` («Suma SHA-256 correcta»), instala, la aplicación arranca y se desinstala: 0 fallos. Un primer intento con el paquete compatible en una subcarpeta `compat/` falló en 22.04 porque `install.sh` busca los paquetes junto a él: la publicación usa el nombre documentado (`…_amd64-compat-debian12-ubuntu2204.deb`) en la misma carpeta.
 
 ### Problemas encontrados y resueltos
 - **Primera ejecución con Docker 29**: `preview_validates_and_translates_without_docker` esperaba un solo aviso; ahora hay dos porque el puerto sin IP genera el aviso nuevo de todas las interfaces (comportamiento correcto). Se actualizó la prueba y se repitió la verificación completa.
