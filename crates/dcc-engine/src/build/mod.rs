@@ -376,6 +376,23 @@ impl Engine {
         &self,
         spec: &BuildSpec,
         cancel: CancellationToken,
+        sink: F,
+    ) -> Result<BuildEnd, EngineError>
+    where
+        F: FnMut(BuildUpdate) -> bool + Send,
+    {
+        self.build_image_with(spec, false, cancel, sink).await
+    }
+
+    /// Como [`Self::build_image`]; `share_local_credentials` permite enviar a
+    /// un servidor remoto las credenciales de este equipo para las imágenes
+    /// base (E2, DCC-SEC-07, D-090). Sin ese permiso, se descargan de forma
+    /// anónima.
+    pub async fn build_image_with<F>(
+        &self,
+        spec: &BuildSpec,
+        share_local_credentials: bool,
+        cancel: CancellationToken,
         mut sink: F,
     ) -> Result<BuildEnd, EngineError>
     where
@@ -410,7 +427,12 @@ impl Engine {
             if creds.contains_key(&key) {
                 continue;
             }
-            let res = registry_auth::resolve(self.activity(), &key, &PullAuth::DockerConfig).await;
+            let mode = registry_auth::effective_auth(
+                self.ssh_session().is_some(),
+                share_local_credentials,
+                &PullAuth::DockerConfig,
+            );
+            let res = registry_auth::resolve(self.activity(), &key, mode).await;
             if let Some(c) = res.credentials {
                 creds.insert(key, c);
             }

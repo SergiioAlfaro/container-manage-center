@@ -29,7 +29,7 @@ export interface PullState {
 
 interface Pulls {
   items: PullState[];
-  start: (server: string, reference: string, auth: PullAuth, onFinished?: (ok: boolean) => void) => Promise<number>;
+  start: (server: string, reference: string, auth: PullAuth, onFinished?: (ok: boolean) => void, shareLocalCredentials?: boolean) => Promise<number>;
   cancel: (key: number) => void;
   dismiss: (key: number) => void;
   clearFinished: (server: string) => void;
@@ -74,7 +74,7 @@ export const usePulls = create<Pulls>((set, get) => {
 
   return {
     items: [],
-    start: async (server, reference, auth, onFinished) => {
+    start: async (server, reference, auth, onFinished, shareLocalCredentials = false) => {
       const key = ++nextKey;
       set((st) => ({
         items: [{ key, server, reference, stream: null, status: "starting", layers: [], messages: [], summary: null, error: null, cancelRequested: false }, ...st.items],
@@ -90,7 +90,7 @@ export const usePulls = create<Pulls>((set, get) => {
         }
       };
       try {
-        const stream = await dockerApi(server).imagePullOpen(reference, auth, handler);
+        const stream = await dockerApi(server).imagePullOpen(reference, auth, handler, shareLocalCredentials);
         const cur = get().items.find((i) => i.key === key);
         if (cur && (cur.status === "starting" || cur.status === "running")) {
           patch(key, { stream });

@@ -6,7 +6,8 @@
 #   bash install.sh --deb RUTA.deb       # instala ese paquete
 #   bash install.sh --check              # solo comprueba el sistema y elige el paquete (no instala)
 #   bash install.sh --uninstall          # desinstala la aplicación (conserva tus datos)
-#   Añade --yes para no tener que confirmar en apt.
+#   Añade --yes para no tener que confirmar en apt. --no-verify omite la
+#   comprobación de SHA256SUMS (no recomendado).
 #
 # Qué hace:
 #   1. Comprueba el sistema: Debian/Ubuntu o derivada, amd64, apt y la versión de glibc.
@@ -15,6 +16,8 @@
 #      target/compat). El paquete normal exige la glibc de Debian 13 / Ubuntu 24.04;
 #      el compatible, la de Debian 12 / Ubuntu 22.04. Se usa el más reciente que
 #      tu sistema puede ejecutar.
+#   2b. Si junto al paquete hay un archivo SHA256SUMS, comprueba que el paquete
+#      coincide con su suma; si no coincide o no aparece, no instala nada.
 #   3. Lo instala con «sudo apt-get install ./paquete.deb»: apt resuelve las
 #      dependencias (WebKitGTK, GTK…) y comprueba que el paquete es para tu sistema.
 #   4. Comprueba, sin cambiar nada, lo que la aplicación necesita para trabajar:
@@ -29,15 +32,16 @@ set -u
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PKG=docker-control-center
-DEB_ARG=""; MODE=install; ASSUME_YES=0
+DEB_ARG=""; MODE=install; ASSUME_YES=0; VERIFY=1
 
-usage() { sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --deb) shift; DEB_ARG="${1:-}"; [ -n "$DEB_ARG" ] || { echo "--deb necesita la ruta de un paquete"; exit 2; } ;;
     --check) MODE=check ;;
     --uninstall) MODE=uninstall ;;
     --yes|-y) ASSUME_YES=1 ;;
+    --no-verify) VERIFY=0 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Opción desconocida: $1"; usage; exit 2 ;;
   esac
@@ -143,6 +147,31 @@ if [ -z "$BEST" ]; then
   exit 1
 fi
 ok "Paquete elegido: $(basename "$BEST") (versión $BEST_VER)"
+
+# Integridad (E2, DCC-SEC-09, D-092): suma SHA-256 del paquete según el
+# SHA256SUMS de la publicación (junto a este script o junto al paquete).
+# Las sumas detectan un paquete dañado o cambiado; la firma GPG de SHA256SUMS
+# queda pendiente de la clave del propietario (ver INSTALL.md).
+SUMS=""
+for s in "$SCRIPT_DIR/SHA256SUMS" "$(dirname "$BEST")/SHA256SUMS"; do
+  [ -f "$s" ] && { SUMS=$s; break; }
+done
+if [ $VERIFY -eq 0 ]; then
+  warn "Comprobación de SHA256SUMS omitida (--no-verify)."
+elif [ -z "$SUMS" ]; then
+  warn "No hay SHA256SUMS junto al paquete: no se puede comprobar su integridad."
+  info "Si lo has descargado, comprueba su suma con la que publica el autor: sha256sum $(basename "$BEST")"
+else
+  REL=$(realpath --relative-to="$(dirname "$SUMS")" "$BEST")
+  EXPECTED=$(awk -v f="$REL" '$2 == f || $2 == "*" f { print $1; exit }' "$SUMS")
+  [ -n "$EXPECTED" ] || die "$REL no aparece en $SUMS: no se instala (usa --no-verify solo si sabes de dónde viene el paquete)."
+  ACTUAL=$(sha256sum -- "$BEST" | cut -d' ' -f1)
+  if [ "$ACTUAL" = "$EXPECTED" ]; then
+    ok "Suma SHA-256 correcta ($SUMS)"
+  else
+    die "La suma SHA-256 de $REL no coincide con $SUMS: el paquete está dañado o se ha modificado. No se instala."
+  fi
+fi
 
 INSTALLED=$(dpkg-query -W -f='${Status} ${Version}' "$PKG" 2>/dev/null | sed -n 's/^install ok installed //p')
 [ -n "$INSTALLED" ] && info "Versión instalada ahora: $INSTALLED"

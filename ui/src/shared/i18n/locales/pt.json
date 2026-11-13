@@ -1080,7 +1080,11 @@
       "capability": "Capacidade {{cap}}: alarga o que o contentor pode fazer com o núcleo do computador.",
       "privileged": "Modo privilegiado: o contentor tem acesso quase completo ao computador (dispositivos, núcleo e todas as capacidades).",
       "networkHost": "Rede do computador (host): o contentor vê todos os serviços do computador, incluindo os que só escutam em 127.0.0.1.",
-      "hostNamespace": "Partilha o espaço {{namespace}} com o computador."
+      "hostNamespace": "Partilha o espaço de nomes {{namespace}} com o computador: o contentor pode ver (e às vezes afetar) os processos, a memória partilhada ou a configuração do computador.",
+      "securityOpt": "{{option}} desativa uma proteção do núcleo ({{protection}}) que limita o que o contentor pode fazer no computador.",
+      "device": "Dispositivo {{device}}: o contentor acede diretamente a esse dispositivo do computador, sem as permissões dos ficheiros.",
+      "cgroupParent": "Grupo de controlo próprio ({{parent}}): o contentor fica fora dos limites geridos pelo Docker.",
+      "portAllInterfaces": "A porta {{port}} é publicada em todas as interfaces: outros computadores da rede podem ligar-se e, com o Docker, a firewall (UFW, firewalld) normalmente não o impede. Use 127.0.0.1 se só precisar dela neste computador."
     }
   },
   "dupNotes": {
@@ -1132,7 +1136,10 @@
       "done": "Transferida",
       "failed": "Erro",
       "cancelled": "Cancelada"
-    }
+    },
+    "shareLocal": "Enviar ao servidor «{{server}}» as credenciais de registo deste computador",
+    "shareLocalOn": "Serão usadas as credenciais de docker login deste computador para esse registo, e o servidor poderá vê-las.",
+    "shareLocalOff": "Sem marcar, a transferência no servidor é anónima: as credenciais deste computador não saem dele."
   },
   "search": {
     "title": "Pesquisar no Docker Hub",
@@ -1301,7 +1308,9 @@
       "done": "Imagem construída",
       "failed": "A construção falhou",
       "cancelled": "Construção cancelada"
-    }
+    },
+    "shareLocalOn": "As imagens base serão transferidas com as credenciais de docker login deste computador, e o servidor poderá vê-las.",
+    "shareLocalOff": "Sem marcar, as imagens base são transferidas de forma anónima: as credenciais deste computador não são enviadas ao servidor."
   },
   "networks": {
     "create": "Criar rede",
@@ -2138,6 +2147,7 @@
     "engine_timeout": "O Docker não respondeu a tempo.",
     "engine_notConfirmed": "A operação precisa de uma confirmação explícita.",
     "engine_composeUnavailable": "O Docker Compose não está disponível.",
+    "engine_pathNotAllowed": "Por segurança, só se abrem ficheiros .yml ou .yaml que não estejam em pastas ocultas (como ~/.ssh) nem do sistema (como /etc), nem ligações para elas.",
     "ipc_unavailable": "A interface está a ser executada fora da aplicação de ambiente de trabalho.",
     "updates_noSource": "Não há nenhuma fonte de atualizações configurada.",
     "updates_invalidSource": "Fonte inválida: indique «proprietário/repositório» do GitHub ou um endereço https://",
@@ -2813,5 +2823,10 @@
       "medium": "Médio",
       "low": "Baixo"
     }
+  },
+  "terminalLink": {
+    "title": "Abrir a ligação do terminal",
+    "body": "A saída do terminal contém esta ligação. Abra-a só se confiar nela: será aberta no navegador do sistema.",
+    "open": "Abrir no navegador"
   }
 }

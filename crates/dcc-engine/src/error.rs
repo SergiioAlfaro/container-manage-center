@@ -49,6 +49,10 @@ pub enum EngineError {
     /// Ya existe un archivo que no se debe sobrescribir.
     #[error("ya existe {path}")]
     AlreadyExists { path: String },
+    /// La ruta no se puede usar como archivo Compose (E2, D-089): no es YAML,
+    /// está en una carpeta oculta o del sistema, o es un enlace a una de ellas.
+    #[error("{path}: no se permite como archivo Compose ({reason})")]
+    PathNotAllowed { path: String, reason: String },
     /// Docker Compose v2+ no está disponible.
     #[error("Docker Compose no está disponible")]
     ComposeUnavailable,

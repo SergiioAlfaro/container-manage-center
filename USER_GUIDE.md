@@ -35,7 +35,8 @@ ningún puerto.
 
 **Requisitos del servidor** (detalle en INSTALL.md): servidor SSH en marcha,
 Docker Engine 20.10 o posterior (API 1.41) con su CLI, y un usuario que pueda
-usar Docker. Para Compose, `docker compose` o `docker-compose` en el servidor.
+usar Docker con una **shell POSIX** de inicio (`bash`, `sh`, `dash` o `zsh`; no
+`fish`, `csh` ni `tcsh`). Para Compose, `docker compose` o `docker-compose` en el servidor.
 La aplicación **no instala Docker, no cambia permisos, no toca la configuración
 SSH ni abre puertos**: si falta algo, te dice qué y cómo resolverlo.
 
@@ -190,7 +191,17 @@ El asistente tiene seis pestañas; solo la imagen es obligatoria:
     `/var/lib/docker`…) o programas del sistema con escritura;
   - el **modo privilegiado**, capacidades como `ALL`, `SYS_ADMIN`,
     `SYS_PTRACE`, `NET_ADMIN`, `DAC_OVERRIDE` o `NET_RAW`, y la red del equipo
-    (`host`).
+    (`host`);
+  - (1.2.0) compartir con el equipo los procesos (`pid`) o la memoria
+    compartida (`ipc`), que son altos, o `userns`, `cgroup` y `uts`; opciones de
+    seguridad que desactivan protecciones (`seccomp=unconfined`,
+    `apparmor=unconfined`, `label=disable`…); **dispositivos** del equipo
+    (`/dev/mem` es crítico, un disco como `/dev/sda` alto); y un grupo de
+    control propio (`cgroup_parent`);
+  - (1.2.0) un **puerto publicado en todas las interfaces** (sin IP o con
+    `0.0.0.0`): aviso bajo, porque otros equipos de la red pueden conectarse y,
+    con Docker, el cortafuegos (UFW, firewalld) normalmente no lo impide. Si
+    solo lo usas en este equipo, escribe la IP `127.0.0.1`.
   Los riesgos **altos y críticos** hay que aceptarlos uno a uno («Entiendo el
   riesgo y quiero continuar») antes de poder crear; la configuración no se
   cambia. La aplicación vuelve a comprobarlo al crear, así que si la
@@ -302,6 +313,14 @@ con las mismas reglas que Docker. Credenciales:
 | Las de Docker | Como `docker pull`: usa lo guardado con `docker login` (o su *credential helper*) para ese registro, si lo hay |
 | Ninguna | Descarga anónima |
 | Usuario y contraseña | Solo para esta descarga: no se guardan ni aparecen en el panel de actividad |
+
+En un **servidor remoto** (1.2.0), «Las de Docker» no envía al servidor las
+credenciales de `docker login` de **este** equipo salvo que marques **Enviar al
+servidor … las credenciales de registro de este equipo**: sin marcarla, la
+descarga en el servidor es anónima. Si las envías, el Docker del servidor puede
+verlas; hazlo solo con servidores de confianza. La casilla no se recuerda: se
+pregunta en cada descarga. Al **construir** en un servidor remoto, la misma
+casilla decide si las imágenes base se descargan con esas credenciales.
 
 El panel **Descargas** muestra el progreso total y por capa; puedes cambiar de
 apartado mientras tanto. **Cancelar** detiene la descarga en Docker.
@@ -493,7 +512,13 @@ servicios.
 - **Archivo**: edita los archivos del proyecto. **Validar** comprueba el
   contenido con Docker Compose sin guardarlo; **Guardar** valida antes y, si
   Compose lo rechaza, solo guarda si insistes. Si otro programa ha cambiado el
-  archivo mientras lo editabas, no se sobrescribe.
+  archivo mientras lo editabas, no se sobrescribe. Si el archivo es un enlace
+  simbólico, se guarda en su destino y el enlace se conserva.
+- (1.2.0) Por seguridad, el editor solo abre y guarda archivos `.yml` o `.yaml`
+  que no estén dentro de carpetas ocultas (`~/.ssh`, `~/.config`…) ni del
+  sistema (`/etc`, `/root`, `/usr`…), ni enlaces a ellas; lo mismo en los
+  servidores remotos. Un proyecto guardado en una carpeta así se puede
+  desplegar y administrar, pero no editar desde la aplicación.
 - **Configuración**: la configuración final tal como la entiende Docker Compose.
   Puede contener valores secretos de las variables (por ejemplo del `.env`), por
   eso está oculta hasta que la pides y no se guarda en el panel de actividad.
@@ -531,6 +556,10 @@ en otros.
   desconectar un servidor se cierran sus terminales sin dejar procesos.
 - El panel de actividad registra la apertura, el cierre y los errores, nunca lo
   que se escribe ni la salida.
+- (1.2.0) Si un programa escribe un **enlace** en la terminal (OSC 8), al
+  pulsarlo la aplicación muestra la dirección completa y pide confirmación antes
+  de abrirla en el navegador del sistema. Solo se abren enlaces `http://` y
+  `https://`.
 
 ## Eventos y registros
 

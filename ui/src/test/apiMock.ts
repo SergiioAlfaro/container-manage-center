@@ -653,7 +653,7 @@ export function composeCommand(p: ProjectRef, a: ComposeAction): string {
 // ------------------------------------------------------------------ Fase 8
 
 export function dockerEvent(over: Partial<DockerEvent> = {}): DockerEvent {
-  return { timeNano: 1_794_067_503_964_175_002, kind: "container", action: "start", actorId: "c0ffee0123456789", name: "web", attributes: { image: "nginx:1.27", name: "web" }, scope: "local", server: null, ...over };
+  return { timeNano: 1_794_067_503_964_175_000, kind: "container", action: "start", actorId: "c0ffee0123456789", name: "web", attributes: { image: "nginx:1.27", name: "web" }, scope: "local", server: null, ...over };
 }
 
 export const journalEvents: DockerEvent[] = [
@@ -1069,6 +1069,7 @@ export const api = {
   updatesCheck: vi.fn(async (_source?: string): Promise<UpdateCheck> => updateCheck()),
   updatesLast: vi.fn(async (): Promise<UpdateOutcome | null> => null),
   openReleasePage: vi.fn(async (_url: string) => null),
+  openTerminalLink: vi.fn(async (_url: string) => null),
   systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
   componentsInspect: vi.fn(async (): Promise<ComponentsReport> => componentsReport()),
   componentsPlan: vi.fn(async (packages: string[]): Promise<RemovalPlan> => removalPlan(packages)),

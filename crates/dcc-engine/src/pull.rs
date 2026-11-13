@@ -190,17 +190,41 @@ pub fn pull_request(r: &ImageRef) -> (CreateImageOptions, String) {
 
 impl Engine {
     /// Descarga una imagen. `sink` recibe el progreso; si devuelve `false` (la
-    /// ventana dejó de escuchar) la descarga se cancela.
+    /// ventana dejó de escuchar) la descarga se cancela. En un servidor remoto
+    /// no se envían las credenciales de este equipo (ver [`Self::pull_image_with`]).
     pub async fn pull_image<F>(
         &self,
         reference: &str,
         auth: &PullAuth,
+        cancel: CancellationToken,
+        sink: F,
+    ) -> Result<StreamEnd, EngineError>
+    where
+        F: FnMut(PullUpdate) -> bool + Send,
+    {
+        self.pull_image_with(reference, auth, false, cancel, sink)
+            .await
+    }
+
+    /// Como [`Self::pull_image`]; `share_local_credentials` permite enviar a un
+    /// servidor remoto las credenciales de la configuración de Docker de este
+    /// equipo (E2, DCC-SEC-07, D-090).
+    pub async fn pull_image_with<F>(
+        &self,
+        reference: &str,
+        auth: &PullAuth,
+        share_local_credentials: bool,
         cancel: CancellationToken,
         mut sink: F,
     ) -> Result<StreamEnd, EngineError>
     where
         F: FnMut(PullUpdate) -> bool + Send,
     {
+        let auth = registry_auth::effective_auth(
+            self.ssh_session().is_some(),
+            share_local_credentials,
+            auth,
+        );
         let r = ImageRef::parse(reference).map_err(|e| EngineError::InvalidInput {
             message: format!("referencia de imagen no válida: {e}"),
         })?;

@@ -7,6 +7,7 @@ import { DashboardView } from "@/features/dashboard/DashboardView";
 import { ConnectionBadge } from "@/features/engine/ConnectionBadge";
 import { ServerSelector } from "@/features/servers/ServerSelector";
 import { SecretDialog } from "@/features/servers/SecretDialog";
+import { TerminalLinkPrompt } from "@/shared/ui/terminalLinks";
 import { PendingSection } from "@/features/pending/PendingSection";
 import { useLiveRefresh } from "@/features/events/liveRefresh";
 import { api } from "@/shared/ipc/client";
@@ -269,6 +270,7 @@ export function App() {
             </Suspense>
           </div>
           <SecretDialog />
+          <TerminalLinkPrompt />
         </main>
       </ServerScope>
 

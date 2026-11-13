@@ -7,6 +7,7 @@ import type { ShellChoice } from "@/shared/ipc/bindings/ShellChoice";
 import type { TerminalEvent } from "@/shared/ipc/bindings/TerminalEvent";
 import { decodeBase64 } from "@/features/containers/detail/TerminalPanel";
 import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
+import { terminalLinkHandler } from "@/shared/ui/terminalLinks";
 
 /**
  * Sesiones del apartado «Terminales» (0.9.1, D-064).
@@ -95,6 +96,7 @@ export function nameProblem(name: string): "empty" | "long" | "control" | null {
   const n = name.trim();
   if (n === "") return "empty";
   if ([...n].length > MAX_NAME) return "long";
+  // eslint-disable-next-line no-control-regex -- se buscan caracteres de control a propósito
   if (/[\u0000-\u001f\u007f]/.test(n)) return "control";
   return null;
 }
@@ -177,7 +179,7 @@ export function openSession(o: {
   const key = ++nextKey;
   const base = o.kind === "server" ? `SSH ${o.serverName}` : o.containerName;
   const name = o.name && nameProblem(o.name) === null ? o.name.trim() : defaultName(base, st.sessions);
-  const term = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false });
+  const term = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false, linkHandler: terminalLinkHandler });
   const untrack = trackTerminal(term);
   const fit = new FitAddon();
   term.loadAddon(fit);

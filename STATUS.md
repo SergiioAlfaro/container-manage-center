@@ -6,12 +6,12 @@
 
 | | |
 |---|---|
-| **Etapa actual** | Evolución E1. Correcciones de seguridad prioritarias ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
-| **Versión** | 1.1.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M8) |
+| **Etapa actual** | Evolución E2. Resto del endurecimiento ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
+| **Versión** | 1.2.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M8 de la 1.2.0) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Pendiente de validar** | Fase 10 (F1–F8) y Etapa E1 (M1–M8) |
-| **Próximas etapas** | E2 endurecimiento · E3 auditoría · E4 copias · E5 monitorización · E6 integración |
+| **Pendiente de validar** | Fase 10 (F1–F8), Etapa E1 (M1–M8) y Etapa E2 (M1–M8) |
+| **Próximas etapas** | E3 auditoría · E4 copias · E5 monitorización · E6 integración |
 
 | Fase | Estado |
 |---|---|
@@ -1089,13 +1089,68 @@ Entorno de desarrollo (Ubuntu 24.04 en contenedor, WebKitGTK 2.52, Xvfb),
 ### Validación manual
 M1–M8, en el apartado 8 del informe de `scripts/verify-evolution-1.1.0.sh`.
 
+## Evolución · Etapa 2 · Resto del endurecimiento (1.2.0)
+
+Autorizada por el propietario el 2026-11-13 («Continúa con la siguiente
+etapa»). Alcance: apartado 5.2 de
+[PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md).
+Decisiones: D-088 a D-092.
+
+### Hallazgos tratados
+| Hallazgo | Corrección | Demostración (pruebas) |
+|---|---|---|
+| DCC-SEC-04 (media). Compose | Completo: `pid`/`ipc`/`userns_mode`/`uts`/`cgroup`, `security_opt`, `devices`, `cgroup_parent` y puertos, también en el asistente y la edición | `risk::tests::namespaces_security_options_devices_and_ports`, `compose_namespaces_security_devices_and_ports`, sin falsos positivos |
+| DCC-SEC-06 (media). Rutas de Compose | Solo YAML, sin carpetas ocultas ni del sistema, también la ruta real; equipo y servidores; `engine.pathNotAllowed` | `compose::file::tests`, IPC `compose_files_via_ipc…`, servidor real `compose_runs_on_the_server_with_server_files` |
+| DCC-SEC-07 (media). Credenciales remotas | Las de este equipo solo con la casilla de cada operación; si no, anónima | `registry_auth::tests`, servidor real `local_registry_credentials_reach_a_server_only_with_consent`, `ImagesView.test.tsx` |
+| DCC-SEC-08 (baja). Puertos | Aviso bajo para todas las interfaces | `spec::tests::ports_are_validated`, `risk::tests` |
+| DCC-SEC-09 (baja). Paquetes | `install.sh` comprueba `SHA256SUMS`; **firma pendiente** de la clave del propietario | Paso `--deb`: correcta, alterada y sin entrada |
+| DCC-SEC-10 (baja). vitest | vitest 5.1.0; `npm audit` completo 0 | `npm audit` en la verificación |
+| DCC-SEC-11 (baja). Root | `DCC_ALLOW_ROOT` solo en desarrollo | `root_tests`; binario de publicación como root con la variable: código 1 |
+| DCC-SEC-12 (baja). OSC 8 | Confirmación y solo http(s), abierto desde Rust | `terminal_links_are_http_only`, `terminalLinks.test.tsx` |
+| DCC-SEC-13 (baja). Enlaces simbólicos | Se guarda en el destino; el enlace se conserva | `symlinks_are_checked…`, servidor real |
+| DCC-SEC-14 a 18 (inf.) | 14: `deny.toml` con excepciones; 15: justificado; 16: origen limitado; 17: permisos mínimos; 18: documentado | `cargo deny check`, `release_pages_only…`, `only_the_minimal_tauri_permissions_are_granted` (ACL real) |
+
+### Verificación (`scripts/verify-evolution-1.2.0.sh`)
+Entorno de desarrollo (Ubuntu 24.04 en contenedor, WebKitGTK 2.52, Xvfb), 2026-11-13:
+
+| Daemon | Opciones | Resultado |
+|---|---|---|
+| Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` (laboratorio de tres servidores) | **117 correctas, 0 fallos**, 4 omitidas justificadamente, 1 aviso (ejecución como root) |
+| Docker 26.1.3 (API 1.45) | — | **86 correctas, 0 fallos**, 5 omitidas |
+| Docker 24.0.7 (API 1.43) | — | **86 correctas, 0 fallos**, 5 omitidas |
+| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | COMPAT_RESULT |
+
+- Pruebas de Rust: 603 superadas, 0 fallidas. Vitest 5.1.0: 43 archivos y 389 pruebas superadas. `cargo fmt`, `clippy -D warnings`, `tsc` y ESLint (0 errores, 13 avisos de `exhaustive-deps` anteriores) correctos. `cargo deny check` y `npm audit` (producción y desarrollo): sin hallazgos.
+- Pasos propios de la 1.2.0: 17 correctos (deterministas, interfaz, ACL real de Tauri, servidor real por SSH, binario de publicación y `install.sh`).
+- Compose 2.26.1: pruebas reales correctas con los tres daemons. Sin recursos de prueba restantes.
+- Instalación limpia: CLEAN_RESULT
+
+### Problemas encontrados y resueltos
+- **Primera ejecución con Docker 29**: `preview_validates_and_translates_without_docker` esperaba un solo aviso; ahora hay dos porque el puerto sin IP genera el aviso nuevo de todas las interfaces (comportamiento correcto). Se actualizó la prueba y se repitió la verificación completa.
+- **Primera ejecución con Docker 26**: la prueba anterior `a_program_that_ignores_ctrl_c_is_terminated_on_close` falló una vez por una carrera ya descrita en su código (el SIGHUP del cierre a veces hace salir la shell sola). La prueba acepta ahora los dos desenlaces y sigue exigiendo que no quede ningún proceso. El producto no cambia. Repetida con Docker 26: correcta.
+- `tempfile` crea carpetas `.tmpXXXX` (ocultas), que la política nueva rechaza: las pruebas usan un prefijo visible.
+- ESLint 10 y typescript-eslint traían `minimatch` con un aviso moderado: se fija 11.0.8 con `overrides` (solo desarrollo).
+- `cargo deny` rechazaba las dependencias internas sin versión: las crates del proyecto se marcan `publish = false`.
+
+### Limitaciones
+- `SHA256SUMS` **sin firmar** hasta que el propietario decida la clave GPG.
+- Un proyecto Compose dentro de una carpeta oculta no se puede editar desde la aplicación (sí desplegar y administrar).
+- La casilla de credenciales remotas no se recuerda (se pregunta en cada operación; desviación consciente del plan).
+- La CSP mantiene `style-src 'unsafe-inline'` (justificado, D-091).
+- Servidores con `fish`, `csh` o `tcsh` como shell de inicio no están soportados (documentado).
+- Debian 12 y 13 sin probar aquí; se validan en el equipo del propietario.
+
+### Validación manual
+M1–M8 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.2.0.sh`.
+
 ---
 
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-evolution-1.1.0.sh --deb --net` en Debian 13 (incluye toda la regresión de la 1.0.0) y envía `verify-evolution-1.1.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M8 y, si no los ha hecho aún, F1–F8.
-2. Con su validación, la Etapa 1 queda completada y se puede autorizar la Etapa 2 (endurecimiento restante, 1.2.0).
+1. El propietario ejecuta `bash scripts/verify-evolution-1.2.0.sh --deb --net` en Debian 13 (incluye toda la regresión de la 1.0.0 y la 1.1.0) y envía `verify-evolution-1.2.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M8 de la 1.2.0 y, si no los ha hecho aún, los de la 1.1.0 y F1–F8.
+2. Con su validación, las Etapas 1 y 2 quedan completadas y se puede autorizar la Etapa 3 (auditoría de seguridad de contenedores, 1.3.0).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).
+- Firma de `SHA256SUMS`: clave GPG del propietario y dónde publicar la clave pública (D-092).
 - Nombre definitivo del producto antes de distribuirlo públicamente ("Docker" es marca registrada).
 - Dónde se publicarán las versiones (repositorio de GitHub o dirección HTTPS): es la fuente que vendría configurada para la comprobación de actualizaciones (D-060). Hasta entonces la fuente está vacía y la aplicación no se conecta a Internet.

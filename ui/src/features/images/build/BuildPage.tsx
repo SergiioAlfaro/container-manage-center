@@ -64,6 +64,9 @@ function BuildForm({ initial }: { initial: BuildSpec }) {
   const [spec, setSpec] = useState<BuildSpec>(initial);
   const [preview, setPreview] = useState<BuildPreview | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
+  // E2 (DCC-SEC-07, D-090): credenciales de este equipo para las imágenes base,
+  // solo con permiso expreso en un servidor remoto.
+  const [share, setShare] = useState(false);
   const set = <K extends keyof BuildSpec>(k: K, v: BuildSpec[K]) => setSpec((s) => ({ ...s, [k]: v }));
 
   const seq = useRef(0);
@@ -98,12 +101,16 @@ function BuildForm({ initial }: { initial: BuildSpec }) {
 
   // Al empezar, la página pasa a mostrar el progreso (y los errores de arranque).
   const submit = () =>
-    start({ ...spec, tags: spec.tags.map((x) => x.trim()).filter(Boolean) }, (ok) => {
-      if (ok) {
-        void qc.invalidateQueries({ queryKey: keys.images });
-        void qc.invalidateQueries({ queryKey: keys.overview });
-      }
-    });
+    start(
+      { ...spec, tags: spec.tags.map((x) => x.trim()).filter(Boolean) },
+      (ok) => {
+        if (ok) {
+          void qc.invalidateQueries({ queryKey: keys.images });
+          void qc.invalidateQueries({ queryKey: keys.overview });
+        }
+      },
+      remote && share,
+    );
 
   return (
     <div className="grid flex-1 gap-6 px-8 py-5 xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -184,6 +191,12 @@ function BuildForm({ initial }: { initial: BuildSpec }) {
             <Checkbox checked={spec.noCache} onChange={(v) => set("noCache", v)} label={t("build.f.noCache")} hint="--no-cache" />
             <Checkbox checked={spec.pull} onChange={(v) => set("pull", v)} label={t("build.f.pull")} hint="--pull" />
           </div>
+          {remote && (
+            <div className="space-y-1">
+              <Checkbox checked={share} onChange={setShare} label={t("pull.shareLocal", { server: view?.name ?? "" })} />
+              <p className="text-[12px] text-ink-3">{t(share ? "build.shareLocalOn" : "build.shareLocalOff")}</p>
+            </div>
+          )}
         </Group>
       </div>
 

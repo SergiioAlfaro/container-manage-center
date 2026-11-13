@@ -3,6 +3,7 @@ name = "docker-control-center"
 description = "Administración gráfica de Docker Engine para Linux"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 rust-version.workspace = true
 default-run = "docker-control-center"

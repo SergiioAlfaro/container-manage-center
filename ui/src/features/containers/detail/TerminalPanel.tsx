@@ -3,6 +3,7 @@ import { useApi } from "@/app/server";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { terminalTheme, trackTerminal } from "@/shared/ui/terminalTheme";
+import { terminalLinkHandler } from "@/shared/ui/terminalLinks";
 import "@xterm/xterm/css/xterm.css";
 import { Power, TerminalSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -39,7 +40,7 @@ export function TerminalPanel({ id, name, running }: { id: string; name: string;
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const tm = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false });
+    const tm = new Terminal({ fontFamily: "JetBrains Mono, monospace", fontSize: 13, cursorBlink: true, theme: terminalTheme(), scrollback: 5000, convertEol: false, linkHandler: terminalLinkHandler });
     const untrack = trackTerminal(tm);
     const fa = new FitAddon();
     tm.loadAddon(fa);

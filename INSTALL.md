@@ -9,8 +9,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.1.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.1.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `docker-control-center_1.2.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.2.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -25,21 +25,38 @@ Ejecútalo con tu usuario normal; pide la contraseña de administrador solo para
 2. Busca los paquetes junto a él, en `dist/` y en las carpetas de compilación
    (`target/release/bundle/deb`, `target/compat`) y elige el más reciente que
    tu sistema puede ejecutar, según la glibc que declara cada paquete.
-3. Simula la instalación con apt y luego instala con
+3. Si junto al paquete (o junto al script) hay un archivo `SHA256SUMS`,
+   comprueba que la suma SHA-256 del paquete coincide (1.2.0). Si no coincide o
+   el paquete no aparece, **no instala nada**. Sin `SHA256SUMS`, avisa de que no
+   puede comprobarlo.
+4. Simula la instalación con apt y luego instala con
    `sudo apt-get install ./paquete.deb`, que resuelve las dependencias.
-4. Comprueba, **sin cambiar nada**, lo que la aplicación necesita para trabajar
+5. Comprueba, **sin cambiar nada**, lo que la aplicación necesita para trabajar
    (Docker y tu acceso al socket, Docker Compose, el cliente SSH, un almacén de
    contraseñas) y explica cómo resolver lo que falte.
 
 Opciones: `--check` (solo comprueba y elige el paquete), `--deb RUTA` (instala
-ese paquete), `--yes` (sin confirmar en apt), `--uninstall`. El script **nunca**
+ese paquete), `--yes` (sin confirmar en apt), `--uninstall` y `--no-verify`
+(omite la comprobación de `SHA256SUMS`; no recomendado). El script **nunca**
 instala Docker, te añade al grupo `docker`, cambia permisos del socket ni toca
 la configuración de SSH.
+
+### Comprobar la integridad a mano
+
+```bash
+sha256sum -c SHA256SUMS      # en la carpeta de la publicación
+```
+
+`SHA256SUMS` detecta un paquete dañado o cambiado. Todavía **no está firmado**
+(la firma GPG necesita la clave del autor; decisión pendiente): alguien que
+pudiera cambiar a la vez el paquete y `SHA256SUMS` no se detectaría. Descarga
+los dos del mismo sitio de confianza. Quien publica los paquetes genera el
+archivo con `bash scripts/release-sums.sh CARPETA`.
 
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.1.0_amd64.deb
+sudo apt install ./docker-control-center_1.2.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -53,7 +70,8 @@ La aplicación aparece en el menú como **Docker Control Center**; también se a
 con `docker-control-center` o, desde el código fuente, con `bash scripts/run.sh`
 (abre la versión instalada o la compilación de `target/release`; `--build` la
 compila). Se ejecuta con tu usuario normal: **no la ejecutes con sudo** (se
-niega a arrancar como root).
+niega a arrancar como root; en el programa publicado no hay forma de
+forzarlo, D-091).
 
 ### Desinstalar
 
@@ -183,7 +201,8 @@ Desde **Servidores** se administran servidores Docker remotos por **SSH**, a la 
 | Cliente `docker` | En el `PATH` del usuario SSH (`docker system dial-stdio`). |
 | Permisos | El usuario SSH puede usar el socket de Docker (grupo `docker`, Docker rootless o un socket propio indicado en el perfil). |
 | Docker Compose | Opcional: `docker compose` (plugin) o `docker-compose` v2 en el servidor. |
-| Utilidades | `stat`, `base64`, `find`, `dd`, `mv`, `chmod` (coreutils y findutils de GNU), para los archivos Compose y las carpetas vinculadas. |
+| Utilidades | `stat`, `base64`, `find`, `dd`, `mv`, `chmod`, `readlink` (coreutils y findutils de GNU), para los archivos Compose y las carpetas vinculadas. |
+| Shell de inicio | POSIX: `bash`, `sh`, `dash` o `zsh` (1.2.0, documentado). Las órdenes se entrecomillan para POSIX; `fish`, `csh` y `tcsh` no están soportados. |
 | Servidor intermedio (opcional) | Un solo salto (`usuario@host:puerto`). Su huella se confirma en la aplicación como la del servidor (1.1.0). Solo admite clave SSH o agente SSH, no contraseña. Debe permitir el reenvío hacia el servidor (`AllowTcpForwarding`). |
 
 Pertenecer al grupo `docker` del servidor equivale a tener acceso de **root** en él. Docker rootless, con su socket indicado en el perfil, es la alternativa más segura.
@@ -254,3 +273,10 @@ configurado allí, como `docker-credential-secretservice` o
 `docker-credential-pass`). Si el helper no está instalado, la descarga sigue sin
 credenciales y se avisa. También puedes escribir usuario y contraseña para una
 sola descarga.
+
+En un **servidor remoto** (1.2.0), las credenciales de este equipo solo se envían
+al Docker del servidor si marcas la casilla **Enviar al servidor … las
+credenciales de registro de este equipo** en esa descarga o construcción; sin
+marcarla, el servidor descarga de forma anónima. Para registros privados en un
+servidor, lo más seguro es hacer `docker login` en el propio servidor (Docker
+Compose en el servidor usa siempre esa configuración).

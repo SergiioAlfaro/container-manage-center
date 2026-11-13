@@ -92,6 +92,7 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::app::updates_check,
             commands::app::updates_last,
             commands::app::open_release_page,
+            commands::app::open_terminal_link,
             commands::app::system_info,
             commands::components::components_inspect,
             commands::components::components_plan,
@@ -217,19 +218,46 @@ pub fn run() {
 }
 
 /// La aplicación no debe ejecutarse como root (requisito de seguridad §12).
-/// Se puede forzar con `DCC_ALLOW_ROOT=1` solo para entornos de prueba aislados.
+/// `DCC_ALLOW_ROOT=1` lo permite solo en las compilaciones de desarrollo y
+/// prueba (entornos aislados). En la compilación de publicación se ignora
+/// (E2, DCC-SEC-11, D-091).
 fn refuse_root() {
     #[cfg(unix)]
     {
         // SAFETY: geteuid no tiene precondiciones y siempre tiene éxito.
         let euid = unsafe { geteuid() };
-        if euid == 0 && std::env::var_os("DCC_ALLOW_ROOT").is_none() {
+        let override_set = std::env::var_os("DCC_ALLOW_ROOT").is_some();
+        if !may_run(euid, override_set, cfg!(debug_assertions)) {
             eprintln!(
                 "Docker Control Center no debe ejecutarse como root.\n\
                  Ejecútalo con tu usuario normal. Para acceder a Docker, consulta INSTALL.md."
             );
             std::process::exit(1);
         }
+    }
+}
+
+/// ¿Puede arrancar? Como root, solo en una compilación de desarrollo y con
+/// `DCC_ALLOW_ROOT` definida.
+fn may_run(euid: u32, override_set: bool, dev_build: bool) -> bool {
+    euid != 0 || (override_set && dev_build)
+}
+
+#[cfg(test)]
+mod root_tests {
+    use super::may_run;
+
+    #[test]
+    fn root_is_refused_in_release_builds_even_with_the_override() {
+        assert!(may_run(1000, false, false));
+        assert!(may_run(1000, true, false));
+        assert!(!may_run(0, false, false));
+        assert!(
+            !may_run(0, true, false),
+            "publicación: DCC_ALLOW_ROOT se ignora"
+        );
+        assert!(!may_run(0, false, true));
+        assert!(may_run(0, true, true), "desarrollo y pruebas aisladas");
     }
 }
 

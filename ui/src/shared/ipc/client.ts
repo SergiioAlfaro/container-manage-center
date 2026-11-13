@@ -121,6 +121,7 @@ export const LOCALIZED_ERRORS = [
   "engine.timeout",
   "engine.notConfirmed",
   "engine.composeUnavailable",
+  "engine.pathNotAllowed",
   "ipc.unavailable",
   "updates.noSource",
   "updates.invalidSource",
@@ -223,8 +224,9 @@ export function dockerApi(server: string) {
     imagesPrune: (all: boolean) => call<PruneResult>("images_prune", { all, confirmed: true }),
     imagesSearch: (term: string, limit: number, officialOnly: boolean) => call<SearchResult[]>("images_search", { term, limit, officialOnly }),
     /** Descarga en flujo. La contraseña (modo manual) solo viaja en esta llamada. */
-    imagePullOpen: (reference: string, auth: PullAuth, onEvent: (e: PullEvent) => void) => call<number>("image_pull_open", { reference, auth, onEvent: channel(onEvent) }),
-    buildOpen: (spec: BuildSpec, onEvent: (e: BuildEvent) => void) => call<number>("build_open", { spec, onEvent: channel(onEvent) }),
+    /** `shareLocalCredentials`: en un servidor remoto, enviar las credenciales de este equipo (E2, D-090). */
+    imagePullOpen: (reference: string, auth: PullAuth, onEvent: (e: PullEvent) => void, shareLocalCredentials = false) => call<number>("image_pull_open", { reference, auth, shareLocalCredentials, onEvent: channel(onEvent) }),
+    buildOpen: (spec: BuildSpec, onEvent: (e: BuildEvent) => void, shareLocalCredentials = false) => call<number>("build_open", { spec, shareLocalCredentials, onEvent: channel(onEvent) }),
 
     networksList: () => call<NetworkSummary[]>("networks_list"),
     networkDetails: (id: string, name: string | null) => call<NetworkDetails>("network_details", { id, name }),
@@ -292,6 +294,8 @@ const appApi = {
   updatesCheck: (source?: string) => call<UpdateCheck>("updates_check", { source: source ?? null }),
   updatesLast: () => call<UpdateOutcome | null>("updates_last"),
   openReleasePage: (url: string) => call<null>("open_release_page", { url }),
+  /** Enlace de la salida de una terminal, ya confirmado (E2, D-091). */
+  openTerminalLink: (url: string) => call<null>("open_terminal_link", { url }),
   systemInfo: () => call<SystemInfo>("system_info"),
   /** Abre el perfil de GitHub del autor en el navegador del sistema (plugin
    *  opener de Tauri; la capacidad solo permite esta dirección). */

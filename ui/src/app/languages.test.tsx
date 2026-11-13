@@ -104,6 +104,8 @@ describe("Idiomas: ocho idiomas (0.9.1 francés e italiano; 0.9.2 catalán, gall
     const { localizeError } = await vi.importActual<typeof import("@/shared/ipc/client")>("@/shared/ipc/client");
     expect(localizeError({ code: "engine.notConnected", message: "Sin conexión", httpStatus: null, issues: null }).message).toBe("Pas de connexion à Docker Engine.");
     expect(localizeError({ code: "packages.cancelled", message: "x", httpStatus: null, issues: null }).message).toBe("L’authentification a été annulée : rien n’a été désinstallé.");
+    // E2 (D-089): rutas de archivos Compose no permitidas.
+    expect(localizeError({ code: "engine.pathNotAllowed", message: "/etc/passwd: …", httpStatus: null, issues: null }).message).toMatch(/^Par sécurité, seuls les fichiers \.yml/);
     // Validación (clave usada por el asistente de terminales).
     expect(i18n.t("terminals.nameProblem.long", { max: 60 })).toBe("Utilisez au maximum 60 caractères.");
     // Lo mismo en los idiomas nuevos.

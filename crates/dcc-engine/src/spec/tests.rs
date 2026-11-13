@@ -84,7 +84,13 @@ fn full() -> ContainerSpec {
 fn minimal_spec_is_valid() {
     assert!(codes(&base()).is_empty());
     // NET_ADMIN es una capacidad peligrosa: aviso, no error (D-086).
-    assert_eq!(codes(&full()), vec!["capAdd:risk.capability"]);
+    assert_eq!(
+        codes(&full()),
+        vec![
+            "capAdd:risk.capability",
+            "ports.0.hostIp:risk.portAllInterfaces"
+        ]
+    );
 }
 
 #[test]
@@ -147,7 +153,8 @@ fn ports_are_validated() {
         ports: vec![p("127.0.0.1", Some(8080), 80), p("", Some(8080), 80)],
         ..base()
     };
-    assert!(codes(&s).is_empty());
+    // E2 (D-088): sin IP, el puerto queda en todas las interfaces (aviso bajo).
+    assert_eq!(codes(&s), vec!["ports.1.hostIp:risk.portAllInterfaces"]);
 }
 
 #[test]

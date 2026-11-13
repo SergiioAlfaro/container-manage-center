@@ -305,11 +305,107 @@ pub fn network_risk(mode: &str, field: &str) -> Option<Risk> {
     (mode.trim() == "host").then(|| Risk::new("risk.networkHost", RiskLevel::High, field, "host"))
 }
 
-/// Espacios de nombres del equipo (`pid: host`, `ipc: host`…, de Compose).
+/// Espacios de nombres del equipo (E2, D-088): `pid: host` permite ver y
+/// depurar los procesos del equipo y `ipc: host` su memoria compartida (alto);
+/// `userns_mode: host` anula la reasignación de usuarios del daemon y
+/// `cgroup: host` comparte el árbol de cgroups (medio); `uts: host` solo el
+/// nombre del equipo (bajo).
 pub fn namespace_risk(kind: &str, mode: &str, field: &str) -> Option<Risk> {
-    (mode.trim() == "host").then(|| {
-        Risk::new("risk.hostNamespace", RiskLevel::High, field, kind).with("namespace", kind)
-    })
+    if mode.trim() != "host" {
+        return None;
+    }
+    let level = match kind {
+        "pid" | "ipc" => RiskLevel::High,
+        "userns" | "cgroup" => RiskLevel::Medium,
+        _ => RiskLevel::Low,
+    };
+    Some(Risk::new("risk.hostNamespace", level, field, kind).with("namespace", kind))
+}
+
+/// Opciones de seguridad (`security_opt`) que desactivan protecciones del
+/// núcleo (E2, D-088). Se aceptan las dos sintaxis (`seccomp=…`, `seccomp:…`).
+pub fn security_opt_risk(opt: &str, field: &str) -> Option<Risk> {
+    let o = opt.trim().to_ascii_lowercase().replacen(':', "=", 1);
+    let (level, what) = match o.as_str() {
+        "seccomp=unconfined" => (RiskLevel::High, "seccomp"),
+        "apparmor=unconfined" => (RiskLevel::High, "apparmor"),
+        "label=disable" => (RiskLevel::High, "selinux"),
+        "systempaths=unconfined" => (RiskLevel::High, "systempaths"),
+        "no-new-privileges=false" => (RiskLevel::Low, "noNewPrivileges"),
+        _ => return None,
+    };
+    Some(
+        Risk::new("risk.securityOpt", level, field, &o)
+            .with("option", opt.trim())
+            .with("protection", what),
+    )
+}
+
+/// Dispositivos del equipo (`devices`): memoria del núcleo, crítico; discos,
+/// alto (acceso directo a los datos sin permisos de archivo); otros, medio;
+/// los habituales de multimedia, red virtual o FUSE, bajo.
+pub fn device_risk(device: &str, field: &str) -> Option<Risk> {
+    // `origen[:destino[:permisos]]` o solo el origen.
+    let src = device.trim().split(':').next().unwrap_or("").trim();
+    let path = normalize(src)?;
+    let name = path.trim_start_matches("/dev/");
+    let level = if matches!(name, "mem" | "kmem" | "port") {
+        RiskLevel::Critical
+    } else if [
+        "sd", "hd", "vd", "xvd", "nvme", "mmcblk", "loop", "dm-", "md", "sr",
+    ]
+    .iter()
+    .any(|p| name.starts_with(p))
+        || name.starts_with("disk/")
+        || name.starts_with("mapper/")
+    {
+        RiskLevel::High
+    } else if [
+        "dri", "snd", "video", "fuse", "net/tun", "kvm", "ttyUSB", "ttyACM", "bus/usb", "input",
+        "hidraw", "nvidia",
+    ]
+    .iter()
+    .any(|p| name.starts_with(p))
+    {
+        RiskLevel::Low
+    } else {
+        RiskLevel::Medium
+    };
+    Some(Risk::new("risk.device", level, field, &path).with("device", path.clone()))
+}
+
+/// `cgroup_parent`: el contenedor queda en un grupo de control elegido a mano,
+/// fuera de los límites que gestiona Docker (bajo).
+pub fn cgroup_parent_risk(parent: &str, field: &str) -> Option<Risk> {
+    let p = parent.trim();
+    (!p.is_empty())
+        .then(|| Risk::new("risk.cgroupParent", RiskLevel::Low, field, p).with("parent", p))
+}
+
+/// Puerto publicado en todas las interfaces (sin IP o con 0.0.0.0 / ::): se
+/// puede acceder desde otros equipos, y en Docker las reglas del cortafuegos
+/// de UFW o firewalld no lo impiden en su configuración habitual (bajo, E2,
+/// DCC-SEC-08).
+pub fn port_risk(
+    host_ip: &str,
+    host_port: &str,
+    container_port: &str,
+    field: &str,
+) -> Option<Risk> {
+    let ip = host_ip.trim().trim_matches(['[', ']']);
+    if !(ip.is_empty() || ip == "0.0.0.0" || ip == "::") {
+        return None;
+    }
+    let shown = if host_port.is_empty() {
+        container_port
+    } else {
+        host_port
+    };
+    Some(
+        Risk::new("risk.portAllInterfaces", RiskLevel::Low, field, shown)
+            .with("port", shown)
+            .with("containerPort", container_port),
+    )
 }
 
 #[cfg(test)]
@@ -477,6 +573,77 @@ mod tests {
         let r = &cap_risks(&["NET_RAW".into()], "capAdd")[0];
         assert_eq!(r.params["default"], "true");
         assert_eq!(r.key, "risk.capability:NET_RAW");
+    }
+
+    #[test]
+    fn namespaces_security_options_devices_and_ports() {
+        let lv = |r: Option<Risk>| r.map(|r| (r.code, r.level));
+        assert_eq!(
+            lv(namespace_risk("pid", "host", "pid")),
+            Some(("risk.hostNamespace".into(), High))
+        );
+        assert_eq!(
+            lv(namespace_risk("ipc", "host", "ipc")),
+            Some(("risk.hostNamespace".into(), High))
+        );
+        assert_eq!(
+            lv(namespace_risk("userns", "host", "u")),
+            Some(("risk.hostNamespace".into(), Medium))
+        );
+        assert_eq!(
+            lv(namespace_risk("uts", "host", "u")),
+            Some(("risk.hostNamespace".into(), Low))
+        );
+        assert_eq!(namespace_risk("pid", "service:db", "pid"), None);
+        assert_eq!(namespace_risk("ipc", "shareable", "ipc"), None);
+        for o in [
+            "seccomp=unconfined",
+            "seccomp:unconfined",
+            "apparmor=unconfined",
+            "label=disable",
+            "label:disable",
+            "systempaths=unconfined",
+        ] {
+            assert_eq!(
+                security_opt_risk(o, "s").map(|r| r.level),
+                Some(High),
+                "{o}"
+            );
+        }
+        assert_eq!(
+            security_opt_risk("no-new-privileges=false", "s").map(|r| r.level),
+            Some(Low)
+        );
+        for ok in [
+            "no-new-privileges",
+            "no-new-privileges:true",
+            "seccomp=/perfil.json",
+            "apparmor=docker-default",
+            "label=type:svirt_lxc_net_t",
+        ] {
+            assert_eq!(security_opt_risk(ok, "s"), None, "{ok}");
+        }
+        let dl = |d: &str| device_risk(d, "devices").map(|r| r.level);
+        assert_eq!(dl("/dev/mem"), Some(Critical));
+        assert_eq!(dl("/dev/sda:/dev/xvda:rwm"), Some(High));
+        assert_eq!(dl("/dev/nvme0n1"), Some(High));
+        assert_eq!(dl("/dev/disk/by-id/x"), Some(High));
+        assert_eq!(dl("/dev/dri"), Some(Low));
+        assert_eq!(dl("/dev/net/tun"), Some(Low));
+        assert_eq!(dl("/dev/ttyS0"), Some(Medium));
+        assert_eq!(cgroup_parent_risk("", "c"), None);
+        assert_eq!(
+            cgroup_parent_risk("mi-grupo", "c").map(|r| r.level),
+            Some(Low)
+        );
+        assert_eq!(
+            lv(port_risk("", "8080", "80", "p")),
+            Some(("risk.portAllInterfaces".into(), Low))
+        );
+        assert!(port_risk("0.0.0.0", "8080", "80", "p").is_some());
+        assert!(port_risk("::", "", "80", "p").is_some());
+        assert_eq!(port_risk("127.0.0.1", "8080", "80", "p"), None);
+        assert_eq!(port_risk("192.168.1.10", "8080", "80", "p"), None);
     }
 
     #[test]

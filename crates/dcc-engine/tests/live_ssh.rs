@@ -1107,6 +1107,69 @@ async fn compose_runs_on_the_server_with_server_files() {
         "{stale:?}"
     );
 
+    // Reglas de rutas (E2, D-089) en el servidor: archivos del sistema, carpetas
+    // ocultas y enlaces que apuntan a ellos se rechazan; un enlace legítimo se
+    // guarda en su destino y sigue siendo un enlace.
+    let invalid = |r: &Result<_, dcc_engine::EngineError>| {
+        matches!(r, Err(dcc_engine::EngineError::PathNotAllowed { .. }))
+    };
+    assert!(invalid(&remote_file::read(&e, "/etc/passwd").await));
+    let ssh_cfg = format!("/home/{}/.ssh/authorized_keys", b.user);
+    assert!(invalid(&remote_file::read(&e, &ssh_cfg).await));
+    let trap = format!("{dir}/trampa.yaml");
+    let linked = format!("{dir}/enlace.yaml");
+    session
+        .run(
+            &[
+                "ln".into(),
+                "-s".into(),
+                "--".into(),
+                "/etc/hostname".into(),
+                trap.clone(),
+            ],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    session
+        .run(
+            &[
+                "ln".into(),
+                "-s".into(),
+                "--".into(),
+                path.clone(),
+                linked.clone(),
+            ],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    assert!(invalid(&remote_file::read(&e, &trap).await));
+    assert!(invalid(
+        &remote_file::save(&e, &trap, "x", &saved.version).await
+    ));
+    let via_link = remote_file::read(&e, &linked).await.unwrap();
+    assert_eq!(via_link.content, edited);
+    let relinked = remote_file::save(&e, &linked, &content, &via_link.version)
+        .await
+        .unwrap();
+    assert_eq!(relinked.path, linked);
+    assert_eq!(remote_file::read(&e, &path).await.unwrap().content, content);
+    let kind = session
+        .run(
+            &[
+                "stat".into(),
+                "-c".into(),
+                "%F".into(),
+                "--".into(),
+                linked.clone(),
+            ],
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+    assert_eq!(kind.stdout.trim(), "symbolic link", "el enlace se conserva");
+
     // down (destructiva: exige confirmación).
     let down = ComposeAction::Down {
         volumes: false,
@@ -1334,6 +1397,75 @@ async fn server_shell_session_resizes_and_closes_cleanly() {
 /// Los bind mounts se comprueban en el servidor: una carpeta que solo existe
 /// en este equipo falta allí; una del servidor se describe como la ve el
 /// usuario SSH (tipo, propietario, lectura).
+/// E2 (DCC-SEC-07, D-090): en un servidor remoto, la configuración de Docker
+/// de este equipo no se consulta (y sus credenciales no se envían) sin permiso
+/// explícito; con permiso, sí. Se usa un `credsStore` inexistente: su aviso
+/// solo aparece si se intentó obtener las credenciales locales.
+#[tokio::test(flavor = "multi_thread")]
+async fn local_registry_credentials_reach_a_server_only_with_consent() {
+    use dcc_engine::registry_auth::PullAuth;
+    let Some(lab) = lab() else { return };
+    let env = Env::new();
+    env.trusted(&lab);
+    let ctx = env.ctx(fixed(None));
+    let log = ActivityLog::new(500);
+    let m = EngineManager::remote(
+        log.clone(),
+        profile(&lab, 1, None, key(&lab), RemoteDocker::Default),
+        ctx.clone(),
+        Timing::default(),
+    );
+    assert!(matches!(
+        m.connect().await,
+        ConnectionState::Connected { .. }
+    ));
+    let e = m.engine().await.unwrap();
+    let cfg = tempfile::Builder::new()
+        .prefix("dcc-test-cfg")
+        .tempdir()
+        .unwrap();
+    std::fs::write(
+        cfg.path().join("config.json"),
+        r#"{"credsStore":"dcc-e2-inexistente"}"#,
+    )
+    .unwrap();
+    let previous = std::env::var_os("DOCKER_CONFIG");
+    std::env::set_var("DOCKER_CONFIG", cfg.path());
+    let pull = |share: bool| {
+        let e = e.clone();
+        async move {
+            let mut messages = Vec::new();
+            let _ = e
+                .pull_image_with(
+                    "127.0.0.1:9/dcc-e2/nada:1",
+                    &PullAuth::DockerConfig,
+                    share,
+                    tokio_util::sync::CancellationToken::new(),
+                    |u| {
+                        messages.extend(u.messages);
+                        true
+                    },
+                )
+                .await;
+            messages.join("\n")
+        }
+    };
+    let without = pull(false).await;
+    let with = pull(true).await;
+    match previous {
+        Some(v) => std::env::set_var("DOCKER_CONFIG", v),
+        None => std::env::remove_var("DOCKER_CONFIG"),
+    }
+    assert!(
+        !without.contains("dcc-e2-inexistente"),
+        "sin permiso no se consultan las credenciales locales: {without}"
+    );
+    assert!(
+        with.contains("docker-credential-dcc-e2-inexistente"),
+        "con permiso sí: {with}"
+    );
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn bind_folders_are_checked_on_the_server() {
     use dcc_engine::binds::PathKind;

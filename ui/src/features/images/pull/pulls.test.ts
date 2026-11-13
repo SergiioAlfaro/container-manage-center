@@ -33,7 +33,7 @@ describe("descargas", () => {
   it("sigue el progreso, termina y avisa", async () => {
     const done = vi.fn();
     await usePulls.getState().start("local", "nginx:1.27", { mode: "dockerConfig" }, done);
-    expect(api.imagePullOpen).toHaveBeenCalledWith("nginx:1.27", { mode: "dockerConfig" }, expect.any(Function));
+    expect(api.imagePullOpen).toHaveBeenCalledWith("nginx:1.27", { mode: "dockerConfig" }, expect.any(Function), false);
     streams.emit(1, { event: "progress", update: { layers: [L("Downloading", 10, 100)], messages: ["1.27: Pulling from library/nginx"] } });
     let p = usePulls.getState().items[0]!;
     expect(p.status).toBe("running");

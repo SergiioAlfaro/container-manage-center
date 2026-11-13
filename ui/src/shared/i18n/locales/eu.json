@@ -1080,7 +1080,11 @@
       "capability": "{{cap}} gaitasuna: edukiontziak ekipoaren nukleoarekin egin dezakeena zabaltzen du.",
       "privileged": "Modu pribilegiatua: edukiontziak ia sarbide osoa du ekipora (gailuak, nukleoa eta gaitasun guztiak).",
       "networkHost": "Ekipoaren sarea (host): edukiontziak ekipoko zerbitzu guztiak ikusten ditu, baita 127.0.0.1-en soilik entzuten dutenak ere.",
-      "hostNamespace": "{{namespace}} espazioa ekipoarekin partekatzen du."
+      "hostNamespace": "{{namespace}} izen-espazioa ekipoarekin partekatzen du: edukiontziak ekipoaren prozesuak, memoria partekatua edo konfigurazioa ikus ditzake (eta batzuetan eragin).",
+      "securityOpt": "{{option}} aukerak nukleoaren babes bat desaktibatzen du ({{protection}}), edukiontziak ekipoan egin dezakeena mugatzen duena.",
+      "device": "{{device}} gailua: edukiontzia zuzenean sartzen da ekipoaren gailu horretara, fitxategien baimenik gabe.",
+      "cgroupParent": "Kontrol-talde propioa ({{parent}}): edukiontzia Dockerrek kudeatzen dituen mugetatik kanpo geratzen da.",
+      "portAllInterfaces": "{{port}} ataka interfaze guztietan argitaratzen da: sareko beste ekipo batzuk konekta daitezke eta, Dockerrekin, suhesiak (UFW, firewalld) ez du normalean eragozten. Erabili 127.0.0.1 ekipo honetan bakarrik behar baduzu."
     }
   },
   "dupNotes": {
@@ -1132,7 +1136,10 @@
       "done": "Deskargatuta",
       "failed": "Errorea",
       "cancelled": "Bertan behera utzita"
-    }
+    },
+    "shareLocal": "Bidali ekipo honetako erregistro-kredentzialak «{{server}}» zerbitzarira",
+    "shareLocalOn": "Ekipo honetako docker login kredentzialak erabiliko dira erregistro horretarako, eta zerbitzariak ikusi ahal izango ditu.",
+    "shareLocalOff": "Markatu gabe, zerbitzariko deskarga anonimoa da: ekipo honetako kredentzialak ez dira ekipotik ateratzen."
   },
   "search": {
     "title": "Bilatu Docker Hub-en",
@@ -1301,7 +1308,9 @@
       "done": "Irudia eraikita",
       "failed": "Eraikuntzak huts egin du",
       "cancelled": "Eraikuntza bertan behera utzita"
-    }
+    },
+    "shareLocalOn": "Oinarrizko irudiak ekipo honetako docker login kredentzialekin deskargatuko dira, eta zerbitzariak ikusi ahal izango ditu.",
+    "shareLocalOff": "Markatu gabe, oinarrizko irudiak modu anonimoan deskargatzen dira: ekipo honetako kredentzialak ez zaizkio zerbitzariari bidaltzen."
   },
   "networks": {
     "create": "Sortu sarea",
@@ -2138,6 +2147,7 @@
     "engine_timeout": "Dockerrek ez du garaiz erantzun.",
     "engine_notConfirmed": "Eragiketak berrespen esplizitua behar du.",
     "engine_composeUnavailable": "Docker Compose ez dago erabilgarri.",
+    "engine_pathNotAllowed": "Segurtasunagatik, .yml edo .yaml fitxategiak bakarrik irekitzen dira, eta ez karpeta ezkutuetan (~/.ssh, adibidez) edo sistemakoetan (/etc, adibidez), ez eta haietarako estekak ere.",
     "ipc_unavailable": "Interfazea mahaigaineko aplikaziotik kanpo exekutatzen ari da.",
     "updates_noSource": "Ez dago eguneratze-iturririk konfiguratuta.",
     "updates_invalidSource": "Iturri baliogabea: adierazi GitHubeko «jabea/biltegia» edo https:// helbide bat",
@@ -2813,5 +2823,10 @@
       "medium": "Ertaina",
       "low": "Baxua"
     }
+  },
+  "terminalLink": {
+    "title": "Ireki terminaleko esteka",
+    "body": "Terminalaren irteerak esteka hau du. Ireki konfiantza ematen badizu bakarrik: sistemaren nabigatzailean irekiko da.",
+    "open": "Ireki nabigatzailean"
   }
 }

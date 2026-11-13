@@ -129,6 +129,39 @@ impl UpdateSource {
     }
 }
 
+/// Servidor (`host[:puerto]`, en minúsculas) de una dirección `https://` sin
+/// usuario ni contraseña; `None` si no lo es.
+pub fn https_host(url: &str) -> Option<String> {
+    let rest = url.strip_prefix("https://")?;
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    if authority.is_empty() || authority.contains('@') {
+        return None;
+    }
+    Some(authority.to_ascii_lowercase())
+}
+
+/// Servidores cuyas páginas de versión se pueden abrir (E2, DCC-SEC-16,
+/// D-091): `github.com` y el de la fuente de actualizaciones propia (la
+/// guardada y la última consultada). `api.github.com` no sirve páginas.
+pub fn release_page_hosts(saved_source: &str, last_checked_url: Option<&str>) -> Vec<String> {
+    let mut hosts = vec!["github.com".to_owned()];
+    if let Ok(Some(UpdateSource::Url(u))) = UpdateSource::parse(saved_source) {
+        hosts.extend(https_host(&u));
+    }
+    hosts.extend(last_checked_url.and_then(https_host));
+    hosts.retain(|h| h != "api.github.com");
+    hosts.dedup();
+    hosts
+}
+
+/// ¿Se puede abrir este enlace de versión? `https://`, sin espacios ni
+/// caracteres de control, hasta 2048 caracteres y en uno de `hosts`.
+pub fn release_page_allowed(url: &str, hosts: &[String]) -> bool {
+    url.len() <= 2048
+        && !url.chars().any(|c| c.is_whitespace() || c.is_control())
+        && https_host(url).is_some_and(|h| hosts.contains(&h))
+}
+
 /// Versión publicada, leída de la respuesta.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Release {
@@ -514,5 +547,46 @@ mod tests {
         assert!(c.newer, "{c:?}");
         assert!(semver::Version::parse(&c.latest).is_ok());
         eprintln!("HTTPS real: {url} → {}", c.latest);
+    }
+
+    #[test]
+    fn release_pages_only_from_github_or_the_own_source() {
+        let gh = release_page_hosts(
+            "org/repo",
+            Some("https://api.github.com/repos/org/repo/releases/latest"),
+        );
+        assert_eq!(gh, vec!["github.com".to_owned()]);
+        assert!(release_page_allowed(
+            "https://github.com/org/repo/releases/tag/v1.2.0",
+            &gh
+        ));
+        for bad in [
+            "https://evil.example/x",
+            "https://github.com.evil.example/x",
+            "https://user@github.com/x",
+            "http://github.com/x",
+            "https://github.com/a b",
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+        ] {
+            assert!(!release_page_allowed(bad, &gh), "{bad}");
+        }
+        let own = release_page_hosts(
+            "https://descargas.ejemplo.es/dcc/latest.json",
+            Some("https://otra.ejemplo.es/latest.json"),
+        );
+        assert!(release_page_allowed(
+            "https://descargas.ejemplo.es/dcc/1.2.0",
+            &own
+        ));
+        assert!(release_page_allowed(
+            "https://DESCARGAS.ejemplo.es/dcc/1.2.0",
+            &own
+        ));
+        assert!(
+            release_page_allowed("https://otra.ejemplo.es/notas", &own),
+            "última consultada"
+        );
+        assert!(!release_page_allowed("https://tercera.ejemplo.es/", &own));
     }
 }

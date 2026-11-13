@@ -196,6 +196,18 @@ fn from_entry(e: &AuthEntry, server: &str) -> Option<DockerCredentials> {
     })
 }
 
+/// Modo que se usa de verdad (E2, DCC-SEC-07, D-090): en un servidor remoto,
+/// las credenciales de la configuración de Docker de **este equipo** solo se
+/// envían si el usuario lo ha permitido para esa operación; si no, la descarga
+/// es anónima. Las credenciales escritas a mano se envían siempre (el usuario
+/// las escribe para esa operación y ese servidor).
+pub fn effective_auth(remote: bool, share_local_credentials: bool, mode: &PullAuth) -> &PullAuth {
+    match mode {
+        PullAuth::DockerConfig if remote && !share_local_credentials => &PullAuth::Anonymous,
+        m => m,
+    }
+}
+
 /// Resuelve las credenciales según el modo elegido. Si hay que ejecutar un
 /// *credential helper*, la ejecución queda registrada (sin su salida).
 pub async fn resolve(log: &ActivityLog, auth_key: &str, mode: &PullAuth) -> ResolvedAuth {
@@ -506,5 +518,32 @@ mod tests {
         assert!(!m.to_string().contains("pw"));
         assert!(!format!("{m:?}").contains("pw"));
         assert!(!format!("{:?}", AuthSource::Manual.describe()).contains("pw"));
+    }
+
+    #[test]
+    fn local_credentials_reach_remote_servers_only_with_consent() {
+        let manual = PullAuth::Manual {
+            username: "u".into(),
+            password: "p".into(),
+        };
+        // En este equipo, como siempre.
+        assert_eq!(
+            effective_auth(false, false, &PullAuth::DockerConfig),
+            &PullAuth::DockerConfig
+        );
+        // En un servidor remoto: anónima salvo permiso explícito.
+        assert_eq!(
+            effective_auth(true, false, &PullAuth::DockerConfig),
+            &PullAuth::Anonymous
+        );
+        assert_eq!(
+            effective_auth(true, true, &PullAuth::DockerConfig),
+            &PullAuth::DockerConfig
+        );
+        assert_eq!(
+            effective_auth(true, false, &PullAuth::Anonymous),
+            &PullAuth::Anonymous
+        );
+        assert_eq!(effective_auth(true, false, &manual), &manual);
     }
 }

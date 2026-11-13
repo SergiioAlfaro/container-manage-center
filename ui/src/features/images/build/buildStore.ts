@@ -28,7 +28,7 @@ interface BuildData {
 }
 
 interface BuildSession extends BuildData {
-  start: (spec: BuildSpec, onFinished?: (ok: boolean) => void) => Promise<void>;
+  start: (spec: BuildSpec, onFinished?: (ok: boolean) => void, shareLocalCredentials?: boolean) => Promise<void>;
   cancel: () => void;
   reset: () => void;
 }
@@ -44,7 +44,7 @@ export function mergeSteps(prev: BuildStep[], next: BuildStep[]): BuildStep[] {
 
 interface BuildStore {
   byServer: Record<string, BuildData>;
-  start: (server: string, spec: BuildSpec, onFinished?: (ok: boolean) => void) => Promise<void>;
+  start: (server: string, spec: BuildSpec, onFinished?: (ok: boolean) => void, shareLocalCredentials?: boolean) => Promise<void>;
   cancel: (server: string) => void;
   reset: (server: string) => void;
 }
@@ -58,7 +58,7 @@ export const useBuildStore = create<BuildStore>((set, get) => {
     });
   return {
     byServer: {},
-    start: async (server, spec, onFinished) => {
+    start: async (server, spec, onFinished, shareLocalCredentials = false) => {
       const st = cur(server).status;
       if (st === "starting" || st === "running") return;
       put(server, { ...empty, status: "starting", spec });
@@ -77,7 +77,7 @@ export const useBuildStore = create<BuildStore>((set, get) => {
         }
       };
       try {
-        const stream = await dockerApi(server).buildOpen(spec, handler);
+        const stream = await dockerApi(server).buildOpen(spec, handler, shareLocalCredentials);
         const s = cur(server);
         if (s.status === "starting" || s.status === "running") {
           put(server, { stream });
@@ -109,7 +109,7 @@ export function useBuild<T>(select?: (s: BuildSession) => T): T | BuildSession {
   const store = useBuildStore.getState();
   const session: BuildSession = {
     ...data,
-    start: (spec, onFinished) => store.start(server, spec, onFinished),
+    start: (spec, onFinished, share) => store.start(server, spec, onFinished, share),
     cancel: () => store.cancel(server),
     reset: () => store.reset(server),
   };

@@ -1,0 +1,46 @@
+# Política de dependencias de Rust (E2, R-08, DCC-SEC-14, D-092).
+# `cargo deny check` la aplica en la verificación (scripts/verify-evolution-*.sh).
+# Cada excepción lleva su justificación y se revisa en cada versión.
+
+[graph]
+all-features = false
+
+[advisories]
+# Avisos de seguridad: siempre error. Crates sin mantenimiento: error salvo las
+# excepciones de abajo.
+unmaintained = "all"
+yanked = "warn"
+ignore = [
+  # proc-macro-error 1.0.4: macro de compilación (no llega al binario) que
+  # usan glib-macros 0.18 → gtk-rs 0.18 → tauri (Linux). No hay versión
+  # nueva compatible; desaparecerá cuando Tauri pase a gtk-rs 0.19+.
+  { id = "RUSTSEC-2024-0370", reason = "transitiva de tauri/gtk-rs 0.18, solo en compilación; sin alternativa compatible" },
+  # zbus 4 / zvariant 4 (y zbus_names, zvariant_derive): D-Bus para Secret
+  # Service (keyring → secret-service) y para el selector de archivos de rfd
+  # (tauri-plugin-dialog). Sin vulnerabilidades conocidas; su sucesor (zbus 5)
+  # llegará con esas dependencias. No se puede cambiar sin bifurcarlas.
+  { id = "RUSTSEC-2026-0370", reason = "zbus/zvariant 4, transitiva de keyring y rfd; sin vulnerabilidades, sucesor zbus 5" },
+  { id = "RUSTSEC-2026-0371", reason = "zbus/zvariant 4, transitiva de keyring y rfd; sin vulnerabilidades, sucesor zbus 5" },
+  { id = "RUSTSEC-2026-0372", reason = "zbus/zvariant 4, transitiva de keyring y rfd; sin vulnerabilidades, sucesor zbus 5" },
+]
+
+[licenses]
+confidence-threshold = 0.8
+# Compatibles con la licencia del proyecto (GPL-3.0-or-later).
+allow = [
+  "MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause",
+  "ISC", "Zlib", "Unicode-3.0", "MPL-2.0", "CC0-1.0", "0BSD",
+  "BSL-1.0", "GPL-3.0-or-later", "GPL-3.0", "CDLA-Permissive-2.0", "OpenSSL", "Unlicense", "LGPL-2.1-or-later", "MIT-0",
+]
+unused-allowed-license = "allow"
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+# Solo crates.io: ningún repositorio git ni registro desconocido.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

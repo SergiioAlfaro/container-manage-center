@@ -3,6 +3,7 @@ name = "dcc-engine"
 description = "Conexión con Docker Engine: resolución del socket, diagnóstico y cliente API con registro de actividad"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 rust-version.workspace = true
 

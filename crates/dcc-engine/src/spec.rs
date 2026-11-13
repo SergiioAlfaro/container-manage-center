@@ -270,6 +270,17 @@ impl ContainerSpec {
         if let Some(r) = risk::network_risk(&self.network, "network") {
             out.push(r);
         }
+        // Con la red del equipo no se publican puertos: ya se avisa arriba.
+        if self.network.trim() != "host" {
+            for (i, p) in self.ports.iter().enumerate() {
+                out.extend(risk::port_risk(
+                    &p.host_ip,
+                    &p.host_port.map(|n| n.to_string()).unwrap_or_default(),
+                    &p.container_port.to_string(),
+                    &format!("ports.{i}.hostIp"),
+                ));
+            }
+        }
         out
     }
 

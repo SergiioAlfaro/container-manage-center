@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
-import { api, connected, imageDetails, images, streams } from "@/test/apiMock";
+import { api, connected, imageDetails, images, localServer, remoteServer, streams } from "@/test/apiMock";
+import { useServers } from "@/app/server";
 import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { useContainersNav } from "@/features/containers/store";
@@ -89,7 +90,7 @@ describe("Lista de imágenes", () => {
     expect(pw).toHaveAttribute("type", "password");
     await userEvent.type(pw, "s3creto");
     await userEvent.click(within(dialog).getByRole("button", { name: "Descargar" }));
-    expect(api.imagePullOpen).toHaveBeenCalledWith("registro.local:5000/equipo/app:v2", { mode: "manual", username: "ana", password: "s3creto" }, expect.any(Function));
+    expect(api.imagePullOpen).toHaveBeenCalledWith("registro.local:5000/equipo/app:v2", { mode: "manual", username: "ana", password: "s3creto" }, expect.any(Function), false);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     act(() => streams.emit(1, { event: "progress", update: { layers: [{ id: "a1b2c3d4e5f6", status: "Downloading", current: 50, total: 100 }], messages: ["v2: Pulling from equipo/app"] } }));
     const panel = screen.getByRole("region", { name: "Descargas" });
@@ -101,6 +102,29 @@ describe("Lista de imágenes", () => {
     await waitFor(() => expect(api.imagesList).toHaveBeenCalledTimes(2));
   });
 
+  it("en un servidor remoto, las credenciales de este equipo solo se envían si se marca (E2, D-090)", async () => {
+    const remote = "srv-0123abcd";
+    useServers.setState({ servers: [localServer(), remoteServer({ id: remote, name: "Producción" }, connected)] });
+    setServerState(connected, remote);
+    renderWithQuery(<ImagesView />, remote);
+    await screen.findByText("nginx:1.27");
+    const pull = async (share: boolean) => {
+      await userEvent.click(screen.getByRole("button", { name: "Descargar imagen" }));
+      const dialog = screen.getByRole("dialog");
+      await userEvent.type(within(dialog).getByLabelText("Imagen"), "alpine");
+      const box = within(dialog).getByRole("checkbox", { name: /credenciales de registro de este equipo/ });
+      expect(box).not.toBeChecked();
+      expect(within(dialog).getByText(/la descarga en el servidor es anónima/)).toBeInTheDocument();
+      if (share) await userEvent.click(box);
+      await waitFor(() => expect(within(dialog).getByRole("button", { name: "Descargar" })).toBeEnabled());
+      await userEvent.click(within(dialog).getByRole("button", { name: "Descargar" }));
+    };
+    await pull(false);
+    expect(api.imagePullOpen).toHaveBeenLastCalledWith("alpine", { mode: "dockerConfig" }, expect.any(Function), false);
+    await pull(true);
+    expect(api.imagePullOpen).toHaveBeenLastCalledWith("alpine", { mode: "dockerConfig" }, expect.any(Function), true);
+  });
+
   it("una descarga en curso se puede cancelar", async () => {
     renderWithQuery(<ImagesView />);
     await screen.findByText("nginx:1.27");
@@ -108,7 +132,7 @@ describe("Lista de imágenes", () => {
     await userEvent.type(within(screen.getByRole("dialog")).getByLabelText("Imagen"), "alpine");
     await waitFor(() => expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Descargar" })).toBeEnabled());
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Descargar" }));
-    expect(api.imagePullOpen).toHaveBeenCalledWith("alpine", { mode: "dockerConfig" }, expect.any(Function));
+    expect(api.imagePullOpen).toHaveBeenCalledWith("alpine", { mode: "dockerConfig" }, expect.any(Function), false);
     await userEvent.click(within(screen.getByRole("region", { name: "Descargas" })).getByRole("button", { name: "Cancelar" }));
     expect(api.streamClose).toHaveBeenCalledWith(1);
     expect(screen.getByText("Cancelada")).toBeInTheDocument();
@@ -307,7 +331,7 @@ describe("Construcción", () => {
     renderWithQuery(<ImagesView />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Construir" })).toBeEnabled());
     await userEvent.click(screen.getByRole("button", { name: "Construir" }));
-    expect(api.buildOpen).toHaveBeenCalledWith(expect.objectContaining({ context: "/home/u/proyecto", tags: ["miapp:1.0"] }), expect.any(Function));
+    expect(api.buildOpen).toHaveBeenCalledWith(expect.objectContaining({ context: "/home/u/proyecto", tags: ["miapp:1.0"] }), expect.any(Function), false);
     act(() =>
       streams.emit(1, {
         event: "progress",

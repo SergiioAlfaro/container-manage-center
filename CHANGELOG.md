@@ -1,5 +1,15 @@
 # Cambios
 
+## 1.2.0 — 2026-11-13 (evolución, Etapa 2: resto del endurecimiento)
+Resto de hallazgos de `docs/security/SECURITY_AUDIT.md` del plan de evolución (E2), corregidos y comprobados con pruebas.
+- **Más riesgos para el equipo** (DCC-SEC-04 y DCC-SEC-08, D-088), en crear, editar y Compose: compartir `pid`/`ipc` (alto), `userns`/`cgroup` (medio) o `uts` (bajo) con el equipo; `security_opt` que desactiva seccomp, AppArmor, SELinux o `systempaths` (alto); dispositivos (`/dev/mem` crítico, discos alto); `cgroup_parent`; y puertos publicados en todas las interfaces (aviso bajo con la sugerencia de `127.0.0.1`).
+- **Archivos Compose** (DCC-SEC-06 y DCC-SEC-13, D-089): el editor solo abre y guarda archivos `.yml`/`.yaml` fuera de carpetas ocultas (`~/.ssh`, `~/.config`…) y del sistema (`/etc`, `/root`…), también si son enlaces a ellas, en este equipo y en los servidores. Guardar un `compose.yaml` que es un enlace simbólico ya no lo convierte en un archivo normal.
+- **Credenciales de registro en servidores remotos** (DCC-SEC-07, D-090): al descargar o construir en un servidor, las credenciales de `docker login` de este equipo solo se envían si marcas la casilla (desmarcada por omisión). Sin ella, la descarga es anónima.
+- **Enlaces de las terminales** (DCC-SEC-12, D-091): un enlace de la salida se abre en el navegador del sistema solo después de confirmarlo, viendo la dirección completa, y solo si es `http://` o `https://`.
+- **Superficie de la aplicación** (DCC-SEC-11, 15–18, D-091): el programa publicado no arranca como root ni con `DCC_ALLOW_ROOT`; permisos de Tauri reducidos a lo que usa la interfaz; la página de una versión solo se abre desde github.com o la fuente de actualizaciones; documentados el estilo en línea de la CSP y el requisito de shell POSIX en los servidores.
+- **Cadena de suministro** (DCC-SEC-09, 10, 14, D-092): `install.sh` comprueba el paquete con `SHA256SUMS` (`scripts/release-sums.sh` lo genera); `deny.toml` versionado con excepciones justificadas; `cargo deny`, `npm audit` y ESLint en la verificación; vitest 5 (sin los avisos de `tinypool`). La firma GPG queda pendiente de la clave del propietario.
+- **Verificación**: `scripts/verify-evolution-1.2.0.sh`, con toda la regresión de las fases 1–10, de la 1.1.0 y las pruebas de la Etapa 2.
+
 ## 1.1.0 — 2026-11-12 (evolución, Etapa 1: correcciones de seguridad prioritarias)
 Hallazgos de `docs/security/SECURITY_AUDIT.md` corregidos y comprobados con pruebas.
 - **Riesgos para el equipo** (DCC-SEC-01 y DCC-SEC-03, D-086): reglas únicas para crear, editar, desplegar con Compose y la pantalla de directorios vinculados.

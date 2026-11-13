@@ -1080,7 +1080,11 @@
       "capability": "Capability {{cap}}: extends what the container can do with the host kernel.",
       "privileged": "Privileged mode: the container gets almost full access to the host (devices, kernel and all capabilities).",
       "networkHost": "Host network: the container sees every service on the host, including those that only listen on 127.0.0.1.",
-      "hostNamespace": "Shares the {{namespace}} namespace with the host."
+      "hostNamespace": "Shares the {{namespace}} namespace with the host: the container can see (and sometimes affect) the host's processes, shared memory or configuration.",
+      "securityOpt": "{{option}} turns off a kernel protection ({{protection}}) that limits what the container can do on the host.",
+      "device": "Device {{device}}: the container accesses that host device directly, bypassing file permissions.",
+      "cgroupParent": "Custom control group ({{parent}}): the container is placed outside the limits Docker manages.",
+      "portAllInterfaces": "Port {{port}} is published on all interfaces: other machines on the network can connect and, with Docker, the firewall (UFW, firewalld) usually does not block it. Use 127.0.0.1 if you only need it on this computer."
     }
   },
   "dupNotes": {
@@ -1132,7 +1136,10 @@
       "done": "Pulled",
       "failed": "Error",
       "cancelled": "Cancelled"
-    }
+    },
+    "shareLocal": "Send this computer's registry credentials to the server “{{server}}”",
+    "shareLocalOn": "The docker login credentials of this computer will be used for that registry, and the server will be able to see them.",
+    "shareLocalOff": "Unchecked, the download on the server is anonymous: this computer's credentials never leave it."
   },
   "search": {
     "title": "Search Docker Hub",
@@ -1301,7 +1308,9 @@
       "done": "Image built",
       "failed": "The build failed",
       "cancelled": "Build cancelled"
-    }
+    },
+    "shareLocalOn": "Base images will be downloaded with this computer's docker login credentials, and the server will be able to see them.",
+    "shareLocalOff": "Unchecked, base images are downloaded anonymously: this computer's credentials are not sent to the server."
   },
   "networks": {
     "create": "Create network",
@@ -2138,6 +2147,7 @@
     "engine_timeout": "Docker did not respond in time.",
     "engine_notConfirmed": "The operation requires explicit confirmation.",
     "engine_composeUnavailable": "Docker Compose is not available.",
+    "engine_pathNotAllowed": "For security, only .yml or .yaml files are opened, and not inside hidden folders (such as ~/.ssh) or system folders (such as /etc), nor links to them.",
     "ipc_unavailable": "The interface is running outside the desktop application.",
     "updates_noSource": "No update source is configured.",
     "updates_invalidSource": "Invalid source: enter a GitHub \"owner/repository\" or an https:// address.",
@@ -2813,5 +2823,10 @@
       "medium": "Medium",
       "low": "Low"
     }
+  },
+  "terminalLink": {
+    "title": "Open terminal link",
+    "body": "The terminal output contains this link. Open it only if you trust it: it will open in the system browser.",
+    "open": "Open in browser"
   }
 }

@@ -37,6 +37,13 @@ fn invalid(message: impl Into<String>) -> EngineError {
     }
 }
 
+pub(crate) fn not_allowed(path: &str, reason: &str) -> EngineError {
+    EngineError::PathNotAllowed {
+        path: path.to_owned(),
+        reason: reason.to_owned(),
+    }
+}
+
 fn io(path: &Path, e: std::io::Error) -> EngineError {
     EngineError::Other {
         message: format!("{}: {e}", path.display()),
@@ -49,10 +56,77 @@ pub fn version_of(content: &[u8]) -> String {
 }
 
 fn absolute(path: &str) -> Result<PathBuf, EngineError> {
-    if path.is_empty() || path.contains('\0') || !path.starts_with('/') || path.len() > 4096 {
+    if path.is_empty()
+        || path.contains('\0')
+        || path.contains('\n')
+        || !path.starts_with('/')
+        || path.len() > 4096
+    {
         return Err(invalid(format!("ruta no válida: {path:?}")));
     }
     Ok(PathBuf::from(path))
+}
+
+/// Carpetas del sistema donde nunca hay que leer ni escribir un archivo
+/// Compose desde la aplicación (E2, DCC-SEC-06, D-089).
+const DENIED_DIRS: [&str; 10] = [
+    "/etc", "/root", "/proc", "/sys", "/dev", "/boot", "/run", "/usr", "/var/lib", "/var/run",
+];
+
+/// Reglas de las rutas de los archivos Compose (E2, DCC-SEC-06, D-089), para
+/// el equipo y para los servidores remotos. Así, aunque algún día se pudiera
+/// ejecutar código en la interfaz, estas órdenes no servirían para leer ni
+/// sobrescribir otros archivos del usuario (claves SSH, `~/.bashrc`…):
+/// * solo archivos YAML (`.yml`, `.yaml`), que es lo que lee Compose;
+/// * ninguna carpeta oculta en la ruta (`~/.ssh`, `~/.docker`, `~/.config`,
+///   `~/.kube`, `~/.gnupg`…), donde se guardan credenciales y configuración;
+/// * ninguna carpeta del sistema (`/etc`, `/root`, `/proc`, `/usr`…);
+/// * ruta absoluta y sin `..` (los discos de `/run/media` sí se permiten).
+///
+/// Si la ruta es un enlace simbólico, se aplican también a su destino real.
+pub fn check_compose_path(path: &str) -> Result<(), EngineError> {
+    absolute(path)?;
+    let norm =
+        crate::risk::normalize(path).ok_or_else(|| invalid(format!("ruta no válida: {path:?}")))?;
+    let name = norm.rsplit('/').next().unwrap_or("");
+    let lower = name.to_ascii_lowercase();
+    if !(lower.ends_with(".yml") || lower.ends_with(".yaml")) {
+        return Err(not_allowed(path, "solo archivos .yml o .yaml"));
+    }
+    let dirs: Vec<&str> = norm.split('/').filter(|c| !c.is_empty()).collect();
+    if dirs[..dirs.len().saturating_sub(1)]
+        .iter()
+        .any(|c| c.starts_with('.'))
+    {
+        return Err(not_allowed(path, "carpeta oculta, como ~/.ssh o ~/.config"));
+    }
+    // Excepción: los discos extraíbles se montan en `/run/media/<usuario>` en
+    // algunas distribuciones (en Debian, en `/media`).
+    let removable = norm.starts_with("/run/media/");
+    if !removable
+        && DENIED_DIRS
+            .iter()
+            .any(|d| norm == *d || norm.starts_with(&format!("{d}/")))
+    {
+        return Err(not_allowed(path, "carpeta del sistema"));
+    }
+    Ok(())
+}
+
+/// Ruta real (sigue los enlaces simbólicos) comprobada con las mismas reglas.
+/// Si el archivo aún no existe, la ruta escrita.
+fn resolved(path: &str) -> Result<PathBuf, EngineError> {
+    check_compose_path(path)?;
+    match std::fs::canonicalize(path) {
+        Ok(real) => {
+            let r = real.to_string_lossy().into_owned();
+            if r != path {
+                check_compose_path(&r).map_err(|_| not_allowed(path, &format!("enlace a {r}")))?;
+            }
+            Ok(real)
+        }
+        Err(_) => absolute(path),
+    }
 }
 
 fn writable(path: &Path) -> bool {
@@ -60,7 +134,7 @@ fn writable(path: &Path) -> bool {
 }
 
 pub fn read(path: &str) -> Result<ComposeFile, EngineError> {
-    let p = absolute(path)?;
+    let p = resolved(path)?;
     let meta = std::fs::metadata(&p).map_err(|e| io(&p, e))?;
     if !meta.is_file() {
         return Err(invalid(format!("{path} no es un archivo")));
@@ -83,8 +157,10 @@ pub fn read(path: &str) -> Result<ComposeFile, EngineError> {
 }
 
 /// Guarda `content` si el archivo sigue siendo el que se leyó (`expected_version`).
+/// Si `path` es un enlace simbólico, se escribe en su destino real y el enlace
+/// se conserva (E2, DCC-SEC-13).
 pub fn save(path: &str, content: &str, expected_version: &str) -> Result<ComposeFile, EngineError> {
-    let p = absolute(path)?;
+    let p = resolved(path)?;
     if content.len() > MAX_FILE_BYTES {
         return Err(invalid("el contenido es demasiado grande"));
     }
@@ -138,6 +214,13 @@ pub fn existing_default(dir: &Path) -> Option<PathBuf> {
 /// Crea `compose.yaml` en `dir`. Se niega si la carpeta ya tiene un archivo Compose.
 pub fn create(dir: &str, content: &str) -> Result<ComposeFile, EngineError> {
     let d = absolute(dir)?;
+    // Mismas reglas de rutas que al leer y guardar (D-089), también para la
+    // carpeta real si es un enlace.
+    let target = |d: &str| format!("{}/{}", d.trim_end_matches('/'), DEFAULT_FILES[0]);
+    check_compose_path(&target(dir))?;
+    if let Ok(real) = std::fs::canonicalize(&d) {
+        check_compose_path(&target(&real.to_string_lossy()))?;
+    }
     if !d.is_dir() {
         return Err(invalid(format!("{dir} no es una carpeta")));
     }
@@ -173,9 +256,17 @@ pub fn create(dir: &str, content: &str) -> Result<ComposeFile, EngineError> {
 mod tests {
     use super::*;
 
+    /// `tempfile` crea `.tmpXXXX` (carpeta oculta, rechazada por la política).
+    fn tmp() -> tempfile::TempDir {
+        tempfile::Builder::new()
+            .prefix("dcc-test")
+            .tempdir()
+            .unwrap()
+    }
+
     #[test]
     fn read_and_save_with_conflict_detection() {
-        let d = tempfile::tempdir().unwrap();
+        let d = tmp();
         let f = d.path().join("compose.yaml");
         std::fs::write(&f, "services: {}\n").unwrap();
         std::fs::set_permissions(&f, std::fs::Permissions::from_mode(0o640)).unwrap();
@@ -211,7 +302,7 @@ mod tests {
 
     #[test]
     fn read_rejects_bad_input() {
-        let d = tempfile::tempdir().unwrap();
+        let d = tmp();
         assert!(read("relativo.yaml").is_err());
         assert!(read(d.path().to_str().unwrap()).is_err(), "una carpeta");
         let big = d.path().join("big.yaml");
@@ -224,7 +315,7 @@ mod tests {
 
     #[test]
     fn create_refuses_to_overwrite_any_compose_file() {
-        let d = tempfile::tempdir().unwrap();
+        let d = tmp();
         let dir = d.path().to_str().unwrap();
         let c = create(dir, "services: {}\n").unwrap();
         assert!(c.path.ends_with("/compose.yaml"));
@@ -232,7 +323,7 @@ mod tests {
             create(dir, "x").unwrap_err(),
             EngineError::AlreadyExists { .. }
         ));
-        let d2 = tempfile::tempdir().unwrap();
+        let d2 = tmp();
         std::fs::write(d2.path().join("docker-compose.yml"), "viejo").unwrap();
         assert!(matches!(
             create(d2.path().to_str().unwrap(), "x").unwrap_err(),
@@ -242,5 +333,115 @@ mod tests {
             std::fs::read_to_string(d2.path().join("docker-compose.yml")).unwrap(),
             "viejo"
         );
+    }
+
+    #[test]
+    fn path_policy_blocks_sensitive_files() {
+        for bad in [
+            "/etc/passwd",
+            "/etc/docker/compose.yaml",
+            "/root/compose.yaml",
+            "/home/ana/.ssh/id_ed25519",
+            "/home/ana/.ssh/config.yaml",
+            "/home/ana/.docker/config.json",
+            "/home/ana/.config/app/compose.yml",
+            "/home/ana/.bashrc",
+            "/home/ana/proyecto/notas.txt",
+            "/home/ana/proyecto/compose",
+            "/home/ana/proyecto/../.ssh/x.yaml",
+            "/proc/self/environ",
+            "/var/lib/docker/x.yaml",
+            "/var/run/docker.sock",
+            "/run/user/1000/x.yaml",
+            "/usr/share/x.yml",
+            "relativo.yaml",
+        ] {
+            assert!(
+                matches!(
+                    check_compose_path(bad),
+                    Err(EngineError::PathNotAllowed { .. } | EngineError::InvalidInput { .. })
+                ),
+                "{bad} debería rechazarse"
+            );
+        }
+        for good in [
+            "/home/ana/proyecto/compose.yaml",
+            "/home/ana/proyecto/docker-compose.yml",
+            "/home/ana/proyecto/compose.prod.YAML",
+            "/srv/tienda/compose.yaml",
+            "/opt/app/docker-compose.override.yml",
+            "/media/ana/disco/web/compose.yaml",
+            "/run/media/ana/disco/web/compose.yaml",
+            "/tmp/prueba/compose.yaml",
+        ] {
+            assert!(
+                check_compose_path(good).is_ok(),
+                "{good} debería permitirse"
+            );
+        }
+    }
+
+    #[test]
+    fn symlinks_are_checked_by_their_real_target_and_kept_on_save() {
+        let d = tmp();
+        // Un enlace con nombre YAML que apunta a un archivo no permitido.
+        let hidden = d.path().join(".secreto");
+        std::fs::create_dir(&hidden).unwrap();
+        let key = hidden.join("id.yaml");
+        std::fs::write(&key, "clave\n").unwrap();
+        let trap = d.path().join("compose.yaml");
+        std::os::unix::fs::symlink(&key, &trap).unwrap();
+        let trap = trap.to_str().unwrap();
+        assert!(matches!(
+            read(trap),
+            Err(EngineError::PathNotAllowed { .. })
+        ));
+        assert!(matches!(
+            save(trap, "x", &version_of(b"clave\n")),
+            Err(EngineError::PathNotAllowed { .. })
+        ));
+        assert_eq!(std::fs::read_to_string(&key).unwrap(), "clave\n");
+
+        // Un enlace legítimo (compose.yaml -> real/compose.yaml): se guarda
+        // en el destino y el enlace sigue siendo un enlace.
+        let d2 = tmp();
+        let real_dir = d2.path().join("real");
+        std::fs::create_dir(&real_dir).unwrap();
+        let real = real_dir.join("compose.yaml");
+        std::fs::write(&real, "services: {}\n").unwrap();
+        let link = d2.path().join("compose.yaml");
+        std::os::unix::fs::symlink(&real, &link).unwrap();
+        let link_s = link.to_str().unwrap();
+        let r = read(link_s).unwrap();
+        assert_eq!(r.path, link_s);
+        save(link_s, "services:\n  a:\n    image: x\n", &r.version).unwrap();
+        assert!(std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink());
+        assert_eq!(
+            std::fs::read_to_string(&real).unwrap(),
+            "services:\n  a:\n    image: x\n"
+        );
+    }
+
+    #[test]
+    fn create_checks_the_folder() {
+        let d = tmp();
+        let hidden = d.path().join(".oculta");
+        std::fs::create_dir(&hidden).unwrap();
+        assert!(matches!(
+            create(hidden.to_str().unwrap(), "services: {}\n"),
+            Err(EngineError::PathNotAllowed { .. })
+        ));
+        // Enlace visible a una carpeta oculta: se comprueba la real.
+        let link = d.path().join("visible");
+        std::os::unix::fs::symlink(&hidden, &link).unwrap();
+        assert!(matches!(
+            create(link.to_str().unwrap(), "services: {}\n"),
+            Err(EngineError::PathNotAllowed { .. })
+        ));
+        assert!(!hidden.join("compose.yaml").exists());
+        assert!(create("/etc", "x").is_err());
     }
 }

@@ -1080,7 +1080,11 @@
       "capability": "Capacidade {{cap}}: amplía o que o contedor pode facer co núcleo do equipo.",
       "privileged": "Modo privilexiado: o contedor ten acceso case completo ao equipo (dispositivos, núcleo e todas as capacidades).",
       "networkHost": "Rede do equipo (host): o contedor ve todos os servizos do equipo, tamén os que só escoitan en 127.0.0.1.",
-      "hostNamespace": "Comparte o espazo {{namespace}} co equipo."
+      "hostNamespace": "Comparte o espazo de nomes {{namespace}} co equipo: o contedor pode ver (e ás veces afectar) os procesos, a memoria compartida ou a configuración do equipo.",
+      "securityOpt": "{{option}} desactiva unha protección do núcleo ({{protection}}) que limita o que o contedor pode facer no equipo.",
+      "device": "Dispositivo {{device}}: o contedor accede directamente a ese dispositivo do equipo, sen os permisos dos ficheiros.",
+      "cgroupParent": "Grupo de control propio ({{parent}}): o contedor queda fóra dos límites que xestiona Docker.",
+      "portAllInterfaces": "O porto {{port}} publícase en todas as interfaces: outros equipos da rede poden conectarse e, con Docker, a devasa (UFW, firewalld) normalmente non o impide. Usa 127.0.0.1 se só o necesitas neste equipo."
     }
   },
   "dupNotes": {
@@ -1132,7 +1136,10 @@
       "done": "Descargada",
       "failed": "Erro",
       "cancelled": "Cancelada"
-    }
+    },
+    "shareLocal": "Enviar ao servidor «{{server}}» as credenciais de rexistro deste equipo",
+    "shareLocalOn": "Usaranse as credenciais de docker login deste equipo para ese rexistro, e o servidor poderá velas.",
+    "shareLocalOff": "Sen marcar, a descarga no servidor é anónima: as credenciais deste equipo non saen del."
   },
   "search": {
     "title": "Buscar en Docker Hub",
@@ -1301,7 +1308,9 @@
       "done": "Imaxe construída",
       "failed": "A construción fallou",
       "cancelled": "Construción cancelada"
-    }
+    },
+    "shareLocalOn": "As imaxes base descargaranse coas credenciais de docker login deste equipo, e o servidor poderá velas.",
+    "shareLocalOff": "Sen marcar, as imaxes base descárganse de forma anónima: as credenciais deste equipo non se envían ao servidor."
   },
   "networks": {
     "create": "Crear rede",
@@ -2138,6 +2147,7 @@
     "engine_timeout": "Docker non respondeu a tempo.",
     "engine_notConfirmed": "A operación necesita unha confirmación explícita.",
     "engine_composeUnavailable": "Docker Compose non está dispoñible.",
+    "engine_pathNotAllowed": "Por seguridade, só se abren ficheiros .yml ou .yaml que non estean en cartafoles ocultos (como ~/.ssh) nin do sistema (como /etc), nin ligazóns a eles.",
     "ipc_unavailable": "A interface estase executando fóra da aplicación de escritorio.",
     "updates_noSource": "Non hai ningunha fonte de actualizacións configurada.",
     "updates_invalidSource": "Fonte non válida: indica «propietario/repositorio» de GitHub ou un enderezo https://",
@@ -2813,5 +2823,10 @@
       "medium": "Medio",
       "low": "Baixo"
     }
+  },
+  "terminalLink": {
+    "title": "Abrir a ligazón do terminal",
+    "body": "A saída do terminal contén esta ligazón. Ábrea só se confías nela: abrirase no navegador do sistema.",
+    "open": "Abrir no navegador"
   }
 }

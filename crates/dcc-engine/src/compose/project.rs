@@ -541,6 +541,58 @@ fn service_risks(service: &str, s: &Value, mounts: &[ServiceMount]) -> Vec<crate
     if let Some(n) = s.get("network_mode").and_then(str_of) {
         out.extend(risk::network_risk(&n, &field("network_mode")));
     }
+    // E2 (D-088): espacios de nombres, opciones de seguridad, dispositivos,
+    // cgroup y puertos en todas las interfaces.
+    for (key, kind) in [
+        ("pid", "pid"),
+        ("ipc", "ipc"),
+        ("userns_mode", "userns"),
+        ("uts", "uts"),
+        ("cgroup", "cgroup"),
+    ] {
+        if let Some(v) = s.get(key).and_then(str_of) {
+            out.extend(risk::namespace_risk(kind, &v, &field(key)));
+        }
+    }
+    let strings = |k: &str| -> Vec<String> {
+        s.get(k)
+            .and_then(Value::as_array)
+            .map(|a| a.iter().filter_map(str_of).collect())
+            .unwrap_or_default()
+    };
+    for o in strings("security_opt") {
+        out.extend(risk::security_opt_risk(&o, &field("security_opt")));
+    }
+    if let Some(devs) = s.get("devices").and_then(Value::as_array) {
+        for (i, d) in devs.iter().enumerate() {
+            // Compose normaliza a objetos `{source, target, permissions}`; las
+            // versiones antiguas dejan la cadena `origen:destino:permisos`.
+            let src = d.get("source").and_then(str_of).or_else(|| str_of(d));
+            if let Some(src) = src {
+                out.extend(risk::device_risk(&src, &field(&format!("devices.{i}"))));
+            }
+        }
+    }
+    if let Some(c) = s.get("cgroup_parent").and_then(str_of) {
+        out.extend(risk::cgroup_parent_risk(&c, &field("cgroup_parent")));
+    }
+    if s.get("network_mode").and_then(str_of).as_deref() != Some("host") {
+        if let Some(ports) = s.get("ports").and_then(Value::as_array) {
+            for (i, p) in ports.iter().enumerate() {
+                let num = |k: &str| {
+                    p.get(k)
+                        .and_then(|v| str_of(v).or_else(|| v.as_u64().map(|n| n.to_string())))
+                        .unwrap_or_default()
+                };
+                out.extend(risk::port_risk(
+                    &num("host_ip"),
+                    &num("published"),
+                    &num("target"),
+                    &field(&format!("ports.{i}")),
+                ));
+            }
+        }
+    }
     for r in &mut out {
         r.key = format!("{}@{service}", r.key);
         r.params.insert("service".into(), service.to_owned());
@@ -1043,6 +1095,50 @@ mod tests {
         );
         assert_eq!(risks_for(&m, &["web".into(), "db".into()]).len(), 0);
         assert_eq!(risks_for(&m, &[]).len(), 5);
+    }
+
+    /// E2 (D-088): espacios de nombres del equipo, opciones de seguridad,
+    /// dispositivos, cgroup y puertos en todas las interfaces.
+    #[test]
+    fn compose_namespaces_security_devices_and_ports() {
+        let json = r#"{"name":"demo","services":{
+          "mon":{"image":"x","pid":"host","ipc":"host","userns_mode":"host","uts":"host","cgroup":"host",
+                 "security_opt":["seccomp:unconfined","apparmor=unconfined","label:disable","no-new-privileges:true"],
+                 "devices":[{"source":"/dev/sda","target":"/dev/sda","permissions":"rwm"},"/dev/dri:/dev/dri"],
+                 "cgroup_parent":"grupo","ports":[{"published":"9100","target":9100,"protocol":"tcp"},{"host_ip":"0.0.0.0","published":"81","target":80},{"host_ip":"127.0.0.1","published":"82","target":80}]},
+          "ok":{"image":"x","pid":"service:mon","ipc":"shareable","security_opt":["no-new-privileges:true"],"devices":[]}
+        }}"#;
+        let m = parse_model(json).unwrap();
+        let of = |n: &str| {
+            m.services
+                .iter()
+                .find(|s| s.name == n)
+                .unwrap()
+                .risks
+                .clone()
+        };
+        assert!(of("ok").is_empty(), "{:?}", of("ok"));
+        use crate::risk::RiskLevel::*;
+        let got: Vec<(String, crate::risk::RiskLevel)> =
+            of("mon").iter().map(|r| (r.key.clone(), r.level)).collect();
+        assert_eq!(
+            got,
+            vec![
+                ("risk.hostNamespace:pid@mon".to_owned(), High),
+                ("risk.hostNamespace:ipc@mon".to_owned(), High),
+                ("risk.hostNamespace:userns@mon".to_owned(), Medium),
+                ("risk.hostNamespace:uts@mon".to_owned(), Low),
+                ("risk.hostNamespace:cgroup@mon".to_owned(), Medium),
+                ("risk.securityOpt:seccomp=unconfined@mon".to_owned(), High),
+                ("risk.securityOpt:apparmor=unconfined@mon".to_owned(), High),
+                ("risk.securityOpt:label=disable@mon".to_owned(), High),
+                ("risk.device:/dev/sda@mon".to_owned(), High),
+                ("risk.device:/dev/dri@mon".to_owned(), Low),
+                ("risk.cgroupParent:grupo@mon".to_owned(), Low),
+                ("risk.portAllInterfaces:9100@mon".to_owned(), Low),
+                ("risk.portAllInterfaces:81@mon".to_owned(), Low),
+            ]
+        );
     }
 
     use super::*;

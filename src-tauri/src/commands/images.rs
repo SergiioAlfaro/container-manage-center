@@ -136,8 +136,12 @@ pub async fn image_pull_open(
     server: String,
     reference: String,
     auth: PullAuth,
+    // E2 (DCC-SEC-07, D-090): en un servidor remoto, enviar las credenciales
+    // de este equipo solo con permiso explícito. Por omisión, no.
+    share_local_credentials: Option<bool>,
     on_event: Channel<PullEvent>,
 ) -> CmdResult<u64> {
+    let share = share_local_credentials.unwrap_or(false);
     let mgr = state.server(&server)?;
     // Errores de formato antes de abrir nada.
     image_ref_parse(reference.clone())?;
@@ -148,7 +152,7 @@ pub async fn image_pull_open(
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
-            .pull_image(&reference, &auth, cancel, move |update| {
+            .pull_image_with(&reference, &auth, share, cancel, move |update| {
                 ch.send(PullEvent::Progress { update }).is_ok()
             })
             .await;
@@ -240,8 +244,10 @@ pub async fn build_open(
     state: State<'_, AppState>,
     server: String,
     spec: BuildSpec,
+    share_local_credentials: Option<bool>,
     on_event: Channel<BuildEvent>,
 ) -> CmdResult<u64> {
+    let share = share_local_credentials.unwrap_or(false);
     let mgr = state.server(&server)?;
     let issues = spec.validate(true);
     if issues.iter().any(|i| i.severity == Severity::Error) {
@@ -254,7 +260,7 @@ pub async fn build_open(
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let r = engine
-            .build_image(&spec, cancel, move |update| {
+            .build_image_with(&spec, share, cancel, move |update| {
                 ch.send(BuildEvent::Progress { update }).is_ok()
             })
             .await;

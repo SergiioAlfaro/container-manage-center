@@ -384,9 +384,12 @@ async fn a_program_that_ignores_ctrl_c_is_terminated_on_close() {
     // programa en primer plano, que a veces muere solo: el número de procesos
     // que termina la aplicación (1 o 2) depende de esa carrera; lo que importa
     // es que no quede ninguno (comprobado abajo).
+    // A veces ese SIGHUP llega antes y la shell sale sola (código 130): no
+    // hace falta terminar nada (visto una vez con Docker 26 en la 1.2.0).
     assert!(
         end.summary
-            .contains("la shell no salió con Ctrl+C y Ctrl+D y se terminaron sus"),
+            .contains("la shell no salió con Ctrl+C y Ctrl+D y se terminaron sus")
+            || end.summary.contains("la shell terminó con código"),
         "{}",
         end.summary
     );

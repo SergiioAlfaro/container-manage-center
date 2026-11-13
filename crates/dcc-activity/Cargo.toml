@@ -3,6 +3,7 @@ name = "dcc-activity"
 description = "Registro de operaciones reales ejecutadas contra Docker (API o CLI)"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 rust-version.workspace = true
 

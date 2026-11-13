@@ -1080,7 +1080,11 @@
       "capability": "Capacità {{cap}}: estende ciò che il container può fare con il kernel del computer.",
       "privileged": "Modalità privilegiata: il container ha accesso quasi completo al computer (dispositivi, kernel e tutte le capacità).",
       "networkHost": "Rete del computer (host): il container vede tutti i servizi del computer, anche quelli in ascolto solo su 127.0.0.1.",
-      "hostNamespace": "Condivide lo spazio {{namespace}} con il computer."
+      "hostNamespace": "Condivide lo spazio dei nomi {{namespace}} con il computer: il container può vedere (e a volte influenzare) i processi, la memoria condivisa o la configurazione del computer.",
+      "securityOpt": "{{option}} disattiva una protezione del kernel ({{protection}}) che limita ciò che il container può fare sul computer.",
+      "device": "Dispositivo {{device}}: il container accede direttamente a quel dispositivo del computer, senza i permessi dei file.",
+      "cgroupParent": "Gruppo di controllo personalizzato ({{parent}}): il container resta fuori dai limiti gestiti da Docker.",
+      "portAllInterfaces": "La porta {{port}} è pubblicata su tutte le interfacce: altri computer della rete possono collegarsi e, con Docker, il firewall (UFW, firewalld) di solito non lo impedisce. Usa 127.0.0.1 se ti serve solo su questo computer."
     }
   },
   "dupNotes": {
@@ -1132,7 +1136,10 @@
       "done": "Scaricata",
       "failed": "Errore",
       "cancelled": "Annullato"
-    }
+    },
+    "shareLocal": "Invia al server «{{server}}» le credenziali di registro di questo computer",
+    "shareLocalOn": "Verranno usate le credenziali docker login di questo computer per quel registro, e il server potrà vederle.",
+    "shareLocalOff": "Se non selezionata, il download sul server è anonimo: le credenziali di questo computer non lo lasciano."
   },
   "search": {
     "title": "Cerca su Docker Hub",
@@ -1301,7 +1308,9 @@
       "done": "Immagine compilata",
       "failed": "La compilazione non è riuscita",
       "cancelled": "Compilazione annullata"
-    }
+    },
+    "shareLocalOn": "Le immagini base verranno scaricate con le credenziali docker login di questo computer, e il server potrà vederle.",
+    "shareLocalOff": "Se non selezionata, le immagini base vengono scaricate in modo anonimo: le credenziali di questo computer non vengono inviate al server."
   },
   "networks": {
     "create": "Crea rete",
@@ -2138,6 +2147,7 @@
     "engine_timeout": "Docker non ha risposto in tempo.",
     "engine_notConfirmed": "L’operazione richiede una conferma esplicita.",
     "engine_composeUnavailable": "Docker Compose non è disponibile.",
+    "engine_pathNotAllowed": "Per sicurezza si aprono solo file .yml o .yaml che non si trovino in cartelle nascoste (come ~/.ssh) o di sistema (come /etc), né collegamenti a esse.",
     "ipc_unavailable": "L’interfaccia è in esecuzione fuori dall’applicazione desktop.",
     "updates_noSource": "Non è configurata alcuna fonte di aggiornamenti.",
     "updates_invalidSource": "Fonte non valida: indica un \"proprietario/repository\" di GitHub o un indirizzo https://.",
@@ -2813,5 +2823,10 @@
       "medium": "Medio",
       "low": "Basso"
     }
+  },
+  "terminalLink": {
+    "title": "Apri il collegamento del terminale",
+    "body": "L'output del terminale contiene questo collegamento. Aprilo solo se ti fidi: si aprirà nel browser di sistema.",
+    "open": "Apri nel browser"
   }
 }

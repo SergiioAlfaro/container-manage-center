@@ -431,10 +431,13 @@ fn preview_validates_and_translates_without_docker() {
         .starts_with("docker create --name web"));
     assert!(v["body"].as_str().unwrap().contains("\"PortBindings\""));
     let issues = v["issues"].as_array().unwrap();
-    assert_eq!(issues.len(), 1);
+    // E2 (D-088): el puerto sin IP también avisa (riesgo bajo, todas las interfaces).
+    assert_eq!(issues.len(), 2, "{issues:?}");
     assert_eq!(issues[0]["code"], "bind.missing");
     assert_eq!(issues[0]["severity"], "error");
     assert_eq!(issues[0]["field"], "mounts.0.source");
+    assert_eq!(issues[1]["code"], "risk.portAllInterfaces");
+    assert_ne!(issues[1]["severity"], "error");
     // Los secretos no aparecen en lo que se muestra.
     let v = invoke(
         &h,
@@ -1319,7 +1322,10 @@ fn live_volumes_via_ipc() {
 #[test]
 fn compose_files_via_ipc_create_read_save_and_conflict() {
     let h = harness();
-    let d = tempfile::tempdir().unwrap();
+    let d = tempfile::Builder::new()
+        .prefix("dcc-test")
+        .tempdir()
+        .unwrap();
     let dir = d.path().display().to_string();
     assert!(invoke(&h, "compose_find_file", json!({ "dir": dir }))
         .unwrap()
@@ -1367,6 +1373,34 @@ fn compose_files_via_ipc_create_read_save_and_conflict() {
     );
     let e = invoke(&h, "compose_file_read", json!({ "path": "relativo.yaml" })).unwrap_err();
     assert_eq!(e["code"], "engine.invalidInput");
+    // E2 (DCC-SEC-06, D-089): las órdenes de archivos no sirven para leer ni
+    // sobrescribir otros archivos del usuario o del sistema.
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/x".into());
+    for bad in [
+        "/etc/passwd".to_owned(),
+        format!("{home}/.ssh/id_ed25519"),
+        format!("{home}/.bashrc"),
+        format!("{dir}/notas.txt"),
+    ] {
+        let e = invoke(&h, "compose_file_read", json!({ "path": bad })).unwrap_err();
+        assert_eq!(e["code"], "engine.pathNotAllowed", "{bad}: {e}");
+        let e = invoke(
+            &h,
+            "compose_file_save",
+            json!({ "path": bad, "content": "x", "version": v1 }),
+        )
+        .unwrap_err();
+        assert_eq!(e["code"], "engine.pathNotAllowed", "{bad}: {e}");
+    }
+    let hidden = d.path().join(".oculta");
+    std::fs::create_dir(&hidden).unwrap();
+    let e = invoke(
+        &h,
+        "compose_file_create",
+        json!({ "dir": hidden.display().to_string(), "content": "services: {}\n" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.pathNotAllowed", "{e}");
 }
 
 #[test]
@@ -1827,6 +1861,15 @@ fn phase9_system_info_and_updates() {
         &h,
         "open_release_page",
         json!({ "url": "file:///etc/passwd" }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "app.open", "{e}");
+    // E2 (DCC-SEC-16): solo github.com o el servidor de la fuente; un enlace
+    // https de otro sitio se rechaza antes de llamar a xdg-open.
+    let e = invoke(
+        &h,
+        "open_release_page",
+        json!({ "url": "https://evil.example/releases/v9" }),
     )
     .unwrap_err();
     assert_eq!(e["code"], "app.open", "{e}");
@@ -2878,5 +2921,43 @@ fn live_e1_risks_and_secrets_via_ipc() {
         );
     } else {
         eprintln!("Compose no disponible: parte de Compose omitida");
+    }
+}
+
+/// E2 (DCC-SEC-17, D-091): la ventana solo tiene los permisos que usa. Escuchar
+/// eventos funciona; las órdenes de ventana, ruta, aplicación o menú que daba
+/// `core:default` se rechazan.
+#[test]
+fn only_the_minimal_tauri_permissions_are_granted() {
+    let h = harness();
+    let ok = invoke_exact(
+        &h,
+        "plugin:event|listen",
+        json!({ "event": "engine://state", "target": { "kind": "Any" }, "handler": 1 }),
+    );
+    assert!(ok.is_ok(), "escuchar eventos: {ok:?}");
+    for (cmd, body) in [
+        (
+            "plugin:window|set_title",
+            json!({ "label": "main", "value": "x" }),
+        ),
+        ("plugin:path|resolve_directory", json!({ "directory": 1 })),
+        ("plugin:app|version", json!({})),
+        (
+            "plugin:webview|create_webview_window",
+            json!({ "options": { "label": "w2", "url": "https://example.com" } }),
+        ),
+        (
+            "plugin:event|emit",
+            json!({ "event": "engine://state", "payload": null }),
+        ),
+    ] {
+        let r = invoke_exact(&h, cmd, body);
+        let msg = format!("{r:?}");
+        assert!(r.is_err(), "{cmd} debería estar denegada: {msg}");
+        assert!(
+            msg.contains("not allowed") || msg.contains("denied") || msg.contains("permission"),
+            "{cmd}: {msg}"
+        );
     }
 }

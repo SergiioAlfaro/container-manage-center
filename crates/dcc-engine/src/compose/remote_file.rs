@@ -10,12 +10,17 @@
 //! entrecomillados uno a uno, por la sesión SSH verificada. Cada orden queda
 //! en el panel de actividad, nunca con el contenido del archivo (puede tener
 //! secretos). Nunca se supone que un archivo del equipo existe en el servidor.
+//!
+//! Desde la 1.2.0 (E2, D-089) se aplican las mismas reglas de rutas que en el
+//! equipo ([`super::file::check_compose_path`]), también a la ruta real en el
+//! servidor (`readlink -f`), y el guardado escribe en el destino real de un
+//! enlace simbólico sin reemplazar el enlace.
 
 use base64::Engine as _;
 use dcc_activity::Category;
 use tokio_util::sync::CancellationToken;
 
-use super::file::{version_of, ComposeFile, MAX_FILE_BYTES};
+use super::file::{check_compose_path, not_allowed, version_of, ComposeFile, MAX_FILE_BYTES};
 use super::project::DEFAULT_FILES;
 use crate::cli::{run_streaming, CliRequest, RemoteExec, StreamOptions};
 use crate::client::Engine;
@@ -30,7 +35,12 @@ fn invalid(message: impl Into<String>) -> EngineError {
 }
 
 fn absolute(path: &str) -> Result<(), EngineError> {
-    if path.is_empty() || path.contains('\0') || !path.starts_with('/') || path.len() > 4096 {
+    if path.is_empty()
+        || path.contains('\0')
+        || path.contains('\n')
+        || !path.starts_with('/')
+        || path.len() > 4096
+    {
         return Err(invalid(format!("ruta no válida: {path:?}")));
     }
     Ok(())
@@ -126,13 +136,40 @@ async fn stat(engine: &Engine, path: &str) -> Result<Option<(String, u64, String
     Ok(Some((kind, size, mode)))
 }
 
+/// Ruta real en el servidor (`readlink -f`), o `None` si no se puede resolver
+/// (no existe la carpeta).
+async fn realpath(engine: &Engine, path: &str) -> Result<Option<String>, EngineError> {
+    let argv = vec!["readlink".into(), "-f".into(), "--".into(), path.to_owned()];
+    let o = remote(engine, "compose.fileResolve", path, argv, None, None).await?;
+    let r = o.stdout.strip_suffix('\n').unwrap_or(&o.stdout);
+    if o.code != Some(0) || r.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(r.to_owned()))
+}
+
+/// Comprueba la ruta escrita y la real con las reglas de D-089 y devuelve la
+/// real (o la escrita si aún no existe).
+async fn resolved(engine: &Engine, path: &str) -> Result<String, EngineError> {
+    absolute(path)?;
+    check_compose_path(path)?;
+    match realpath(engine, path).await? {
+        Some(real) if real != path => {
+            check_compose_path(&real)
+                .map_err(|_| not_allowed(path, &format!("enlace a {real}")))?;
+            Ok(real)
+        }
+        _ => Ok(path.to_owned()),
+    }
+}
+
 fn is_file(kind: &str) -> bool {
     kind == "regular file" || kind == "regular empty file"
 }
 
 pub async fn read(engine: &Engine, path: &str) -> Result<ComposeFile, EngineError> {
-    absolute(path)?;
-    let Some((kind, size, _)) = stat(engine, path).await? else {
+    let real = resolved(engine, path).await?;
+    let Some((kind, size, _)) = stat(engine, &real).await? else {
         return Err(invalid(format!("no existe en el servidor: {path}")));
     };
     if !is_file(&kind) {
@@ -146,7 +183,7 @@ pub async fn read(engine: &Engine, path: &str) -> Result<ComposeFile, EngineErro
     }
     // base64: el contenido llega exacto (también saltos de línea y \r).
     let mut argv = sv(&["base64", "--"]);
-    argv.push(path.into());
+    argv.push(real.clone());
     let o = remote(
         engine,
         "compose.fileRead",
@@ -173,7 +210,7 @@ pub async fn read(engine: &Engine, path: &str) -> Result<ComposeFile, EngineErro
     let content =
         String::from_utf8(bytes).map_err(|_| invalid(format!("{path} no es texto UTF-8")))?;
     let mut argv = sv(&["test", "-w"]);
-    argv.push(path.into());
+    argv.push(real);
     let w = remote(engine, "compose.fileWritable", path, argv, None, None).await?;
     Ok(ComposeFile {
         path: path.to_owned(),
@@ -223,7 +260,8 @@ pub async fn save(
     content: &str,
     expected_version: &str,
 ) -> Result<ComposeFile, EngineError> {
-    absolute(path)?;
+    // Se escribe en el destino real: un enlace simbólico se conserva.
+    let real = resolved(engine, path).await?;
     if content.len() > MAX_FILE_BYTES {
         return Err(invalid("el contenido es demasiado grande"));
     }
@@ -236,12 +274,12 @@ pub async fn save(
     if !current.writable {
         return Err(invalid(format!("no tienes permiso para escribir {path}")));
     }
-    let Some((_, _, mode)) = stat(engine, path).await? else {
+    let Some((_, _, mode)) = stat(engine, &real).await? else {
         return Err(EngineError::FileChanged {
             path: path.to_owned(),
         });
     };
-    let (dir, name) = split(path);
+    let (dir, name) = split(&real);
     let tmp = format!(
         "{}/.{name}.dcc-{}.tmp",
         dir.trim_end_matches('/'),
@@ -274,7 +312,7 @@ pub async fn save(
                 "-f".into(),
                 "--".into(),
                 tmp.clone(),
-                path.into(),
+                real.clone(),
             ],
             None,
             Some(format!("Guardado {path}")),
@@ -320,6 +358,11 @@ pub async fn existing_default(engine: &Engine, dir: &str) -> Result<Option<Strin
 /// Crea `compose.yaml` en una carpeta del servidor sin archivo Compose.
 pub async fn create(engine: &Engine, dir: &str, content: &str) -> Result<ComposeFile, EngineError> {
     absolute(dir)?;
+    let target = |d: &str| format!("{}/{}", d.trim_end_matches('/'), DEFAULT_FILES[0]);
+    check_compose_path(&target(dir))?;
+    if let Some(real) = realpath(engine, dir).await? {
+        check_compose_path(&target(&real))?;
+    }
     if content.len() > MAX_FILE_BYTES {
         return Err(invalid("el contenido es demasiado grande"));
     }
@@ -349,6 +392,7 @@ mod tests {
         assert_eq!(split("/compose.yaml"), ("/".into(), "compose.yaml".into()));
         assert!(absolute("relativo/compose.yaml").is_err());
         assert!(absolute("/x\0y").is_err());
+        assert!(absolute("/x\ny.yaml").is_err());
         assert!(absolute("/srv/a b/compose.yaml").is_ok());
     }
 }

@@ -73,6 +73,7 @@ impl From<EngineError> for CommandError {
             EngineError::NotConfirmed => "engine.notConfirmed",
             EngineError::FileChanged { .. } => "engine.fileChanged",
             EngineError::AlreadyExists { .. } => "engine.alreadyExists",
+            EngineError::PathNotAllowed { .. } => "engine.pathNotAllowed",
             EngineError::ComposeUnavailable => "engine.composeUnavailable",
             EngineError::InvalidSpec { .. } => "engine.invalidSpec",
             EngineError::RisksNotAccepted { .. } => "engine.risksNotAccepted",

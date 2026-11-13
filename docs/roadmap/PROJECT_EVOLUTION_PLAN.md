@@ -4,7 +4,7 @@
 |---|---|
 | Versión de partida | 1.0.0 (commit `d1068d4`) |
 | Fecha | 12 de noviembre de 2026 |
-| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0) implementada**; pendiente de su validación manual (M1–M8) |
+| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0) y E2 (1.2.0) implementadas**; pendientes de su validación manual (M1–M8 de cada una) |
 | Documentos relacionados | [STATUS.md](../../STATUS.md) (fases 1–10) · [DECISIONS.md](../../DECISIONS.md) · [docs/security/](../security/) |
 
 Este plan continúa el proyecto existente. No es una reescritura ni sustituye a
@@ -100,8 +100,8 @@ mezclar los datos de distintos servidores.
 
 ### 3.1 Hallazgos de seguridad pendientes
 
-Estado en la Etapa 0: todos **pendientes** (actualizado tras la 1.1.0 en la
-tabla). Se comprobó que no había cambios de
+Estado en la Etapa 0: todos **pendientes** (actualizado tras la 1.1.0 y la 1.2.0
+en la tabla). Se comprobó que no había cambios de
 código desde la auditoría (`git status`: solo `docs/` sin seguimiento) y que las
 líneas citadas en el informe siguen siendo las mismas.
 
@@ -111,16 +111,16 @@ líneas citadas en el informe siguen siendo las mismas.
 | DCC-SEC-02 ProxyJump: el salto no hereda las opciones y recibe el askpass | Media | **Corregido en 1.1.0** (reproducido y probado) | **E1** |
 | DCC-SEC-03 Capacidades peligrosas y red `host` | Media | **Corregido en 1.1.0** (probado) | **E1** |
 | DCC-SEC-05 Ocultación de secretos incompleta | Media | **Corregido en 1.1.0** (probado) | **E1** |
-| DCC-SEC-04 Compose sin análisis de riesgos | Media | Parcial en 1.1.0 (montajes, capacidades, privilegiado, red) | E1 (montajes y capacidades, porque lo exigen SEC-01 y SEC-03) + E2 (resto de opciones) |
-| DCC-SEC-06 IPC de archivos Compose sin límite de rutas | Media | Pendiente | E2 |
-| DCC-SEC-07 Credenciales locales enviadas a daemons remotos | Media | Pendiente | E2 |
-| DCC-SEC-08 Puertos en todas las interfaces | Baja | Pendiente | E2 |
-| DCC-SEC-09 Paquetes sin firma ni sumas | Baja | Pendiente | E2 |
-| DCC-SEC-10 vitest/tinypool (solo desarrollo) | Baja | Pendiente | E2 |
-| DCC-SEC-11 `DCC_ALLOW_ROOT` en el binario de publicación | Baja | Pendiente | E2 |
-| DCC-SEC-12 Enlaces OSC 8 en las terminales | Baja | Pendiente | E2 |
-| DCC-SEC-13 El guardado de Compose sustituye los enlaces simbólicos | Baja | Pendiente | E2 |
-| DCC-SEC-14 a 18 (informativas) | Inf. | Pendientes | E2 (17, 16 y 18) y seguimiento (14 y 15) |
+| DCC-SEC-04 Compose sin análisis de riesgos | Media | **Corregido**: parcial en 1.1.0 (montajes, capacidades, privilegiado, red), completo en **1.2.0** (probado) | E1 (montajes y capacidades, porque lo exigen SEC-01 y SEC-03) + E2 (resto de opciones) |
+| DCC-SEC-06 IPC de archivos Compose sin límite de rutas | Media | **Corregido en 1.2.0** (probado, también en servidor real) | E2 |
+| DCC-SEC-07 Credenciales locales enviadas a daemons remotos | Media | **Corregido en 1.2.0** (probado con servidor real) | E2 |
+| DCC-SEC-08 Puertos en todas las interfaces | Baja | **Corregido en 1.2.0** (aviso bajo; probado) | E2 |
+| DCC-SEC-09 Paquetes sin firma ni sumas | Baja | **Parcial en 1.2.0**: `SHA256SUMS` comprobado por `install.sh` (probado); firma pendiente de la clave del propietario | E2 |
+| DCC-SEC-10 vitest/tinypool (solo desarrollo) | Baja | **Corregido en 1.2.0** (vitest 5; `npm audit` 0) | E2 |
+| DCC-SEC-11 `DCC_ALLOW_ROOT` en el binario de publicación | Baja | **Corregido en 1.2.0** (probado con el binario de publicación) | E2 |
+| DCC-SEC-12 Enlaces OSC 8 en las terminales | Baja | **Corregido en 1.2.0** (probado) | E2 |
+| DCC-SEC-13 El guardado de Compose sustituye los enlaces simbólicos | Baja | **Corregido en 1.2.0** (probado, también en servidor real) | E2 |
+| DCC-SEC-14 a 18 (informativas) | Inf. | **1.2.0**: 14 con excepciones justificadas en `deny.toml`; 15 justificado y documentado; 16 y 17 corregidos y probados; 18 documentado | E2 (17, 16 y 18) y seguimiento (14 y 15) |
 
 ### 3.2 Otros problemas encontrados en la Etapa 0
 
@@ -660,19 +660,20 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☐ Validación manual del propietario (M1–M8, en el informe de verificación).
 
 ### E2 (1.2.0)
-- ☐ Compose: además de lo de E1, `pid`/`ipc`/`userns_mode`, `security_opt`, `devices`, `cgroup_parent` (R-05).
-- ☐ Rutas admitidas (R-06).
-- ☐ Enlaces simbólicos (R-13).
-- ☐ Puertos (R-10).
-- ☐ Credenciales remotas (R-07).
-- ☐ `deny.toml` y `npm audit` (R-08).
-- ☐ vitest 5 (R-14).
-- ☐ `SHA256SUMS` firmado (R-09).
-- ☐ `DCC_ALLOW_ROOT` (R-11).
-- ☐ OSC 8 (R-12).
-- ☐ Permisos de Tauri, origen de la página de la versión y `sh -c` remoto (R-15, R-16, R-18).
-- ☐ ESLint (autorizado: configuración mínima).
-- ☐ SECURITY_CHECKLIST.md con evidencias.
+- ☑ Compose: además de lo de E1, `pid`/`ipc`/`userns_mode`, `security_opt`, `devices`, `cgroup_parent` (R-05, D-088). También en el asistente y la edición.
+- ☑ Rutas admitidas (R-06, D-089), en el equipo y en los servidores.
+- ☑ Enlaces simbólicos (R-13).
+- ☑ Puertos (R-10).
+- ☑ Credenciales remotas (R-07, D-090). Desviación: se pregunta en cada operación en vez de recordarlo en `servers.toml`.
+- ☑ `deny.toml` y `npm audit` (R-08, D-092).
+- ☑ vitest 5 (R-14).
+- ◐ `SHA256SUMS` verificado por `install.sh` (R-09); la **firma** queda pendiente de la clave del propietario.
+- ☑ `DCC_ALLOW_ROOT` (R-11).
+- ☑ OSC 8 (R-12).
+- ☑ Permisos de Tauri, origen de la página de la versión y `sh -c` remoto (R-15, R-16, R-18; D-091). R-17 (CSP `unsafe-inline`) justificado.
+- ☑ ESLint (autorizado: configuración mínima).
+- ☑ SECURITY_CHECKLIST.md con evidencias.
+- ☐ Validación manual del propietario (M1–M8, en el informe de verificación).
 
 ### E3 (1.3.0)
 - ☐ Modelo de hallazgo y motor de auditoría sobre `risk`.

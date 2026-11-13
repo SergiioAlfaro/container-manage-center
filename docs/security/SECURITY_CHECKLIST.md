@@ -2,9 +2,9 @@
 
 Se usa antes de cada versión y al revisar cada cambio. La marca indica el
 estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026), actualizado
-con la **1.1.0** (Etapa 1 de evolución, 12-11-2026). Las líneas cambiadas en la
-1.1.0 llevan su evidencia entre corchetes (prueba automática que lo demuestra;
-`verify-evolution-1.1.0.sh` las ejecuta todas):
+con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
+13-11-2026). Las líneas cambiadas llevan su evidencia entre corchetes (prueba
+automática que lo demuestra; `verify-evolution-1.2.0.sh` las ejecuta todas):
 
 - ✅ cumple;
 - ⚠️ cumple en parte (ver hallazgo);
@@ -18,16 +18,27 @@ seguridad de Docker Engine y RustSec.
 
 - ✅ CSP sin `unsafe-eval` ni orígenes remotos en `script-src`. `connect-src`
   limitado a IPC.
-- ⚠️ `style-src` sin `unsafe-inline` (DCC-SEC-15).
+- ✅ `style-src 'unsafe-inline'` se mantiene **justificado** (DCC-SEC-15, R-17,
+  D-091): React usa atributos `style` para tamaños calculados; `script-src`
+  sigue sin `unsafe-inline` ni `unsafe-eval`, así que no permite ejecutar código.
 - ✅ `freezePrototype: true` y `withGlobalTauri: false`.
-- ⚠️ Capacidades mínimas: `core:default` es más amplia de lo necesario
-  (DCC-SEC-17).
+- ✅ Capacidades mínimas: solo `core:event:allow-listen`/`allow-unlisten`, el
+  diálogo de abrir, el portapapeles y el enlace del autor (**DCC-SEC-17**,
+  corregido en la 1.2.0, D-091) [`only_the_minimal_tauri_permissions_are_granted`,
+  con la ACL real].
 - ✅ `opener` limitado a URL concretas. Ninguna capacidad de `shell` ni `fs`.
 - ✅ No hay `dangerouslySetInnerHTML`, `innerHTML`, `eval`, `new Function` ni
   `href` dinámico. El Markdown se convierte en elementos de React.
 - ✅ La interfaz no navega a orígenes remotos.
-- ⚠️ Enlaces de la salida de terminal (OSC 8) con un manejador propio
-  (DCC-SEC-12).
+- ✅ Enlaces de la salida de terminal (OSC 8) con un manejador propio: solo
+  http(s), confirmación con la dirección completa y apertura validada en Rust
+  (**DCC-SEC-12**, 1.2.0) [`terminal_links_are_http_only`,
+  `ui/src/shared/ui/terminalLinks.test.tsx`].
+- ✅ La página de una versión solo se abre desde `github.com` o la fuente de
+  actualizaciones (**DCC-SEC-16**, 1.2.0)
+  [`release_pages_only_from_github_or_the_own_source`, IPC `phase9_`].
+- ✅ ESLint con reglas de seguridad (`no-eval`, `no-new-func`, sin `innerHTML` ni
+  `dangerouslySetInnerHTML`) en la verificación (1.2.0) [`npm run lint`].
 - ✅ La salida de la terminal se trata como datos (base64 → xterm) y nunca se
   ejecuta.
 
@@ -35,15 +46,23 @@ seguridad de Docker Engine y RustSec.
 
 - ✅ Cada orden valida sus argumentos en Rust (tipos, longitudes, nombres,
   referencias de imagen).
-- ⚠️ Las órdenes de archivos limitan las rutas a lo necesario (DCC-SEC-06).
+- ✅ Las órdenes de archivos limitan las rutas a lo necesario: solo YAML, sin
+  carpetas ocultas ni del sistema, también tras los enlaces, en el equipo y en
+  los servidores (**DCC-SEC-06**, 1.2.0, D-089) [`compose::file::tests`,
+  `compose_files_via_ipc_create_read_save_and_conflict`,
+  `live_ssh::compose_runs_on_the_server_with_server_files`].
+- ✅ El guardado de Compose conserva los enlaces simbólicos (**DCC-SEC-13**,
+  1.2.0) [`symlinks_are_checked_by_their_real_target_and_kept_on_save`, prueba
+  real en el servidor].
 - ✅ Las operaciones destructivas requieren confirmación (`confirmed`) y
   bloqueo cuando procede.
 - ✅ Los procesos se lanzan con `Command::new` y una lista de argumentos, nunca
   con `sh -c` y entrada del usuario.
 - ✅ Los bloques `unsafe` se limitan a llamadas a libc (`getuid`, PTY, `kill`,
   `ioctl`) con argumentos controlados.
-- ⚠️ La negativa a ejecutarse como root no se puede desactivar en el binario de
-  publicación (DCC-SEC-11).
+- ✅ La negativa a ejecutarse como root no se puede desactivar en el binario de
+  publicación (**DCC-SEC-11**, 1.2.0) [`root_tests`; con `--deb` como root, el
+  binario de publicación con `DCC_ALLOW_ROOT=1` termina con código 1].
 - ✅ Hay límites de tamaño: archivos Compose de 1 MiB, respuestas de
   actualizaciones de 1 MiB, 5000 eventos, 10 000 líneas de registro, tamaño de
   terminal acotado.
@@ -69,14 +88,21 @@ seguridad de Docker Engine y RustSec.
 - ✅ Sin falsos positivos en las configuraciones legítimas del plan (§9.5)
   [`legitimate_configurations_have_no_host_risks`,
   `compose_services_risks_without_false_positives`].
-- ⚠️ Aviso de puertos en todas las interfaces (DCC-SEC-08).
-- ⚠️ Análisis de riesgos de Compose antes de desplegar (DCC-SEC-04): montajes,
-  capacidades, modo privilegiado y red del equipo ✅ desde la 1.1.0; faltan
-  `pid`/`ipc`/`userns_mode`, `security_opt`, `devices` y `cgroup_parent` (E2).
+- ✅ Aviso de puertos en todas las interfaces (**DCC-SEC-08**, 1.2.0, D-088)
+  [`risk::tests::namespaces_security_options_devices_and_ports`,
+  `spec::tests::ports_are_validated`].
+- ✅ Análisis de riesgos de Compose antes de desplegar: montajes, capacidades,
+  privilegiado y red del equipo (1.1.0); `pid`/`ipc`/`userns_mode`/`uts`/`cgroup`,
+  `security_opt`, `devices`, `cgroup_parent` y puertos (**DCC-SEC-04**, 1.2.0)
+  [`compose_namespaces_security_devices_and_ports`, sin falsos positivos en
+  `compose_services_risks_without_false_positives`].
 - ✅ La recreación segura conserva una copia y se puede deshacer (D-070).
 - ✅ El contexto de construcción no sigue enlaces y respeta `.dockerignore`.
-- ⚠️ Credenciales de registro: no se envían a servidores remotos sin
-  confirmación (DCC-SEC-07).
+- ✅ Credenciales de registro: las de este equipo no se envían a servidores
+  remotos sin permiso explícito en cada operación (**DCC-SEC-07**, 1.2.0, D-090)
+  [`local_credentials_reach_remote_servers_only_with_consent`, real
+  `live_ssh::local_registry_credentials_reach_a_server_only_with_consent`,
+  `ImagesView.test.tsx`].
 
 ## SSH y administración remota
 
@@ -87,7 +113,8 @@ seguridad de Docker Engine y RustSec.
 - ✅ `--` antes del host. El usuario, el host, el puerto y el salto se validan.
 - ✅ Órdenes remotas entrecomilladas para POSIX, con una prueba de ida y vuelta
   por `sh`.
-- ⚠️ Requisito de shell POSIX documentado (DCC-SEC-18).
+- ✅ Requisito de shell POSIX documentado en INSTALL y la guía (DCC-SEC-18,
+  1.2.0).
 - ✅ El servidor intermedio (ProxyJump) recibe las mismas opciones de seguridad,
   su huella se confirma en la aplicación, solo admite clave o agente y no
   recibe el askpass (**DCC-SEC-02**, corregido en la 1.1.0, D-087). Antes de
@@ -131,11 +158,13 @@ seguridad de Docker Engine y RustSec.
 ## Dependencias y cadena de suministro
 
 - ✅ `cargo audit`: 0 vulnerabilidades.
-- ⚠️ Crates transitivas sin mantenimiento (DCC-SEC-14), a revisar.
+- ✅ Crates transitivas sin mantenimiento con excepciones justificadas en
+  `deny.toml` (DCC-SEC-14, 1.2.0, D-092) [`cargo deny check`].
 - ✅ `cargo deny`: licencias y orígenes correctos (solo crates.io).
-- ⚠️ `npm audit --omit=dev`: 0. `npm audit` completo: 3 avisos de vitest
-  (DCC-SEC-10).
-- ❌ Comprobación automática de dependencias en la verificación (R-08).
+- ✅ `npm audit --omit=dev`: 0. `npm audit` completo: 0 con vitest 5 y
+  `minimatch` 11.0.8 fijado (DCC-SEC-10, 1.2.0).
+- ✅ Comprobación automática de dependencias en la verificación: `cargo deny`,
+  `npm audit` y ESLint (R-08, 1.2.0).
 - ✅ Archivos de bloqueo versionados y usados con `--locked`.
 - ⚠️ Las herramientas externas que se integren tendrán la versión fijada y la
   firma verificada (Trivy v0.69.4, CVE-2026-33634).
@@ -145,7 +174,10 @@ seguridad de Docker Engine y RustSec.
 - ✅ El `.deb` contiene la licencia, el copyright y las licencias de terceros.
 - ✅ `install.sh` usa `sudo` solo para `apt-get` y no ejecuta la aplicación como
   root.
-- ❌ `SHA256SUMS` firmado y verificado por `install.sh` (DCC-SEC-09).
+- ⚠️ `SHA256SUMS` verificado por `install.sh` (no instala si no coincide o falta
+  la entrada) ✅ desde la 1.2.0 [paso de `verify-evolution-1.2.0.sh --deb`];
+  **sin firmar**: la firma GPG necesita la clave del propietario (DCC-SEC-09,
+  decisión pendiente).
 - ✅ La aplicación no instala Docker ni cambia grupos ni permisos del sistema.
 - ✅ La documentación avisa de que el grupo `docker` equivale a root y
   recomienda rootless.
@@ -153,10 +185,10 @@ seguridad de Docker Engine y RustSec.
 ## Proceso para cada cambio
 
 - [ ] Pruebas unitarias o IPC de la validación nueva.
-- [ ] `bash scripts/verify-phase-10.sh --deb` (o su sucesor) sin regresiones,
+- [ ] `bash scripts/verify-evolution-1.2.0.sh --deb` (o su sucesor) sin regresiones,
       con Docker 24, 26 y 29.
-- [ ] `cargo audit`, `cargo deny check` y `npm audit --omit=dev` sin hallazgos
-      nuevos.
+- [ ] `cargo audit`, `cargo deny check`, `npm audit` y `npm run lint` sin
+      hallazgos nuevos (las excepciones de `deny.toml`, revisadas).
 - [ ] Sin secretos en registros, panel, historial, capturas ni documentación.
 - [ ] Traducciones en los ocho idiomas para cada aviso nuevo.
 - [ ] CHANGELOG.md y DECISIONS.md actualizados. Esta lista revisada.

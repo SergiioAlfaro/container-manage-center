@@ -296,7 +296,7 @@ Primer contacto: la clave se captura en un archivo temporal y se muestra la huel
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.fileChanged`, `engine.alreadyExists`, `engine.composeUnavailable`, `compose.duplicate`, `history.io`, `engine.other`, `config.io`.
 
-El plugin `opener` de Tauri (0.9.1, D-066) solo puede abrir `https://github.com/SergiioAlfaro` (permiso limitado en `capabilities/default.json`).
+El plugin `opener` de Tauri (0.9.1, D-066) solo puede abrir `https://github.com/SergiioAlfaro` (permiso limitado en `capabilities/default.json`). Desde la 1.2.0 (D-091), `capabilities/default.json` ya no incluye `core:default`: solo `core:event:allow-listen` y `core:event:allow-unlisten`, el diálogo de abrir y el portapapeles. Los enlaces de las terminales (OSC 8) y la página de una versión se abren desde Rust con `xdg-open` tras validarlos (`open_terminal_link`, `open_release_page`).
 
 Al cerrar la ventana (0.9.1, D-063) se cierran los flujos abiertos y se espera a que terminen (como mucho 8 s): `StreamRegistry::close_all_and_wait`.
 

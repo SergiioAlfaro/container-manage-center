@@ -3,6 +3,7 @@ name = "dcc-store"
 description = "Configuración persistente de Docker Control Center"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 rust-version.workspace = true
 

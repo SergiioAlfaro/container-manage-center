@@ -106,19 +106,55 @@ pub fn spawn_startup_check<R: Runtime>(app: AppHandle<R>) {
     });
 }
 
-/// Abre en el navegador la página de una versión. Solo `https://`, con
-/// `xdg-open` y el enlace como argumento (sin shell).
+/// Abre en el navegador la página de una versión. Solo `https://` de
+/// `github.com` o del servidor de la fuente de actualizaciones (E2,
+/// DCC-SEC-16), con `xdg-open` y el enlace como argumento (sin shell).
 #[tauri::command]
-pub fn open_release_page(url: String) -> CmdResult<()> {
-    let ok = url.starts_with("https://")
-        && url.len() <= 2048
-        && !url.chars().any(|c| c.is_whitespace() || c.is_control());
-    if !ok {
+pub fn open_release_page(state: State<'_, AppState>, url: String) -> CmdResult<()> {
+    let last = state
+        .last_update
+        .lock()
+        .as_ref()
+        .and_then(|o| o.check.as_ref().map(|c| c.checked_url.clone()));
+    let hosts = crate::updates::release_page_hosts(&state.config().updates.source, last.as_deref());
+    if !crate::updates::release_page_allowed(&url, &hosts) {
         return Err(CommandError::new(
             "app.open",
-            "Solo se pueden abrir enlaces https://.",
+            "Solo se abren enlaces https:// de github.com o de la fuente de actualizaciones.",
         ));
     }
+    open_in_browser(&url)
+}
+
+/// Abre en el navegador un enlace de la salida de una terminal (OSC 8) que el
+/// usuario ha confirmado (E2, DCC-SEC-12, D-091). Solo `http://` y `https://`,
+/// sin usuario ni contraseña, sin espacios ni caracteres de control.
+#[tauri::command]
+pub fn open_terminal_link(url: String) -> CmdResult<()> {
+    if !terminal_link_allowed(&url) {
+        return Err(CommandError::new(
+            "app.open",
+            "Solo se abren enlaces http:// o https://.",
+        ));
+    }
+    open_in_browser(&url)
+}
+
+pub(crate) fn terminal_link_allowed(url: &str) -> bool {
+    let rest = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"));
+    let Some(rest) = rest else { return false };
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    url.len() <= 2048
+        && !url.chars().any(|c| c.is_whitespace() || c.is_control())
+        && !authority.is_empty()
+        && !authority.contains('@')
+        && !authority.starts_with(':')
+}
+
+/// Abre `url` (ya validada) con `xdg-open`, como argumento y sin shell.
+pub(crate) fn open_in_browser(url: &str) -> CmdResult<()> {
     let program = dcc_engine::sys::find_executable("xdg-open").ok_or_else(|| {
         CommandError::new(
             "app.open",
@@ -126,7 +162,7 @@ pub fn open_release_page(url: String) -> CmdResult<()> {
         )
     })?;
     std::process::Command::new(program)
-        .arg(&url)
+        .arg(url)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -255,11 +291,36 @@ Package: viejo\nStatus: deinstall ok config-files\nVersion: 2\n";
             "javascript:x",
             "https://x\n--flag",
         ] {
-            assert_eq!(
-                open_release_page(bad.into()).unwrap_err().code,
-                "app.open",
-                "{bad}"
-            );
+            let hosts = crate::updates::release_page_hosts("org/repo", None);
+            assert!(!crate::updates::release_page_allowed(bad, &hosts), "{bad}");
         }
+    }
+
+    #[test]
+    fn terminal_links_are_http_only() {
+        for good in [
+            "https://example.com/a?b=c#d",
+            "http://localhost:8080/",
+            "http://127.0.0.1:3000",
+        ] {
+            assert!(terminal_link_allowed(good), "{good}");
+        }
+        for bad in [
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+            "ssh://host",
+            "https://user:pw@example.com/",
+            "https://",
+            "https://a b",
+            "https://x\n--flag",
+            "--help",
+            "HTTPS://example.com",
+        ] {
+            assert!(!terminal_link_allowed(bad), "{bad}");
+        }
+        assert!(!terminal_link_allowed(&format!(
+            "https://e.com/{}",
+            "a".repeat(2050)
+        )));
     }
 }

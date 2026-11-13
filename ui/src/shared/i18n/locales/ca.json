@@ -1080,7 +1080,11 @@
       "capability": "Capacitat {{cap}}: amplia el que el contenidor pot fer amb el nucli de l'equip.",
       "privileged": "Mode privilegiat: el contenidor té accés gairebé complet a l'equip (dispositius, nucli i totes les capacitats).",
       "networkHost": "Xarxa de l'equip (host): el contenidor veu tots els serveis de l'equip, també els que només escolten a 127.0.0.1.",
-      "hostNamespace": "Comparteix l'espai {{namespace}} amb l'equip."
+      "hostNamespace": "Comparteix l'espai de noms {{namespace}} amb l'equip: el contenidor pot veure (i de vegades afectar) els processos, la memòria compartida o la configuració de l'equip.",
+      "securityOpt": "{{option}} desactiva una protecció del nucli ({{protection}}) que limita el que el contenidor pot fer a l'equip.",
+      "device": "Dispositiu {{device}}: el contenidor accedeix directament a aquest dispositiu de l'equip, sense els permisos dels fitxers.",
+      "cgroupParent": "Grup de control propi ({{parent}}): el contenidor queda fora dels límits que gestiona Docker.",
+      "portAllInterfaces": "El port {{port}} es publica a totes les interfícies: altres equips de la xarxa s'hi poden connectar i, amb Docker, el tallafoc (UFW, firewalld) normalment no ho impedeix. Fes servir 127.0.0.1 si només el necessites en aquest equip."
     }
   },
   "dupNotes": {
@@ -1132,7 +1136,10 @@
       "done": "Baixada",
       "failed": "Error",
       "cancelled": "Cancel·lada"
-    }
+    },
+    "shareLocal": "Envia al servidor «{{server}}» les credencials de registre d'aquest equip",
+    "shareLocalOn": "Es faran servir les credencials de docker login d'aquest equip per a aquest registre, i el servidor les podrà veure.",
+    "shareLocalOff": "Sense marcar, la baixada al servidor és anònima: les credencials d'aquest equip no en surten."
   },
   "search": {
     "title": "Cercar a Docker Hub",
@@ -1301,7 +1308,9 @@
       "done": "Imatge construïda",
       "failed": "La construcció ha fallat",
       "cancelled": "Construcció cancel·lada"
-    }
+    },
+    "shareLocalOn": "Les imatges base es baixaran amb les credencials de docker login d'aquest equip, i el servidor les podrà veure.",
+    "shareLocalOff": "Sense marcar, les imatges base es baixen de manera anònima: les credencials d'aquest equip no s'envien al servidor."
   },
   "networks": {
     "create": "Crear una xarxa",
@@ -2138,6 +2147,7 @@
     "engine_timeout": "Docker no ha respost a temps.",
     "engine_notConfirmed": "L’operació necessita una confirmació explícita.",
     "engine_composeUnavailable": "Docker Compose no està disponible.",
+    "engine_pathNotAllowed": "Per seguretat, només s'obren fitxers .yml o .yaml que no siguin en carpetes ocultes (com ~/.ssh) ni del sistema (com /etc), ni enllaços a aquestes.",
     "ipc_unavailable": "La interfície s’està executant fora de l’aplicació d’escriptori.",
     "updates_noSource": "No hi ha cap font d’actualitzacions configurada.",
     "updates_invalidSource": "Font no vàlida: indica «propietari/repositori» de GitHub o una adreça https://",
@@ -2813,5 +2823,10 @@
       "medium": "Mitjà",
       "low": "Baix"
     }
+  },
+  "terminalLink": {
+    "title": "Obre l'enllaç del terminal",
+    "body": "La sortida del terminal conté aquest enllaç. Obre'l només si hi confies: s'obrirà al navegador del sistema.",
+    "open": "Obre al navegador"
   }
 }

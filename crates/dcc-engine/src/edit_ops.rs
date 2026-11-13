@@ -326,7 +326,7 @@ impl Engine {
         let changed = |f: &str| changes.iter().any(|x| x.field == f);
         // Riesgos para el equipo de los montajes que añade el cambio (D-086).
         // Lo que el contenedor ya tenía no se vuelve a pedir.
-        let host_risks: Vec<crate::risk::Risk> = desired
+        let mut host_risks: Vec<crate::risk::Risk> = desired
             .mounts
             .iter()
             .enumerate()
@@ -340,6 +340,22 @@ impl Engine {
                 )
             })
             .collect();
+        // Puertos nuevos en todas las interfaces (aviso bajo, E2, D-088).
+        host_risks.extend(
+            desired
+                .ports
+                .iter()
+                .enumerate()
+                .filter(|(_, p)| !current.ports.contains(p))
+                .filter_map(|(i, p)| {
+                    crate::risk::port_risk(
+                        &p.host_ip,
+                        &p.host_port.map(|n| n.to_string()).unwrap_or_default(),
+                        &p.container_port.to_string(),
+                        &format!("ports.{i}.hostIp"),
+                    )
+                }),
+        );
 
         if changed("name")
             && ctx
