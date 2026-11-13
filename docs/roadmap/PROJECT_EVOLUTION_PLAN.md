@@ -4,7 +4,7 @@
 |---|---|
 | Versión de partida | 1.0.0 (commit `d1068d4`) |
 | Fecha | 12 de noviembre de 2026 |
-| Estado de este documento | Etapa 0 completada; Etapa 1 preparada, **pendiente de autorización** |
+| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0) implementada**; pendiente de su validación manual (M1–M8) |
 | Documentos relacionados | [STATUS.md](../../STATUS.md) (fases 1–10) · [DECISIONS.md](../../DECISIONS.md) · [docs/security/](../security/) |
 
 Este plan continúa el proyecto existente. No es una reescritura ni sustituye a
@@ -100,17 +100,18 @@ mezclar los datos de distintos servidores.
 
 ### 3.1 Hallazgos de seguridad pendientes
 
-Todos los hallazgos siguen **pendientes**. Se ha comprobado que no hay cambios de
+Estado en la Etapa 0: todos **pendientes** (actualizado tras la 1.1.0 en la
+tabla). Se comprobó que no había cambios de
 código desde la auditoría (`git status`: solo `docs/` sin seguimiento) y que las
 líneas citadas en el informe siguen siendo las mismas.
 
 | ID | Sev. | Estado | Etapa |
 |---|---|---|---|
-| DCC-SEC-01 Montajes peligrosos (socket en solo lectura, subrutas, rutas sin normalizar) | Alta | Pendiente | **E1** |
-| DCC-SEC-02 ProxyJump: el salto no hereda las opciones y recibe el askpass | Media | Pendiente | **E1** |
-| DCC-SEC-03 Capacidades peligrosas y red `host` | Media | Pendiente | **E1** |
-| DCC-SEC-05 Ocultación de secretos incompleta | Media | Pendiente | **E1** |
-| DCC-SEC-04 Compose sin análisis de riesgos | Media | Pendiente | E1 (montajes y capacidades, porque lo exigen SEC-01 y SEC-03) + E2 (resto de opciones) |
+| DCC-SEC-01 Montajes peligrosos (socket en solo lectura, subrutas, rutas sin normalizar) | Alta | **Corregido en 1.1.0** (probado) | **E1** |
+| DCC-SEC-02 ProxyJump: el salto no hereda las opciones y recibe el askpass | Media | **Corregido en 1.1.0** (reproducido y probado) | **E1** |
+| DCC-SEC-03 Capacidades peligrosas y red `host` | Media | **Corregido en 1.1.0** (probado) | **E1** |
+| DCC-SEC-05 Ocultación de secretos incompleta | Media | **Corregido en 1.1.0** (probado) | **E1** |
+| DCC-SEC-04 Compose sin análisis de riesgos | Media | Parcial en 1.1.0 (montajes, capacidades, privilegiado, red) | E1 (montajes y capacidades, porque lo exigen SEC-01 y SEC-03) + E2 (resto de opciones) |
 | DCC-SEC-06 IPC de archivos Compose sin límite de rutas | Media | Pendiente | E2 |
 | DCC-SEC-07 Credenciales locales enviadas a daemons remotos | Media | Pendiente | E2 |
 | DCC-SEC-08 Puertos en todas las interfaces | Baja | Pendiente | E2 |
@@ -274,13 +275,10 @@ etapas se publican como parches.
   - registro en la actividad.
 
   Se ofrece restauración de prueba en un volumen nuevo.
-- **Copias programadas.** Decisión pendiente (§10, pregunta 2):
-  - **(a)** planificador interno, que solo funciona con la aplicación abierta,
-    guarda la planificación en `config.toml` y al arrancar ejecuta o avisa de
-    las copias perdidas;
-  - **(b)** temporizador de usuario de systemd, que funciona sin la aplicación
-    pero crea archivos en `~/.config/systemd/user`, y por tanto exige
-    autorización expresa.
+- **Copias programadas** (decisión del propietario, §10.2): **temporizadores de
+  usuario de systemd** (`~/.config/systemd/user`), para que funcionen con la
+  aplicación cerrada. Se crean solo con autorización expresa y se pueden
+  consultar, desactivar y eliminar desde la aplicación.
 
   En cualquier caso se documenta cómo se guarda, se cancela y se recupera.
 
@@ -470,9 +468,8 @@ orígenes; `npm audit` 3 avisos, solo en desarrollo.
     apariciones;
   - legibilidad: el nombre de la variable, el host de la URL y el código de
     error siguen visibles.
-- **Pendiente de decidir:** la salida de los **registros de los contenedores**
-  y de las **terminales** son datos del usuario. Se propone **no** alterarlos
-  (§10, pregunta 1).
+- **Decidido (§10.1):** los registros de los contenedores y la salida de las
+  terminales no se alteran.
 
 ### 9.3 E1-2 · Reglas de riesgo centralizadas (DCC-SEC-01 y 03)
 
@@ -558,7 +555,7 @@ Traefik y Portainer con el socket **deben** avisar: es lo correcto.
   - Si el salto exige contraseña, se muestra un error claro
     (`ssh.jumpNeedsKey`).
   - Se documenta en USER_GUIDE.
-  - Contraseña también para el salto: **decisión pendiente** (§10, pregunta 3).
+  - Contraseña en el salto: **no se admite** (decisión del propietario, §10.3).
 - **Askpass.** `prompt_matches` exige `<usuario>@<host de destino>` (o la ruta
   de la clave para la frase de paso), y `ASKPASS_ANSWERS` pasa a 2.
 - **Huella del salto.** El alta del perfil muestra y guarda en el `known_hosts`
@@ -605,23 +602,24 @@ Las versiones se actualizan a 1.1.0 en `Cargo.toml`, `package.json` y
 
 ---
 
-## 10. Decisiones que necesitan al propietario antes o durante la Etapa 1
+## 10. Decisiones del propietario (12-11-2026)
 
-1. **Registros de contenedores y terminales.** ¿Se dejan sin alterar (propuesta),
-   ocultando secretos solo en lo que produce la aplicación? La alternativa es
-   ocultar también los patrones evidentes (URL con contraseña, PEM) en la vista
-   de registros, con un interruptor «mostrar sin ocultar».
-2. **Copias programadas (E4).** ¿Planificador interno, que solo funciona con la
-   aplicación abierta (propuesta), o temporizador de usuario de systemd, que
-   escribe en `~/.config/systemd/user`?
-3. **ProxyJump con contraseña en el salto.** ¿Se rechaza y se pide clave o
-   agente para el salto (propuesta, la opción más segura), o se admite una
-   segunda contraseña propia del salto, guardada en el llavero y con su propio
-   askpass?
-4. **ESLint (E2).** ¿Se añade como dependencia de desarrollo?
-5. **H-10 «modo de producción».** ¿Se incorpora en E6?
-
----
+1. **Registros y terminales**: los registros de los contenedores y la salida de
+   las terminales **no se alteran** (datos del usuario). La protección de
+   secretos es obligatoria en todo lo que genera la aplicación: registros
+   propios, panel de actividad, historiales, órdenes equivalentes, errores e
+   informes. Documentado como limitación (D-085, USER_GUIDE).
+2. **Copias programadas (E4)**: **temporizadores de usuario de systemd**, para
+   que funcionen con la aplicación cerrada. Crearlos exige autorización
+   expresa; se podrán consultar, desactivar y eliminar desde la aplicación, y
+   nunca se tocan archivos de systemd sin consentimiento.
+3. **ProxyJump**: se **rechaza la contraseña en el servidor intermedio** (clave
+   o agente SSH). Se mantienen las huellas del intermedio y del destino, y las
+   credenciales del destino nunca se comparten con el salto (D-087).
+4. **ESLint**: autorizado en E2, con configuración mínima y dependencias
+   justificadas.
+5. **H-10 «modo de producción»**: **no** se incorpora en E0–E6; queda como
+   candidata para una ampliación futura.
 
 ## 11. Estrategia de validación
 
@@ -652,16 +650,17 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☑ Línea base (§8).
 - ☑ Este plan.
 
-### E1 (1.1.0)
-- ☐ E1-1 `redact` + integración en `ActivityLog` + exportación a TS + pruebas de extremo a extremo.
-- ☐ E1-2 `risk`: montajes, capacidades, red `host` + casos peligrosos y legítimos.
-- ☐ E1-3 Integración en creación, edición y Compose + `accepted_risks` comprobado en Rust + pruebas IPC.
-- ☐ E1-4 ProxyJump seguro + huella del salto + askpass estricto + pruebas de laboratorio.
-- ☐ E1-5 Interfaz y 8 idiomas.
-- ☐ E1-6 Verificación, documentación, `.deb`, `.tar.gz` e informes.
+### E1 (1.1.0) — implementada (12-11-2026)
+- ☑ E1-1 `redact` + integración en `ActivityLog`, errores IPC y registros + mismas reglas en la interfaz (prueba de igualdad) + pruebas de extremo a extremo (D-085).
+- ☑ E1-2 `risk`: montajes, capacidades, red `host` + casos peligrosos y legítimos (D-086).
+- ☑ E1-3 Integración en creación, edición y Compose + aceptación comprobada en el motor + pruebas IPC contra Docker real.
+- ☑ E1-4 ProxyJump con `ProxyCommand`, huella del salto, solo clave o agente, askpass estricto + pruebas en el laboratorio (D-087). Desviaciones del plan: `ASKPASS_ANSWERS` se mantiene en 64 (canales adicionales de OpenSSH) y se admite **un** salto.
+- ☑ E1-5 Interfaz («Riesgos para el equipo», huella del intermedio) y 8 idiomas.
+- ☑ E1-6 `scripts/verify-evolution-1.1.0.sh`, documentación, `.deb`, `.tar.gz` e informes.
+- ☐ Validación manual del propietario (M1–M8, en el informe de verificación).
 
 ### E2 (1.2.0)
-- ☐ Resto de Compose (R-05).
+- ☐ Compose: además de lo de E1, `pid`/`ipc`/`userns_mode`, `security_opt`, `devices`, `cgroup_parent` (R-05).
 - ☐ Rutas admitidas (R-06).
 - ☐ Enlaces simbólicos (R-13).
 - ☐ Puertos (R-10).
@@ -672,7 +671,7 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☐ `DCC_ALLOW_ROOT` (R-11).
 - ☐ OSC 8 (R-12).
 - ☐ Permisos de Tauri, origen de la página de la versión y `sh -c` remoto (R-15, R-16, R-18).
-- ☐ ESLint (si se autoriza).
+- ☐ ESLint (autorizado: configuración mínima).
 - ☐ SECURITY_CHECKLIST.md con evidencias.
 
 ### E3 (1.3.0)
@@ -711,7 +710,7 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 
 ### E6 (1.6.0)
 - ☐ Enlaces entre herramientas: de la auditoría a la monitorización y a las copias por id.
-- ☐ H-10 (si se aprueba).
+- ➖ H-10: no se incorpora (decisión del propietario); queda como candidata futura.
 - ☐ Regresión completa.
 - ☐ Validación manual guiada.
 - ☐ Documentación final.

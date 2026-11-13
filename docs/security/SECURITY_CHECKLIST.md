@@ -1,7 +1,10 @@
 # Lista de comprobación de seguridad
 
 Se usa antes de cada versión y al revisar cada cambio. La marca indica el
-estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026):
+estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026), actualizado
+con la **1.1.0** (Etapa 1 de evolución, 12-11-2026). Las líneas cambiadas en la
+1.1.0 llevan su evidencia entre corchetes (prueba automática que lo demuestra;
+`verify-evolution-1.1.0.sh` las ejecuta todas):
 
 - ✅ cumple;
 - ⚠️ cumple en parte (ver hallazgo);
@@ -49,12 +52,27 @@ seguridad de Docker Engine y RustSec.
 ## Docker Engine
 
 - ✅ Solo socket Unix: no hay `tcp://` sin TLS.
-- ⚠️ Aviso de montajes sensibles con rutas normalizadas, subrutas y sockets de
-  *runtime*, aunque sean de solo lectura (**DCC-SEC-01**).
-- ✅ Aviso de `privileged`.
-- ⚠️ Aviso de capacidades peligrosas y de `network=host` (DCC-SEC-03).
+- ✅ Aviso de montajes sensibles con rutas normalizadas, subrutas, enlaces
+  simbólicos y sockets de *runtime*, aunque sean de solo lectura
+  (**DCC-SEC-01**, corregido en la 1.1.0, D-086) [`dcc-engine risk::`,
+  `spec::tests::mounts_are_validated`, `binds::tests::risks`,
+  `live_e1_risks_and_secrets_via_ipc`].
+- ✅ Aviso de `privileged` (ahora crítico y con aceptación).
+- ✅ Aviso de capacidades peligrosas (`ALL`, `SYS_ADMIN`, `SYS_PTRACE`,
+  `NET_ADMIN`, `DAC_OVERRIDE`, `NET_RAW`…) y de `network=host`
+  (**DCC-SEC-03**, corregido en la 1.1.0) [`risk::tests::capabilities`,
+  `spec::tests::resources_restart_and_security_are_validated`].
+- ✅ Los riesgos altos y críticos exigen una aceptación explícita que el motor
+  vuelve a comprobar en crear, editar y Compose `up` [`live_e1_risks_and_secrets_via_ipc`,
+  `risk::tests::acceptance`, pruebas de interfaz del asistente, la edición y
+  Compose].
+- ✅ Sin falsos positivos en las configuraciones legítimas del plan (§9.5)
+  [`legitimate_configurations_have_no_host_risks`,
+  `compose_services_risks_without_false_positives`].
 - ⚠️ Aviso de puertos en todas las interfaces (DCC-SEC-08).
-- ⚠️ Análisis de riesgos de Compose antes de desplegar (DCC-SEC-04).
+- ⚠️ Análisis de riesgos de Compose antes de desplegar (DCC-SEC-04): montajes,
+  capacidades, modo privilegiado y red del equipo ✅ desde la 1.1.0; faltan
+  `pid`/`ipc`/`userns_mode`, `security_opt`, `devices` y `cgroup_parent` (E2).
 - ✅ La recreación segura conserva una copia y se puede deshacer (D-070).
 - ✅ El contexto de construcción no sigue enlaces y respeta `.dockerignore`.
 - ⚠️ Credenciales de registro: no se envían a servidores remotos sin
@@ -70,15 +88,22 @@ seguridad de Docker Engine y RustSec.
 - ✅ Órdenes remotas entrecomilladas para POSIX, con una prueba de ida y vuelta
   por `sh`.
 - ⚠️ Requisito de shell POSIX documentado (DCC-SEC-18).
-- ⚠️ El servidor intermedio (ProxyJump) recibe las mismas opciones de seguridad
-  y no recibe el askpass (**DCC-SEC-02**).
+- ✅ El servidor intermedio (ProxyJump) recibe las mismas opciones de seguridad,
+  su huella se confirma en la aplicación, solo admite clave o agente y no
+  recibe el askpass (**DCC-SEC-02**, corregido en la 1.1.0, D-087). Antes de
+  corregirlo se reprodujo la fuga en el laboratorio (`Failed password` en el
+  registro del intermedio) [`ssh::args::tests::proxy_command_roundtrips…`,
+  `live_ssh::proxy_jump_checks_both_identities_and_never_shares_the_target_secret`].
 - ✅ Askpass:
   - socket 0600 en un directorio 0700;
   - comprobación de `peer_cred`;
   - nunca responde a preguntas de sí o no;
   - el secreto nunca va en argumentos ni en el entorno.
-- ⚠️ El askpass responde solo a la pregunta del destino exacto, con un número
-  mínimo de respuestas (DCC-SEC-02).
+- ✅ El askpass responde solo a la pregunta del destino exacto (usuario y
+  servidor, o la clave del perfil) [`ssh::askpass::tests`]. El número de
+  respuestas se mantiene (64) por los canales adicionales de OpenSSH (D-087).
+- ✅ Un salto definido en `~/.ssh/config` no se usa con contraseña o frase de
+  paso (`jumpFromSshConfig`).
 - ✅ Los diálogos muestran el servidor de destino de la operación.
 
 ## Secretos y datos sensibles
@@ -88,8 +113,17 @@ seguridad de Docker Engine y RustSec.
   directorios 0700, con escritura atómica.
 - ✅ El historial persistente no guarda cuerpos, órdenes equivalentes ni
   salidas. Los `buildargs` se ocultan.
-- ⚠️ Ocultación de secretos en el panel y en la orden equivalente
-  (`*_PWD`, `*_PASS`, `*_AUTH`, URL con credenciales) (**DCC-SEC-05**).
+- ✅ Ocultación de secretos centralizada en el panel, sus eventos, el
+  historial, la orden equivalente, los argumentos, las salidas, los errores
+  IPC y los registros de la aplicación (`*_PWD`, `*_PASS`, `*_AUTH`, URL con
+  credenciales, claves privadas, `Authorization`) (**DCC-SEC-05**, corregido en
+  la 1.1.0, D-085) [`dcc-activity redact::`,
+  `secrets_never_reach_records_events_or_history`, `error::tests`,
+  `live_e1_risks_and_secrets_via_ipc`, `ui/src/shared/secrets.test.ts`].
+- ✅ Reglas de secretos idénticas en Rust y en la interfaz
+  [`redact::tests::interface_rules_match`].
+- ➖ Registros de los contenedores y salida de las terminales: no se alteran
+  por decisión del propietario (datos del usuario; D-085).
 - ✅ Las credenciales de registro manuales solo viven en memoria. La salida de
   los *credential helpers* nunca se registra.
 - ✅ Los documentos y los informes no contienen secretos.

@@ -185,14 +185,20 @@ fn activity_events_reach_the_window() {
     let h = harness();
     let received: Arc<Mutex<Vec<ActivityEvent>>> = Default::default();
     let sink = received.clone();
+    // Solo los eventos de esta operación: si hay un Docker accesible, el
+    // arranque de la aplicación registra a la vez sus propias operaciones.
+    const KIND: &str = "test.activityBridge";
     h.window.listen(crate::events::ACTIVITY_EVENT, move |e| {
-        sink.lock()
-            .unwrap()
-            .push(serde_json::from_str(e.payload()).unwrap());
+        let ev: ActivityEvent = serde_json::from_str(e.payload()).unwrap();
+        if matches!(&ev, ActivityEvent::Upsert { record } if record.kind == KIND) {
+            sink.lock().unwrap().push(ev);
+        }
     });
 
     let state = h.app.state::<AppState>();
-    state.activity.begin(spec()).succeed(Outcome::default());
+    let mut s = spec();
+    s.kind = KIND.into();
+    state.activity.begin(s).succeed(Outcome::default());
 
     // El puente corre en el runtime asíncrono: espera acotada.
     let deadline = std::time::Instant::now() + Duration::from_secs(5);

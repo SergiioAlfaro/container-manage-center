@@ -814,7 +814,9 @@ async fn recreation_changes_only_what_was_edited_and_keeps_data_and_a_backup() {
     let (o, code) = sh(
         &docker,
         &out.container_id,
-        "cat /data/v.txt /anon/a.txt /host/host.txt; echo $MODE; cat /layer.txt",
+        // El error de /layer.txt va a /dev/null: la salida de error se mezcla
+        // con la normal en cualquier orden y rompía la comparación.
+        "cat /data/v.txt /anon/a.txt /host/host.txt; echo $MODE; cat /layer.txt 2>/dev/null",
     )
     .await;
     assert!(o.contains("vol\nanon\ndesde el equipo\nstaging\n"), "{o}");
