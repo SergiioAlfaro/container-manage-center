@@ -1,16 +1,17 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-12
+Última actualización: 2026-11-13
 
 ## Resumen
 
 | | |
 |---|---|
-| **Fase actual** | 10. Pruebas finales y distribución |
-| **Versión** | 1.0.0 |
-| **Estado** | Implementada y verificada; pendiente de la validación del propietario (F1–F8) |
+| **Etapa actual** | Evolución E1. Correcciones de seguridad prioritarias ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
+| **Versión** | 1.1.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M8) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Fases pendientes** | Validación de la 10 |
+| **Pendiente de validar** | Fase 10 (F1–F8) y Etapa E1 (M1–M8) |
+| **Próximas etapas** | E2 endurecimiento · E3 auditoría · E4 copias · E5 monitorización · E6 integración |
 
 | Fase | Estado |
 |---|---|
@@ -27,6 +28,8 @@
 | Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | **Validada** (confirmada por el propietario, 2026-11-12) |
 | Actualización 0.10.0 (administración remota de servidores Docker por SSH) | **Validada** (confirmada por el propietario, 2026-11-12) |
 | 10. Pruebas finales y distribución | Implementada (versión 1.0.0); pendiente de validación |
+| Evolución E0. Revisión y línea base | Completada (2026-11-12): plan aprobado por el propietario |
+| Evolución E1. Correcciones de seguridad prioritarias | Implementada (versión 1.1.0); pendiente de validación |
 
 ---
 
@@ -1026,9 +1029,71 @@ Ejecutadas en Ubuntu 24.04 con `scripts/verify-phase-10.sh` (registros completos
 
 ---
 
+## Evolución · Etapa 1 · Correcciones de seguridad prioritarias (1.1.0)
+
+Autorizada por el propietario el 2026-11-12. Alcance: apartado 9 de
+[PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md).
+Decisiones: D-085 a D-087.
+
+### Hallazgos corregidos
+| Hallazgo | Corrección | Demostración (pruebas) |
+|---|---|---|
+| DCC-SEC-01 (alta). Montajes peligrosos | Reglas únicas `dcc-engine::risk`: socket de motor crítico también `:ro`, rutas normalizadas y enlaces, credenciales, sistema; en crear, editar, Compose y directorios vinculados | `risk::`, `spec::tests`, `binds::tests`, IPC real `live_e1_risks_and_secrets_via_ipc` |
+| DCC-SEC-03 (media). Capacidades y red del equipo | `ALL`/`SYS_ADMIN` críticos; `SYS_PTRACE`, `NET_ADMIN`… altos; `DAC_OVERRIDE` medio; `NET_RAW` bajo; `network=host` alto | `risk::tests::capabilities`, Compose `compose_services_risks_without_false_positives` |
+| DCC-SEC-05 (media). Secretos | `dcc-activity::redact` aplicado en `ActivityLog` (panel, eventos, historial, orden, salidas, error), errores IPC y registros; mismas reglas en la interfaz | `redact::`, `secrets_never_reach_records_events_or_history`, `error::tests`, IPC real, `secrets.test.ts` |
+| DCC-SEC-02 (media). ProxyJump | `ProxyCommand` con las reglas del destino y sin askpass; huella del salto confirmada; solo clave o agente; askpass solo para el destino; un salto | Fuga reproducida antes en el laboratorio; `ssh::args`/`askpass`/`profile`; real `proxy_jump_checks_both_identities_and_never_shares_the_target_secret` |
+| DCC-SEC-04 (media). Compose | **Parcial**: montajes, capacidades, privilegiado y red del equipo (lo exigido por 01 y 03). El resto, en E2 | `compose_services_risks_without_false_positives` |
+
+Los riesgos altos y críticos se aceptan uno a uno y el **motor los vuelve a
+comprobar** (`engine.risksNotAccepted`). Las configuraciones legítimas del plan
+(§9.5) no producen avisos.
+
+### Verificación (`scripts/verify-evolution-1.1.0.sh`)
+Entorno de desarrollo (Ubuntu 24.04 en contenedor, WebKitGTK 2.52, Xvfb),
+2026-11-12 y 2026-11-13:
+
+| Daemon | Opciones | Resultado |
+|---|---|---|
+| Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` (laboratorio de tres servidores) | **100 correctas, 0 fallos**, 4 omitidas justificadamente, 1 aviso (ejecución como root) |
+| Docker 26.1.3 (API 1.45) | — | **73 correctas, 0 fallos**, 5 omitidas |
+| Docker 24.0.7 (API 1.43) | — | **73 correctas, 0 fallos**, 5 omitidas |
+| Docker 29.9.2 | `--compat` (paquete Debian 12+/Ubuntu 22.04+) | Correcto (glibc ≤ 2.35, `openssh-client` recomendado) |
+
+- Pruebas de Rust: 592 superadas, 0 fallidas. Vitest: 42 archivos y 386 pruebas superadas. `cargo fmt`, `clippy -D warnings` y `tsc` correctos.
+- Pasos propios de la 1.1.0: 13 correctos (deterministas, interfaz, IPC contra Docker real y ProxyJump real).
+- Compose 2.26.1: pruebas reales correctas con los tres daemons.
+- Sin recursos de prueba restantes.
+- Instalación limpia de los `.deb` 1.1.0 (`scripts/dev/clean-install-test.sh`): Ubuntu 24.04 (paquete normal) y 22.04 (compatible). Instalación como usuario normal, archivos, arranque y desinstalación: 0 fallos.
+- Primera verificación (12-11): dos fallos en pruebas **inestables anteriores a la E1** (ver abajo). Se corrigieron las pruebas y se repitió con Docker 29 y 24. Docker 26 y el paquete compatible ya habían pasado con el mismo código del producto.
+
+### Problemas encontrados y resueltos
+- **`ssh -J` con el askpass heredado**: reproducido en el laboratorio antes de corregirlo (el registro del salto mostraba `Failed password` con la contraseña del destino).
+- **`exec exec`**: OpenSSH ya antepone `exec` al `ProxyCommand`. El primer intento fallaba (`NotSsh`) y se corrigió con la prueba real.
+- **Laboratorio SSH**: el servidor A no permitía reenvíos. Ahora los permite solo hacia B y C (`PermitOpen`), para hacer de intermedio.
+- **Tipo `Risk` duplicado** en los enlaces TypeScript (la edición ya tenía uno): el nuevo se exporta como `HostRisk`.
+- **Dos pruebas inestables, anteriores a la E1**, que fallaron una vez cada una en la primera verificación:
+  - `live_edit`: la salida de error se mezclaba con la normal en cualquier orden;
+  - `activity_events_reach_the_window`: recibía las operaciones de arranque de la aplicación si había un Docker accesible.
+
+  Se corrigieron las pruebas; el producto no cambia.
+- **Arranque del daemon de pruebas**: el script de verificación del entorno de desarrollo no esperaba a que containerd terminara (bloqueo de su base). Ahora espera y reintenta.
+
+### Limitaciones
+- **Un solo servidor intermedio** (los perfiles con varios saltos se marcan como no válidos) y **sin contraseña en el salto** (decisión del propietario).
+- Los **registros de los contenedores** y la **salida de las terminales** no se alteran (decisión del propietario).
+- La ocultación se basa en nombres y formatos conocidos. Un secreto en una variable de nombre corriente (`DATA=…`) sin formato reconocible no se detecta.
+- En Compose, `pid`/`ipc`/`userns_mode`, `security_opt`, `devices` y `cgroup_parent` no se analizan todavía (E2).
+- Los enlaces simbólicos solo se resuelven con Docker en este equipo; en un servidor remoto se evalúa la ruta escrita.
+- Debian 12 y 13 sin probar aquí (solo Ubuntu 22.04/24.04 en contenedor); se validan en el equipo del propietario.
+
+### Validación manual
+M1–M8, en el apartado 8 del informe de `scripts/verify-evolution-1.1.0.sh`.
+
+---
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-phase-10.sh --deb --net` en Debian 13 y envía `verify-phase-10-report.txt`. Si el veredicto es «parte automática superada», realiza F1–F8.
-2. Con su validación, la Fase 10 queda completada y el proyecto, terminado en su versión 1.0.0.
+1. El propietario ejecuta `bash scripts/verify-evolution-1.1.0.sh --deb --net` en Debian 13 (incluye toda la regresión de la 1.0.0) y envía `verify-evolution-1.1.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M8 y, si no los ha hecho aún, F1–F8.
+2. Con su validación, la Etapa 1 queda completada y se puede autorizar la Etapa 2 (endurecimiento restante, 1.2.0).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).
