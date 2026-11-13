@@ -72,6 +72,10 @@
       "title": "Terminals",
       "description": "Diversos terminals alhora en contenidors en execució."
     },
+    "audit": {
+      "title": "Auditoria",
+      "description": "Revisa la seguretat de contenidors, imatges i projectes Compose."
+    },
     "events": {
       "title": "Esdeveniments i registres",
       "description": "Esdeveniments de Docker en temps real i historial d’operacions."
@@ -2828,5 +2832,188 @@
     "title": "Obre l'enllaç del terminal",
     "body": "La sortida del terminal conté aquest enllaç. Obre'l només si hi confies: s'obrirà al navegador del sistema.",
     "open": "Obre al navegador"
+  },
+  "audit": {
+    "intro": "L'auditoria només llegeix la configuració: no canvia res. Les correccions es proposen a «Edita la configuració», amb previsualització i confirmació.",
+    "options": "Què s'audita",
+    "scope": "Contenidors",
+    "scopeAll": "Tots (en execució i aturats)",
+    "includeCompose": "Projectes Compose",
+    "includeImages": "Imatges",
+    "scanVulns": "Vulnerabilitats conegudes (Trivy o Grype)",
+    "run": "Audita",
+    "running": "S'està auditant…",
+    "cancel": "Cancel·la",
+    "cancelled": "Auditoria cancel·lada.",
+    "failed": "No s'ha pogut completar l'auditoria: {{message}}",
+    "noReport": "Encara no hi ha cap auditoria d'aquest servidor.",
+    "progress": {
+      "containers": "Contenidors {{done}} de {{total}}: {{current}}",
+      "images": "Imatges {{done}} de {{total}}: {{current}}",
+      "compose": "Projectes Compose {{done}} de {{total}}: {{current}}",
+      "vulnerabilities": "Vulnerabilitats {{done}} de {{total}}: {{current}}"
+    },
+    "summary": {
+      "title": "Resultat",
+      "meta_one": "{{date}} · {{count}} element auditat · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} elements auditats · Docker {{docker}}",
+      "counts": "Troballes per nivell",
+      "none": "No hi ha troballes en el que s'ha auditat."
+    },
+    "filter": {
+      "level": "Nivell",
+      "all": "Tots",
+      "kind": "Tipus",
+      "allKinds": "Tots els tipus",
+      "search": "Cerca per nom o troballa",
+      "count_one": "{{count}} troballa",
+      "count_other": "{{count}} troballes",
+      "noMatches": "Cap troballa no coincideix amb el filtre."
+    },
+    "kind": {
+      "container": "Contenidor",
+      "service": "Servei",
+      "image": "Imatge"
+    },
+    "kindPlural": {
+      "container": "Contenidors",
+      "service": "Serveis de Compose",
+      "image": "Imatges"
+    },
+    "project": "projecte {{name}}",
+    "propose_one": "Proposa {{count}} correcció",
+    "propose_other": "Proposa {{count}} correccions",
+    "proposeHint": "Obre «Edita la configuració» amb els canvis proposats. No s'aplica res fins que ho revisis i ho confirmis.",
+    "clean_one": "Sense troballes: {{names}}.",
+    "clean_other": "Sense troballes ({{count}}): {{names}}.",
+    "finding": {
+      "why": "Per què és important",
+      "fix": "Recomanació"
+    },
+    "check": {
+      "rootUser": "El procés principal s'executa com a root.",
+      "writableRootfs": "El sistema de fitxers del contenidor es pot modificar.",
+      "noMemoryLimit": "Sense límit de memòria.",
+      "noCpuLimit": "Sense límit de CPU.",
+      "noPidsLimit": "Sense límit de processos.",
+      "noNewPrivileges": "Sense l'opció no-new-privileges.",
+      "imageOld": "La imatge té {{days}} dies (creada el {{created}}).",
+      "imageRootUser": "La imatge s'executa com a root per defecte."
+    },
+    "why": {
+      "runtimeSocket": "Amb el sòcol es pot crear un contenidor privilegiat i controlar tot l'equip.",
+      "hostRoot": "El contenidor pot llegir i, amb escriptura, canviar qualsevol fitxer de l'equip.",
+      "credentials": "Exposa contrasenyes, claus o testimonis de l'equip o dels seus usuaris.",
+      "systemDir": "Permet llegir o canviar la configuració de l'equip.",
+      "systemBinaries": "Permet substituir programes o biblioteques de l'equip.",
+      "capability": "Cada capacitat afegida amplia el que el contenidor pot fer amb el nucli.",
+      "privileged": "Sense aïllament: dispositius, nucli i totes les capacitats.",
+      "networkHost": "Veu tots els serveis de l'equip, també els que només escolten a 127.0.0.1.",
+      "hostNamespace": "Trenca part de l'aïllament entre el contenidor i l'equip.",
+      "securityOpt": "Desactiva una protecció del nucli que limita el que pot fer un procés compromès.",
+      "device": "Accés directe al dispositiu, sense els permisos dels fitxers.",
+      "cgroupParent": "Els límits de recursos deixen de gestionar-se com als altres contenidors.",
+      "portAllInterfaces": "Altres equips de la xarxa s'hi poden connectar i, amb Docker, el tallafoc normalment no ho impedeix.",
+      "rootUser": "Si algú compromet el procés, és root dins del contenidor i en pot sortir més fàcilment. Amb Docker rootless o userns-remap el risc és menor.",
+      "writableRootfs": "Un atacant pot deixar programes o canviar la configuració dins del contenidor.",
+      "noMemoryLimit": "Un error o un atac pot consumir tota la memòria de l'equip.",
+      "noCpuLimit": "Un procés pot ocupar tota la CPU i alentir la resta.",
+      "noPidsLimit": "Una «bomba de processos» pot esgotar els processos de l'equip.",
+      "noNewPrivileges": "Els programes amb setuid poden guanyar privilegis dins del contenidor.",
+      "imageOld": "Una imatge antiga sol tenir vulnerabilitats ja corregides en versions noves.",
+      "imageRootUser": "Els contenidors creats amb ella s'executen com a root llevat que s'indiqui un altre usuari. Amb Docker rootless o userns-remap el risc és menor."
+    },
+    "fix": {
+      "runtimeSocket": "Treu el sòcol. Si de debò el necessita, fes servir un servidor intermediari del sòcol amb permisos limitats o Docker rootless.",
+      "hostRoot": "Munta només la carpeta que necessita, només de lectura si és possible.",
+      "credentials": "Munta només el fitxer concret que necessita, o passa-li el secret amb Docker secrets.",
+      "systemDir": "Munta només el necessari i només de lectura.",
+      "systemBinaries": "Munta-ho només de lectura o no ho muntis.",
+      "capability": "Treu la capacitat si no cal; comença per --cap-drop ALL i afegeix només les imprescindibles.",
+      "privileged": "Treu --privileged i afegeix només les capacitats o dispositius que necessiti.",
+      "networkHost": "Fes servir una xarxa de Docker i publica només els ports necessaris.",
+      "hostNamespace": "Treu l'opció llevat que el contenidor la necessiti de debò (p. ex. eines de diagnòstic).",
+      "securityOpt": "Treu l'opció; si un perfil bloqueja alguna cosa, crea un perfil a mida en lloc de desactivar-lo.",
+      "device": "Passa només el dispositiu concret que necessita, o cap.",
+      "cgroupParent": "Treu cgroup_parent llevat que gestionis els grups de control a mà.",
+      "portAllInterfaces": "Si només el fas servir en aquest equip, publica'l a 127.0.0.1.",
+      "rootUser": "Indica un usuari sense privilegis (--user, o user: a Compose) o fes servir una imatge que ja en tingui.",
+      "writableRootfs": "Fes servir --read-only (read_only: true) amb un tmpfs o un volum per al que hagi d'escriure.",
+      "noMemoryLimit": "Fixa un límit de memòria (--memory o mem_limit).",
+      "noCpuLimit": "Fixa un límit de CPU (--cpus o cpus).",
+      "noPidsLimit": "Fixa un límit de processos (--pids-limit o pids_limit).",
+      "noNewPrivileges": "Afegeix --security-opt no-new-privileges:true (o security_opt a Compose).",
+      "imageOld": "Baixa o construeix una versió recent de la imatge i torna a crear el contenidor.",
+      "imageRootUser": "Fes servir una imatge amb un usuari sense privilegis (USER al Dockerfile) o indica --user en crear el contenidor."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "sí",
+      "no": "no"
+    },
+    "vuln": {
+      "title": "Vulnerabilitats",
+      "tool": "{{name}} {{version}} amb la base del {{date}}",
+      "toolNotReady": "{{name}} {{version}}: {{reason}}",
+      "unknownDate": "data desconeguda",
+      "notAnalyzed": "No analitzat: {{reason}}",
+      "notAnalyzedImage": "No analitzat: {{reason}}",
+      "noneKnown": "{{tool}} no troba vulnerabilitats conegudes a la seva base del {{date}}. Això no garanteix que no n'hi hagi.",
+      "found": "{{tool}} (base del {{date}}): {{critical}} crítiques, {{high}} altes, {{medium}} mitjanes, {{low}} baixes i {{unknown}} sense classificar.",
+      "failed": "L'anàlisi amb {{tool}} no ha acabat: {{message}}",
+      "list_one": "Mostra la vulnerabilitat més greu",
+      "list_other": "Mostra les {{count}} més greus",
+      "id": "Identificador",
+      "package": "Paquet",
+      "severity": "Gravetat",
+      "fixed": "Corregida a",
+      "noFix": "sense correcció",
+      "notRequested": "no s'ha demanat l'anàlisi.",
+      "remote": "només s'analitzen imatges del Docker d'aquest equip.",
+      "noTool": "no hi ha ni Trivy ni Grype instal·lats en aquest equip (l'aplicació no els instal·la).",
+      "noDatabase": "l'eina no té baixada la seva base de vulnerabilitats (l'aplicació no la baixa).",
+      "toolError": "l'eina ha fallat ({{message}}).",
+      "unknownTool": "eina no admesa.",
+      "badImage": "referència d'imatge no vàlida."
+    },
+    "skipped": {
+      "title": "No auditat",
+      "composeUnavailable": "Docker Compose no està disponible: no s'han revisat els projectes.",
+      "noFiles": "el projecte no té fitxers Compose coneguts.",
+      "composeConfig": "no s'ha pogut llegir la seva configuració."
+    },
+    "history": {
+      "title": "Auditories anteriors",
+      "empty": "Encara no hi ha auditories desades d'aquest servidor.",
+      "one": "Contenidor {{name}}",
+      "all_one": "{{count}} element",
+      "all_other": "{{count}} elements",
+      "open": "Mostra",
+      "shown": "Es mostra a dalt"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Informe desat a {{path}} (només tu el pots llegir).",
+      "error": "No s'ha pogut desar l'informe: {{message}}",
+      "title": "Auditoria de seguretat · {{server}}",
+      "date": "Data",
+      "scope": "Abast",
+      "scopeAll": "tots els contenidors",
+      "scopeOne": "contenidor {{name}}",
+      "readOnly": "L'auditoria només ha llegit la configuració; no ha canviat res. Els secrets s'oculten."
+    },
+    "proposal": {
+      "banner_one": "L'auditoria ha proposat {{count}} canvi. Revisa'l abans d'aplicar-lo: encara no s'ha canviat res.",
+      "banner_other": "L'auditoria ha proposat {{count}} canvis. Revisa'ls abans d'aplicar-los: encara no s'ha canviat res.",
+      "resources": "Indica també límits de CPU i memòria a «Recursos»."
+    }
   }
 }

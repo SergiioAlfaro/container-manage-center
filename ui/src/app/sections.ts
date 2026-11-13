@@ -9,6 +9,7 @@ import {
   Radio,
   Server,
   Settings,
+  ShieldCheck,
   SquareTerminal,
   Workflow,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export type SectionId =
   | "binds"
   | "compose"
   | "terminals"
+  | "audit"
   | "events"
   | "settings";
 
@@ -45,6 +47,8 @@ export const SECTIONS: SectionDef[] = [
   { id: "binds", icon: FolderSymlink, group: "resources" },
   { id: "compose", icon: Workflow, group: "orchestration" },
   { id: "terminals", icon: SquareTerminal, group: "tools" },
+  // E3 (1.3.0): auditoría de seguridad.
+  { id: "audit", icon: ShieldCheck, group: "tools" },
   { id: "events", icon: Radio, group: "monitoring" },
   { id: "settings", icon: Settings, group: "bottom" },
 ];

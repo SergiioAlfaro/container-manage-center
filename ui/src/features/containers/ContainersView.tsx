@@ -314,7 +314,7 @@ function ContainersPages() {
     case "detail":
       return <ContainerDetail key={page.id} id={page.id} name={page.name} tab={page.tab} />;
     case "edit":
-      return <EditContainer key={page.id} id={page.id} name={page.name} />;
+      return <EditContainer key={page.id} id={page.id} name={page.name} proposal={page.proposal} />;
     case "create":
       return <CreateWizard initial={page.spec} notes={page.notes} sourceName={page.sourceName} />;
     default:

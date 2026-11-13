@@ -72,6 +72,10 @@
       "title": "Terminales",
       "description": "Varias terminales a la vez en contenedores en ejecución."
     },
+    "audit": {
+      "title": "Auditoría",
+      "description": "Revisa la seguridad de contenedores, imágenes y proyectos Compose."
+    },
     "events": {
       "title": "Eventos y registros",
       "description": "Eventos de Docker en tiempo real e historial de operaciones."
@@ -2828,5 +2832,188 @@
     "title": "Abrir el enlace de la terminal",
     "body": "La salida de la terminal contiene este enlace. Ábrelo solo si confías en él: se abrirá en el navegador del sistema.",
     "open": "Abrir en el navegador"
+  },
+  "audit": {
+    "intro": "La auditoría solo lee la configuración: no cambia nada. Las correcciones se proponen en «Editar configuración», con vista previa y confirmación.",
+    "options": "Qué auditar",
+    "scope": "Contenedores",
+    "scopeAll": "Todos (en ejecución y detenidos)",
+    "includeCompose": "Proyectos Compose",
+    "includeImages": "Imágenes",
+    "scanVulns": "Vulnerabilidades conocidas (Trivy o Grype)",
+    "run": "Auditar",
+    "running": "Auditando…",
+    "cancel": "Cancelar",
+    "cancelled": "Auditoría cancelada.",
+    "failed": "No se pudo completar la auditoría: {{message}}",
+    "noReport": "Todavía no hay ninguna auditoría de este servidor.",
+    "progress": {
+      "containers": "Contenedores {{done}} de {{total}}: {{current}}",
+      "images": "Imágenes {{done}} de {{total}}: {{current}}",
+      "compose": "Proyectos Compose {{done}} de {{total}}: {{current}}",
+      "vulnerabilities": "Vulnerabilidades {{done}} de {{total}}: {{current}}"
+    },
+    "summary": {
+      "title": "Resultado",
+      "meta_one": "{{date}} · {{count}} elemento auditado · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} elementos auditados · Docker {{docker}}",
+      "counts": "Hallazgos por nivel",
+      "none": "No hay hallazgos en lo auditado."
+    },
+    "filter": {
+      "level": "Nivel",
+      "all": "Todos",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "search": "Buscar por nombre o hallazgo",
+      "count_one": "{{count}} hallazgo",
+      "count_other": "{{count}} hallazgos",
+      "noMatches": "Ningún hallazgo coincide con el filtro."
+    },
+    "kind": {
+      "container": "Contenedor",
+      "service": "Servicio",
+      "image": "Imagen"
+    },
+    "kindPlural": {
+      "container": "Contenedores",
+      "service": "Servicios de Compose",
+      "image": "Imágenes"
+    },
+    "project": "proyecto {{name}}",
+    "propose_one": "Proponer {{count}} corrección",
+    "propose_other": "Proponer {{count}} correcciones",
+    "proposeHint": "Abre «Editar configuración» con los cambios propuestos. Nada se aplica hasta que lo revisas y confirmas.",
+    "clean_one": "Sin hallazgos: {{names}}.",
+    "clean_other": "Sin hallazgos ({{count}}): {{names}}.",
+    "finding": {
+      "why": "Por qué importa",
+      "fix": "Recomendación"
+    },
+    "check": {
+      "rootUser": "El proceso principal se ejecuta como root.",
+      "writableRootfs": "El sistema de archivos del contenedor se puede modificar.",
+      "noMemoryLimit": "Sin límite de memoria.",
+      "noCpuLimit": "Sin límite de CPU.",
+      "noPidsLimit": "Sin límite de procesos.",
+      "noNewPrivileges": "Sin la opción no-new-privileges.",
+      "imageOld": "La imagen tiene {{days}} días (creada el {{created}}).",
+      "imageRootUser": "La imagen se ejecuta como root por defecto."
+    },
+    "why": {
+      "runtimeSocket": "Con el socket se puede crear un contenedor privilegiado y controlar todo el equipo.",
+      "hostRoot": "El contenedor puede leer y, con escritura, cambiar cualquier archivo del equipo.",
+      "credentials": "Expone contraseñas, claves o tokens del equipo o de sus usuarios.",
+      "systemDir": "Permite leer o cambiar la configuración del equipo.",
+      "systemBinaries": "Permite sustituir programas o bibliotecas del equipo.",
+      "capability": "Cada capacidad añadida amplía lo que el contenedor puede hacer con el núcleo.",
+      "privileged": "Sin aislamiento: dispositivos, núcleo y todas las capacidades.",
+      "networkHost": "Ve todos los servicios del equipo, también los que solo escuchan en 127.0.0.1.",
+      "hostNamespace": "Rompe parte del aislamiento entre el contenedor y el equipo.",
+      "securityOpt": "Desactiva una protección del núcleo que limita lo que puede hacer un proceso comprometido.",
+      "device": "Acceso directo al dispositivo, sin los permisos de los archivos.",
+      "cgroupParent": "Los límites de recursos dejan de gestionarse como el resto de contenedores.",
+      "portAllInterfaces": "Otros equipos de la red pueden conectarse, y con Docker el cortafuegos normalmente no lo impide.",
+      "rootUser": "Si alguien compromete el proceso, es root dentro del contenedor y tiene más fácil escapar. Con Docker rootless o userns-remap el riesgo es menor.",
+      "writableRootfs": "Un atacante puede dejar programas o cambiar la configuración dentro del contenedor.",
+      "noMemoryLimit": "Un fallo o un ataque puede consumir toda la memoria del equipo.",
+      "noCpuLimit": "Un proceso puede ocupar toda la CPU y ralentizar el resto.",
+      "noPidsLimit": "Una «bomba de procesos» puede agotar los procesos del equipo.",
+      "noNewPrivileges": "Los programas con setuid pueden ganar privilegios dentro del contenedor.",
+      "imageOld": "Una imagen antigua suele tener vulnerabilidades ya corregidas en versiones nuevas.",
+      "imageRootUser": "Los contenedores creados con ella se ejecutan como root salvo que se indique otro usuario. Con Docker rootless o userns-remap el riesgo es menor."
+    },
+    "fix": {
+      "runtimeSocket": "Quita el socket. Si de verdad lo necesita, usa un proxy del socket con permisos limitados o Docker rootless.",
+      "hostRoot": "Monta solo la carpeta que necesita, en solo lectura si es posible.",
+      "credentials": "Monta solo el archivo concreto que necesita, o pásale el secreto con Docker secrets.",
+      "systemDir": "Monta solo lo necesario y en solo lectura.",
+      "systemBinaries": "Móntalo en solo lectura o no lo montes.",
+      "capability": "Quita la capacidad si no hace falta; empieza por --cap-drop ALL y añade solo las imprescindibles.",
+      "privileged": "Quita --privileged y añade solo las capacidades o dispositivos que necesite.",
+      "networkHost": "Usa una red de Docker y publica solo los puertos necesarios.",
+      "hostNamespace": "Quita la opción salvo que el contenedor la necesite de verdad (p. ej. herramientas de diagnóstico).",
+      "securityOpt": "Quita la opción; si un perfil bloquea algo, crea un perfil a medida en lugar de desactivarlo.",
+      "device": "Pasa solo el dispositivo concreto que necesita, o ninguno.",
+      "cgroupParent": "Quita cgroup_parent salvo que gestiones los grupos de control a mano.",
+      "portAllInterfaces": "Si solo lo usas en este equipo, publícalo en 127.0.0.1.",
+      "rootUser": "Indica un usuario sin privilegios (--user o user: en Compose) o usa una imagen que ya lo tenga.",
+      "writableRootfs": "Usa --read-only (read_only: true) con un tmpfs o un volumen para lo que tenga que escribir.",
+      "noMemoryLimit": "Fija un límite de memoria (--memory o mem_limit).",
+      "noCpuLimit": "Fija un límite de CPU (--cpus o cpus).",
+      "noPidsLimit": "Fija un límite de procesos (--pids-limit o pids_limit).",
+      "noNewPrivileges": "Añade --security-opt no-new-privileges:true (o security_opt en Compose).",
+      "imageOld": "Descarga o construye una versión reciente de la imagen y vuelve a crear el contenedor.",
+      "imageRootUser": "Usa una imagen con un usuario sin privilegios (USER en el Dockerfile) o indica --user al crear el contenedor."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "sí",
+      "no": "no"
+    },
+    "vuln": {
+      "title": "Vulnerabilidades",
+      "tool": "{{name}} {{version}} con la base del {{date}}",
+      "toolNotReady": "{{name}} {{version}}: {{reason}}",
+      "unknownDate": "fecha desconocida",
+      "notAnalyzed": "No analizado: {{reason}}",
+      "notAnalyzedImage": "No analizado: {{reason}}",
+      "noneKnown": "{{tool}} no encuentra vulnerabilidades conocidas en su base del {{date}}. Eso no garantiza que no las haya.",
+      "found": "{{tool}} (base del {{date}}): {{critical}} críticas, {{high}} altas, {{medium}} medias, {{low}} bajas y {{unknown}} sin clasificar.",
+      "failed": "El análisis con {{tool}} no terminó: {{message}}",
+      "list_one": "Ver la vulnerabilidad más grave",
+      "list_other": "Ver las {{count}} más graves",
+      "id": "Identificador",
+      "package": "Paquete",
+      "severity": "Gravedad",
+      "fixed": "Corregida en",
+      "noFix": "sin corrección",
+      "notRequested": "no se pidió el análisis.",
+      "remote": "solo se analizan imágenes del Docker de este equipo.",
+      "noTool": "no hay Trivy ni Grype instalados en este equipo (la aplicación no los instala).",
+      "noDatabase": "la herramienta no tiene su base de vulnerabilidades descargada (la aplicación no la descarga).",
+      "toolError": "la herramienta falló ({{message}}).",
+      "unknownTool": "herramienta no admitida.",
+      "badImage": "referencia de imagen no válida."
+    },
+    "skipped": {
+      "title": "No auditado",
+      "composeUnavailable": "Docker Compose no está disponible: no se han revisado los proyectos.",
+      "noFiles": "el proyecto no tiene archivos Compose conocidos.",
+      "composeConfig": "no se pudo leer su configuración."
+    },
+    "history": {
+      "title": "Auditorías anteriores",
+      "empty": "Aún no hay auditorías guardadas de este servidor.",
+      "one": "Contenedor {{name}}",
+      "all_one": "{{count}} elemento",
+      "all_other": "{{count}} elementos",
+      "open": "Ver",
+      "shown": "Se muestra arriba"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Informe guardado en {{path}} (solo tú puedes leerlo).",
+      "error": "No se pudo guardar el informe: {{message}}",
+      "title": "Auditoría de seguridad · {{server}}",
+      "date": "Fecha",
+      "scope": "Alcance",
+      "scopeAll": "todos los contenedores",
+      "scopeOne": "contenedor {{name}}",
+      "readOnly": "La auditoría solo ha leído la configuración; no ha cambiado nada. Los secretos se ocultan."
+    },
+    "proposal": {
+      "banner_one": "La auditoría ha propuesto {{count}} cambio. Revísalo antes de aplicarlo: no se ha cambiado nada todavía.",
+      "banner_other": "La auditoría ha propuesto {{count}} cambios. Revísalos antes de aplicarlos: no se ha cambiado nada todavía.",
+      "resources": "Indica también límites de CPU y memoria en «Recursos»."
+    }
   }
 }

@@ -1,3 +1,4 @@
+import type { AuditFix } from "@/shared/ipc/bindings/AuditFix";
 /**
  * Estado de la pantalla «Editar configuración» (0.9.2): borrador, textos de
  * los campos numéricos y cambios pendientes por pestaña.
@@ -124,4 +125,41 @@ export function pendingByTab(p: Pending[]): Partial<Record<EditTab, "direct" | "
     out[tab] = out[tab] === "recreate" || c.kind === "recreate" ? "recreate" : "direct";
   }
   return out;
+}
+
+/**
+ * Correcciones propuestas por la auditoría (E3, D-095) aplicadas al borrador:
+ * puertos solo en 127.0.0.1 y carpetas en solo lectura. Los límites de CPU y
+ * memoria los elige el usuario: se abre la pestaña de recursos. Nada se aplica
+ * a Docker hasta revisar y confirmar.
+ */
+export function applyAuditFixes(r: EditRequest, fixes: AuditFix[]): { request: EditRequest; tab: EditTab | null; applied: number; resources: boolean } {
+  const request: EditRequest = structuredClone(r);
+  let applied = 0;
+  let tab: EditTab | null = null;
+  let resources = false;
+  for (const f of fixes) {
+    if (f.kind === "portLocalhost") {
+      for (const p of request.ports) {
+        const sameHost = f.hostPort === "" || String(p.hostPort ?? "") === f.hostPort;
+        if (p.containerPort === f.containerPort && p.protocol === f.protocol && sameHost && (p.hostIp === "" || p.hostIp === "0.0.0.0" || p.hostIp === "::")) {
+          p.hostIp = "127.0.0.1";
+          applied++;
+          tab ??= "ports";
+        }
+      }
+    } else if (f.kind === "mountReadOnly") {
+      for (const m of request.mounts) {
+        if (m.target === f.target && !m.readOnly) {
+          m.readOnly = true;
+          applied++;
+          tab ??= "storage";
+        }
+      }
+    } else {
+      resources = true;
+    }
+  }
+  // Se abre la pestaña de un cambio ya hecho; si solo faltan límites, Recursos.
+  return { request, tab: tab ?? (resources ? "resources" : null), applied, resources };
 }

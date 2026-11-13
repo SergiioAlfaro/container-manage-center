@@ -91,6 +91,11 @@ import type { RemovalResult } from "@/shared/ipc/bindings/RemovalResult";
 import type { SystemInfo } from "@/shared/ipc/bindings/SystemInfo";
 import type { UpdateCheck } from "@/shared/ipc/bindings/UpdateCheck";
 import type { UpdateOutcome } from "@/shared/ipc/bindings/UpdateOutcome";
+import type { AuditEvent } from "@/shared/ipc/bindings/AuditEvent";
+import type { AuditReport } from "@/shared/ipc/bindings/AuditReport";
+import type { AuditRequest } from "@/shared/ipc/bindings/AuditRequest";
+import type { AuditSummary } from "@/shared/ipc/bindings/AuditSummary";
+import type { VulnTool } from "@/shared/ipc/bindings/VulnTool";
 
 export function updateCheck(over: Partial<UpdateCheck> = {}): UpdateCheck {
   return {
@@ -1070,6 +1075,13 @@ export const api = {
   updatesLast: vi.fn(async (): Promise<UpdateOutcome | null> => null),
   openReleasePage: vi.fn(async (_url: string) => null),
   openTerminalLink: vi.fn(async (_url: string) => null),
+  auditTools: vi.fn(async (): Promise<VulnTool[]> => []),
+  auditExportSave: vi.fn(async (_f: string, _c: string, name: string): Promise<string | null> => `/home/u/${name}`),
+  auditRunOpen: vi.fn(async (_r: AuditRequest, h: (e: AuditEvent) => void) =>
+    streams.add(h, { event: "end", report: null, error: { code: "engine.other", message: "auditoría cancelada", httpStatus: null, issues: null } }),
+  ),
+  auditHistory: vi.fn(async (): Promise<AuditSummary[]> => []),
+  auditGet: vi.fn(async (id: string): Promise<AuditReport> => auditReport({ id })),
   systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
   componentsInspect: vi.fn(async (): Promise<ComponentsReport> => componentsReport()),
   componentsPlan: vi.fn(async (packages: string[]): Promise<RemovalPlan> => removalPlan(packages)),
@@ -1091,3 +1103,37 @@ export const dockerApi = vi.fn((server: string) => {
 });
 
 export const module = { api, dockerApi, LOCAL_SERVER: "local", toCommandError: (e: unknown) => e };
+
+/** Informe de auditoría de ejemplo (E3): un contenedor peligroso, uno sin
+ *  hallazgos, un servicio de Compose y una imagen; vulnerabilidades sin analizar. */
+export function auditReport(over: Partial<AuditReport> = {}): AuditReport {
+  const web = { kind: "container" as const, id: "c0ffee0123456789", name: "web", project: null };
+  const svc = { kind: "service" as const, id: "tienda/db", name: "db", project: "tienda" };
+  const img = { kind: "image" as const, id: "sha256:aaaa", name: "viejo:1", project: null };
+  return {
+    id: "20261113T120000-abc123",
+    server: "local",
+    startedAt: "2026-11-13T12:00:00+00:00",
+    finishedAt: "2026-11-13T12:00:02+00:00",
+    request: { container: null, includeCompose: true, includeImages: true, scanVulnerabilities: false, tool: null },
+    daemon: { rootless: false, userns: false, seccomp: true, seccompProfile: "builtin", apparmor: true, selinux: false, cgroupVersion: "2" },
+    dockerVersion: "29.9.2",
+    targets: [
+      { target: web, state: "running", image: "nginx:1.27" },
+      { target: { kind: "container", id: "def", name: "seguro", project: null }, state: "running", image: "nginx:1.27" },
+      { target: svc, state: "", image: "postgres:17" },
+      { target: img, state: "", image: "viejo:1" },
+    ],
+    findings: [
+      { target: web, code: "risk.runtimeSocket", level: "critical", field: "mounts./var/run/docker.sock", key: "risk.runtimeSocket:/var/run/docker.sock", params: { level: "critical", path: "/var/run/docker.sock", target: "/var/run/docker.sock" }, fix: null },
+      { target: web, code: "risk.portAllInterfaces", level: "low", field: "ports", key: "risk.portAllInterfaces:8080", params: { level: "low", port: "8080", containerPort: "80", protocol: "tcp" }, fix: { kind: "portLocalhost", containerPort: 80, protocol: "tcp", hostPort: "8080" } },
+      { target: web, code: "audit.noMemoryLimit", level: "medium", field: "memory", key: "audit.noMemoryLimit:memory", params: { level: "medium" }, fix: { kind: "resources" } },
+      { target: svc, code: "audit.rootUser", level: "medium", field: "services.db.user", key: "audit.rootUser:user", params: { level: "medium", mapped: "false" }, fix: null },
+      { target: img, code: "audit.imageOld", level: "low", field: "created", key: "audit.imageOld:image", params: { level: "low", days: "900", created: "2024-05-01" }, fix: null },
+    ],
+    skipped: [],
+    vulnerabilities: { requested: false, tools: [], notAnalyzed: "audit.vuln.notRequested", images: [] },
+    counts: { critical: 1, high: 0, medium: 2, low: 2 },
+    ...over,
+  };
+}

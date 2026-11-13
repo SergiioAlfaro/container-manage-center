@@ -72,6 +72,10 @@
       "title": "Terminais",
       "description": "Vários terminais ao mesmo tempo em contentores em execução."
     },
+    "audit": {
+      "title": "Auditoria",
+      "description": "Reveja a segurança de contentores, imagens e projetos Compose."
+    },
     "events": {
       "title": "Eventos e registos",
       "description": "Eventos do Docker em tempo real e histórico de operações."
@@ -2828,5 +2832,188 @@
     "title": "Abrir a ligação do terminal",
     "body": "A saída do terminal contém esta ligação. Abra-a só se confiar nela: será aberta no navegador do sistema.",
     "open": "Abrir no navegador"
+  },
+  "audit": {
+    "intro": "A auditoria só lê a configuração: não altera nada. As correções são propostas em «Editar configuração», com pré-visualização e confirmação.",
+    "options": "O que auditar",
+    "scope": "Contentores",
+    "scopeAll": "Todos (em execução e parados)",
+    "includeCompose": "Projetos Compose",
+    "includeImages": "Imagens",
+    "scanVulns": "Vulnerabilidades conhecidas (Trivy ou Grype)",
+    "run": "Auditar",
+    "running": "A auditar…",
+    "cancel": "Cancelar",
+    "cancelled": "Auditoria cancelada.",
+    "failed": "Não foi possível concluir a auditoria: {{message}}",
+    "noReport": "Ainda não há nenhuma auditoria deste servidor.",
+    "progress": {
+      "containers": "Contentores {{done}} de {{total}}: {{current}}",
+      "images": "Imagens {{done}} de {{total}}: {{current}}",
+      "compose": "Projetos Compose {{done}} de {{total}}: {{current}}",
+      "vulnerabilities": "Vulnerabilidades {{done}} de {{total}}: {{current}}"
+    },
+    "summary": {
+      "title": "Resultado",
+      "meta_one": "{{date}} · {{count}} elemento auditado · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} elementos auditados · Docker {{docker}}",
+      "counts": "Constatações por nível",
+      "none": "Não há constatações no que foi auditado."
+    },
+    "filter": {
+      "level": "Nível",
+      "all": "Todos",
+      "kind": "Tipo",
+      "allKinds": "Todos os tipos",
+      "search": "Procurar por nome ou constatação",
+      "count_one": "{{count}} constatação",
+      "count_other": "{{count}} constatações",
+      "noMatches": "Nenhuma constatação corresponde ao filtro."
+    },
+    "kind": {
+      "container": "Contentor",
+      "service": "Serviço",
+      "image": "Imagem"
+    },
+    "kindPlural": {
+      "container": "Contentores",
+      "service": "Serviços Compose",
+      "image": "Imagens"
+    },
+    "project": "projeto {{name}}",
+    "propose_one": "Propor {{count}} correção",
+    "propose_other": "Propor {{count}} correções",
+    "proposeHint": "Abre «Editar configuração» com as alterações propostas. Nada é aplicado até as rever e confirmar.",
+    "clean_one": "Sem constatações: {{names}}.",
+    "clean_other": "Sem constatações ({{count}}): {{names}}.",
+    "finding": {
+      "why": "Porque é importante",
+      "fix": "Recomendação"
+    },
+    "check": {
+      "rootUser": "O processo principal é executado como root.",
+      "writableRootfs": "O sistema de ficheiros do contentor pode ser alterado.",
+      "noMemoryLimit": "Sem limite de memória.",
+      "noCpuLimit": "Sem limite de CPU.",
+      "noPidsLimit": "Sem limite de processos.",
+      "noNewPrivileges": "Sem a opção no-new-privileges.",
+      "imageOld": "A imagem tem {{days}} dias (criada a {{created}}).",
+      "imageRootUser": "A imagem é executada como root por predefinição."
+    },
+    "why": {
+      "runtimeSocket": "Com o socket é possível criar um contentor privilegiado e controlar todo o computador.",
+      "hostRoot": "O contentor pode ler e, com escrita, alterar qualquer ficheiro do computador.",
+      "credentials": "Expõe palavras-passe, chaves ou tokens do computador ou dos seus utilizadores.",
+      "systemDir": "Permite ler ou alterar a configuração do computador.",
+      "systemBinaries": "Permite substituir programas ou bibliotecas do computador.",
+      "capability": "Cada capacidade adicionada alarga o que o contentor pode fazer com o núcleo.",
+      "privileged": "Sem isolamento: dispositivos, núcleo e todas as capacidades.",
+      "networkHost": "Vê todos os serviços do computador, também os que só escutam em 127.0.0.1.",
+      "hostNamespace": "Quebra parte do isolamento entre o contentor e o computador.",
+      "securityOpt": "Desativa uma proteção do núcleo que limita o que pode fazer um processo comprometido.",
+      "device": "Acesso direto ao dispositivo, sem as permissões dos ficheiros.",
+      "cgroupParent": "Os limites de recursos deixam de ser geridos como nos outros contentores.",
+      "portAllInterfaces": "Outros computadores da rede podem ligar-se e, com o Docker, a firewall normalmente não o impede.",
+      "rootUser": "Se o processo for comprometido, o atacante é root dentro do contentor e tem mais facilidade em sair. Com Docker rootless ou userns-remap o risco é menor.",
+      "writableRootfs": "Um atacante pode deixar programas ou alterar a configuração dentro do contentor.",
+      "noMemoryLimit": "Uma falha ou um ataque pode consumir toda a memória do computador.",
+      "noCpuLimit": "Um processo pode ocupar toda a CPU e tornar o resto mais lento.",
+      "noPidsLimit": "Uma «fork bomb» pode esgotar os processos do computador.",
+      "noNewPrivileges": "Os programas com setuid podem ganhar privilégios dentro do contentor.",
+      "imageOld": "Uma imagem antiga costuma ter vulnerabilidades já corrigidas em versões novas.",
+      "imageRootUser": "Os contentores criados com ela são executados como root, a menos que se indique outro utilizador. Com Docker rootless ou userns-remap o risco é menor."
+    },
+    "fix": {
+      "runtimeSocket": "Retire o socket. Se for mesmo necessário, use um proxy do socket com permissões limitadas ou Docker rootless.",
+      "hostRoot": "Monte só a pasta necessária, só de leitura se possível.",
+      "credentials": "Monte só o ficheiro necessário, ou passe o segredo com Docker secrets.",
+      "systemDir": "Monte só o necessário, só de leitura.",
+      "systemBinaries": "Monte-o só de leitura ou não o monte.",
+      "capability": "Retire a capacidade se não for precisa; comece por --cap-drop ALL e adicione só as imprescindíveis.",
+      "privileged": "Retire --privileged e adicione só as capacidades ou dispositivos necessários.",
+      "networkHost": "Use uma rede do Docker e publique só as portas necessárias.",
+      "hostNamespace": "Retire a opção a menos que o contentor precise mesmo dela (p. ex. ferramentas de diagnóstico).",
+      "securityOpt": "Retire a opção; se um perfil bloquear algo, crie um perfil à medida em vez de o desativar.",
+      "device": "Passe só o dispositivo necessário, ou nenhum.",
+      "cgroupParent": "Retire cgroup_parent a menos que gira os grupos de controlo à mão.",
+      "portAllInterfaces": "Se só o usa neste computador, publique-o em 127.0.0.1.",
+      "rootUser": "Indique um utilizador sem privilégios (--user, ou user: no Compose) ou use uma imagem que já o tenha.",
+      "writableRootfs": "Use --read-only (read_only: true) com um tmpfs ou um volume para o que tiver de escrever.",
+      "noMemoryLimit": "Defina um limite de memória (--memory ou mem_limit).",
+      "noCpuLimit": "Defina um limite de CPU (--cpus ou cpus).",
+      "noPidsLimit": "Defina um limite de processos (--pids-limit ou pids_limit).",
+      "noNewPrivileges": "Adicione --security-opt no-new-privileges:true (ou security_opt no Compose).",
+      "imageOld": "Transfira ou construa uma versão recente da imagem e volte a criar o contentor.",
+      "imageRootUser": "Use uma imagem com um utilizador sem privilégios (USER no Dockerfile) ou indique --user ao criar o contentor."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "sim",
+      "no": "não"
+    },
+    "vuln": {
+      "title": "Vulnerabilidades",
+      "tool": "{{name}} {{version}} com a base de {{date}}",
+      "toolNotReady": "{{name}} {{version}}: {{reason}}",
+      "unknownDate": "data desconhecida",
+      "notAnalyzed": "Não analisado: {{reason}}",
+      "notAnalyzedImage": "Não analisado: {{reason}}",
+      "noneKnown": "O {{tool}} não encontra vulnerabilidades conhecidas na sua base de {{date}}. Isso não garante que não existam.",
+      "found": "{{tool}} (base de {{date}}): {{critical}} críticas, {{high}} altas, {{medium}} médias, {{low}} baixas e {{unknown}} sem classificação.",
+      "failed": "A análise com o {{tool}} não terminou: {{message}}",
+      "list_one": "Ver a vulnerabilidade mais grave",
+      "list_other": "Ver as {{count}} mais graves",
+      "id": "Identificador",
+      "package": "Pacote",
+      "severity": "Gravidade",
+      "fixed": "Corrigida em",
+      "noFix": "sem correção",
+      "notRequested": "a análise não foi pedida.",
+      "remote": "só são analisadas imagens do Docker deste computador.",
+      "noTool": "não há Trivy nem Grype instalados neste computador (a aplicação não os instala).",
+      "noDatabase": "a ferramenta não tem a sua base de vulnerabilidades transferida (a aplicação não a transfere).",
+      "toolError": "a ferramenta falhou ({{message}}).",
+      "unknownTool": "ferramenta não suportada.",
+      "badImage": "referência de imagem inválida."
+    },
+    "skipped": {
+      "title": "Não auditado",
+      "composeUnavailable": "O Docker Compose não está disponível: os projetos não foram revistos.",
+      "noFiles": "o projeto não tem ficheiros Compose conhecidos.",
+      "composeConfig": "não foi possível ler a sua configuração."
+    },
+    "history": {
+      "title": "Auditorias anteriores",
+      "empty": "Ainda não há auditorias guardadas deste servidor.",
+      "one": "Contentor {{name}}",
+      "all_one": "{{count}} elemento",
+      "all_other": "{{count}} elementos",
+      "open": "Ver",
+      "shown": "Mostrada acima"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Relatório guardado em {{path}} (só o utilizador o pode ler).",
+      "error": "Não foi possível guardar o relatório: {{message}}",
+      "title": "Auditoria de segurança · {{server}}",
+      "date": "Data",
+      "scope": "Âmbito",
+      "scopeAll": "todos os contentores",
+      "scopeOne": "contentor {{name}}",
+      "readOnly": "A auditoria só leu a configuração; não alterou nada. Os segredos estão ocultos."
+    },
+    "proposal": {
+      "banner_one": "A auditoria propôs {{count}} alteração. Reveja-a antes de a aplicar: ainda não foi alterado nada.",
+      "banner_other": "A auditoria propôs {{count}} alterações. Reveja-as antes de as aplicar: ainda não foi alterado nada.",
+      "resources": "Indique também limites de CPU e memória em «Recursos»."
+    }
   }
 }

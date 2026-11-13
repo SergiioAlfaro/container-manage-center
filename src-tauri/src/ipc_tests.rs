@@ -2961,3 +2961,205 @@ fn only_the_minimal_tauri_permissions_are_granted() {
         );
     }
 }
+
+// ------------------------------------------------------------- E3 (1.3.0)
+
+/// E3: historial vacío, auditoría inexistente y servidor desconocido.
+#[test]
+fn audit_history_and_get_without_docker() {
+    let h = harness();
+    assert_eq!(invoke(&h, "audit_history", json!({})).unwrap(), json!([]));
+    let e = invoke(&h, "audit_get", json!({ "id": "20260101T000000-abc" })).unwrap_err();
+    assert_eq!(e["code"], "audit.notFound", "{e}");
+    let e = invoke_exact(&h, "audit_history", json!({ "server": "srv-0123abcd" })).unwrap_err();
+    assert_eq!(e["code"], "server.unknown", "{e}");
+    // El informe se guarda y se envía con los secretos ocultos.
+    let mut rep: dcc_engine::audit::AuditReport = serde_json::from_value(json!({
+        "id": "x", "server": "local", "startedAt": "", "finishedAt": "",
+        "request": { "container": null, "includeCompose": false, "includeImages": false, "scanVulnerabilities": false, "tool": null },
+        "daemon": { "rootless": false, "userns": false, "seccomp": true, "seccompProfile": null, "apparmor": false, "selinux": false, "cgroupVersion": "2" },
+        "dockerVersion": null,
+        "targets": [{ "target": { "kind": "image", "id": "i", "name": "registro.local/app:1", "project": null }, "state": "", "image": "https://u:clave-e3@registro.local/app" }],
+        "findings": [{ "target": { "kind": "container", "id": "c", "name": "web", "project": null }, "code": "risk.systemDir", "level": "high", "field": "mounts./x", "key": "k",
+                       "params": { "path": "/srv/DB_PASS=clave-e3" }, "fix": null }],
+        "skipped": [{ "target": { "kind": "service", "id": "p", "name": "", "project": "p" }, "reason": "audit.skipped.composeConfig", "detail": "postgres://app:clave-e3@db/app" }],
+        "vulnerabilities": { "requested": false, "tools": [], "notAnalyzed": "audit.vuln.notRequested", "images": [] },
+        "counts": {}
+    }))
+    .unwrap();
+    crate::commands::audit::redact_report(&mut rep);
+    let text = serde_json::to_string(&rep).unwrap();
+    assert!(!text.contains("clave-e3"), "{text}");
+}
+
+/// E3 contra Docker real: la auditoría por IPC encuentra el socket de Docker
+/// montado, se guarda en el historial (0600) del servidor, se puede abrir y
+/// **no cambia nada**: durante la auditoría solo hay lecturas en el panel de
+/// actividad.
+#[test]
+fn live_e3_audit_via_ipc_is_read_only_and_saved() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let state_dir = dir.path().join("estado");
+    std::env::set_var("DCC_STATE_DIR", &state_dir);
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    std::env::remove_var("DCC_STATE_DIR");
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let images = invoke(&h, "images_list", json!({})).unwrap();
+    let image = images
+        .as_array()
+        .unwrap()
+        .iter()
+        .find_map(|i| {
+            let tag = i["repoTags"].as_array()?.first()?.as_str()?.to_owned();
+            let d = invoke(&h, "image_details", json!({ "reference": i["id"] })).ok()?;
+            let runnable = d["command"].as_array().is_some_and(|c| !c.is_empty())
+                || d["entrypoint"].as_array().is_some_and(|c| !c.is_empty());
+            runnable.then_some(tag)
+        })
+        .expect("hace falta una imagen local con etiqueta y comando");
+    let socket = "/var/run/docker.sock";
+    let name = format!("dcc-test-e3-{}", std::process::id());
+    let spec = json!({
+        "name": name, "image": image,
+        "labels": [{ "key": "dcc.test", "value": "true" }],
+        "mounts": [{ "kind": "bind", "source": socket, "target": "/var/run/docker.sock", "readOnly": true }],
+        "acceptedRisks": [format!("risk.runtimeSocket:{socket}")]
+    });
+    let r = invoke(
+        &h,
+        "container_create",
+        json!({ "spec": spec, "start": false }),
+    )
+    .unwrap();
+    let id = r["id"].as_str().unwrap().to_owned();
+    struct Cleanup<'a>(&'a Harness, String, String);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = invoke(
+                self.0,
+                "container_remove",
+                json!({ "id": self.1, "name": self.2, "force": true, "volumes": true, "confirmed": true }),
+            );
+        }
+    }
+    let _c = Cleanup(&h, id.clone(), name.clone());
+    let before = invoke(&h, "container_inspect", json!({ "id": id, "name": name })).unwrap();
+    let t0 = chrono::Utc::now();
+
+    let ended: Arc<Mutex<Option<serde_json::Value>>> = Default::default();
+    let progress = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let (e2, p2) = (ended.clone(), progress.clone());
+    let ch = tauri::ipc::Channel::<crate::commands::audit::AuditEvent>::new(move |body| {
+        if let tauri::ipc::InvokeResponseBody::Json(j) = body {
+            let v: serde_json::Value = serde_json::from_str(&j).unwrap();
+            if v["event"] == "end" {
+                *e2.lock().unwrap() = Some(v);
+            } else {
+                p2.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+        }
+        Ok(())
+    });
+    let request: dcc_engine::audit::AuditRequest = serde_json::from_value(json!({
+        "container": null, "includeCompose": true, "includeImages": true, "scanVulnerabilities": true, "tool": null
+    }))
+    .unwrap();
+    tauri::async_runtime::block_on(crate::commands::audit::audit_run_open(
+        h.app.state::<AppState>(),
+        "local".into(),
+        request,
+        ch,
+    ))
+    .unwrap();
+    wait_for("fin de la auditoría", || ended.lock().unwrap().is_some());
+    let end = ended.lock().unwrap().clone().unwrap();
+    assert!(end["error"].is_null(), "{end}");
+    let report = &end["report"];
+    assert!(
+        progress.load(std::sync::atomic::Ordering::SeqCst) > 0,
+        "hubo progreso"
+    );
+    let mine: Vec<_> = report["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["target"]["name"] == name.as_str())
+        .collect();
+    assert!(
+        mine.iter()
+            .any(|f| f["code"] == "risk.runtimeSocket" && f["level"] == "critical"),
+        "{mine:?}"
+    );
+    // Sin herramienta de vulnerabilidades: «no analizado», nunca 0.
+    if dcc_engine::sys::find_executable("trivy").is_none()
+        && dcc_engine::sys::find_executable("grype").is_none()
+    {
+        assert_eq!(
+            report["vulnerabilities"]["notAnalyzed"],
+            "audit.vuln.noTool"
+        );
+    }
+
+    // Historial del servidor (0600) y lectura.
+    let hist = invoke(&h, "audit_history", json!({})).unwrap();
+    assert_eq!(hist[0]["id"], report["id"]);
+    let got = invoke(&h, "audit_get", json!({ "id": report["id"] })).unwrap();
+    assert_eq!(&got, report);
+    let file = state_dir.join("auditorias.jsonl");
+    use std::os::unix::fs::PermissionsExt;
+    assert_eq!(
+        std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+
+    // Solo lectura: el contenedor no cambia y las operaciones de la
+    // auditoría son lecturas (GET) o la propia auditoría.
+    let after = invoke(&h, "container_inspect", json!({ "id": id, "name": name })).unwrap();
+    // `raw` es el JSON de Docker tal cual: el orden de sus mapas cambia entre
+    // llamadas (Docker 26), así que se compara ya interpretado.
+    let norm = |mut v: serde_json::Value| {
+        let raw: serde_json::Value = serde_json::from_str(v["raw"].as_str().unwrap()).unwrap();
+        v["raw"] = raw;
+        v
+    };
+    assert_eq!(norm(before), norm(after), "el contenedor no cambia");
+    let ops = invoke(&h, "activity_list", json!({})).unwrap();
+    let ops = ops.as_array().unwrap();
+    let during: Vec<_> = ops
+        .iter()
+        .filter(|o| {
+            chrono::DateTime::parse_from_rfc3339(o["startedAt"].as_str().unwrap()).unwrap() >= t0
+        })
+        .collect();
+    assert!(
+        during.iter().any(|o| o["kind"] == "audit.run"),
+        "{during:?}"
+    );
+    for o in &during {
+        let t = &o["transport"];
+        let ok = (t["via"] == "api" && t["method"] == "GET")
+            || t["via"] == "app"
+            || o["kind"] == "audit.vulnScan"
+            || (t["via"] == "cli"
+                && t["args"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|a| a == "config" || a == "version"));
+        assert!(
+            ok,
+            "operación que no es de lectura durante la auditoría: {o}"
+        );
+    }
+}

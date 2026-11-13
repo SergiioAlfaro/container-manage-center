@@ -1,5 +1,17 @@
 # Cambios
 
+## 1.3.0 — 2026-11-13 (evolución, Etapa 3: auditoría de seguridad)
+- **Auditoría de seguridad** (sección nueva en «Herramientas», D-093): revisa todos los contenedores o uno, las imágenes y los proyectos Compose del servidor elegido, también remoto, **sin cambiar nada**. Comprueba:
+  - los riesgos para el equipo (socket de Docker, montajes, capacidades, modo privilegiado, red, PID, IPC, opciones de seguridad, dispositivos y puertos);
+  - el usuario root, el sistema de archivos modificable, la falta de límites de memoria, CPU y procesos, `no-new-privileges` y las imágenes antiguas.
+
+  Cada hallazgo tiene nivel, explicación, por qué importa y recomendación. Se puede filtrar por nivel, tipo y texto.
+- **Correcciones propuestas**: abren «Editar configuración» con los cambios ya hechos en el borrador (puerto en 127.0.0.1, carpeta en solo lectura) o en la pestaña de límites. Nada se aplica sin revisar y confirmar.
+- **Vulnerabilidades con Trivy o Grype** (D-094), si están instalados y tienen su base: recuentos por gravedad y fecha de la base. La aplicación no los instala ni descarga su base. Sin ellos, o en un servidor remoto, el informe dice «No analizado», nunca «0».
+- **Historial y exportación** (D-095): las auditorías se guardan por servidor (0600) y se exportan a JSON, Markdown o HTML, sin secretos y con permisos 0600.
+- **Verificación**: `scripts/verify-evolution-1.3.0.sh`, con toda la regresión anterior y las pruebas de la auditoría contra Docker real, por IPC y por SSH.
+- **Corrección** (terminales): al cerrar una sesión cuyo programa ignora Ctrl+C, el resumen del panel de actividad podía decir que el proceso seguía en marcha aunque la aplicación ya lo había terminado. Docker 24 tarda un momento en reflejarlo; ahora se espera hasta 2 s antes de concluirlo.
+
 ## 1.2.0 — 2026-11-13 (evolución, Etapa 2: resto del endurecimiento)
 Resto de hallazgos de `docs/security/SECURITY_AUDIT.md` del plan de evolución (E2), corregidos y comprobados con pruebas.
 - **Más riesgos para el equipo** (DCC-SEC-04 y DCC-SEC-08, D-088), en crear, editar y Compose: compartir `pid`/`ipc` (alto), `userns`/`cgroup` (medio) o `uts` (bajo) con el equipo; `security_opt` que desactiva seccomp, AppArmor, SELinux o `systempaths` (alto); dispositivos (`/dev/mem` crítico, discos alto); `cgroup_parent`; y puertos publicados en todas las interfaces (aviso bajo con la sugerencia de `127.0.0.1`).

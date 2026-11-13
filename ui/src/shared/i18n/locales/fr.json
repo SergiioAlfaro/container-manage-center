@@ -72,6 +72,10 @@
       "title": "Terminaux",
       "description": "Plusieurs terminaux à la fois dans des conteneurs en cours d’exécution."
     },
+    "audit": {
+      "title": "Audit",
+      "description": "Vérifiez la sécurité des conteneurs, des images et des projets Compose."
+    },
     "events": {
       "title": "Événements et journaux",
       "description": "Événements Docker en temps réel et historique des opérations."
@@ -2828,5 +2832,188 @@
     "title": "Ouvrir le lien du terminal",
     "body": "La sortie du terminal contient ce lien. Ne l'ouvrez que si vous lui faites confiance : il s'ouvrira dans le navigateur du système.",
     "open": "Ouvrir dans le navigateur"
+  },
+  "audit": {
+    "intro": "L’audit ne fait que lire la configuration : il ne modifie rien. Les corrections sont proposées dans « Modifier la configuration », avec un aperçu et une confirmation.",
+    "options": "Que vérifier",
+    "scope": "Conteneurs",
+    "scopeAll": "Tous (en cours et arrêtés)",
+    "includeCompose": "Projets Compose",
+    "includeImages": "Images",
+    "scanVulns": "Vulnérabilités connues (Trivy ou Grype)",
+    "run": "Auditer",
+    "running": "Audit en cours…",
+    "cancel": "Annuler",
+    "cancelled": "Audit annulé.",
+    "failed": "L’audit n’a pas pu se terminer : {{message}}",
+    "noReport": "Aucun audit de ce serveur pour l’instant.",
+    "progress": {
+      "containers": "Conteneurs {{done}} sur {{total}} : {{current}}",
+      "images": "Images {{done}} sur {{total}} : {{current}}",
+      "compose": "Projets Compose {{done}} sur {{total}} : {{current}}",
+      "vulnerabilities": "Vulnérabilités {{done}} sur {{total}} : {{current}}"
+    },
+    "summary": {
+      "title": "Résultat",
+      "meta_one": "{{date}} · {{count}} élément vérifié · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} éléments vérifiés · Docker {{docker}}",
+      "counts": "Constats par niveau",
+      "none": "Aucun constat dans ce qui a été vérifié."
+    },
+    "filter": {
+      "level": "Niveau",
+      "all": "Tous",
+      "kind": "Type",
+      "allKinds": "Tous les types",
+      "search": "Rechercher par nom ou constat",
+      "count_one": "{{count}} constat",
+      "count_other": "{{count}} constats",
+      "noMatches": "Aucun constat ne correspond au filtre."
+    },
+    "kind": {
+      "container": "Conteneur",
+      "service": "Service",
+      "image": "Image"
+    },
+    "kindPlural": {
+      "container": "Conteneurs",
+      "service": "Services Compose",
+      "image": "Images"
+    },
+    "project": "projet {{name}}",
+    "propose_one": "Proposer {{count}} correction",
+    "propose_other": "Proposer {{count}} corrections",
+    "proposeHint": "Ouvre « Modifier la configuration » avec les changements proposés. Rien n’est appliqué avant votre vérification et votre confirmation.",
+    "clean_one": "Aucun constat : {{names}}.",
+    "clean_other": "Aucun constat ({{count}}) : {{names}}.",
+    "finding": {
+      "why": "Pourquoi c’est important",
+      "fix": "Recommandation"
+    },
+    "check": {
+      "rootUser": "Le processus principal s’exécute en root.",
+      "writableRootfs": "Le système de fichiers du conteneur est modifiable.",
+      "noMemoryLimit": "Aucune limite de mémoire.",
+      "noCpuLimit": "Aucune limite de CPU.",
+      "noPidsLimit": "Aucune limite de processus.",
+      "noNewPrivileges": "L’option no-new-privileges n’est pas activée.",
+      "imageOld": "L’image a {{days}} jours (créée le {{created}}).",
+      "imageRootUser": "L’image s’exécute en root par défaut."
+    },
+    "why": {
+      "runtimeSocket": "Avec le socket, on peut créer un conteneur privilégié et contrôler tout l’ordinateur.",
+      "hostRoot": "Le conteneur peut lire et, en écriture, modifier n’importe quel fichier de l’ordinateur.",
+      "credentials": "Expose des mots de passe, des clés ou des jetons de l’ordinateur ou de ses utilisateurs.",
+      "systemDir": "Permet de lire ou de modifier la configuration de l’ordinateur.",
+      "systemBinaries": "Permet de remplacer des programmes ou des bibliothèques de l’ordinateur.",
+      "capability": "Chaque capacité ajoutée étend ce que le conteneur peut faire avec le noyau.",
+      "privileged": "Aucune isolation : périphériques, noyau et toutes les capacités.",
+      "networkHost": "Il voit tous les services de l’ordinateur, même ceux qui n’écoutent que sur 127.0.0.1.",
+      "hostNamespace": "Cela supprime une partie de l’isolation entre le conteneur et l’ordinateur.",
+      "securityOpt": "Désactive une protection du noyau qui limite ce que peut faire un processus compromis.",
+      "device": "Accès direct au périphérique, sans les permissions des fichiers.",
+      "cgroupParent": "Les limites de ressources ne sont plus gérées comme pour les autres conteneurs.",
+      "portAllInterfaces": "D’autres machines du réseau peuvent se connecter, et avec Docker le pare-feu ne l’empêche généralement pas.",
+      "rootUser": "Si le processus est compromis, l’attaquant est root dans le conteneur et s’en échappe plus facilement. Avec Docker rootless ou userns-remap, le risque est moindre.",
+      "writableRootfs": "Un attaquant peut déposer des programmes ou modifier la configuration dans le conteneur.",
+      "noMemoryLimit": "Un bogue ou une attaque peut consommer toute la mémoire de l’ordinateur.",
+      "noCpuLimit": "Un processus peut occuper tout le CPU et ralentir le reste.",
+      "noPidsLimit": "Une « fork bomb » peut épuiser les processus de l’ordinateur.",
+      "noNewPrivileges": "Les programmes setuid peuvent obtenir des privilèges dans le conteneur.",
+      "imageOld": "Une image ancienne contient souvent des vulnérabilités déjà corrigées dans les versions récentes.",
+      "imageRootUser": "Les conteneurs créés à partir d’elle s’exécutent en root sauf si un autre utilisateur est indiqué. Avec Docker rootless ou userns-remap, le risque est moindre."
+    },
+    "fix": {
+      "runtimeSocket": "Retirez le socket. S’il est vraiment nécessaire, utilisez un proxy du socket aux droits limités ou Docker rootless.",
+      "hostRoot": "Montez seulement le dossier nécessaire, en lecture seule si possible.",
+      "credentials": "Montez seulement le fichier nécessaire, ou transmettez le secret avec Docker secrets.",
+      "systemDir": "Montez seulement le nécessaire, en lecture seule.",
+      "systemBinaries": "Montez-le en lecture seule ou ne le montez pas.",
+      "capability": "Retirez la capacité si elle n’est pas utile ; partez de --cap-drop ALL et n’ajoutez que l’indispensable.",
+      "privileged": "Retirez --privileged et n’ajoutez que les capacités ou périphériques nécessaires.",
+      "networkHost": "Utilisez un réseau Docker et ne publiez que les ports nécessaires.",
+      "hostNamespace": "Retirez l’option sauf si le conteneur en a vraiment besoin (p. ex. outils de diagnostic).",
+      "securityOpt": "Retirez l’option ; si un profil bloque quelque chose, écrivez un profil adapté au lieu de le désactiver.",
+      "device": "Ne transmettez que le périphérique nécessaire, ou aucun.",
+      "cgroupParent": "Retirez cgroup_parent sauf si vous gérez vous-même les groupes de contrôle.",
+      "portAllInterfaces": "Si vous ne l’utilisez que sur cet ordinateur, publiez-le sur 127.0.0.1.",
+      "rootUser": "Indiquez un utilisateur sans privilèges (--user, ou user: dans Compose) ou utilisez une image qui en a déjà un.",
+      "writableRootfs": "Utilisez --read-only (read_only: true) avec un tmpfs ou un volume pour ce qui doit être écrit.",
+      "noMemoryLimit": "Fixez une limite de mémoire (--memory ou mem_limit).",
+      "noCpuLimit": "Fixez une limite de CPU (--cpus ou cpus).",
+      "noPidsLimit": "Fixez une limite de processus (--pids-limit ou pids_limit).",
+      "noNewPrivileges": "Ajoutez --security-opt no-new-privileges:true (ou security_opt dans Compose).",
+      "imageOld": "Téléchargez ou construisez une version récente de l’image et recréez le conteneur.",
+      "imageRootUser": "Utilisez une image avec un utilisateur sans privilèges (USER dans le Dockerfile) ou indiquez --user à la création du conteneur."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "oui",
+      "no": "non"
+    },
+    "vuln": {
+      "title": "Vulnérabilités",
+      "tool": "{{name}} {{version}} avec la base du {{date}}",
+      "toolNotReady": "{{name}} {{version}} : {{reason}}",
+      "unknownDate": "date inconnue",
+      "notAnalyzed": "Non analysé : {{reason}}",
+      "notAnalyzedImage": "Non analysé : {{reason}}",
+      "noneKnown": "{{tool}} ne trouve aucune vulnérabilité connue dans sa base du {{date}}. Cela ne garantit pas qu’il n’y en a pas.",
+      "found": "{{tool}} (base du {{date}}) : {{critical}} critiques, {{high}} élevées, {{medium}} moyennes, {{low}} faibles et {{unknown}} non classées.",
+      "failed": "L’analyse avec {{tool}} ne s’est pas terminée : {{message}}",
+      "list_one": "Voir la vulnérabilité la plus grave",
+      "list_other": "Voir les {{count}} plus graves",
+      "id": "Identifiant",
+      "package": "Paquet",
+      "severity": "Gravité",
+      "fixed": "Corrigée dans",
+      "noFix": "pas de correctif",
+      "notRequested": "l’analyse n’a pas été demandée.",
+      "remote": "seules les images du Docker de cet ordinateur sont analysées.",
+      "noTool": "ni Trivy ni Grype n’est installé sur cet ordinateur (l’application ne les installe pas).",
+      "noDatabase": "l’outil n’a pas téléchargé sa base de vulnérabilités (l’application ne la télécharge pas).",
+      "toolError": "l’outil a échoué ({{message}}).",
+      "unknownTool": "outil non pris en charge.",
+      "badImage": "référence d’image non valide."
+    },
+    "skipped": {
+      "title": "Non vérifié",
+      "composeUnavailable": "Docker Compose n’est pas disponible : les projets n’ont pas été vérifiés.",
+      "noFiles": "le projet n’a pas de fichiers Compose connus.",
+      "composeConfig": "sa configuration n’a pas pu être lue."
+    },
+    "history": {
+      "title": "Audits précédents",
+      "empty": "Aucun audit de ce serveur n’a encore été enregistré.",
+      "one": "Conteneur {{name}}",
+      "all_one": "{{count}} élément",
+      "all_other": "{{count}} éléments",
+      "open": "Voir",
+      "shown": "Affiché ci-dessus"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Rapport enregistré dans {{path}} (vous seul pouvez le lire).",
+      "error": "Le rapport n’a pas pu être enregistré : {{message}}",
+      "title": "Audit de sécurité · {{server}}",
+      "date": "Date",
+      "scope": "Portée",
+      "scopeAll": "tous les conteneurs",
+      "scopeOne": "conteneur {{name}}",
+      "readOnly": "L’audit a seulement lu la configuration ; il n’a rien modifié. Les secrets sont masqués."
+    },
+    "proposal": {
+      "banner_one": "L’audit a proposé {{count}} changement. Vérifiez-le avant de l’appliquer : rien n’a encore été modifié.",
+      "banner_other": "L’audit a proposé {{count}} changements. Vérifiez-les avant de les appliquer : rien n’a encore été modifié.",
+      "resources": "Indiquez aussi des limites de CPU et de mémoire dans « Ressources »."
+    }
   }
 }

@@ -1148,3 +1148,31 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 * **ESLint** (autorizado por el propietario, configuración mínima): `eslint`, `@eslint/js`, `typescript-eslint` y `eslint-plugin-react-hooks`, con versión exacta. Reglas recomendadas más `no-eval`, `no-implied-eval`, `no-new-func`, `no-script-url` y la prohibición de `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`dangerouslySetInnerHTML` (desactivadas solo en las pruebas, que las usan a propósito). `exhaustive-deps` queda como aviso (13 avisos existentes, sin cambiar el comportamiento ahora). `minimatch` se fija en 11.0.8 (`overrides`) porque la versión que traen ESLint 10 y typescript-eslint tiene un aviso moderado (GHSA-g3hv-75wg-m249); solo afecta a desarrollo.
 * **SHA256SUMS**: `scripts/release-sums.sh` lo genera (rutas relativas, también `compat/`). `install.sh` comprueba la suma del paquete elegido si encuentra `SHA256SUMS` junto a él o junto al script: si no coincide o no aparece, no instala; sin `SHA256SUMS`, avisa. `--no-verify` lo omite.
 * **Pendiente del propietario**: la **firma** GPG de `SHA256SUMS` necesita su clave y dónde publicar la pública. Hasta entonces, las sumas detectan un paquete dañado o cambiado, pero no a alguien que cambie a la vez el paquete y `SHA256SUMS`.
+
+## Evolución · Etapa 3: auditoría de seguridad (1.3.0)
+
+### D-093 · Motor de auditoría: comprobaciones de solo lectura sobre `risk`
+* **Sección nueva** «Auditoría» en «Herramientas». Analiza todos los contenedores (en ejecución y detenidos) o uno solo, las imágenes y los proyectos Compose conocidos (`docker compose config --format json`, sin desplegar nada), en el servidor elegido (este equipo o uno remoto por SSH).
+* **Solo lectura**: `docker info`, listas, `inspect` de contenedores e imágenes y `compose config`/`version`. Cada lectura real queda en el panel de actividad, más una operación «Auditoría de seguridad (solo lectura)». Las pruebas comprueban con un proxy del socket que no llega ninguna petición que no sea GET o HEAD y que los contenedores quedan igual.
+* **Un único lugar para los riesgos**: los riesgos para el equipo son las reglas de `dcc-engine::risk` (D-086, D-088), las mismas que al crear, editar y desplegar. La auditoría añade el **endurecimiento**: usuario root (medio; bajo con Docker rootless o `userns-remap`), sistema de archivos modificable (bajo), sin límite de memoria (medio), de CPU (bajo) o de procesos (bajo), sin `no-new-privileges` (bajo) e imagen de más de 365 días (bajo). En las imágenes: usuario root por defecto y antigüedad.
+* **Sin falsos positivos conocidos**:
+  * un contenedor privilegiado no se marca además por AppArmor;
+  * con cgroup v1 el espacio de cgroups del equipo es el valor por defecto de Docker y no se marca (con v2 sí, porque se pidió);
+  * `seccomp=unconfined`, `apparmor=unconfined` y `label=disable` solo cuentan si el daemon usa esa protección (Docker añade `label=disable` por su cuenta con `--pid host`);
+  * las fechas de imagen anteriores a 2000 (compilaciones reproducibles, 1-1-1970) no se evalúan.
+  Un contenedor legítimo y endurecido no tiene ningún hallazgo (prueba real).
+* **Cada hallazgo** lleva código, nivel (crítico, alto, medio, bajo), explicación con sus datos, por qué importa y recomendación, traducidos en los ocho idiomas.
+* **Correcciones**: la auditoría no cambia nada. Para un contenedor se pueden «proponer correcciones», que abren «Editar configuración» (D-070) con el borrador ya cambiado: puertos en `127.0.0.1` y carpetas en solo lectura; para los límites se abre la pestaña Recursos. Nada se aplica hasta revisar y confirmar, con la vista previa y la recreación segura de siempre. Las demás recomendaciones (quitar `--privileged`, capacidades, usuario…) son texto: «Editar configuración» no edita esos campos.
+
+### D-094 · Vulnerabilidades con Trivy o Grype, sin instalarlos ni actualizarlos
+* **Se detectan, nunca se instalan** (decisión de E0, §4.1): si `trivy` o `grype` están en el `PATH`, se muestran su versión y la fecha de su base (`trivy version --format json`, `grype version`/`grype db status -o json`).
+* **Sin red**: Trivy con `--skip-db-update --skip-java-db-update --offline-scan`; Grype con `GRYPE_DB_AUTO_UPDATE=false` y `GRYPE_CHECK_FOR_APP_UPDATE=false`. La aplicación nunca descarga ni actualiza la base: si falta, el informe lo dice.
+* **Nunca «sin vulnerabilidades» sin análisis completo**: cada imagen es `done` (con los recuentos por gravedad, las 50 más graves y la fecha de la base), `notAnalyzed` (sin herramienta, sin base, servidor remoto, referencia no válida) o `failed` (la herramienta falló, salida incompleta, tiempo agotado o cancelada). Incluso con 0, el texto dice que eso no garantiza que no haya ninguna.
+* **Solo el Docker de este equipo**: las herramientas leen las imágenes por el socket local (`DOCKER_HOST`/`--docker-host` con el socket de la conexión). En un servidor remoto se informa «no analizado».
+* **Ejecución**: sin shell, argumentos separados, `--` antes de la imagen, 15 minutos como máximo por imagen, cancelable, y en el panel de actividad sin su salida.
+* **No verificable aquí**: este entorno no tiene Trivy ni Grype ni red para sus bases; el análisis se prueba con herramientas simuladas que reproducen su salida JSON. Trivy v0.69.4 fue una versión maliciosa (CVE-2026-33634): la documentación recomienda una versión fijada y con firma verificada.
+
+### D-095 · Historial por servidor y exportación
+* **Historial**: cada auditoría terminada se guarda en `auditorias.jsonl` (carpeta de estado, 0600, las 200 últimas) con el servidor. La sección muestra solo las del servidor elegido y permite abrirlas.
+* **Secretos**: antes de guardar o enviar el informe, los nombres, parámetros, detalles y mensajes pasan por `redact` (D-085).
+* **Exportación** a JSON, Markdown y HTML en el idioma de la interfaz. El contenido se genera en la interfaz (con su propia ocultación de secretos y el HTML escapado). Rust vuelve a ocultar los secretos, pide la ruta con el diálogo nativo (la interfaz no puede indicar una ruta) y escribe el archivo con permisos 0600 de forma atómica. No hace falta ningún permiso nuevo de Tauri.

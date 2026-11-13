@@ -72,6 +72,10 @@
       "title": "Terminals",
       "description": "Several terminals at once in running containers."
     },
+    "audit": {
+      "title": "Audit",
+      "description": "Review the security of containers, images and Compose projects."
+    },
     "events": {
       "title": "Events and logs",
       "description": "Real-time Docker events and operation history."
@@ -2828,5 +2832,188 @@
     "title": "Open terminal link",
     "body": "The terminal output contains this link. Open it only if you trust it: it will open in the system browser.",
     "open": "Open in browser"
+  },
+  "audit": {
+    "intro": "The audit only reads the configuration: it changes nothing. Fixes are proposed in “Edit configuration”, with a preview and confirmation.",
+    "options": "What to audit",
+    "scope": "Containers",
+    "scopeAll": "All (running and stopped)",
+    "includeCompose": "Compose projects",
+    "includeImages": "Images",
+    "scanVulns": "Known vulnerabilities (Trivy or Grype)",
+    "run": "Audit",
+    "running": "Auditing…",
+    "cancel": "Cancel",
+    "cancelled": "Audit cancelled.",
+    "failed": "The audit could not be completed: {{message}}",
+    "noReport": "There is no audit of this server yet.",
+    "progress": {
+      "containers": "Containers {{done}} of {{total}}: {{current}}",
+      "images": "Images {{done}} of {{total}}: {{current}}",
+      "compose": "Compose projects {{done}} of {{total}}: {{current}}",
+      "vulnerabilities": "Vulnerabilities {{done}} of {{total}}: {{current}}"
+    },
+    "summary": {
+      "title": "Result",
+      "meta_one": "{{date}} · {{count}} item audited · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} items audited · Docker {{docker}}",
+      "counts": "Findings by level",
+      "none": "No findings in what was audited."
+    },
+    "filter": {
+      "level": "Level",
+      "all": "All",
+      "kind": "Type",
+      "allKinds": "All types",
+      "search": "Search by name or finding",
+      "count_one": "{{count}} finding",
+      "count_other": "{{count}} findings",
+      "noMatches": "No finding matches the filter."
+    },
+    "kind": {
+      "container": "Container",
+      "service": "Service",
+      "image": "Image"
+    },
+    "kindPlural": {
+      "container": "Containers",
+      "service": "Compose services",
+      "image": "Images"
+    },
+    "project": "project {{name}}",
+    "propose_one": "Propose {{count}} fix",
+    "propose_other": "Propose {{count}} fixes",
+    "proposeHint": "Opens “Edit configuration” with the proposed changes. Nothing is applied until you review and confirm.",
+    "clean_one": "No findings: {{names}}.",
+    "clean_other": "No findings ({{count}}): {{names}}.",
+    "finding": {
+      "why": "Why it matters",
+      "fix": "Recommendation"
+    },
+    "check": {
+      "rootUser": "The main process runs as root.",
+      "writableRootfs": "The container's file system is writable.",
+      "noMemoryLimit": "No memory limit.",
+      "noCpuLimit": "No CPU limit.",
+      "noPidsLimit": "No process limit.",
+      "noNewPrivileges": "The no-new-privileges option is not set.",
+      "imageOld": "The image is {{days}} days old (created on {{created}}).",
+      "imageRootUser": "The image runs as root by default."
+    },
+    "why": {
+      "runtimeSocket": "With the socket, anyone can create a privileged container and control the whole host.",
+      "hostRoot": "The container can read, and with write access change, any file on the host.",
+      "credentials": "It exposes passwords, keys or tokens of the host or its users.",
+      "systemDir": "It lets the container read or change the host configuration.",
+      "systemBinaries": "It lets the container replace host programs or libraries.",
+      "capability": "Each added capability extends what the container can do with the kernel.",
+      "privileged": "No isolation: devices, kernel and every capability.",
+      "networkHost": "It sees every service on the host, including those only listening on 127.0.0.1.",
+      "hostNamespace": "It breaks part of the isolation between the container and the host.",
+      "securityOpt": "It turns off a kernel protection that limits what a compromised process can do.",
+      "device": "Direct access to the device, bypassing file permissions.",
+      "cgroupParent": "Resource limits are no longer managed like the other containers.",
+      "portAllInterfaces": "Other machines on the network can connect, and with Docker the firewall usually does not block it.",
+      "rootUser": "If the process is compromised, the attacker is root inside the container and escaping is easier. With rootless Docker or userns-remap the risk is lower.",
+      "writableRootfs": "An attacker can drop programs or change the configuration inside the container.",
+      "noMemoryLimit": "A bug or an attack can use up all the host's memory.",
+      "noCpuLimit": "One process can take all the CPU and slow everything else down.",
+      "noPidsLimit": "A fork bomb can exhaust the host's processes.",
+      "noNewPrivileges": "setuid programs can gain privileges inside the container.",
+      "imageOld": "An old image usually has vulnerabilities that newer versions have fixed.",
+      "imageRootUser": "Containers created from it run as root unless another user is given. With rootless Docker or userns-remap the risk is lower."
+    },
+    "fix": {
+      "runtimeSocket": "Remove the socket. If it is really needed, use a socket proxy with limited permissions or rootless Docker.",
+      "hostRoot": "Mount only the folder it needs, read-only if possible.",
+      "credentials": "Mount only the specific file it needs, or pass the secret with Docker secrets.",
+      "systemDir": "Mount only what is needed, read-only.",
+      "systemBinaries": "Mount it read-only or not at all.",
+      "capability": "Remove the capability if it is not needed; start from --cap-drop ALL and add only the essential ones.",
+      "privileged": "Remove --privileged and add only the capabilities or devices it needs.",
+      "networkHost": "Use a Docker network and publish only the ports you need.",
+      "hostNamespace": "Remove the option unless the container really needs it (e.g. diagnostic tools).",
+      "securityOpt": "Remove the option; if a profile blocks something, write a custom profile instead of turning it off.",
+      "device": "Pass only the specific device it needs, or none.",
+      "cgroupParent": "Remove cgroup_parent unless you manage control groups yourself.",
+      "portAllInterfaces": "If you only use it on this computer, publish it on 127.0.0.1.",
+      "rootUser": "Set an unprivileged user (--user, or user: in Compose) or use an image that already has one.",
+      "writableRootfs": "Use --read-only (read_only: true) with a tmpfs or a volume for what it has to write.",
+      "noMemoryLimit": "Set a memory limit (--memory or mem_limit).",
+      "noCpuLimit": "Set a CPU limit (--cpus or cpus).",
+      "noPidsLimit": "Set a process limit (--pids-limit or pids_limit).",
+      "noNewPrivileges": "Add --security-opt no-new-privileges:true (or security_opt in Compose).",
+      "imageOld": "Pull or build a recent version of the image and recreate the container.",
+      "imageRootUser": "Use an image with an unprivileged user (USER in the Dockerfile) or pass --user when creating the container."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "yes",
+      "no": "no"
+    },
+    "vuln": {
+      "title": "Vulnerabilities",
+      "tool": "{{name}} {{version}} with the database of {{date}}",
+      "toolNotReady": "{{name}} {{version}}: {{reason}}",
+      "unknownDate": "unknown date",
+      "notAnalyzed": "Not analysed: {{reason}}",
+      "notAnalyzedImage": "Not analysed: {{reason}}",
+      "noneKnown": "{{tool}} finds no known vulnerabilities in its database of {{date}}. That does not guarantee there are none.",
+      "found": "{{tool}} (database of {{date}}): {{critical}} critical, {{high}} high, {{medium}} medium, {{low}} low and {{unknown}} unclassified.",
+      "failed": "The {{tool}} scan did not finish: {{message}}",
+      "list_one": "Show the most severe vulnerability",
+      "list_other": "Show the {{count}} most severe",
+      "id": "Identifier",
+      "package": "Package",
+      "severity": "Severity",
+      "fixed": "Fixed in",
+      "noFix": "no fix",
+      "notRequested": "the scan was not requested.",
+      "remote": "only images in this computer's Docker are scanned.",
+      "noTool": "neither Trivy nor Grype is installed on this computer (the application does not install them).",
+      "noDatabase": "the tool has not downloaded its vulnerability database (the application does not download it).",
+      "toolError": "the tool failed ({{message}}).",
+      "unknownTool": "unsupported tool.",
+      "badImage": "invalid image reference."
+    },
+    "skipped": {
+      "title": "Not audited",
+      "composeUnavailable": "Docker Compose is not available: projects were not reviewed.",
+      "noFiles": "the project has no known Compose files.",
+      "composeConfig": "its configuration could not be read."
+    },
+    "history": {
+      "title": "Previous audits",
+      "empty": "No audits of this server have been saved yet.",
+      "one": "Container {{name}}",
+      "all_one": "{{count}} item",
+      "all_other": "{{count}} items",
+      "open": "View",
+      "shown": "Shown above"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Report saved to {{path}} (only you can read it).",
+      "error": "The report could not be saved: {{message}}",
+      "title": "Security audit · {{server}}",
+      "date": "Date",
+      "scope": "Scope",
+      "scopeAll": "all containers",
+      "scopeOne": "container {{name}}",
+      "readOnly": "The audit only read the configuration; it changed nothing. Secrets are hidden."
+    },
+    "proposal": {
+      "banner_one": "The audit has proposed {{count}} change. Review it before applying it: nothing has been changed yet.",
+      "banner_other": "The audit has proposed {{count}} changes. Review them before applying them: nothing has been changed yet.",
+      "resources": "Also set CPU and memory limits under “Resources”."
+    }
   }
 }

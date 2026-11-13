@@ -6,12 +6,12 @@
 
 | | |
 |---|---|
-| **Etapa actual** | Evolución E2. Resto del endurecimiento ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
-| **Versión** | 1.2.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M8 de la 1.2.0) |
+| **Etapa actual** | Evolución E3. Auditoría de seguridad ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
+| **Versión** | 1.3.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M8 de la 1.3.0) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Pendiente de validar** | Fase 10 (F1–F8), Etapa E1 (M1–M8) y Etapa E2 (M1–M8) |
-| **Próximas etapas** | E3 auditoría · E4 copias · E5 monitorización · E6 integración |
+| **Pendiente de validar** | Fase 10 (F1–F8) y Etapas E1, E2 y E3 (M1–M8 de cada una) |
+| **Próximas etapas** | E4 copias · E5 monitorización · E6 integración |
 
 | Fase | Estado |
 |---|---|
@@ -1143,11 +1143,62 @@ Entorno de desarrollo (Ubuntu 24.04 en contenedor, WebKitGTK 2.52, Xvfb), 2026-1
 ### Validación manual
 M1–M8 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.2.0.sh`.
 
+## Evolución · Etapa 3 · Auditoría de seguridad (1.3.0)
+
+Autorizada por el propietario el 2026-11-13 («Procede a la siguiente etapa»).
+Alcance: apartado 5.3 (E3) de
+[PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md).
+Decisiones: D-093 a D-095.
+
+### Qué se ha hecho
+| Parte | Implementación | Demostración (pruebas) |
+|---|---|---|
+| Motor de auditoría | `dcc-engine::audit`: contenedores (`inspect`), imágenes y servicios de Compose (`compose config`); riesgos de `risk` y endurecimiento (root, sistema de archivos, límites, `no-new-privileges`, imagen antigua); seguridad del daemon | `audit::checks::tests` (peligroso con todas, legítimo sin ninguna, falsos positivos evitados); `live_audit` contra Docker real; `live_ssh::audit_of_a_remote_server…` |
+| Solo lectura | Solo lecturas, cada una en el panel de actividad | Proxy del socket: ninguna petición que no sea GET/HEAD; contenedores sin cambios (Docker real, IPC y SSH) |
+| Vulnerabilidades | Trivy o Grype si están instalados, sin red ni actualizaciones; «no analizado» o «falló», nunca 0 sin análisis completo | `audit::vuln::tests` con herramientas simuladas (no hay Trivy ni Grype aquí); «no analizado» real en Docker real |
+| Historial y exportación | `auditorias.jsonl` (0600) por servidor; JSON, Markdown y HTML sin secretos, guardados 0600 con el diálogo nativo | `commands::audit::tests`, IPC `live_e3_audit_via_ipc_is_read_only_and_saved`, `AuditView.test.tsx` |
+| Interfaz | Sección «Auditoría»: opciones, avance y cancelación, resumen por nivel, filtros, explicación y recomendación, correcciones propuestas en «Editar configuración», vulnerabilidades, historial; 8 idiomas | `AuditView.test.tsx`, `edit.test.tsx`; revisión visual en la aplicación real (Xvfb) |
+
+### Verificación (`scripts/verify-evolution-1.3.0.sh`)
+Entorno de desarrollo (Ubuntu 24.04 en contenedor, WebKitGTK 2.52, Xvfb), 2026-11-13, con el código final:
+
+| Daemon | Opciones | Resultado |
+|---|---|---|
+| Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` | **125 correctas, 0 fallos**, 4 omitidas, 1 aviso (root en desarrollo) |
+| Docker 26.1.3 (API 1.45) | — | **92 correctas, 0 fallos**, 5 omitidas |
+| Docker 24.0.7 (API 1.43) | — | **92 correctas, 0 fallos**, 5 omitidas |
+| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | Correcto (glibc ≥ 2.34, `openssh-client` recomendado) |
+
+- Pruebas de Rust: 635 superadas, 0 fallidas. Vitest: 44 archivos y 398 pruebas. `fmt`, `clippy -D warnings`, `tsc`, ESLint (0 errores), `cargo deny` y `npm audit`: correctos.
+- Pasos propios de la 1.3.0: deterministas, interfaz, Docker real, IPC y SSH, todos correctos.
+- Compose 2.26.1 correcto con los tres daemons. Sin recursos de prueba restantes.
+- Instalación limpia de los `.deb` 1.3.0 en Ubuntu 24.04 (normal) y 22.04 (compatible): `install.sh` comprueba `SHA256SUMS`, instala, la aplicación arranca y se desinstala: 0 fallos.
+
+### Problemas encontrados y resueltos
+- **Falsos positivos de la primera versión**, vistos en la aplicación real:
+  - con cgroup v1 todos los contenedores comparten el espacio de cgroups del equipo por defecto;
+  - Docker añade `label=disable` por su cuenta con `--pid host` aunque no haya SELinux.
+
+  Ahora el primero solo se marca con cgroup v2 y el segundo solo si el daemon usa SELinux (igual con seccomp y AppArmor).
+- Las imágenes tenían el mismo texto que los contenedores para root: tienen ahora el suyo («La imagen se ejecuta como root por defecto»).
+- **Primera ejecución con Docker 26**: se llenó el disco del entorno durante la compilación (se liberó). La prueba IPC nueva comparaba el JSON de Docker tal cual, y Docker 26 cambia el orden de sus mapas entre llamadas: ahora se compara ya interpretado.
+- **Docker 24**: la prueba de terminales con un programa que ignora Ctrl+C mostró un tercer desenlace de la misma carrera: tras terminar los procesos, Docker 24 tarda en marcar el exec como terminado y el resumen decía «sigue en ejecución». Se corrigió el producto: se espera hasta 2 s. Con el cambio se repitió la verificación completa con los tres daemons.
+
+### Limitaciones
+- **Trivy y Grype no se han podido probar de verdad aquí** (no están instalados y no hay red para sus bases): el análisis se prueba con herramientas simuladas que reproducen su salida. Queda para la validación manual (M6).
+- Vulnerabilidades solo de las imágenes del Docker de este equipo; en un servidor remoto, «no analizado».
+- «Editar configuración» solo admite parte de las correcciones (puertos, solo lectura y límites). Las demás (quitar `--privileged`, capacidades, usuario, `read-only`, `security_opt`) son recomendaciones en texto: hay que recrear el contenedor.
+- La auditoría de Compose necesita los archivos del proyecto (si faltan, se lista como no auditado).
+- Debian 12 y 13 sin probar aquí.
+
+### Validación manual
+M1–M8 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.3.0.sh`.
+
 ---
 
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-evolution-1.2.0.sh --deb --net` en Debian 13 (incluye toda la regresión de la 1.0.0 y la 1.1.0) y envía `verify-evolution-1.2.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M8 de la 1.2.0 y, si no los ha hecho aún, los de la 1.1.0 y F1–F8.
-2. Con su validación, las Etapas 1 y 2 quedan completadas y se puede autorizar la Etapa 3 (auditoría de seguridad de contenedores, 1.3.0).
+1. El propietario ejecuta `bash scripts/verify-evolution-1.3.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.3.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M8 de la 1.3.0 y, si no los ha hecho aún, los de la 1.1.0, la 1.2.0 y F1–F8.
+2. Con su validación, las Etapas 1 a 3 quedan completadas y se puede autorizar la Etapa 4 (copias de seguridad y restauración, 1.4.0).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

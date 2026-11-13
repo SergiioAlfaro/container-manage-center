@@ -1397,6 +1397,122 @@ async fn server_shell_session_resizes_and_closes_cleanly() {
 /// Los bind mounts se comprueban en el servidor: una carpeta que solo existe
 /// en este equipo falta allí; una del servidor se describe como la ve el
 /// usuario SSH (tipo, propietario, lectura).
+/// E3 (1.3.0): la auditoría de un servidor remoto lee sus contenedores por la
+/// sesión SSH, encuentra lo peligroso, no analiza vulnerabilidades (las
+/// herramientas solo ven el Docker de este equipo) y no cambia nada.
+#[tokio::test(flavor = "multi_thread")]
+async fn audit_of_a_remote_server_reads_its_containers_only() {
+    use bollard::models::{ContainerCreateBody, HostConfig};
+    use bollard::query_parameters::{CreateContainerOptions, RemoveContainerOptions};
+    use dcc_engine::audit::AuditRequest;
+    let Some(lab) = lab() else { return };
+    let env = Env::new();
+    env.trusted(&lab);
+    let ctx = env.ctx(fixed(None));
+    let log = ActivityLog::new(2000);
+    let b = &lab.servers[1];
+    let docker_b = local(&b.socket);
+    fixture::ensure_image(&docker_b).await;
+    let name = format!("dcc-test-audit-remote-{}", std::process::id());
+    let _ = docker_b
+        .remove_container(
+            &name,
+            Some(RemoveContainerOptions {
+                force: true,
+                ..Default::default()
+            }),
+        )
+        .await;
+    docker_b
+        .create_container(
+            Some(CreateContainerOptions {
+                name: Some(name.clone()),
+                ..Default::default()
+            }),
+            ContainerCreateBody {
+                image: Some(fixture::IMAGE.into()),
+                labels: Some([("dcc.test".to_owned(), "true".to_owned())].into()),
+                host_config: Some(HostConfig {
+                    cap_add: Some(vec!["SYS_ADMIN".into()]),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+    let m = EngineManager::remote(
+        log.clone(),
+        profile(&lab, 1, None, key(&lab), RemoteDocker::Default),
+        ctx.clone(),
+        Timing::default(),
+    );
+    assert!(matches!(
+        m.connect().await,
+        ConnectionState::Connected { .. }
+    ));
+    let e = m.engine().await.unwrap();
+    let before = docker_b
+        .inspect_container(
+            &name,
+            None::<bollard::query_parameters::InspectContainerOptions>,
+        )
+        .await
+        .unwrap();
+    let req = AuditRequest {
+        container: Some(name.clone()),
+        include_compose: false,
+        include_images: false,
+        scan_vulnerabilities: true,
+        tool: None,
+    };
+    let r = e
+        .audit(
+            &b.name,
+            &req,
+            None,
+            tokio_util::sync::CancellationToken::new(),
+            |_| {},
+        )
+        .await
+        .unwrap();
+    assert_eq!(r.targets.len(), 1);
+    assert!(
+        r.findings
+            .iter()
+            .any(|f| f.code == "risk.capability" && f.target.name == name),
+        "{:#?}",
+        r.findings
+    );
+    assert_eq!(
+        r.vulnerabilities.not_analyzed.as_deref(),
+        Some("audit.vuln.remote")
+    );
+    assert_eq!(r.server, b.name);
+    let after = docker_b
+        .inspect_container(
+            &name,
+            None::<bollard::query_parameters::InspectContainerOptions>,
+        )
+        .await
+        .unwrap();
+    assert_eq!(before.host_config, after.host_config);
+    assert_eq!(
+        before.state.map(|s| s.status),
+        after.state.map(|s| s.status)
+    );
+    docker_b
+        .remove_container(
+            &name,
+            Some(RemoveContainerOptions {
+                force: true,
+                ..Default::default()
+            }),
+        )
+        .await
+        .unwrap();
+}
+
 /// E2 (DCC-SEC-07, D-090): en un servidor remoto, la configuración de Docker
 /// de este equipo no se consulta (y sus credenciales no se envían) sin permiso
 /// explícito; con permiso, sí. Se usa un `credsStore` inexistente: su aviso

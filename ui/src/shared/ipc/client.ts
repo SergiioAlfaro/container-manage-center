@@ -101,6 +101,11 @@ import type { KeyringStatus } from "./bindings/KeyringStatus";
 import type { ServerDiagnosis } from "./bindings/ServerDiagnosis";
 import type { ServerOverview } from "./bindings/ServerOverview";
 import type { ServerStateEvent } from "./bindings/ServerStateEvent";
+import type { AuditEvent } from "./bindings/AuditEvent";
+import type { AuditReport } from "./bindings/AuditReport";
+import type { AuditRequest } from "./bindings/AuditRequest";
+import type { AuditSummary } from "./bindings/AuditSummary";
+import type { VulnTool } from "./bindings/VulnTool";
 
 export const ACTIVITY_EVENT = "activity://event";
 export const ACTIVITY_RESYNC = "activity://resync";
@@ -260,6 +265,10 @@ export function dockerApi(server: string) {
       call<number>("compose_logs_open", { project, services, tail, timestamps, onEvent: channel(onEvent) }),
     composeRegister: (files: string[], name: string | null) => call<RegisterResult>("compose_register", { files, name }),
     eventsQuery: (query: EventQuery) => call<EventQueryResult>("events_query", { query }),
+    /** E3: auditoría de seguridad (solo lectura), historial del servidor. */
+    auditRunOpen: (request: AuditRequest, onEvent: (e: AuditEvent) => void) => call<number>("audit_run_open", { request, onEvent: channel(onEvent) }),
+    auditHistory: () => call<AuditSummary[]>("audit_history"),
+    auditGet: (id: string) => call<AuditReport>("audit_get", { id }),
   };
 }
 
@@ -296,6 +305,10 @@ const appApi = {
   openReleasePage: (url: string) => call<null>("open_release_page", { url }),
   /** Enlace de la salida de una terminal, ya confirmado (E2, D-091). */
   openTerminalLink: (url: string) => call<null>("open_terminal_link", { url }),
+  /** E3: Trivy y Grype de este equipo (versión y fecha de su base). */
+  auditTools: () => call<VulnTool[]>("audit_tools"),
+  /** E3: guarda un informe; la ruta se elige en el diálogo nativo (Rust). `null` si se cancela. */
+  auditExportSave: (format: "json" | "markdown" | "html", content: string, name: string) => call<string | null>("audit_export_save", { format, content, name }),
   systemInfo: () => call<SystemInfo>("system_info"),
   /** Abre el perfil de GitHub del autor en el navegador del sistema (plugin
    *  opener de Tauri; la capacidad solo permite esta dirección). */

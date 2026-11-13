@@ -72,6 +72,10 @@
       "title": "Terminais",
       "description": "Varios terminais á vez en contedores en execución."
     },
+    "audit": {
+      "title": "Auditoría",
+      "description": "Revisa a seguridade de contedores, imaxes e proxectos Compose."
+    },
     "events": {
       "title": "Eventos e rexistros",
       "description": "Eventos de Docker en tempo real e historial de operacións."
@@ -2828,5 +2832,188 @@
     "title": "Abrir a ligazón do terminal",
     "body": "A saída do terminal contén esta ligazón. Ábrea só se confías nela: abrirase no navegador do sistema.",
     "open": "Abrir no navegador"
+  },
+  "audit": {
+    "intro": "A auditoría só le a configuración: non cambia nada. As correccións propóñense en «Editar a configuración», con vista previa e confirmación.",
+    "options": "Que auditar",
+    "scope": "Contedores",
+    "scopeAll": "Todos (en execución e detidos)",
+    "includeCompose": "Proxectos Compose",
+    "includeImages": "Imaxes",
+    "scanVulns": "Vulnerabilidades coñecidas (Trivy ou Grype)",
+    "run": "Auditar",
+    "running": "Auditando…",
+    "cancel": "Cancelar",
+    "cancelled": "Auditoría cancelada.",
+    "failed": "Non se puido completar a auditoría: {{message}}",
+    "noReport": "Aínda non hai ningunha auditoría deste servidor.",
+    "progress": {
+      "containers": "Contedores {{done}} de {{total}}: {{current}}",
+      "images": "Imaxes {{done}} de {{total}}: {{current}}",
+      "compose": "Proxectos Compose {{done}} de {{total}}: {{current}}",
+      "vulnerabilities": "Vulnerabilidades {{done}} de {{total}}: {{current}}"
+    },
+    "summary": {
+      "title": "Resultado",
+      "meta_one": "{{date}} · {{count}} elemento auditado · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} elementos auditados · Docker {{docker}}",
+      "counts": "Achados por nivel",
+      "none": "Non hai achados no que se auditou."
+    },
+    "filter": {
+      "level": "Nivel",
+      "all": "Todos",
+      "kind": "Tipo",
+      "allKinds": "Todos os tipos",
+      "search": "Buscar por nome ou achado",
+      "count_one": "{{count}} achado",
+      "count_other": "{{count}} achados",
+      "noMatches": "Ningún achado coincide co filtro."
+    },
+    "kind": {
+      "container": "Contedor",
+      "service": "Servizo",
+      "image": "Imaxe"
+    },
+    "kindPlural": {
+      "container": "Contedores",
+      "service": "Servizos de Compose",
+      "image": "Imaxes"
+    },
+    "project": "proxecto {{name}}",
+    "propose_one": "Propor {{count}} corrección",
+    "propose_other": "Propor {{count}} correccións",
+    "proposeHint": "Abre «Editar a configuración» cos cambios propostos. Non se aplica nada ata que o revises e o confirmes.",
+    "clean_one": "Sen achados: {{names}}.",
+    "clean_other": "Sen achados ({{count}}): {{names}}.",
+    "finding": {
+      "why": "Por que importa",
+      "fix": "Recomendación"
+    },
+    "check": {
+      "rootUser": "O proceso principal execútase como root.",
+      "writableRootfs": "O sistema de ficheiros do contedor pódese modificar.",
+      "noMemoryLimit": "Sen límite de memoria.",
+      "noCpuLimit": "Sen límite de CPU.",
+      "noPidsLimit": "Sen límite de procesos.",
+      "noNewPrivileges": "Sen a opción no-new-privileges.",
+      "imageOld": "A imaxe ten {{days}} días (creada o {{created}}).",
+      "imageRootUser": "A imaxe execútase como root por defecto."
+    },
+    "why": {
+      "runtimeSocket": "Co socket pódese crear un contedor privilexiado e controlar todo o equipo.",
+      "hostRoot": "O contedor pode ler e, con escritura, cambiar calquera ficheiro do equipo.",
+      "credentials": "Expón contrasinais, claves ou tokens do equipo ou dos seus usuarios.",
+      "systemDir": "Permite ler ou cambiar a configuración do equipo.",
+      "systemBinaries": "Permite substituír programas ou bibliotecas do equipo.",
+      "capability": "Cada capacidade engadida amplía o que o contedor pode facer co núcleo.",
+      "privileged": "Sen illamento: dispositivos, núcleo e todas as capacidades.",
+      "networkHost": "Ve todos os servizos do equipo, tamén os que só escoitan en 127.0.0.1.",
+      "hostNamespace": "Rompe parte do illamento entre o contedor e o equipo.",
+      "securityOpt": "Desactiva unha protección do núcleo que limita o que pode facer un proceso comprometido.",
+      "device": "Acceso directo ao dispositivo, sen os permisos dos ficheiros.",
+      "cgroupParent": "Os límites de recursos deixan de xestionarse coma nos outros contedores.",
+      "portAllInterfaces": "Outros equipos da rede poden conectarse e, con Docker, a devasa normalmente non o impide.",
+      "rootUser": "Se alguén compromete o proceso, é root dentro do contedor e pode saír máis doadamente. Con Docker rootless ou userns-remap o risco é menor.",
+      "writableRootfs": "Un atacante pode deixar programas ou cambiar a configuración dentro do contedor.",
+      "noMemoryLimit": "Un fallo ou un ataque pode consumir toda a memoria do equipo.",
+      "noCpuLimit": "Un proceso pode ocupar toda a CPU e facer máis lento o resto.",
+      "noPidsLimit": "Unha «bomba de procesos» pode esgotar os procesos do equipo.",
+      "noNewPrivileges": "Os programas con setuid poden gañar privilexios dentro do contedor.",
+      "imageOld": "Unha imaxe antiga adoita ter vulnerabilidades xa corrixidas en versións novas.",
+      "imageRootUser": "Os contedores creados con ela execútanse como root salvo que se indique outro usuario. Con Docker rootless ou userns-remap o risco é menor."
+    },
+    "fix": {
+      "runtimeSocket": "Quita o socket. Se de verdade o necesita, usa un proxy do socket con permisos limitados ou Docker rootless.",
+      "hostRoot": "Monta só o cartafol que necesita, só de lectura se é posible.",
+      "credentials": "Monta só o ficheiro concreto que necesita, ou pásalle o segredo con Docker secrets.",
+      "systemDir": "Monta só o necesario e só de lectura.",
+      "systemBinaries": "Móntao só de lectura ou non o montes.",
+      "capability": "Quita a capacidade se non fai falta; comeza por --cap-drop ALL e engade só as imprescindibles.",
+      "privileged": "Quita --privileged e engade só as capacidades ou dispositivos que necesite.",
+      "networkHost": "Usa unha rede de Docker e publica só os portos necesarios.",
+      "hostNamespace": "Quita a opción salvo que o contedor a necesite de verdade (p. ex. ferramentas de diagnóstico).",
+      "securityOpt": "Quita a opción; se un perfil bloquea algo, crea un perfil á medida no canto de desactivalo.",
+      "device": "Pasa só o dispositivo concreto que necesita, ou ningún.",
+      "cgroupParent": "Quita cgroup_parent salvo que xestiones os grupos de control á man.",
+      "portAllInterfaces": "Se só o usas neste equipo, publícao en 127.0.0.1.",
+      "rootUser": "Indica un usuario sen privilexios (--user, ou user: en Compose) ou usa unha imaxe que xa o teña.",
+      "writableRootfs": "Usa --read-only (read_only: true) cun tmpfs ou un volume para o que teña que escribir.",
+      "noMemoryLimit": "Fixa un límite de memoria (--memory ou mem_limit).",
+      "noCpuLimit": "Fixa un límite de CPU (--cpus ou cpus).",
+      "noPidsLimit": "Fixa un límite de procesos (--pids-limit ou pids_limit).",
+      "noNewPrivileges": "Engade --security-opt no-new-privileges:true (ou security_opt en Compose).",
+      "imageOld": "Descarga ou constrúe unha versión recente da imaxe e volve crear o contedor.",
+      "imageRootUser": "Usa unha imaxe cun usuario sen privilexios (USER no Dockerfile) ou indica --user ao crear o contedor."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "si",
+      "no": "non"
+    },
+    "vuln": {
+      "title": "Vulnerabilidades",
+      "tool": "{{name}} {{version}} coa base do {{date}}",
+      "toolNotReady": "{{name}} {{version}}: {{reason}}",
+      "unknownDate": "data descoñecida",
+      "notAnalyzed": "Non analizado: {{reason}}",
+      "notAnalyzedImage": "Non analizado: {{reason}}",
+      "noneKnown": "{{tool}} non atopa vulnerabilidades coñecidas na súa base do {{date}}. Iso non garante que non as haxa.",
+      "found": "{{tool}} (base do {{date}}): {{critical}} críticas, {{high}} altas, {{medium}} medias, {{low}} baixas e {{unknown}} sen clasificar.",
+      "failed": "A análise con {{tool}} non rematou: {{message}}",
+      "list_one": "Ver a vulnerabilidade máis grave",
+      "list_other": "Ver as {{count}} máis graves",
+      "id": "Identificador",
+      "package": "Paquete",
+      "severity": "Gravidade",
+      "fixed": "Corrixida en",
+      "noFix": "sen corrección",
+      "notRequested": "non se pediu a análise.",
+      "remote": "só se analizan imaxes do Docker deste equipo.",
+      "noTool": "non hai Trivy nin Grype instalados neste equipo (a aplicación non os instala).",
+      "noDatabase": "a ferramenta non ten descargada a súa base de vulnerabilidades (a aplicación non a descarga).",
+      "toolError": "a ferramenta fallou ({{message}}).",
+      "unknownTool": "ferramenta non admitida.",
+      "badImage": "referencia de imaxe non válida."
+    },
+    "skipped": {
+      "title": "Non auditado",
+      "composeUnavailable": "Docker Compose non está dispoñible: non se revisaron os proxectos.",
+      "noFiles": "o proxecto non ten ficheiros Compose coñecidos.",
+      "composeConfig": "non se puido ler a súa configuración."
+    },
+    "history": {
+      "title": "Auditorías anteriores",
+      "empty": "Aínda non hai auditorías gardadas deste servidor.",
+      "one": "Contedor {{name}}",
+      "all_one": "{{count}} elemento",
+      "all_other": "{{count}} elementos",
+      "open": "Ver",
+      "shown": "Móstrase arriba"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Informe gardado en {{path}} (só ti podes lelo).",
+      "error": "Non se puido gardar o informe: {{message}}",
+      "title": "Auditoría de seguridade · {{server}}",
+      "date": "Data",
+      "scope": "Alcance",
+      "scopeAll": "todos os contedores",
+      "scopeOne": "contedor {{name}}",
+      "readOnly": "A auditoría só leu a configuración; non cambiou nada. Os segredos ocúltanse."
+    },
+    "proposal": {
+      "banner_one": "A auditoría propuxo {{count}} cambio. Revísao antes de aplicalo: aínda non se cambiou nada.",
+      "banner_other": "A auditoría propuxo {{count}} cambios. Revísaos antes de aplicalos: aínda non se cambiou nada.",
+      "resources": "Indica tamén límites de CPU e memoria en «Recursos»."
+    }
   }
 }

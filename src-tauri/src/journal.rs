@@ -20,6 +20,10 @@ use crate::state::AppState;
 
 pub const HISTORY_FILE: &str = "historial.jsonl";
 pub const EVENTS_FILE: &str = "eventos.jsonl";
+/// Historial de auditorías de seguridad (E3, D-095), de todos los servidores.
+pub const AUDITS_FILE: &str = "auditorias.jsonl";
+/// Auditorías conservadas.
+pub const AUDITS_MAX: usize = 200;
 /// Operaciones conservadas en el historial persistente.
 pub const HISTORY_MAX: usize = 10_000;
 /// Eventos conservados en el diario persistente.
@@ -50,6 +54,7 @@ pub fn state_dir(config_path: &Path) -> Option<PathBuf> {
 pub struct Journals {
     pub history: Option<Journal<HistoryEntry>>,
     pub events: Option<Journal<DockerEvent>>,
+    pub audits: Option<Journal<dcc_engine::audit::AuditReport>>,
     pub recent: Mutex<VecDeque<DockerEvent>>,
     pub session_start: DateTime<Utc>,
     pub dir: Option<PathBuf>,
@@ -96,6 +101,18 @@ impl Journals {
                 None
             }
         });
+        let audits = open(AUDITS_FILE, AUDITS_MAX).and_then(|(p, max)| match Journal::open(&p, max) {
+            Ok((j, st)) => {
+                if st.skipped > 0 {
+                    warnings.push(format!("Se han descartado {} líneas dañadas de {}.", st.skipped, p.display()));
+                }
+                Some(j)
+            }
+            Err(e) => {
+                warnings.push(format!("No se pudo abrir el historial de auditorías ({}): {e}. No se guardará en esta sesión.", p.display()));
+                None
+            }
+        });
         if dir.is_none() {
             warnings.push("No se ha encontrado una carpeta para guardar el historial: no se guardará en esta sesión.".into());
         }
@@ -103,6 +120,7 @@ impl Journals {
             Self {
                 history,
                 events,
+                audits,
                 recent: Mutex::new(VecDeque::new()),
                 session_start: Utc::now(),
                 dir,

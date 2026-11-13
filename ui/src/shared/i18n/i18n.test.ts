@@ -32,20 +32,29 @@ const TECHNICAL = [
   "APP", "Docker Engine API", "Digests",
   // 0.10.0: columna de versión y recursos de un servidor (nombres de producto y unidades).
   "Docker / API", "{{cpus}} CPU · {{memory}}", "SSH (docker system dial-stdio)",
+  // 1.3.0: auditoría (nombres de tecnologías y de formatos de archivo).
+  "rootless", "userns-remap", "seccomp", "AppArmor", "SELinux", "cgroup", "JSON", "Markdown", "HTML", "Docker",
+  "{{name}} {{version}}: {{reason}}",
 ];
 const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   fr: [
     "Orchestration", "Images", "Image", "Volumes", "Volume", "Ports", "Actions", "Options", "{{count}} image", "{{count}} images", "{{count}} volume",
     "{{count}} volumes", "Versions", "Version", "Terminal", "Description", "Digests", "Instruction", "Type", "Local", "Services", "Service",
     "Configuration", "Pause", "Secret", "Application", "Architecture", "Variables", "volume",
+    // 1.3.0
+    "Audit", "Date",
   ],
   it: [
     "Dashboard", "Area", "No", "Host", "Kernel", "{{count}} container", "Entrypoint", "Gateway", "Container {{name}}", "Container", "Volume",
     "{{count}} volume", "Repository", "Tag", "Driver", "Local", "File", "Output", "Plugin", "Computer", "Desktop", "volume", "REPOSITORY:TAG",
     // 0.10.0: en italiano se usan «server» y «password».
     "Server {{name}}", "Password", "Server",
+    // 1.3.0
+    "Audit", "no", "container {{name}}",
   ],
   ca: [
+    // 1.3.0
+    "no",
     "Context", "Equivalent", "Error", "Error: {{message}}", "Executable", "General", "Local", "No", "Node", "Ports", "Protocol", "Secret",
     "Terminal", "Terminals", "Variables", "Versions", "{{count}} error", "{{count}} errors",
   ],

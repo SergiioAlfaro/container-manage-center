@@ -19,7 +19,7 @@ use crate::state::AppState;
 /// Proyectos añadidos **en ese servidor**: los del equipo local en su
 /// configuración; los de un servidor remoto en su perfil, con rutas del
 /// servidor (0.10.0). Nunca se mezclan.
-fn registered(state: &AppState, server: &str) -> CmdResult<Vec<ProjectRef>> {
+pub(crate) fn registered(state: &AppState, server: &str) -> CmdResult<Vec<ProjectRef>> {
     let saved = if server == crate::servers::LOCAL {
         state.config().compose.projects
     } else {

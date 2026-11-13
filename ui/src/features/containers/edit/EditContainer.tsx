@@ -27,7 +27,8 @@ import { KvEditor, MemField, MountsEditor, PortsEditor } from "../create/editors
 import { Field, Group, IssueList, Select, TextInput } from "../create/fields";
 import { isSecretEntry, issuesFor } from "../specModel";
 import { useContainersNav } from "../store";
-import { EDIT_TABS, pendingByTab, pendingChanges, tabOfIssue, textsOf, withTexts, type EditTab, type Texts } from "./model";
+import type { AuditFix } from "@/shared/ipc/bindings/AuditFix";
+import { applyAuditFixes, EDIT_TABS, pendingByTab, pendingChanges, tabOfIssue, textsOf, withTexts, type EditTab, type Texts } from "./model";
 import { ReviewPanel } from "./ReviewPanel";
 import { OutcomeBanner, editKey } from "./shared";
 
@@ -36,7 +37,7 @@ export { editKey };
 const RESTARTS: RestartName[] = ["no", "always", "unlessStopped", "onFailure"];
 
 
-export function EditContainer({ id, name }: { id: string; name: string }) {
+export function EditContainer({ id, name, proposal }: { id: string; name: string; proposal?: AuditFix[] }) {
   const api = useApi();
   const { t } = useTranslation();
   const nav = useContainersNav();
@@ -75,16 +76,19 @@ export function EditContainer({ id, name }: { id: string; name: string }) {
         </div>
       ) : (
         // Al recargar la configuración (p. ej. tras aplicar) se parte de nuevo de lo que dice Docker.
-        <Editor key={`${cfg.id}-${q.dataUpdatedAt}`} cfg={cfg} onApplied={setNow} />
+        <Editor key={`${cfg.id}-${q.dataUpdatedAt}`} cfg={cfg} onApplied={setNow} proposal={now ? undefined : proposal} />
       )}
     </div>
   );
 }
 
-function Editor({ cfg, onApplied }: { cfg: EditableConfig; onApplied: (now: { id: string; name: string; status: string }) => void }) {
+function Editor({ cfg, onApplied, proposal }: { cfg: EditableConfig; onApplied: (now: { id: string; name: string; status: string }) => void; proposal?: AuditFix[] }) {
   const { t, i18n } = useTranslation();
-  const [tab, setTab] = useState<EditTab>("general");
-  const [draft, setDraft] = useState<EditRequest>(() => structuredClone(cfg.current));
+  // E3: las correcciones propuestas por la auditoría se aplican al borrador;
+  // nada se cambia hasta revisar y confirmar.
+  const proposed = useMemo(() => (proposal && proposal.length > 0 ? applyAuditFixes(cfg.current, proposal) : null), [cfg, proposal]);
+  const [tab, setTab] = useState<EditTab>(proposed?.tab ?? "general");
+  const [draft, setDraft] = useState<EditRequest>(() => structuredClone(proposed?.request ?? cfg.current));
   const [texts, setTexts] = useState<Texts>(() => textsOf(cfg.current));
   const [reviewing, setReviewing] = useState(false);
   const { request, problems } = useMemo(() => withTexts(draft, texts), [draft, texts]);
@@ -148,6 +152,12 @@ function Editor({ cfg, onApplied }: { cfg: EditableConfig; onApplied: (now: { id
       </div>
 
       <div id="edit-panel" role="tabpanel" aria-labelledby={`edit-tab-${tab}`} className="mx-auto w-full max-w-[920px] flex-1 space-y-6 px-8 py-6">
+        {proposed && (
+          <Banner tone="info">
+            {t("audit.proposal.banner", { count: proposed.applied })}
+            {proposed.resources && ` ${t("audit.proposal.resources")}`}
+          </Banner>
+        )}
         {tab === "general" && (
           <>
             <Group title={t("edit.g.identity")}>

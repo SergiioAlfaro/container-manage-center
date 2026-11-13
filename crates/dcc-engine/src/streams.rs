@@ -821,13 +821,27 @@ impl Engine {
                         .ok();
                 }
                 if ended || killed.is_some() {
-                    match exit_query(exec_id.clone()).await {
-                        Some((true, _)) => ended = false,
-                        Some((false, c)) => {
-                            ended = true;
-                            exit_code = c;
+                    // Tras terminar los procesos, Docker (24) puede tardar un
+                    // momento en marcar el exec como terminado: se espera
+                    // hasta ~2 s antes de concluir que sigue en marcha.
+                    let mut tries = if killed.is_some() { 10 } else { 1 };
+                    loop {
+                        tries -= 1;
+                        match exit_query(exec_id.clone()).await {
+                            Some((true, _)) if tries > 0 => {
+                                tokio::time::sleep(Duration::from_millis(200)).await;
+                            }
+                            Some((true, _)) => {
+                                ended = false;
+                                break;
+                            }
+                            Some((false, c)) => {
+                                ended = true;
+                                exit_code = c;
+                                break;
+                            }
+                            None => break,
                         }
-                        None => {}
                     }
                 }
             }

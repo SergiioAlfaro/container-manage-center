@@ -206,6 +206,16 @@ describe("Editar configuración: pantalla", () => {
     expect(screen.getByText("Sin cambios pendientes.")).toBeInTheDocument();
   });
 
+  it("E3: las correcciones de la auditoría llegan como cambios pendientes, sin aplicar nada", async () => {
+    renderWithQuery(<EditContainer id="a1b2c3d4e5f6a7b8c9d0" name="web" proposal={[{ kind: "portLocalhost", containerPort: 80, protocol: "tcp", hostPort: "8080" }, { kind: "resources" }]} />);
+    expect(await screen.findByText(/La auditoría ha propuesto 1 cambio\. Revísalo antes de aplicarlo/)).toBeInTheDocument();
+    expect(screen.getByText(/Indica también límites de CPU y memoria/)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Puertos/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("1 cambio pendiente. Requiere recrear el contenedor.")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("127.0.0.1")).toBeInTheDocument();
+    expect(api.containerEditApply).not.toHaveBeenCalled();
+  });
+
   it("las variables secretas se muestran ocultas", async () => {
     await open();
     await userEvent.click(screen.getByRole("tab", { name: /Variables/ }));

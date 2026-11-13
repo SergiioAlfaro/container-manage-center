@@ -3,8 +3,9 @@
 Se usa antes de cada versión y al revisar cada cambio. La marca indica el
 estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026), actualizado
 con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
-13-11-2026). Las líneas cambiadas llevan su evidencia entre corchetes (prueba
-automática que lo demuestra; `verify-evolution-1.2.0.sh` las ejecuta todas):
+13-11-2026) y la **1.3.0** (Etapa 3, auditoría de seguridad). Las líneas cambiadas
+llevan su evidencia entre corchetes (prueba automática que lo demuestra;
+`verify-evolution-1.3.0.sh` las ejecuta todas):
 
 - ✅ cumple;
 - ⚠️ cumple en parte (ver hallazgo);
@@ -132,6 +133,23 @@ seguridad de Docker Engine y RustSec.
 - ✅ Un salto definido en `~/.ssh/config` no se usa con contraseña o frase de
   paso (`jumpFromSshConfig`).
 - ✅ Los diálogos muestran el servidor de destino de la operación.
+
+## Auditoría de seguridad (1.3.0)
+
+- ✅ Solo lectura: ninguna petición de escritura a Docker durante la auditoría y
+  los contenedores no cambian (D-093) [`live_audit::audit_detects_dangerous_settings…`
+  con el registro del proxy, IPC `live_e3_audit_via_ipc_is_read_only_and_saved`,
+  `live_ssh::audit_of_a_remote_server_reads_its_containers_only`].
+- ✅ Las correcciones solo se proponen en «Editar configuración»; nada se aplica
+  sin revisar y confirmar [`AuditView.test.tsx`, `edit.test.tsx`].
+- ✅ Contenedores peligrosos con todas las comprobaciones y legítimos sin
+  hallazgos [`audit::checks::tests`, `live_audit`].
+- ✅ Sin herramienta de vulnerabilidades, sin base o con fallo: «no analizado» o
+  «falló», nunca 0; Trivy y Grype sin red ni actualizaciones (D-094)
+  [`audit::vuln::tests`].
+- ✅ Informe e historial sin secretos; exportación 0600 en una ruta elegida en el
+  diálogo nativo (D-095) [`commands::audit::tests`,
+  `audit_history_and_get_without_docker`, `AuditView.test.tsx`].
 
 ## Secretos y datos sensibles
 

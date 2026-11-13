@@ -72,6 +72,10 @@
       "title": "Terminalak",
       "description": "Hainbat terminal aldi berean, exekutatzen ari diren edukiontzietan."
     },
+    "audit": {
+      "title": "Auditoria",
+      "description": "Berrikusi edukiontzien, irudien eta Compose proiektuen segurtasuna."
+    },
     "events": {
       "title": "Gertaerak eta erregistroak",
       "description": "Dockerren gertaerak denbora errealean eta eragiketen historia."
@@ -2828,5 +2832,188 @@
     "title": "Ireki terminaleko esteka",
     "body": "Terminalaren irteerak esteka hau du. Ireki konfiantza ematen badizu bakarrik: sistemaren nabigatzailean irekiko da.",
     "open": "Ireki nabigatzailean"
+  },
+  "audit": {
+    "intro": "Auditoriak konfigurazioa irakurri besterik ez du egiten: ez du ezer aldatzen. Zuzenketak «Editatu konfigurazioa» atalean proposatzen dira, aurrebistarekin eta berrespenarekin.",
+    "options": "Zer auditatu",
+    "scope": "Edukiontziak",
+    "scopeAll": "Guztiak (exekutatzen eta geldituta)",
+    "includeCompose": "Compose proiektuak",
+    "includeImages": "Irudiak",
+    "scanVulns": "Ahultasun ezagunak (Trivy edo Grype)",
+    "run": "Auditatu",
+    "running": "Auditatzen…",
+    "cancel": "Utzi",
+    "cancelled": "Auditoria bertan behera utzi da.",
+    "failed": "Ezin izan da auditoria osatu: {{message}}",
+    "noReport": "Oraindik ez dago zerbitzari honen auditoriarik.",
+    "progress": {
+      "containers": "Edukiontziak: {{done}}/{{total}}: {{current}}",
+      "images": "Irudiak: {{done}}/{{total}}: {{current}}",
+      "compose": "Compose proiektuak: {{done}}/{{total}}: {{current}}",
+      "vulnerabilities": "Ahultasunak: {{done}}/{{total}}: {{current}}"
+    },
+    "summary": {
+      "title": "Emaitza",
+      "meta_one": "{{date}} · elementu {{count}} auditatuta · Docker {{docker}}",
+      "meta_other": "{{date}} · {{count}} elementu auditatuta · Docker {{docker}}",
+      "counts": "Aurkikuntzak mailaka",
+      "none": "Ez dago aurkikuntzarik auditatutakoan."
+    },
+    "filter": {
+      "level": "Maila",
+      "all": "Guztiak",
+      "kind": "Mota",
+      "allKinds": "Mota guztiak",
+      "search": "Bilatu izenaren edo aurkikuntzaren arabera",
+      "count_one": "Aurkikuntza {{count}}",
+      "count_other": "{{count}} aurkikuntza",
+      "noMatches": "Ez dago iragazkiarekin bat datorren aurkikuntzarik."
+    },
+    "kind": {
+      "container": "Edukiontzia",
+      "service": "Zerbitzua",
+      "image": "Irudia"
+    },
+    "kindPlural": {
+      "container": "Edukiontziak",
+      "service": "Compose zerbitzuak",
+      "image": "Irudiak"
+    },
+    "project": "{{name}} proiektua",
+    "propose_one": "Proposatu zuzenketa {{count}}",
+    "propose_other": "Proposatu {{count}} zuzenketa",
+    "proposeHint": "«Editatu konfigurazioa» irekitzen du proposatutako aldaketekin. Ez da ezer aplikatzen berrikusi eta berretsi arte.",
+    "clean_one": "Aurkikuntzarik gabe: {{names}}.",
+    "clean_other": "Aurkikuntzarik gabe ({{count}}): {{names}}.",
+    "finding": {
+      "why": "Zergatik den garrantzitsua",
+      "fix": "Gomendioa"
+    },
+    "check": {
+      "rootUser": "Prozesu nagusia root gisa exekutatzen da.",
+      "writableRootfs": "Edukiontziaren fitxategi-sistema alda daiteke.",
+      "noMemoryLimit": "Memoria-mugarik gabe.",
+      "noCpuLimit": "CPU mugarik gabe.",
+      "noPidsLimit": "Prozesu-mugarik gabe.",
+      "noNewPrivileges": "no-new-privileges aukerarik gabe.",
+      "imageOld": "Irudiak {{days}} egun ditu ({{created}} sortua).",
+      "imageRootUser": "Irudia root gisa exekutatzen da lehenespenez."
+    },
+    "why": {
+      "runtimeSocket": "Socketarekin edukiontzi pribilegiatu bat sor daiteke eta ekipo osoa kontrolatu.",
+      "hostRoot": "Edukiontziak ekipoko edozein fitxategi irakur dezake eta, idazteko baimenarekin, aldatu.",
+      "credentials": "Ekipoaren edo bere erabiltzaileen pasahitzak, gakoak edo tokenak agerian uzten ditu.",
+      "systemDir": "Ekipoaren konfigurazioa irakurtzea edo aldatzea ahalbidetzen du.",
+      "systemBinaries": "Ekipoaren programak edo liburutegiak ordeztea ahalbidetzen du.",
+      "capability": "Gehitutako gaitasun bakoitzak edukiontziak nukleoarekin egin dezakeena zabaltzen du.",
+      "privileged": "Isolamendurik gabe: gailuak, nukleoa eta gaitasun guztiak.",
+      "networkHost": "Ekipoaren zerbitzu guztiak ikusten ditu, baita 127.0.0.1-en soilik entzuten dutenak ere.",
+      "hostNamespace": "Edukiontziaren eta ekipoaren arteko isolamenduaren zati bat hausten du.",
+      "securityOpt": "Prozesu arriskutsu batek egin dezakeena mugatzen duen nukleoaren babes bat desaktibatzen du.",
+      "device": "Gailurako sarbide zuzena, fitxategien baimenik gabe.",
+      "cgroupParent": "Baliabide-mugak ez dira beste edukiontzietan bezala kudeatzen.",
+      "portAllInterfaces": "Sareko beste ekipo batzuk konekta daitezke eta, Dockerrekin, suhesiak normalean ez du eragozten.",
+      "rootUser": "Norbaitek prozesua arriskuan jartzen badu, root da edukiontzian eta errazago irten daiteke. Docker rootless edo userns-remap erabiliz arriskua txikiagoa da.",
+      "writableRootfs": "Erasotzaile batek programak utz ditzake edo konfigurazioa alda dezake edukiontzian.",
+      "noMemoryLimit": "Akats edo eraso batek ekipoaren memoria osoa kontsumi dezake.",
+      "noCpuLimit": "Prozesu batek CPU osoa har dezake eta gainerakoa moteldu.",
+      "noPidsLimit": "«Prozesu-bonba» batek ekipoaren prozesuak agor ditzake.",
+      "noNewPrivileges": "setuid duten programek pribilegioak lor ditzakete edukiontzian.",
+      "imageOld": "Irudi zahar batek bertsio berrietan zuzendutako ahultasunak izan ohi ditu.",
+      "imageRootUser": "Harekin sortutako edukiontziak root gisa exekutatzen dira beste erabiltzaile bat adierazi ezean. Docker rootless edo userns-remap erabiliz arriskua txikiagoa da."
+    },
+    "fix": {
+      "runtimeSocket": "Kendu socketa. Benetan behar badu, erabili baimen mugatuak dituen socket-proxy bat edo Docker rootless.",
+      "hostRoot": "Muntatu behar duen karpeta soilik, irakurtzeko soilik ahal bada.",
+      "credentials": "Muntatu behar duen fitxategi zehatza soilik, edo pasatu sekretua Docker secrets bidez.",
+      "systemDir": "Muntatu beharrezkoa soilik, irakurtzeko soilik.",
+      "systemBinaries": "Muntatu irakurtzeko soilik edo ez muntatu.",
+      "capability": "Kendu gaitasuna behar ez bada; hasi --cap-drop ALL aukerarekin eta gehitu ezinbestekoak soilik.",
+      "privileged": "Kendu --privileged eta gehitu behar dituen gaitasunak edo gailuak soilik.",
+      "networkHost": "Erabili Docker sare bat eta argitaratu beharrezko atakak soilik.",
+      "hostNamespace": "Kendu aukera edukiontziak benetan behar ez badu (adib. diagnostiko-tresnak).",
+      "securityOpt": "Kendu aukera; profil batek zerbait blokeatzen badu, sortu neurrira egindako profil bat desaktibatu beharrean.",
+      "device": "Pasatu behar duen gailu zehatza soilik, edo bat ere ez.",
+      "cgroupParent": "Kendu cgroup_parent kontrol-taldeak eskuz kudeatzen ez badituzu.",
+      "portAllInterfaces": "Ekipo honetan soilik erabiltzen baduzu, argitaratu 127.0.0.1-en.",
+      "rootUser": "Adierazi pribilegiorik gabeko erabiltzaile bat (--user, edo user: Compose-n) edo erabili dagoeneko baduen irudi bat.",
+      "writableRootfs": "Erabili --read-only (read_only: true) tmpfs batekin edo bolumen batekin idatzi behar duenerako.",
+      "noMemoryLimit": "Ezarri memoria-muga bat (--memory edo mem_limit).",
+      "noCpuLimit": "Ezarri CPU muga bat (--cpus edo cpus).",
+      "noPidsLimit": "Ezarri prozesu-muga bat (--pids-limit edo pids_limit).",
+      "noNewPrivileges": "Gehitu --security-opt no-new-privileges:true (edo security_opt Compose-n).",
+      "imageOld": "Deskargatu edo eraiki irudiaren bertsio berri bat eta sortu berriro edukiontzia.",
+      "imageRootUser": "Erabili pribilegiorik gabeko erabiltzailea duen irudi bat (USER Dockerfile-n) edo adierazi --user edukiontzia sortzean."
+    },
+    "daemon": {
+      "title": "Docker",
+      "rootless": "rootless",
+      "userns": "userns-remap",
+      "seccomp": "seccomp",
+      "apparmor": "AppArmor",
+      "selinux": "SELinux",
+      "cgroup": "cgroup",
+      "yes": "bai",
+      "no": "ez"
+    },
+    "vuln": {
+      "title": "Ahultasunak",
+      "tool": "{{name}} {{version}}, {{date}} datako datu-basearekin",
+      "toolNotReady": "{{name}} {{version}}: {{reason}}",
+      "unknownDate": "data ezezaguna",
+      "notAnalyzed": "Aztertu gabe: {{reason}}",
+      "notAnalyzedImage": "Aztertu gabe: {{reason}}",
+      "noneKnown": "{{tool}} tresnak ez du ahultasun ezagunik aurkitzen bere {{date}} datako datu-basean. Horrek ez du bermatzen ez dagoenik.",
+      "found": "{{tool}} ({{date}} datako datu-basea): {{critical}} kritiko, {{high}} handi, {{medium}} ertain, {{low}} txiki eta {{unknown}} sailkatu gabe.",
+      "failed": "{{tool}} tresnarekin egindako azterketa ez da amaitu: {{message}}",
+      "list_one": "Erakutsi ahultasun larriena",
+      "list_other": "Erakutsi {{count}} larrienak",
+      "id": "Identifikatzailea",
+      "package": "Paketea",
+      "severity": "Larritasuna",
+      "fixed": "Zuzenduta",
+      "noFix": "zuzenketarik gabe",
+      "notRequested": "ez da azterketa eskatu.",
+      "remote": "ekipo honetako Dockerren irudiak soilik aztertzen dira.",
+      "noTool": "ez dago Trivy edo Grype instalatuta ekipo honetan (aplikazioak ez ditu instalatzen).",
+      "noDatabase": "tresnak ez du bere ahultasun-datu-basea deskargatuta (aplikazioak ez du deskargatzen).",
+      "toolError": "tresnak huts egin du ({{message}}).",
+      "unknownTool": "onartzen ez den tresna.",
+      "badImage": "irudi-erreferentzia baliogabea."
+    },
+    "skipped": {
+      "title": "Auditatu gabe",
+      "composeUnavailable": "Docker Compose ez dago erabilgarri: ez dira proiektuak berrikusi.",
+      "noFiles": "proiektuak ez du Compose fitxategi ezagunik.",
+      "composeConfig": "ezin izan da bere konfigurazioa irakurri."
+    },
+    "history": {
+      "title": "Aurreko auditoriak",
+      "empty": "Oraindik ez dago zerbitzari honen auditoriarik gordeta.",
+      "one": "{{name}} edukiontzia",
+      "all_one": "Elementu {{count}}",
+      "all_other": "{{count}} elementu",
+      "open": "Ikusi",
+      "shown": "Goian erakusten da"
+    },
+    "export": {
+      "json": "JSON",
+      "markdown": "Markdown",
+      "html": "HTML",
+      "saved": "Txostena hemen gorde da: {{path}} (zuk bakarrik irakur dezakezu).",
+      "error": "Ezin izan da txostena gorde: {{message}}",
+      "title": "Segurtasun-auditoria · {{server}}",
+      "date": "Data",
+      "scope": "Irismena",
+      "scopeAll": "edukiontzi guztiak",
+      "scopeOne": "{{name}} edukiontzia",
+      "readOnly": "Auditoriak konfigurazioa irakurri besterik ez du egin; ez du ezer aldatu. Sekretuak ezkutatuta daude."
+    },
+    "proposal": {
+      "banner_one": "Auditoriak aldaketa {{count}} proposatu du. Berrikusi aplikatu aurretik: oraindik ez da ezer aldatu.",
+      "banner_other": "Auditoriak {{count}} aldaketa proposatu ditu. Berrikusi aplikatu aurretik: oraindik ez da ezer aldatu.",
+      "resources": "Adierazi CPU eta memoria-mugak ere «Baliabideak» atalean."
+    }
   }
 }

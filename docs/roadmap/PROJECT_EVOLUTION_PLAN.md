@@ -4,7 +4,7 @@
 |---|---|
 | Versión de partida | 1.0.0 (commit `d1068d4`) |
 | Fecha | 12 de noviembre de 2026 |
-| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0) y E2 (1.2.0) implementadas**; pendientes de su validación manual (M1–M8 de cada una) |
+| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0), E2 (1.2.0) y E3 (1.3.0) implementadas**; pendientes de su validación manual (M1–M8 de cada una) |
 | Documentos relacionados | [STATUS.md](../../STATUS.md) (fases 1–10) · [DECISIONS.md](../../DECISIONS.md) · [docs/security/](../security/) |
 
 Este plan continúa el proyecto existente. No es una reescritura ni sustituye a
@@ -676,14 +676,15 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☐ Validación manual del propietario (M1–M8, en el informe de verificación).
 
 ### E3 (1.3.0)
-- ☐ Modelo de hallazgo y motor de auditoría sobre `risk`.
-- ☐ Comprobaciones de `inspect`: seccomp, AppArmor, `no-new-privileges`, usuario, recursos, `readonly_rootfs`, PID e IPC.
-- ☐ Compose e imágenes.
-- ☐ Detección de Trivy y Grype, versión y fecha de la base, estados «no analizado».
-- ☐ Historial por servidor.
-- ☐ Exportación a JSON, Markdown y HTML.
-- ☐ Interfaz: resumen, filtros, detalle, recomendaciones y acción correctiva con vista previa.
-- ☐ Pruebas con contenedores peligrosos y legítimos.
+- ☑ Modelo de hallazgo y motor de auditoría sobre `risk` (D-093).
+- ☑ Comprobaciones de `inspect`: seccomp, AppArmor, `no-new-privileges`, usuario, recursos, `readonly_rootfs`, PID e IPC.
+- ☑ Compose e imágenes (usuario y antigüedad; los puertos se evalúan en los contenedores y servicios que los publican).
+- ☑ Detección de Trivy y Grype, versión y fecha de la base, estados «no analizado» (D-094). Probado con herramientas simuladas: no hay Trivy ni Grype ni red en este entorno.
+- ☑ Historial por servidor (D-095).
+- ☑ Exportación a JSON, Markdown y HTML.
+- ☑ Interfaz: resumen, filtros, detalle, recomendaciones y acción correctiva con vista previa (puertos, carpetas en solo lectura y límites; el resto, recomendación en texto).
+- ☑ Pruebas con contenedores peligrosos y legítimos (Docker real, IPC y SSH).
+- ☐ Validación manual del propietario (M1–M8, en el informe de verificación).
 
 ### E4 (1.4.0)
 - ☐ Formato de copia (manifiesto, hashes, permisos).

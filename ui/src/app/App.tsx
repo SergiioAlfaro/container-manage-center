@@ -27,6 +27,7 @@ const load = {
   BindsView: () => import("@/features/binds/BindsView"),
   ComposeView: () => import("@/features/compose/ComposeView"),
   TerminalsView: () => import("@/features/terminals/TerminalsView"),
+  AuditView: () => import("@/features/audit/AuditView"),
   EventsView: () => import("@/features/events/EventsView"),
   ServersView: () => import("@/features/servers/ServersView"),
   SettingsView: () => import("@/features/settings/SettingsView"),
@@ -143,6 +144,8 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <View name="ComposeView" />;
     case "terminals":
       return <View name="TerminalsView" />;
+    case "audit":
+      return <View name="AuditView" />;
     case "events":
       return <View name="EventsView" />;
     case "settings":

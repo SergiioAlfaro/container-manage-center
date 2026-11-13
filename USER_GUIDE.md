@@ -561,6 +561,46 @@ en otros.
   de abrirla en el navegador del sistema. Solo se abren enlaces `http://` y
   `https://`.
 
+## Auditoría
+
+**Herramientas → Auditoría** (1.3.0) revisa la seguridad del servidor elegido
+(este equipo o uno remoto) y **no cambia nada**: solo lee la configuración.
+
+- **Qué auditar**: todos los contenedores (en ejecución y detenidos) o uno;
+  también las imágenes y los proyectos Compose (se lee su configuración con
+  `docker compose config`, sin desplegar). **Auditar** muestra el avance y se
+  puede cancelar.
+- **Resultado**: los hallazgos por nivel (crítico, alto, medio, bajo),
+  agrupados por contenedor, servicio o imagen. Cada uno explica qué ocurre,
+  **por qué importa** y qué se **recomienda**. Se comprueban:
+  - los riesgos para el equipo: socket de Docker, carpetas sensibles,
+    capacidades, modo privilegiado, red del equipo, PID e IPC compartidos,
+    opciones que desactivan seccomp, AppArmor o SELinux, dispositivos y puertos
+    abiertos a todas las interfaces;
+  - el endurecimiento: proceso como root, sistema de archivos modificable,
+    sin límites de memoria, CPU o procesos, sin `no-new-privileges` e imágenes
+    de más de un año.
+
+  Con Docker rootless o `userns-remap`, el root del contenedor es menos grave y
+  se marca como bajo. Debajo se indica qué protecciones usa Docker (rootless,
+  seccomp, AppArmor, SELinux, versión de cgroup).
+- **Filtros**: por nivel, por tipo y por texto.
+- **Proponer correcciones** (contenedores): abre «Editar configuración» con
+  los cambios ya puestos en el borrador (publicar el puerto solo en
+  127.0.0.1, montar la carpeta en solo lectura) o en la pestaña de límites de
+  CPU y memoria. Revisa los cambios y aplícalos como cualquier edición, con su
+  copia de seguridad; si los descartas, no cambia nada.
+- **Vulnerabilidades**: si tienes **Trivy** o **Grype** instalados con su base
+  descargada, marca la casilla y cada imagen muestra cuántas vulnerabilidades
+  conocidas tiene, por gravedad, y la fecha de la base usada. La aplicación no
+  instala estas herramientas ni descarga su base (ver INSTALL.md). Sin ellas, o
+  en un servidor remoto, el informe dice «No analizado»: nunca «0» si no se
+  analizó.
+- **Exportar** a JSON, Markdown o HTML: eliges dónde guardarlo y el archivo
+  queda solo para tu usuario (permisos 0600). Los secretos se ocultan.
+- **Auditorías anteriores**: las de este servidor (las 200 últimas), para
+  abrirlas de nuevo.
+
 ## Eventos y registros
 
 Docker anuncia cada cambio (un contenedor que se crea, arranca o se detiene,

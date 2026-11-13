@@ -39,3 +39,22 @@ export function isSecretEntry(name: string, value: string): boolean {
   if (isSecretName(name) && value !== "" && !TRIVIAL.has(value.toLowerCase())) return true;
   return hasCredentials(value);
 }
+
+const PEM_BLOCK = /-----BEGIN ([A-Z ]*)PRIVATE KEY-----[\s\S]*?-----END \1PRIVATE KEY-----/g;
+const URL_CREDENTIALS = /(:\/\/[^\s"'/<>@:]*):([^\s"'/<>@]+)@/g;
+const ASSIGNMENT = /\b([A-Za-z_][A-Za-z0-9_.-]*)=([^\s"',;&<>]+)/g;
+const AUTH_HEADER = /(Authorization:\s*\w+\s+)\S+/gi;
+
+/**
+ * Oculta los secretos de un texto libre (E3: informes exportados): claves
+ * privadas PEM, contraseñas de URL, `NOMBRE=valor` con nombre secreto y
+ * cabeceras `Authorization`. Es una primera pasada: al guardar, Rust vuelve a
+ * aplicar sus reglas (`dcc_activity::redact`).
+ */
+export function redactText(text: string): string {
+  return text
+    .replace(PEM_BLOCK, `-----BEGIN $1PRIVATE KEY-----${REDACTED}-----END $1PRIVATE KEY-----`)
+    .replace(URL_CREDENTIALS, `$1:${REDACTED}@`)
+    .replace(ASSIGNMENT, (m, name: string, value: string) => (isSecretName(name) && !TRIVIAL.has(value.toLowerCase()) ? `${name}=${REDACTED}` : m))
+    .replace(AUTH_HEADER, `$1${REDACTED}`);
+}

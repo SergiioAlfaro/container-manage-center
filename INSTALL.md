@@ -9,8 +9,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.2.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.2.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `docker-control-center_1.3.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.3.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -56,7 +56,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.2.0_amd64.deb
+sudo apt install ./docker-control-center_1.3.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -264,6 +264,20 @@ comprobación de versiones nuevas (Configuración → Actualizaciones), que est�
 desactivada mientras no indiques una fuente y la uses. Solo las operaciones que **Docker Engine** hace
 contra registros remotos necesitan que Docker tenga red: descargar imágenes,
 buscar en Docker Hub y construir con imágenes base que no estén en el equipo.
+
+## Análisis de vulnerabilidades (opcional)
+
+La auditoría (1.3.0) puede usar **Trivy** o **Grype** si están instalados en
+este equipo (en el `PATH`). La aplicación **no los instala ni descarga su base
+de vulnerabilidades**: sin ellos, el informe dice «No analizado».
+
+- Instálalos desde su proyecto oficial con una **versión fijada** y comprueba
+  su firma o suma (la versión 0.69.4 de Trivy fue maliciosa, CVE-2026-33634).
+- Descarga su base tú mismo cuando quieras actualizarla:
+  `trivy image --download-db-only` o `grype db update`. La aplicación siempre
+  analiza sin conexión con la base que haya y muestra su fecha.
+- Solo se analizan las imágenes del Docker de este equipo; en un servidor
+  remoto, instala la herramienta allí y úsala desde su terminal.
 
 ## Credenciales de registros privados
 
