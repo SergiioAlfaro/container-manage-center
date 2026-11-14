@@ -76,6 +76,10 @@
       "title": "Audit",
       "description": "Controlla la sicurezza di container, immagini e progetti Compose."
     },
+    "monitor": {
+      "title": "Monitoraggio",
+      "description": "Uso di CPU, memoria, rete e disco dei container, con cronologia, confronto e avvisi."
+    },
     "events": {
       "title": "Eventi e registri",
       "description": "Eventi di Docker in tempo reale e cronologia delle operazioni."
@@ -3250,6 +3254,141 @@
       "restore_action_newFolder": "Verrà creata una nuova cartella.",
       "engine_pathNotAllowed": "Per sicurezza, quella cartella non è consentita.",
       "engine_notConnected": "Nessuna connessione a Docker Engine."
+    }
+  },
+  "monitor": {
+    "intro": "Docker Control Center campiona con «docker stats» e «inspect» (senza installare nulla sul server). Le interruzioni di connessione appaiono come vuoti: nessun dato viene inventato.",
+    "controls": "Controlli del monitoraggio",
+    "enable": "Monitora questo server",
+    "resume": "Riprendi",
+    "pause": "Metti in pausa",
+    "interval": "Ogni",
+    "seconds_one": "{{count}} secondo",
+    "seconds_other": "{{count}} secondi",
+    "off": "Il monitoraggio di questo server è disattivato.",
+    "paused": "In pausa: non si prendono campioni.",
+    "gap": "Disconnesso: viene registrato un vuoto.",
+    "lastSample": "Ultimo campione alle {{time}}: {{count}} container in {{ms}} ms",
+    "waiting": "In attesa del primo campione…",
+    "lastError": "Ultimo errore: {{error}}",
+    "offHint": "Attivalo per vedere l’uso dei container. Un riepilogo al minuto viene conservato sul tuo computer, con un limite di dimensione e di tempo.",
+    "tabs": "Viste",
+    "tab": {
+      "summary": "Riepilogo",
+      "compare": "Confronta",
+      "alerts": "Avvisi"
+    },
+    "range": "Periodo",
+    "ranges": {
+      "5m": "5 min",
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h",
+      "6h": "6 h",
+      "24h": "24 h"
+    },
+    "host": "Macchina (secondo Docker)",
+    "hostValue": "{{cpus}} CPU · {{mem}}",
+    "hostHint": "Dati di «docker info»: non è un monitoraggio del sistema operativo.",
+    "counts": "Container",
+    "countsValue": "{{running}} in esecuzione · {{paused}} in pausa · {{stopped}} fermi",
+    "usage": "Uso totale",
+    "usageValue": "CPU {{cpu}} · memoria {{mem}}",
+    "cpuTotal": "CPU dei container",
+    "memTotal": "Memoria dei container",
+    "noData": "Nessun dato in questo periodo",
+    "containers": "Container",
+    "col": {
+      "name": "Nome",
+      "cpu": "CPU",
+      "mem": "Memoria",
+      "net": "Rete",
+      "disk": "Disco",
+      "pids": "PID",
+      "uptime": "In esecuzione da"
+    },
+    "alerting": "Avviso",
+    "notRunning": "Non in esecuzione ({{state}})",
+    "restarts_one": "{{count}} riavvio",
+    "restarts_other": "{{count}} riavvii",
+    "detail": "Dettaglio di {{name}}",
+    "metric": {
+      "cpu": "CPU",
+      "mem": "Memoria",
+      "memPercent": "Memoria (% del limite)",
+      "netRx": "Rete ricevuta",
+      "netTx": "Rete inviata",
+      "blkRead": "Lettura disco",
+      "blkWrite": "Scrittura disco",
+      "pids": "Processi (PID)"
+    },
+    "diskHint": "Lettura e scrittura disco appaiono solo se Docker le fornisce (dipendono dal driver di archiviazione e dai cgroup).",
+    "compareHint": "Scegli fino a {{count}} container in esecuzione e una metrica.",
+    "metricLabel": "Metrica",
+    "compareEmpty": "Scegli un container da confrontare.",
+    "rules": {
+      "title": "Regole di avviso",
+      "hint": "Si applicano a tutti i container dei server monitorati. Un avviso scatta dopo diversi campioni consecutivi sopra la soglia e si risolve dopo altrettanti sotto il valore di risoluzione.",
+      "cpu": "CPU alta",
+      "memory": "Memoria alta",
+      "above": "Scatta sopra ({{unit}})",
+      "clearBelow": "Si risolve sotto ({{unit}})",
+      "samples": "Campioni consecutivi",
+      "restart": "Si blocca e Docker lo riavvia",
+      "oom": "Docker lo ferma per mancanza di memoria (OOM)",
+      "exitError": "Termina con errore senza che nessuno lo fermi",
+      "disconnected": "Si perde la connessione con il server",
+      "silence": "Non ripetere lo stesso avviso per (minuti)"
+    },
+    "retention": "Cronologia al minuto su disco (ore, 1–168)",
+    "notifications": "Notifiche desktop",
+    "notificationsHint": "Inviate al sistema di notifiche del tuo desktop; non lasciano il tuo computer.",
+    "testNotification": "Prova notifica",
+    "testTitle": "Prova di Docker Control Center",
+    "testBody": "Se vedi questo messaggio, le notifiche funzionano.",
+    "testSent": "Inviata.",
+    "testFailed": "Invio non riuscito: {{error}}",
+    "save": "Salva",
+    "history": "Cronologia degli avvisi",
+    "noAlerts": "Nessun avviso.",
+    "silenced": "non notificato (silenzio)",
+    "uptime": {
+      "days": "{{d}} g {{h}} h",
+      "hours": "{{h}} h {{m}} min",
+      "minutes": "{{m}} min",
+      "seconds": "{{s}} s"
+    },
+    "alert": {
+      "cpu": {
+        "fired": "CPU alta su {{name}}",
+        "resolved": "CPU normale su {{name}}",
+        "body": "{{name}} su {{server}}: {{value}} di CPU"
+      },
+      "memory": {
+        "fired": "Memoria alta su {{name}}",
+        "resolved": "Memoria normale su {{name}}",
+        "body": "{{name}} su {{server}}: {{value}} del suo limite di memoria"
+      },
+      "restart": {
+        "fired": "{{name}} si è riavviato",
+        "resolved": "{{name}} si è riavviato",
+        "body": "{{name}} su {{server}} si è bloccato e Docker lo ha riavviato."
+      },
+      "oom": {
+        "fired": "{{name}} ha esaurito la memoria",
+        "resolved": "{{name}} ha esaurito la memoria",
+        "body": "Docker ha fermato {{name}} su {{server}} per mancanza di memoria."
+      },
+      "exitError": {
+        "fired": "{{name}} è terminato con errore",
+        "resolved": "{{name}} è terminato con errore",
+        "body": "{{name}} su {{server}} è terminato con il codice {{value}}."
+      },
+      "disconnected": {
+        "fired": "Disconnesso da {{name}}",
+        "resolved": "Riconnesso a {{name}}",
+        "body": "{{server}}: finché non c’è connessione i grafici mostreranno un vuoto."
+      }
     }
   }
 }

@@ -37,6 +37,8 @@ const TECHNICAL = [
   "{{name}} {{version}}: {{reason}}",
   // 1.4.0: copias (nombres de los motores de bases de datos).
   "MariaDB", "MySQL", "PostgreSQL", "Redis", "MongoDB",
+  // 1.5.0: monitorización (unidades de tiempo y de recursos).
+  "5 min", "15 min", "30 min", "1 h", "6 h", "24 h", "{{cpus}} CPU · {{mem}}", "{{h}} h {{m}} min", "{{m}} min", "{{s}} s", "PIDs", "{{d}} d {{h}} h",
 ];
 const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   fr: [

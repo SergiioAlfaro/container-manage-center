@@ -370,6 +370,15 @@ pub fn spawn_events_watcher<R: Runtime>(
                 state
                     .journals
                     .record_event(&ev, state.config().activity.keep_history);
+                // Alertas de la monitorización por eventos (reinicio, OOM, caída).
+                let server = ev
+                    .server
+                    .as_ref()
+                    .map_or(crate::servers::LOCAL, |t| t.id.as_str());
+                let alerts = state.monitor.on_event(server, &ev);
+                for a in &alerts {
+                    let _ = a2.emit(crate::monitor::ALERT_EVENT, a);
+                }
                 let _ = a2.emit(DOCKER_EVENT, &ev);
                 true
             });

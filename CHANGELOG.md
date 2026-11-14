@@ -1,5 +1,16 @@
 # Cambios
 
+## 1.5.0 — 2026-11-14 (evolución, Etapa 5: monitorización avanzada)
+- **Monitorización** (sección nueva en «Supervisión», D-102): CPU, memoria y su límite, red, disco (donde Docker lo da), PIDs, estado, tiempo en marcha y reinicios de cada contenedor, con los mismos cálculos que `docker stats`. Sin instalar nada en los servidores: solo la API de Docker, igual en local y por SSH. El panel de inicio se mantiene.
+- **Por servidor**: se activa en cada servidor y sigue activa al volver a abrir la aplicación. Intervalo de 2 a 60 s y pausa. El equipo se muestra solo con lo que da `docker info` (CPU y memoria), sin presentarlo como monitorización del sistema.
+- **Historial** (D-103): los últimos 30 minutos en memoria y un resumen por minuto en el disco (0600), con retención de 1 a 168 horas y un máximo de 64 MiB. Periodos de 5 minutos a 24 horas.
+- **Desconexiones**: se ven como huecos rayados en los gráficos; no se inventan datos y la aplicación no se bloquea. Al volver la conexión, el muestreo sigue solo.
+- **Gráficos** propios en SVG (D-106), con los colores del tema y trazos distintos; detalle por contenedor y **comparación** de hasta 4 contenedores por métrica.
+- **Alertas** (D-104): CPU y memoria con umbral, histéresis y número de muestras; reinicio tras una caída, falta de memoria (OOM), salida con error y desconexión. Un periodo de silencio evita repetir el mismo aviso. Historial de alertas por servidor.
+- **Notificaciones de escritorio** (D-105) por D-Bus, sin complemento ni permiso nuevo; se pueden desactivar y probar.
+- **Consumo** (D-107): medido con 50 contenedores y 3 servidores a 2 s, dentro del límite fijado (≤ 10 % de una CPU, ≤ 64 MiB adicionales, cada muestra en menos de 2 s).
+- **Verificación**: `scripts/verify-evolution-1.5.0.sh`, con toda la regresión anterior y la monitorización contra Docker real (comparación con `docker stats`, desconexión, consumo, alertas reales de CPU y OOM), por IPC y por SSH.
+
 ## 1.4.0 — 2026-11-14 (evolución, Etapa 4: copias de seguridad y restauración)
 - **Copias de seguridad** (sección nueva «Copias» en «Herramientas», D-096): de volúmenes, bases de datos, la configuración de contenedores, proyectos Compose y la configuración de la aplicación, en una carpeta que eliges. Cada copia tiene un manifiesto con la SHA-256 de cada archivo; carpetas 0700 y archivos 0600. Sin cifrado (evaluado y documentado).
 - **Nunca una copia a medias**: se escribe aparte y solo se da por completa con el manifiesto escrito. Una copia cancelada no deja nada; una interrumpida aparece como «Incompleta» y no se puede restaurar. «Comprobar» detecta archivos alterados, que faltan o que sobran.

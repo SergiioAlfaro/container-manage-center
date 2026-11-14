@@ -165,8 +165,8 @@ Reglas:
 | Dependencia | Etapa | Licencia | Estado de la evaluación |
 |---|---|---|---|
 | Trivy / Grype (binarios opcionales del usuario) | E3 | Apache-2.0 | No se ha podido confirmar que estén en los repositorios oficiales de Debian 13 ni de Ubuntu; hay que comprobarlo en E3. Normalmente se instalan desde el proyecto (repositorio APT de Aqua o binarios). Ambos admiten una base local (`trivy --skip-db-update` con caché, `grype db import`). Trivy tuvo una versión maliciosa (v0.69.4, CVE-2026-33634). **Se detectan, nunca se instalan.** |
-| `tauri-plugin-notification` | E5 | MIT/Apache-2.0 (a confirmar con `cargo deny`) | Comprobar en WebKitGTK/D-Bus de GNOME y KDE |
-| Biblioteca de gráficos (p. ej. uPlot, MIT) o SVG propio | E5 | — | Decidir en E5 según el tamaño, la accesibilidad y el modo oscuro. SVG propio si basta con líneas y áreas |
+| `tauri-plugin-notification` | E5 | MIT/Apache-2.0 | **Descartado en E5** (D-105): las notificaciones van por D-Bus con `zbus`, que ya estaba en el árbol de dependencias |
+| Biblioteca de gráficos (p. ej. uPlot, MIT) o SVG propio | E5 | — | **Decidido en E5: SVG propio** (D-106), basta con líneas |
 | Cifrado de copias (crate `age`, MIT/Apache-2.0) | E4 | — | Evaluar frente a un archivo sin cifrar en una carpeta 0700 |
 
 ---
@@ -702,14 +702,15 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☐ Validación manual del propietario (M1–M10, en el informe de verificación).
 
 ### E5 (1.5.0)
-- ☐ Muestreador por servidor (`stats` compartido, frecuencia y pausa).
-- ☐ Históricos en anillo y reducción a disco con límite.
-- ☐ Métricas de servidor.
-- ☐ Gráficos (decisión de biblioteca).
-- ☐ Comparación de contenedores.
-- ☐ Alertas con histéresis y notificaciones.
-- ☐ Desconexión y reconexión.
-- ☐ Medición del consumo de la aplicación.
+- ☑ Muestreador por servidor compartido (`stats` de una lectura por contenedor, 8 a la vez), intervalo de 2 a 60 s y pausa; sigue activo tras reiniciar la aplicación (D-102).
+- ☑ Históricos en anillo (30 min) y reducción a 1 minuto en el disco con límite de tiempo (1–168 h) y de tamaño (64 MiB) (D-103).
+- ☑ Métricas de servidor: estado, recuentos, conexión y el equipo solo según `docker info`.
+- ☑ Gráficos: SVG propio, sin biblioteca (D-106).
+- ☑ Comparación de contenedores (hasta 4, por métrica).
+- ☑ Alertas con umbral, histéresis y silencio, y por eventos (reinicio, OOM, salida con error, desconexión); notificaciones de escritorio por D-Bus con `zbus`, sin complemento nuevo (D-104, D-105). Aviso visible en GNOME/KDE, sin probar aquí.
+- ☑ Desconexión y reconexión: huecos sin datos inventados, sin bloquear.
+- ☑ Medición del consumo de la aplicación con 50 contenedores y 3 servidores, dentro del límite fijado (D-107).
+- ☐ Validación manual del propietario (M1–M9, en el informe de verificación).
 
 ### E6 (1.6.0)
 - ☐ Enlaces entre herramientas: de la auditoría a la monitorización y a las copias por id.

@@ -5,7 +5,7 @@ este equipo y en servidores remotos por SSH: contenedores, imágenes, redes,
 volúmenes, directorios vinculados y proyectos Docker Compose, mostrando en todo
 momento las operaciones reales que se ejecutan.
 
-**Versión 1.4.0** (evolución, Etapa 4: copias de seguridad y restauración).
+**Versión 1.5.0** (evolución, Etapa 5: monitorización avanzada).
 Tauri 2 · Rust · React · TypeScript · bollard.
 
 ## Qué hace
@@ -21,6 +21,10 @@ Tauri 2 · Rust · React · TypeScript · bollard.
 - **Docker Compose**: importar o crear proyectos, editor con validación,
   desplegar, detener, construir, servicios y registros.
 - **Terminales**: varias sesiones a la vez, en contenedores y en servidores.
+- **Monitorización** (1.5.0): CPU, memoria, red, disco y procesos de cada
+  contenedor como `docker stats`, sin instalar nada en los servidores; gráficos
+  de 5 minutos a 24 horas, comparación de contenedores, huecos visibles cuando
+  no hay conexión, y alertas con histéresis y notificaciones de escritorio.
 - **Copias de seguridad** (1.4.0): de volúmenes, bases de datos (MariaDB, MySQL,
   PostgreSQL, Redis, MongoDB, con su propio volcado), configuración de
   contenedores, Compose y la aplicación; con manifiesto y SHA-256, comprobación
@@ -55,7 +59,7 @@ bash scripts/install.sh --check  # solo comprueba el sistema
 bash scripts/install.sh --uninstall
 ```
 
-O directamente: `sudo apt install ./docker-control-center_1.4.0_amd64.deb`.
+O directamente: `sudo apt install ./docker-control-center_1.5.0_amd64.deb`.
 Después se abre desde el menú de aplicaciones o con `docker-control-center`
 (desde el código fuente: `bash scripts/run.sh`). Requisitos, acceso a Docker,
 compilación y diagnóstico en [INSTALL.md](INSTALL.md).
@@ -77,7 +81,7 @@ compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 ## Comprobación
 
 ```bash
-bash scripts/verify-evolution-1.4.0.sh --deb   # regresión completa, paquete y comprobaciones de las Etapas 1 a 4
+bash scripts/verify-evolution-1.5.0.sh --deb   # regresión completa, paquete y comprobaciones de las Etapas 1 a 5
 cargo run -q -p dcc-engine --bin dcc-diagnose   # diagnóstico de la conexión con Docker
 npm run lint                                    # ESLint (configuración mínima, reglas de seguridad)
 cargo deny check                                # dependencias de Rust (deny.toml)

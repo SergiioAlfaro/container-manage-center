@@ -3498,3 +3498,281 @@ fn live_e4_scheduled_job_runs_headless_with_retention() {
     )
     .unwrap();
 }
+
+// ------------------------------------------------------------- E5 (1.5.0)
+
+/// Monitorización sin Docker: se activa por servidor, las muestras son huecos,
+/// los comandos responden al momento (no bloquean), la configuración se valida
+/// y la monitorización sigue activa tras reiniciar la aplicación.
+#[test]
+fn e5_monitor_without_docker_shows_gaps_and_survives_a_restart() {
+    let h = harness();
+    let s = invoke(&h, "monitor_settings", json!({})).unwrap();
+    assert_eq!(s["intervalSecs"], 5);
+    assert_eq!(s["servers"], json!([]));
+    let st = invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap();
+    assert_eq!(
+        (st["enabled"].as_bool(), st["running"].as_bool()),
+        (Some(false), Some(false))
+    );
+    // Configuración no válida o servidor desconocido.
+    let mut bad = s.clone();
+    bad["intervalSecs"] = json!(1);
+    assert_eq!(
+        invoke(&h, "monitor_settings_set", json!({ "settings": bad })).unwrap_err()["code"],
+        "monitor.invalid"
+    );
+    assert!(invoke(
+        &h,
+        "monitor_set_server",
+        json!({ "server": "srv-noexiste", "enabled": true })
+    )
+    .is_err());
+    let mut fast = s.clone();
+    fast["intervalSecs"] = json!(2);
+    invoke(&h, "monitor_settings_set", json!({ "settings": fast })).unwrap();
+    let st = invoke(
+        &h,
+        "monitor_set_server",
+        json!({ "server": "local", "enabled": true }),
+    )
+    .unwrap();
+    assert_eq!(
+        (st["enabled"].as_bool(), st["running"].as_bool()),
+        (Some(true), Some(true))
+    );
+    // Sin Docker: hueco, y los comandos responden enseguida.
+    wait_long("primer hueco", 15, || {
+        invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap()["gap"] == true
+    });
+    let t = std::time::Instant::now();
+    let st = invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap();
+    let live = invoke(
+        &h,
+        "monitor_live",
+        json!({ "server": "local", "containers": ["x"], "minutes": 5 }),
+    )
+    .unwrap();
+    assert!(
+        t.elapsed() < Duration::from_millis(500),
+        "no bloquea: {:?}",
+        t.elapsed()
+    );
+    assert!(st["last"].is_null());
+    assert!(live["server"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|p| p["connected"] == false));
+    assert!(
+        live["containers"][0]["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|p| p[1].is_null()),
+        "sin datos inventados"
+    );
+    // La desconexión es una alerta (una sola).
+    std::thread::sleep(Duration::from_secs(5));
+    let alerts = invoke(&h, "monitor_alerts", json!({ "server": "local" })).unwrap();
+    let disc: Vec<_> = alerts
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|a| a["kind"] == "disconnected")
+        .collect();
+    assert_eq!(disc.len(), 1, "{alerts}");
+    // Pausa.
+    invoke(&h, "monitor_pause", json!({ "paused": true })).unwrap();
+    assert_eq!(
+        invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap()["paused"],
+        true
+    );
+    // Reinicio de la aplicación: sigue activada y en marcha (y sin pausa).
+    let Harness {
+        app,
+        window,
+        _dir: keep,
+        store,
+    } = h;
+    drop(window);
+    drop(app);
+    let h = reopen(&store);
+    let st = invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap();
+    assert_eq!(
+        (
+            st["enabled"].as_bool(),
+            st["running"].as_bool(),
+            st["paused"].as_bool()
+        ),
+        (Some(true), Some(true), Some(false))
+    );
+    assert_eq!(
+        invoke(&h, "monitor_settings", json!({})).unwrap()["intervalSecs"],
+        2
+    );
+    // Desactivar la detiene.
+    let st = invoke(
+        &h,
+        "monitor_set_server",
+        json!({ "server": "local", "enabled": false }),
+    )
+    .unwrap();
+    assert_eq!(st["running"], false);
+    let ops = invoke(&h, "activity_list", json!({})).unwrap();
+    let kinds: Vec<&str> = ops
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|o| o["kind"].as_str())
+        .collect();
+    assert!(kinds.contains(&"monitor.settings"), "{kinds:?}");
+    drop(keep);
+}
+
+/// E5 contra Docker real: muestras con los contenedores, series en vivo,
+/// registros por minuto en disco y una alerta de OOM que llega por los eventos
+/// que ya recibe la aplicación.
+#[test]
+fn live_e5_monitor_samples_minutes_and_event_alerts() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let mut s = invoke(&h, "monitor_settings", json!({})).unwrap();
+    s["intervalSecs"] = json!(2);
+    s["servers"] = json!(["local"]);
+    invoke(&h, "monitor_settings_set", json!({ "settings": s })).unwrap();
+    // Un contenedor que se queda sin memoria (16 MiB).
+    let name = format!("dcc-test-e5-oom-{}", std::process::id());
+    struct Cleanup<'a>(&'a Harness, String);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = invoke(
+                self.0,
+                "container_remove",
+                json!({ "id": self.1, "force": true, "volumes": true, "confirmed": true }),
+            );
+        }
+    }
+    let _c = Cleanup(&h, name.clone());
+    wait_long("dos muestras", 30, || {
+        let st = invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap();
+        let live = invoke(
+            &h,
+            "monitor_live",
+            json!({ "server": "local", "containers": [], "minutes": 5 }),
+        )
+        .unwrap();
+        st["last"]["connected"] == true
+            && st["host"]["ncpu"].as_i64().unwrap_or(0) > 0
+            && live["server"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|p| p["connected"] == true)
+                .count()
+                >= 2
+    });
+    let sock = std::env::var("DCC_DOCKER_SOCKET").unwrap_or_else(|_| "/var/run/docker.sock".into());
+    let out = std::process::Command::new("docker")
+        .env("DOCKER_HOST", format!("unix://{sock}"))
+        .args([
+            "run",
+            "-d",
+            "--name",
+            &name,
+            "--label",
+            "dcc.test=true",
+            "--memory",
+            "16m",
+            "--memory-swap",
+            "16m",
+            "dcc-test/shell:1",
+            "sh",
+            "-c",
+            "x=a; while :; do x=\"$x$x\"; done",
+        ])
+        .output()
+        .expect("docker run");
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    wait_long("alerta de OOM", 60, || {
+        let a = invoke(&h, "monitor_alerts", json!({ "server": "local" })).unwrap();
+        a.as_array()
+            .unwrap()
+            .iter()
+            .any(|x| x["kind"] == "oom" && x["container"] == name.as_str())
+    });
+    let st = invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap();
+    let id = st["last"]["containers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["meta"]["name"] == name.as_str())
+        .map(|c| c["meta"]["id"].as_str().unwrap().to_owned());
+    let live = invoke(
+        &h,
+        "monitor_live",
+        json!({ "server": "local", "containers": [id.clone().unwrap_or_default()], "minutes": 5 }),
+    )
+    .unwrap();
+    assert!(live["server"].as_array().unwrap().len() >= 2);
+    assert!(live["server"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|p| p["connected"] == true));
+    // Un registro por minuto en el disco (como mucho, un minuto y algo).
+    wait_long("registro por minuto", 80, || {
+        !invoke(
+            &h,
+            "monitor_minutes",
+            json!({ "server": "local", "hours": 1, "containers": [] }),
+        )
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .is_empty()
+    });
+    let file = h
+        .store
+        .path()
+        .parent()
+        .unwrap()
+        .join("estado/monitor/local/metricas.jsonl");
+    use std::os::unix::fs::PermissionsExt;
+    assert_eq!(
+        std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    // El muestreo no registra cada lectura en el panel de actividad.
+    let ops = invoke(&h, "activity_list", json!({})).unwrap();
+    let stats = ops
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|o| o["kind"] == "container.stats" || o["kind"] == "container.list")
+        .count();
+    assert!(stats < 5, "{stats} lecturas registradas");
+    let s = invoke(
+        &h,
+        "monitor_set_server",
+        json!({ "server": "local", "enabled": false }),
+    )
+    .unwrap();
+    assert_eq!(s["running"], false);
+}

@@ -5,6 +5,8 @@ mod commands;
 mod error;
 mod events;
 mod journal;
+mod monitor;
+mod notify;
 mod secrets;
 mod servers;
 mod state;
@@ -63,7 +65,10 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
                         let _ = w.close();
                     });
                 }
-                tauri::WindowEvent::Destroyed => state.streams.close_all(),
+                tauri::WindowEvent::Destroyed => {
+                    state.streams.close_all();
+                    state.monitor.stop_all();
+                }
                 _ => {}
             }
         })
@@ -87,6 +92,8 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             });
             commands::servers::spawn_auto_connect(app.handle().clone());
             commands::app::spawn_startup_check(app.handle().clone());
+            // Monitorización de los servidores activados (sobrevive a un reinicio).
+            monitor::start_enabled(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -101,6 +108,15 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::audit::audit_get,
             commands::audit::audit_export_save,
             commands::backup::backup_settings,
+            commands::monitor::monitor_settings,
+            commands::monitor::monitor_settings_set,
+            commands::monitor::monitor_set_server,
+            commands::monitor::monitor_pause,
+            commands::monitor::monitor_status,
+            commands::monitor::monitor_live,
+            commands::monitor::monitor_minutes,
+            commands::monitor::monitor_alerts,
+            commands::monitor::monitor_notify,
             commands::backup::backup_pick_folder,
             commands::backup::backup_list,
             commands::backup::backup_verify,

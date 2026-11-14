@@ -76,6 +76,10 @@
       "title": "Auditoria",
       "description": "Berrikusi edukiontzien, irudien eta Compose proiektuen segurtasuna."
     },
+    "monitor": {
+      "title": "Monitorizazioa",
+      "description": "Edukiontzien CPU, memoria, sare eta disko erabilera, historiala, konparazioa eta alertekin."
+    },
     "events": {
       "title": "Gertaerak eta erregistroak",
       "description": "Dockerren gertaerak denbora errealean eta eragiketen historia."
@@ -3250,6 +3254,141 @@
       "restore_action_newFolder": "Karpeta berri bat sortuko da.",
       "engine_pathNotAllowed": "Segurtasunagatik, karpeta hori ez dago baimenduta.",
       "engine_notConnected": "Ez dago konexiorik Docker Enginerekin."
+    }
+  },
+  "monitor": {
+    "intro": "Docker Control Center-ek «docker stats» eta «inspect» erabiliz hartzen ditu laginak (zerbitzarian ezer instalatu gabe). Konexio-etenak hutsune gisa ikusten dira: ez da daturik asmatzen.",
+    "controls": "Monitorizazioaren kontrolak",
+    "enable": "Monitorizatu zerbitzari hau",
+    "resume": "Berrekin",
+    "pause": "Pausatu",
+    "interval": "Maiztasuna",
+    "seconds_one": "Segundo {{count}}",
+    "seconds_other": "{{count}} segundo",
+    "off": "Zerbitzari honen monitorizazioa desaktibatuta dago.",
+    "paused": "Pausan: ez da laginik hartzen.",
+    "gap": "Konexiorik gabe: hutsune bat erregistratzen da.",
+    "lastSample": "Azken lagina {{time}}(e)tan: {{count}} edukiontzi {{ms}} ms-tan",
+    "waiting": "Lehen laginaren zain…",
+    "lastError": "Azken errorea: {{error}}",
+    "offHint": "Aktibatu edukiontzien erabilera ikusteko. Minutuko laburpen bat gordetzen da zure ordenagailuan, tamaina- eta denbora-mugarekin.",
+    "tabs": "Ikuspegiak",
+    "tab": {
+      "summary": "Laburpena",
+      "compare": "Konparatu",
+      "alerts": "Alertak"
+    },
+    "range": "Epea",
+    "ranges": {
+      "5m": "5 min",
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h",
+      "6h": "6 h",
+      "24h": "24 h"
+    },
+    "host": "Ordenagailua (Docker-en arabera)",
+    "hostValue": "{{cpus}} CPU · {{mem}}",
+    "hostHint": "«docker info»-ren datuak: ez da sistema eragilearen monitorizazio bat.",
+    "counts": "Edukiontziak",
+    "countsValue": "{{running}} martxan · {{paused}} pausan · {{stopped}} geldituta",
+    "usage": "Erabilera osoa",
+    "usageValue": "CPU {{cpu}} · memoria {{mem}}",
+    "cpuTotal": "Edukiontzien CPUa",
+    "memTotal": "Edukiontzien memoria",
+    "noData": "Ez dago daturik epe honetan",
+    "containers": "Edukiontziak",
+    "col": {
+      "name": "Izena",
+      "cpu": "CPUa",
+      "mem": "Memoria",
+      "net": "Sarea",
+      "disk": "Diskoa",
+      "pids": "PIDak",
+      "uptime": "Martxan"
+    },
+    "alerting": "Alerta",
+    "notRunning": "Ez dago martxan ({{state}})",
+    "restarts_one": "Berrabiarazte {{count}}",
+    "restarts_other": "{{count}} berrabiarazte",
+    "detail": "{{name}}: xehetasunak",
+    "metric": {
+      "cpu": "CPUa",
+      "mem": "Memoria",
+      "memPercent": "Memoria (mugaren %)",
+      "netRx": "Jasotako sarea",
+      "netTx": "Bidalitako sarea",
+      "blkRead": "Diskoaren irakurketa",
+      "blkWrite": "Diskoaren idazketa",
+      "pids": "Prozesuak (PIDak)"
+    },
+    "diskHint": "Diskoaren irakurketa eta idazketa Docker-ek ematen baditu soilik agertzen dira (biltegiratze-kontrolatzailearen eta cgroups-en araberakoak dira).",
+    "compareHint": "Aukeratu gehienez {{count}} edukiontzi martxan eta metrika bat.",
+    "metricLabel": "Metrika",
+    "compareEmpty": "Aukeratu edukiontziren bat konparatzeko.",
+    "rules": {
+      "title": "Alerta-arauak",
+      "hint": "Monitorizatutako zerbitzarietako edukiontzi guztiei aplikatzen zaizkie. Alerta bat atalasetik gorako jarraian hainbat laginen ondoren pizten da eta ebazpen-balioaren azpitik beste horrenbesteren ondoren ebazten da.",
+      "cpu": "CPU altua",
+      "memory": "Memoria altua",
+      "above": "Honen gainetik pizten da ({{unit}})",
+      "clearBelow": "Honen azpitik ebazten da ({{unit}})",
+      "samples": "Jarraian dauden laginak",
+      "restart": "Erortzen da eta Docker-ek berriro abiarazten du",
+      "oom": "Docker-ek gelditzen du memoria faltagatik (OOM)",
+      "exitError": "Errore batekin amaitzen da inork gelditu gabe",
+      "disconnected": "Zerbitzariarekiko konexioa galtzen da",
+      "silence": "Ez errepikatu alerta beraren abisua (minutuak)"
+    },
+    "retention": "Minutuko historiala diskoan (orduak, 1–168)",
+    "notifications": "Mahaigaineko jakinarazpenak",
+    "notificationsHint": "Zure mahaigaineko jakinarazpen-sistemara bidaltzen dira; ez dira zure ordenagailutik ateratzen.",
+    "testNotification": "Probatu jakinarazpena",
+    "testTitle": "Docker Control Center-en proba",
+    "testBody": "Abisu hau ikusten baduzu, jakinarazpenek funtzionatzen dute.",
+    "testSent": "Bidalita.",
+    "testFailed": "Ezin izan da bidali: {{error}}",
+    "save": "Gorde",
+    "history": "Alerten historiala",
+    "noAlerts": "Ez dago alertarik.",
+    "silenced": "abisurik gabe (isilik)",
+    "uptime": {
+      "days": "{{d}} e {{h}} o",
+      "hours": "{{h}} o {{m}} min",
+      "minutes": "{{m}} min",
+      "seconds": "{{s}} s"
+    },
+    "alert": {
+      "cpu": {
+        "fired": "CPU altua: {{name}}",
+        "resolved": "CPU normala: {{name}}",
+        "body": "{{name}} ({{server}}): CPUaren {{value}}"
+      },
+      "memory": {
+        "fired": "Memoria altua: {{name}}",
+        "resolved": "Memoria normala: {{name}}",
+        "body": "{{name}} ({{server}}): memoria-mugaren {{value}}"
+      },
+      "restart": {
+        "fired": "{{name}} berrabiarazi da",
+        "resolved": "{{name}} berrabiarazi da",
+        "body": "{{name}} ({{server}}) erori da eta Docker-ek berriro abiarazi du."
+      },
+      "oom": {
+        "fired": "{{name}} memoriarik gabe geratu da",
+        "resolved": "{{name}} memoriarik gabe geratu da",
+        "body": "Docker-ek {{name}} ({{server}}) gelditu du memoria faltagatik."
+      },
+      "exitError": {
+        "fired": "{{name}} errore batekin amaitu da",
+        "resolved": "{{name}} errore batekin amaitu da",
+        "body": "{{name}} ({{server}}) {{value}} kodearekin amaitu da."
+      },
+      "disconnected": {
+        "fired": "Konexiorik ez {{name}}(r)ekin",
+        "resolved": "Konexioa berreskuratu da {{name}}(r)ekin",
+        "body": "{{server}}: konexiorik ez dagoen bitartean, grafikoek hutsune bat erakutsiko dute."
+      }
     }
   }
 }

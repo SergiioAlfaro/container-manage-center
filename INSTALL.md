@@ -9,8 +9,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.4.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.4.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `docker-control-center_1.5.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.5.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -56,7 +56,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.4.0_amd64.deb
+sudo apt install ./docker-control-center_1.5.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -295,6 +295,19 @@ propia aplicación.
 - Si quitas la aplicación sin quitar antes las programaciones, borra los
   archivos `~/.config/systemd/user/dcc-backup-*` y ejecuta
   `systemctl --user daemon-reload`.
+
+## Notificaciones de la monitorización (opcional)
+
+Las alertas de la monitorización (1.5.0) se envían al servicio de
+notificaciones del escritorio por D-Bus (`org.freedesktop.Notifications`), el
+mismo que usan las demás aplicaciones. GNOME, KDE, Xfce y los demás
+escritorios habituales ya lo tienen; no hay que instalar nada. Sin él, las
+alertas se siguen viendo en la aplicación y «Probar notificación» dice por qué
+no se pudo enviar.
+
+La monitorización no instala nada en los servidores. Guarda un resumen por
+minuto en `~/.local/state/docker-control-center/monitor/` (como máximo 64 MiB
+por servidor); si quitas la aplicación, puedes borrar esa carpeta.
 
 ## Credenciales de registros privados
 

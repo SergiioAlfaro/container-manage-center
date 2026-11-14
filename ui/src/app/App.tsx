@@ -13,9 +13,11 @@ import { useLiveRefresh } from "@/features/events/liveRefresh";
 import { api } from "@/shared/ipc/client";
 import { cx } from "@/shared/ui/controls";
 import { Spinner } from "@/shared/ui/feedback";
+import { alertText } from "@/features/monitor/model";
+import { numberFormat } from "@/shared/format";
 import { Sidebar } from "./Sidebar";
 import { useApp } from "./store";
-import { queryClientFor, ServerScope, useServers } from "./server";
+import { queryClientFor, serverName, ServerScope, useServers } from "./server";
 
 // Fase 9: cada apartado (y su código) se carga la primera vez que se abre. El
 // panel, que es lo primero que se ve, va en el paquete inicial.
@@ -29,6 +31,7 @@ const load = {
   TerminalsView: () => import("@/features/terminals/TerminalsView"),
   AuditView: () => import("@/features/audit/AuditView"),
   BackupView: () => import("@/features/backup/BackupView"),
+  MonitorView: () => import("@/features/monitor/MonitorView"),
   EventsView: () => import("@/features/events/EventsView"),
   ServersView: () => import("@/features/servers/ServersView"),
   SettingsView: () => import("@/features/settings/SettingsView"),
@@ -127,6 +130,35 @@ function useServersBridge() {
   }, []);
 }
 
+/** E5 (1.5.0): las alertas que el motor marca para avisar se convierten en
+ *  notificaciones de escritorio, con el texto traducido aquí. */
+function useMonitorNotifications() {
+  const { t, i18n } = useTranslation();
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void api
+      .onMonitorAlert(async (a) => {
+        if (!a.notified) return;
+        try {
+          const s = await api.monitorSettings();
+          if (!s.notifications) return;
+          const server = serverName(useServers.getState().servers.find((x) => x.id === a.server), t("servers.local")) || a.server;
+          const nf = numberFormat(i18n.language, { maximumFractionDigits: 1 });
+          const x = alertText(t, a, server, (v) => `${nf.format(v)} %`);
+          await api.monitorNotify(x.summary, x.body);
+        } catch {
+          // Sin servidor de notificaciones: la alerta sigue en el historial.
+        }
+      })
+      .then((un) => (disposed ? un() : (unlisten = un)));
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [t, i18n.language]);
+}
+
 function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) {
   switch (id) {
     case "dashboard":
@@ -149,6 +181,8 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <View name="AuditView" />;
     case "backup":
       return <View name="BackupView" />;
+    case "monitor":
+      return <View name="MonitorView" />;
     case "events":
       return <View name="EventsView" />;
     case "settings":
@@ -187,6 +221,7 @@ export function App() {
   useActivityBridge();
   useLiveRefresh();
   useServersBridge();
+  useMonitorNotifications();
   const selected = useServers((s) => s.selected);
   useShortcuts();
 

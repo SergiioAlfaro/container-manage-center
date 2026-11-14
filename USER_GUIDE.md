@@ -667,6 +667,54 @@ elegido (este equipo o uno remoto) y las restaura.
 Las copias **no están cifradas**: los volcados y los volúmenes contienen tus
 datos tal cual. Si las guardas fuera del equipo, usa un disco cifrado.
 
+## Monitorización
+
+**Supervisión → Monitorización** (1.5.0) muestra el uso de los contenedores
+del servidor elegido a lo largo del tiempo. No instala nada en el servidor:
+pregunta a Docker lo mismo que `docker stats`, también por SSH. El panel de
+inicio sigue igual.
+
+- **Activar**: marca «Monitorizar este servidor». Se activa en cada servidor por
+  separado y sigue activa cuando vuelves a abrir la aplicación. El
+  **intervalo** (de 2 a 60 s) es común a todos; «Pausar» detiene todas las
+  muestras hasta que pulses «Reanudar» o vuelvas a abrir la aplicación.
+- **Resumen**: el equipo según Docker (sus CPU y su memoria, de `docker info`;
+  no es una monitorización del sistema operativo), los contenedores en marcha,
+  en pausa y parados, y el uso total en gráficos. La tabla tiene, por
+  contenedor, CPU, memoria y su límite, red, disco, procesos (PIDs), tiempo en
+  marcha y reinicios. Pulsa un nombre para ver sus gráficos.
+  - La CPU está en % de una CPU, como `docker stats`: un contenedor que usa
+    dos CPU enteras marca 200 %.
+  - El disco solo aparece si Docker lo da (depende del almacenamiento).
+- **Periodo**: 5, 15 y 30 minutos vienen de la memoria, con cada muestra (desde
+  que abriste la aplicación); 1, 6 y 24 horas, del resumen por minuto que se
+  guarda en tu equipo (`~/.local/state/docker-control-center/monitor/`, solo
+  para tu usuario).
+- **Comparar**: elige hasta 4 contenedores en marcha y una métrica para verlos
+  en el mismo gráfico. Cada uno tiene su color y su tipo de línea.
+- **Sin conexión**: si el servidor deja de responder, el estado dice «Sin
+  conexión» y los gráficos muestran un tramo rayado. No se inventan datos y la
+  aplicación no se bloquea. Al volver la conexión, sigue sola.
+- **Alertas**: las reglas valen para todos los contenedores monitorizados.
+  - **CPU alta** y **memoria alta** (en % de su límite): saltan cuando el valor
+    pasa del umbral durante varias muestras seguidas y se resuelven cuando
+    baja del valor de resolución otras tantas. Entre los dos valores no
+    cambian, así no avisan a cada pequeña subida.
+  - **Se cae y Docker lo vuelve a arrancar**, **falta de memoria (OOM)**,
+    **termina con error sin que nadie lo pare** y **se pierde la conexión con
+    el servidor**. Parar un contenedor tú no es un error.
+  - Tras avisar de una alerta, no se repite el aviso de la misma durante los
+    minutos de silencio (15 por defecto), aunque cierres y abras la aplicación.
+  - **Notificaciones de escritorio**: se envían al sistema de avisos de tu
+    escritorio y no salen del equipo. «Probar notificación» envía una de
+    prueba. Todas las alertas quedan en el «Historial de alertas», también las
+    que no se notificaron.
+  - «Historial por minuto en el disco» fija cuántas horas se guardan (de 1 a
+    168). El archivo nunca pasa de 64 MiB.
+
+La monitorización no apunta cada muestra en el panel de actividad (serían
+miles por hora): solo cuándo empieza y cuándo termina en cada servidor.
+
 ## Eventos y registros
 
 Docker anuncia cada cambio (un contenedor que se crea, arranca o se detiene,

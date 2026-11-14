@@ -26,6 +26,7 @@ pub mod events;
 pub mod images;
 pub mod manager;
 mod model;
+pub mod monitor;
 pub mod networks;
 pub mod probe;
 pub mod pull;

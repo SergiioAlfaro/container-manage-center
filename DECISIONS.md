@@ -1236,3 +1236,53 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 * **Compose**: los archivos del proyecto, solo en este equipo (en un servidor remoto no están aquí). Los `.env` y los archivos de variables **solo con aceptación expresa** («Incluir los archivos .env», con el aviso de que pueden tener contraseñas sin cifrar). Sin ella, la copia avisa de que no los incluye.
 * **Aplicación**: `config.toml`, `servers.toml` y `copias.json`, pasados además por `redact`. Las contraseñas y frases están en el llavero (D-076) y nunca entran en la copia.
 * **Registro**: las peticiones a Docker de las copias van al panel de actividad (categoría nueva «Copias») sin secretos. La salida de error de los volcados se oculta con `redact` antes de mostrarla.
+
+## Evolución · Etapa 5: monitorización avanzada (1.5.0)
+
+### D-102 · Muestreo por servidor, sin agentes, y tolerancia frente a `docker stats`
+* **Un muestreador por servidor monitorizado**, compartido por toda la interfaz (no uno por pantalla). Se activa por servidor y se guarda en `monitor.json` junto a `config.toml` (0600), así que **sigue en marcha tras reiniciar la aplicación**. Intervalo común de **2 a 60 s** (5 por defecto). La **pausa** es global, solo en memoria: al volver a abrir la aplicación, la monitorización sigue activa.
+* **Sin agentes ni nada instalado en los servidores** (plan §5.3): solo la API de Docker, igual en local y por SSH. En cada muestra:
+  * la lista de contenedores (una llamada);
+  * por cada contenedor en marcha, `stats` de una sola lectura (`stream=false`, `one-shot=true`), con **8 a la vez** como máximo y **10 s** de límite cada una;
+  * `inspect` (inicio y número de reinicios) solo cuando un contenedor aparece, cambia de estado o un evento de Docker lo marca; no en cada muestra;
+  * `info` (CPU y memoria del equipo) al empezar y cada 60 s.
+* **Cálculos como la CLI de Docker**:
+  * CPU = Δcpu del contenedor / Δcpu del sistema × CPU en línea × 100, entre **dos muestras consecutivas de la aplicación** (no con el `precpu` de Docker, que con `one-shot` no sirve). En % de una CPU, como `docker stats` (puede pasar de 100).
+  * Memoria = uso − `inactive_file` (cgroup v2) o − `total_inactive_file` (v1), como la CLI. Límite y PIDs, los de Docker.
+  * Red y disco: velocidades (bytes/s) a partir de los contadores. **Disco solo donde Docker lo da** (depende del controlador de almacenamiento y de cgroups); si no, «—».
+  * Si un contador baja (el contenedor se reinició), ese dato queda vacío en esa muestra; **nunca se inventa un valor**. La primera muestra de un contenedor no tiene CPU ni velocidades.
+* **Tolerancia documentada** frente a `docker stats --no-stream`, medidos con instantes distintos: CPU ±15 puntos con una carga constante; memoria ±5 % o ±256 KiB; límite de memoria y PIDs exactos. Prueba real: `live_monitor::metrics_match_docker_stats` (en Docker 29, 99,8 % frente a 100,55 % de la CLI).
+* **Registro**: las lecturas del muestreo **no** se apuntan una a una en el panel de actividad (serían miles por hora y taparían lo importante). Solo se apuntan `monitor.start` y `monitor.stop`, y el cambio de configuración como preferencia. Las peticiones usan el mismo cliente con sus límites de tiempo; un error se muestra en el estado («Último error»).
+* **Desconexión**: si el servidor no responde, la muestra falla enseguida (no espera al siguiente intervalo ni bloquea los comandos) y se registra un **hueco**. Al volver la conexión, el muestreo sigue solo.
+
+### D-103 · Historial: anillo en memoria y resumen por minuto en el disco, con límites
+* **En memoria**: un anillo por servidor de **30 minutos y 900 entradas como máximo** (30 min a 2 s). Las entradas son compactas (ids de contenedor compartidos con `Arc<str>`). Aparte se guarda la **última muestra con conexión**, para el estado.
+* **En el disco**: cada minuto se resume (medias de CPU y memoria, máximos, bytes de red y disco, PIDs máximos, número de muestras y de huecos) y se añade a `<estado>/monitor/<servidor>/metricas.jsonl` (archivo **0600**, carpeta **0700**). Retención de **1 a 168 horas** (24 por defecto) y **64 MiB** como máximo: al pasar, se compacta a la mitad (los minutos más antiguos se van). Las lecturas recorren el archivo línea a línea, filtrando por tiempo y contenedores (no se carga entero).
+* **Huecos**: una muestra sin conexión es un hueco (`connected=false`), sin datos. En los gráficos se ven como un **tramo rayado** y la línea se corta; en los minutos guardados, un minuto sin registros o solo con huecos también es un hueco.
+* **Periodos**: 5, 15 y 30 minutos se leen de la memoria; 1, 6 y 24 horas, del resumen por minuto.
+* El minuto en curso se guarda al parar la monitorización o cerrar la ventana. Si el proceso se termina de golpe (señal, cierre de sesión), se pierde como mucho ese minuto: queda como un hueco. El anillo en memoria empieza vacío al abrir la aplicación; lo anterior se ve en los periodos del disco.
+* Se descartó el diario de actividad (`Journal`) para las métricas porque guarda todas las entradas en memoria.
+
+### D-104 · Alertas con umbral, histéresis y periodo de silencio
+* **Reglas globales**, para todos los contenedores de los servidores monitorizados:
+  * **CPU** (en % de una CPU) y **memoria** (en % de su límite) con tres valores: salta por encima de `above` durante `samples` muestras seguidas y se resuelve por debajo de `clear_below` durante otras tantas (**histéresis**: entre los dos valores no cambia). Por defecto CPU 90/70/3 y memoria 90/80/3.
+  * **Eventos de Docker**: reinicio tras una caída (un `start` en los 120 s siguientes a una caída no pedida), **OOM**, **salida con error** (código distinto de 0 sin un `kill`/`stop` pedido en los 30 s anteriores) y **desconexión** del servidor (salta y se resuelve con la conexión).
+* **Sin repetirse**: una alerta activa no vuelve a saltar. Además, tras avisar de una alerta, **no se vuelve a avisar de la misma** (servidor, tipo y contenedor) durante el **periodo de silencio** (15 minutos por defecto, 0–1440), aunque se resuelva y vuelva a saltar. Las resoluciones se apuntan pero no se notifican. El silencio **sigue valiendo tras reiniciar la aplicación**: al empezar a monitorizar un servidor se recuerdan los avisos de su historial (`remember_notified`).
+* **Historial**: `alertas.jsonl` por servidor (0600, 1000 como máximo), con si se avisó o no. Las reglas se validan (`clear_below` < `above`, de 1 a 60 muestras, memoria ≤ 100 %, silencio ≤ 24 h).
+* La lógica (`AlertEngine`) es pura y se prueba sin Docker. Las alertas de umbral salen del muestreador; las de eventos, del observador de eventos que ya existía (Fase 8).
+
+### D-105 · Notificaciones de escritorio por D-Bus, sin complemento nuevo
+* Se envían a `org.freedesktop.Notifications` del **bus de sesión**, con `zbus` 5, que **ya estaba en el árbol de dependencias** (lo usan el llavero y el complemento de apertura). No se añade el complemento de notificaciones de Tauri ni ningún permiso nuevo en la interfaz.
+* **El texto lo pone la interfaz**, traducido al idioma elegido: el motor emite la alerta con `notified=true` y la interfaz llama a `monitor_notify`. El backend limita el título a 120 caracteres y el cuerpo a 500, y quita los caracteres de control. Urgencia normal; no salen del equipo.
+* Se pueden desactivar («Notificaciones de escritorio») y probar («Probar notificación»). Sin servidor de notificaciones, el error se muestra y la alerta sigue en el historial.
+* Prueba: un `dbus-daemon` privado con un servidor de notificaciones falso (`notify::tests`). **No verificable aquí**: el aviso visible en GNOME/KDE (se comprueba a mano, M6).
+
+### D-106 · Gráficos propios en SVG, sin biblioteca
+* Un componente propio (`LineChart`) en SVG: líneas, huecos rayados, valor bajo el ratón, leyenda con el último valor y un resumen para lectores de pantalla. No hace falta más (líneas en el tiempo) y así no se añade una dependencia de unos cientos de KB.
+* **Colores del tema** (`--beacon`, `--signal-run`, `--signal-warn`, `--signal-ok`) **y trazos distintos** (continuo, discontinuo, punteado…), para no depender solo del color. Los textos van en HTML, así no se deforman al cambiar el tamaño.
+* El panel (Dashboard) se mantiene; la monitorización es una sección nueva («Monitorización», en Supervisión).
+
+### D-107 · Consumo de la aplicación: límites y medida
+* **Límites fijados en la E5**, con 50 contenedores en marcha en cada uno de 3 servidores, muestreando cada 2 s durante 60 s: **CPU media ≤ 10 % de una CPU**, **memoria adicional ≤ 64 MiB** y **cada muestra de un servidor en menos de 2 s**.
+* **Medido** (`live_monitor::consumption_with_50_containers_and_3_servers`, Docker 29 local): CPU media 5,8 % de una CPU, 6 MiB de memoria adicional, anillos de 902 KiB, muestra más lenta 529 ms. La cifra de cada daemon está en el informe de verificación.
+* Se mide el proceso de pruebas (motor y muestreador), no la ventana: la interfaz solo vuelve a pedir datos al llegar cada muestra y solo de lo que se ve.

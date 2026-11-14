@@ -76,6 +76,10 @@
       "title": "Audit",
       "description": "Review the security of containers, images and Compose projects."
     },
+    "monitor": {
+      "title": "Monitoring",
+      "description": "CPU, memory, network and disk usage of containers, with history, comparison and alerts."
+    },
     "events": {
       "title": "Events and logs",
       "description": "Real-time Docker events and operation history."
@@ -3250,6 +3254,141 @@
       "restore_action_newFolder": "A new folder will be created.",
       "engine_pathNotAllowed": "For security, that folder is not allowed.",
       "engine_notConnected": "There is no connection to Docker Engine."
+    }
+  },
+  "monitor": {
+    "intro": "Docker Control Center samples with “docker stats” and “inspect” (nothing is installed on the server). Connection drops show as gaps: no data is invented.",
+    "controls": "Monitoring controls",
+    "enable": "Monitor this server",
+    "resume": "Resume",
+    "pause": "Pause",
+    "interval": "Every",
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds",
+    "off": "Monitoring of this server is off.",
+    "paused": "Paused: no samples are taken.",
+    "gap": "Disconnected: a gap is recorded.",
+    "lastSample": "Last sample at {{time}}: {{count}} containers in {{ms}} ms",
+    "waiting": "Waiting for the first sample…",
+    "lastError": "Last error: {{error}}",
+    "offHint": "Turn it on to see container usage. A per-minute summary is kept on your computer, limited in size and time.",
+    "tabs": "Views",
+    "tab": {
+      "summary": "Summary",
+      "compare": "Compare",
+      "alerts": "Alerts"
+    },
+    "range": "Period",
+    "ranges": {
+      "5m": "5 min",
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h",
+      "6h": "6 h",
+      "24h": "24 h"
+    },
+    "host": "Host (according to Docker)",
+    "hostValue": "{{cpus}} CPU · {{mem}}",
+    "hostHint": "Data from “docker info”: this is not operating system monitoring.",
+    "counts": "Containers",
+    "countsValue": "{{running}} running · {{paused}} paused · {{stopped}} stopped",
+    "usage": "Total usage",
+    "usageValue": "CPU {{cpu}} · memory {{mem}}",
+    "cpuTotal": "Container CPU",
+    "memTotal": "Container memory",
+    "noData": "No data in this period",
+    "containers": "Containers",
+    "col": {
+      "name": "Name",
+      "cpu": "CPU",
+      "mem": "Memory",
+      "net": "Network",
+      "disk": "Disk",
+      "pids": "PIDs",
+      "uptime": "Uptime"
+    },
+    "alerting": "Alert",
+    "notRunning": "Not running ({{state}})",
+    "restarts_one": "{{count}} restart",
+    "restarts_other": "{{count}} restarts",
+    "detail": "{{name}} details",
+    "metric": {
+      "cpu": "CPU",
+      "mem": "Memory",
+      "memPercent": "Memory (% of limit)",
+      "netRx": "Network received",
+      "netTx": "Network sent",
+      "blkRead": "Disk read",
+      "blkWrite": "Disk write",
+      "pids": "Processes (PIDs)"
+    },
+    "diskHint": "Disk read and write only appear when Docker provides them (they depend on the storage driver and cgroups).",
+    "compareHint": "Pick up to {{count}} running containers and a metric.",
+    "metricLabel": "Metric",
+    "compareEmpty": "Pick a container to compare.",
+    "rules": {
+      "title": "Alert rules",
+      "hint": "They apply to every container on monitored servers. An alert fires after several consecutive samples above the threshold and resolves after as many below the resolve value.",
+      "cpu": "High CPU",
+      "memory": "High memory",
+      "above": "Fires above ({{unit}})",
+      "clearBelow": "Resolves below ({{unit}})",
+      "samples": "Consecutive samples",
+      "restart": "Crashes and Docker restarts it",
+      "oom": "Docker stops it for lack of memory (OOM)",
+      "exitError": "Exits with an error without being stopped",
+      "disconnected": "Connection to the server is lost",
+      "silence": "Do not repeat the same alert for (minutes)"
+    },
+    "retention": "Per-minute history on disk (hours, 1–168)",
+    "notifications": "Desktop notifications",
+    "notificationsHint": "Sent to your desktop’s notification system; they never leave your computer.",
+    "testNotification": "Test notification",
+    "testTitle": "Docker Control Center test",
+    "testBody": "If you see this, notifications work.",
+    "testSent": "Sent.",
+    "testFailed": "Could not send: {{error}}",
+    "save": "Save",
+    "history": "Alert history",
+    "noAlerts": "No alerts.",
+    "silenced": "not notified (silenced)",
+    "uptime": {
+      "days": "{{d}} d {{h}} h",
+      "hours": "{{h}} h {{m}} min",
+      "minutes": "{{m}} min",
+      "seconds": "{{s}} s"
+    },
+    "alert": {
+      "cpu": {
+        "fired": "High CPU on {{name}}",
+        "resolved": "CPU back to normal on {{name}}",
+        "body": "{{name}} on {{server}}: {{value}} CPU"
+      },
+      "memory": {
+        "fired": "High memory on {{name}}",
+        "resolved": "Memory back to normal on {{name}}",
+        "body": "{{name}} on {{server}}: {{value}} of its memory limit"
+      },
+      "restart": {
+        "fired": "{{name}} restarted",
+        "resolved": "{{name}} restarted",
+        "body": "{{name}} on {{server}} crashed and Docker started it again."
+      },
+      "oom": {
+        "fired": "{{name}} ran out of memory",
+        "resolved": "{{name}} ran out of memory",
+        "body": "Docker stopped {{name}} on {{server}} for lack of memory."
+      },
+      "exitError": {
+        "fired": "{{name}} exited with an error",
+        "resolved": "{{name}} exited with an error",
+        "body": "{{name}} on {{server}} exited with code {{value}}."
+      },
+      "disconnected": {
+        "fired": "Disconnected from {{name}}",
+        "resolved": "Reconnected to {{name}}",
+        "body": "{{server}}: charts will show a gap while there is no connection."
+      }
     }
   }
 }

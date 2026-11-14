@@ -4,6 +4,7 @@ import {
   DatabaseBackup,
   FolderSymlink,
   HardDrive,
+  Activity,
   Layers,
   LayoutDashboard,
   type LucideIcon,
@@ -27,6 +28,7 @@ export type SectionId =
   | "terminals"
   | "audit"
   | "backup"
+  | "monitor"
   | "events"
   | "settings";
 
@@ -53,6 +55,8 @@ export const SECTIONS: SectionDef[] = [
   { id: "audit", icon: ShieldCheck, group: "tools" },
   // E4 (1.4.0): copias de seguridad y restauración.
   { id: "backup", icon: DatabaseBackup, group: "tools" },
+  // E5 (1.5.0): monitorización avanzada.
+  { id: "monitor", icon: Activity, group: "monitoring" },
   { id: "events", icon: Radio, group: "monitoring" },
   { id: "settings", icon: Settings, group: "bottom" },
 ];

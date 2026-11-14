@@ -76,6 +76,10 @@
       "title": "Auditoria",
       "description": "Revisa la seguretat de contenidors, imatges i projectes Compose."
     },
+    "monitor": {
+      "title": "Monitorització",
+      "description": "Ús de CPU, memòria, xarxa i disc dels contenidors, amb historial, comparació i alertes."
+    },
     "events": {
       "title": "Esdeveniments i registres",
       "description": "Esdeveniments de Docker en temps real i historial d’operacions."
@@ -3250,6 +3254,141 @@
       "restore_action_newFolder": "Es crearà una carpeta nova.",
       "engine_pathNotAllowed": "Per seguretat, aquesta carpeta no està permesa.",
       "engine_notConnected": "No hi ha connexió amb Docker Engine."
+    }
+  },
+  "monitor": {
+    "intro": "Docker Control Center pren mostres amb «docker stats» i «inspect» (sense instal·lar res al servidor). Els talls de connexió es veuen com a buits: no s’inventen dades.",
+    "controls": "Controls de la monitorització",
+    "enable": "Monitoritza aquest servidor",
+    "resume": "Reprèn",
+    "pause": "Pausa",
+    "interval": "Cada",
+    "seconds_one": "{{count}} segon",
+    "seconds_other": "{{count}} segons",
+    "off": "La monitorització d’aquest servidor està desactivada.",
+    "paused": "En pausa: no es prenen mostres.",
+    "gap": "Sense connexió: es registra un buit.",
+    "lastSample": "Última mostra a les {{time}}: {{count}} contenidors en {{ms}} ms",
+    "waiting": "Esperant la primera mostra…",
+    "lastError": "Darrer error: {{error}}",
+    "offHint": "Activa-la per veure l’ús dels contenidors. Es desa un resum per minut al teu equip, amb un límit de mida i de temps.",
+    "tabs": "Vistes",
+    "tab": {
+      "summary": "Resum",
+      "compare": "Compara",
+      "alerts": "Alertes"
+    },
+    "range": "Període",
+    "ranges": {
+      "5m": "5 min",
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h",
+      "6h": "6 h",
+      "24h": "24 h"
+    },
+    "host": "Equip (segons Docker)",
+    "hostValue": "{{cpus}} CPU · {{mem}}",
+    "hostHint": "Dades de «docker info»: no és una monitorització del sistema operatiu.",
+    "counts": "Contenidors",
+    "countsValue": "{{running}} en marxa · {{paused}} en pausa · {{stopped}} aturats",
+    "usage": "Ús total",
+    "usageValue": "CPU {{cpu}} · memòria {{mem}}",
+    "cpuTotal": "CPU dels contenidors",
+    "memTotal": "Memòria dels contenidors",
+    "noData": "Sense dades en aquest període",
+    "containers": "Contenidors",
+    "col": {
+      "name": "Nom",
+      "cpu": "CPU",
+      "mem": "Memòria",
+      "net": "Xarxa",
+      "disk": "Disc",
+      "pids": "PIDs",
+      "uptime": "En marxa"
+    },
+    "alerting": "Alerta",
+    "notRunning": "No està en marxa ({{state}})",
+    "restarts_one": "{{count}} reinici",
+    "restarts_other": "{{count}} reinicis",
+    "detail": "Detall de {{name}}",
+    "metric": {
+      "cpu": "CPU",
+      "mem": "Memòria",
+      "memPercent": "Memòria (% del límit)",
+      "netRx": "Xarxa rebuda",
+      "netTx": "Xarxa enviada",
+      "blkRead": "Lectura de disc",
+      "blkWrite": "Escriptura de disc",
+      "pids": "Processos (PIDs)"
+    },
+    "diskHint": "La lectura i l’escriptura de disc només apareixen si Docker les dona (depenen del controlador d’emmagatzematge i dels cgroups).",
+    "compareHint": "Tria fins a {{count}} contenidors en marxa i una mètrica.",
+    "metricLabel": "Mètrica",
+    "compareEmpty": "Tria algun contenidor per comparar-lo.",
+    "rules": {
+      "title": "Regles d’alerta",
+      "hint": "S’apliquen a tots els contenidors dels servidors monitoritzats. Una alerta salta després de diverses mostres seguides per sobre del llindar i es resol després d’altres tantes per sota del valor de resolució.",
+      "cpu": "CPU alta",
+      "memory": "Memòria alta",
+      "above": "Salta per sobre de ({{unit}})",
+      "clearBelow": "Es resol per sota de ({{unit}})",
+      "samples": "Mostres seguides",
+      "restart": "Cau i Docker el torna a engegar",
+      "oom": "Docker l’atura per manca de memòria (OOM)",
+      "exitError": "Acaba amb error sense que ningú l’aturi",
+      "disconnected": "Es perd la connexió amb el servidor",
+      "silence": "No repetir l’avís de la mateixa alerta durant (minuts)"
+    },
+    "retention": "Historial per minut al disc (hores, 1–168)",
+    "notifications": "Notificacions d’escriptori",
+    "notificationsHint": "S’envien al sistema de notificacions del teu escriptori; no surten del teu equip.",
+    "testNotification": "Prova la notificació",
+    "testTitle": "Prova de Docker Control Center",
+    "testBody": "Si veus aquest avís, les notificacions funcionen.",
+    "testSent": "Enviada.",
+    "testFailed": "No s’ha pogut enviar: {{error}}",
+    "save": "Desa",
+    "history": "Historial d’alertes",
+    "noAlerts": "No hi ha alertes.",
+    "silenced": "sense avís (en silenci)",
+    "uptime": {
+      "days": "{{d}} d {{h}} h",
+      "hours": "{{h}} h {{m}} min",
+      "minutes": "{{m}} min",
+      "seconds": "{{s}} s"
+    },
+    "alert": {
+      "cpu": {
+        "fired": "CPU alta a {{name}}",
+        "resolved": "CPU normal a {{name}}",
+        "body": "{{name}} a {{server}}: {{value}} de CPU"
+      },
+      "memory": {
+        "fired": "Memòria alta a {{name}}",
+        "resolved": "Memòria normal a {{name}}",
+        "body": "{{name}} a {{server}}: {{value}} del seu límit de memòria"
+      },
+      "restart": {
+        "fired": "{{name}} s’ha reiniciat",
+        "resolved": "{{name}} s’ha reiniciat",
+        "body": "{{name}} a {{server}} ha caigut i Docker l’ha tornat a engegar."
+      },
+      "oom": {
+        "fired": "{{name}} s’ha quedat sense memòria",
+        "resolved": "{{name}} s’ha quedat sense memòria",
+        "body": "Docker ha aturat {{name}} a {{server}} per manca de memòria."
+      },
+      "exitError": {
+        "fired": "{{name}} ha acabat amb error",
+        "resolved": "{{name}} ha acabat amb error",
+        "body": "{{name}} a {{server}} ha acabat amb el codi {{value}}."
+      },
+      "disconnected": {
+        "fired": "Sense connexió amb {{name}}",
+        "resolved": "Connexió recuperada amb {{name}}",
+        "body": "{{server}}: mentre no hi hagi connexió, els gràfics mostraran un buit."
+      }
     }
   }
 }

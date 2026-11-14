@@ -24,7 +24,7 @@ describe("App", () => {
     configSet.mockImplementation(async (c) => c);
   });
 
-  it("muestra los trece apartados en el orden requerido (0.9.1 añade «Terminales»; 0.10.0, «Servidores»; 1.3.0, «Auditoría»; 1.4.0, «Copias»)", async () => {
+  it("muestra los catorce apartados en el orden requerido (0.9.1 añade «Terminales»; 0.10.0, «Servidores»; 1.3.0, «Auditoría»; 1.4.0, «Copias»; 1.5.0, «Monitorización»)", async () => {
     await boot();
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });
     const labels = within(nav)
@@ -42,6 +42,7 @@ describe("App", () => {
       "Terminales",
       "Auditoría",
       "Copias",
+      "Monitorización",
       "Eventos y registros",
       "Configuración",
     ]);

@@ -76,6 +76,10 @@
       "title": "Auditoría",
       "description": "Revisa a seguridade de contedores, imaxes e proxectos Compose."
     },
+    "monitor": {
+      "title": "Monitorización",
+      "description": "Uso de CPU, memoria, rede e disco dos contedores, con historial, comparación e alertas."
+    },
     "events": {
       "title": "Eventos e rexistros",
       "description": "Eventos de Docker en tempo real e historial de operacións."
@@ -3250,6 +3254,141 @@
       "restore_action_newFolder": "Crearase un cartafol novo.",
       "engine_pathNotAllowed": "Por seguranza, ese cartafol non está permitido.",
       "engine_notConnected": "Non hai conexión con Docker Engine."
+    }
+  },
+  "monitor": {
+    "intro": "Docker Control Center toma mostras con «docker stats» e «inspect» (sen instalar nada no servidor). Os cortes de conexión vense como ocos: non se inventan datos.",
+    "controls": "Controis da monitorización",
+    "enable": "Monitorizar este servidor",
+    "resume": "Retomar",
+    "pause": "Pausar",
+    "interval": "Cada",
+    "seconds_one": "{{count}} segundo",
+    "seconds_other": "{{count}} segundos",
+    "off": "A monitorización deste servidor está desactivada.",
+    "paused": "En pausa: non se toman mostras.",
+    "gap": "Sen conexión: rexístrase un oco.",
+    "lastSample": "Última mostra ás {{time}}: {{count}} contedores en {{ms}} ms",
+    "waiting": "Agardando a primeira mostra…",
+    "lastError": "Último erro: {{error}}",
+    "offHint": "Actívaa para ver o uso dos contedores. Gárdase un resumo por minuto no teu equipo, cun límite de tamaño e de tempo.",
+    "tabs": "Vistas",
+    "tab": {
+      "summary": "Resumo",
+      "compare": "Comparar",
+      "alerts": "Alertas"
+    },
+    "range": "Período",
+    "ranges": {
+      "5m": "5 min",
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h",
+      "6h": "6 h",
+      "24h": "24 h"
+    },
+    "host": "Equipo (segundo Docker)",
+    "hostValue": "{{cpus}} CPU · {{mem}}",
+    "hostHint": "Datos de «docker info»: non é unha monitorización do sistema operativo.",
+    "counts": "Contedores",
+    "countsValue": "{{running}} en marcha · {{paused}} en pausa · {{stopped}} parados",
+    "usage": "Uso total",
+    "usageValue": "CPU {{cpu}} · memoria {{mem}}",
+    "cpuTotal": "CPU dos contedores",
+    "memTotal": "Memoria dos contedores",
+    "noData": "Sen datos neste período",
+    "containers": "Contedores",
+    "col": {
+      "name": "Nome",
+      "cpu": "CPU",
+      "mem": "Memoria",
+      "net": "Rede",
+      "disk": "Disco",
+      "pids": "PIDs",
+      "uptime": "En marcha"
+    },
+    "alerting": "Alerta",
+    "notRunning": "Non está en marcha ({{state}})",
+    "restarts_one": "{{count}} reinicio",
+    "restarts_other": "{{count}} reinicios",
+    "detail": "Detalle de {{name}}",
+    "metric": {
+      "cpu": "CPU",
+      "mem": "Memoria",
+      "memPercent": "Memoria (% do límite)",
+      "netRx": "Rede recibida",
+      "netTx": "Rede enviada",
+      "blkRead": "Lectura de disco",
+      "blkWrite": "Escritura de disco",
+      "pids": "Procesos (PIDs)"
+    },
+    "diskHint": "A lectura e a escritura de disco só aparecen se Docker as dá (dependen do controlador de almacenamento e dos cgroups).",
+    "compareHint": "Escolle ata {{count}} contedores en marcha e unha métrica.",
+    "metricLabel": "Métrica",
+    "compareEmpty": "Escolle algún contedor para comparalo.",
+    "rules": {
+      "title": "Regras de alerta",
+      "hint": "Aplícanse a todos os contedores dos servidores monitorizados. Unha alerta salta tras varias mostras seguidas por riba do limiar e resólvese tras outras tantas por baixo do valor de resolución.",
+      "cpu": "CPU alta",
+      "memory": "Memoria alta",
+      "above": "Salta por riba de ({{unit}})",
+      "clearBelow": "Resólvese por baixo de ({{unit}})",
+      "samples": "Mostras seguidas",
+      "restart": "Cae e Docker vólveo arrancar",
+      "oom": "Docker deténo por falta de memoria (OOM)",
+      "exitError": "Remata con erro sen que ninguén o pare",
+      "disconnected": "Pérdese a conexión co servidor",
+      "silence": "Non repetir o aviso da mesma alerta durante (minutos)"
+    },
+    "retention": "Historial por minuto no disco (horas, 1–168)",
+    "notifications": "Notificacións de escritorio",
+    "notificationsHint": "Envíanse ao sistema de notificacións do teu escritorio; non saen do teu equipo.",
+    "testNotification": "Probar notificación",
+    "testTitle": "Proba de Docker Control Center",
+    "testBody": "Se ves este aviso, as notificacións funcionan.",
+    "testSent": "Enviada.",
+    "testFailed": "Non se puido enviar: {{error}}",
+    "save": "Gardar",
+    "history": "Historial de alertas",
+    "noAlerts": "Non hai alertas.",
+    "silenced": "sen aviso (en silencio)",
+    "uptime": {
+      "days": "{{d}} d {{h}} h",
+      "hours": "{{h}} h {{m}} min",
+      "minutes": "{{m}} min",
+      "seconds": "{{s}} s"
+    },
+    "alert": {
+      "cpu": {
+        "fired": "CPU alta en {{name}}",
+        "resolved": "CPU normal en {{name}}",
+        "body": "{{name}} en {{server}}: {{value}} de CPU"
+      },
+      "memory": {
+        "fired": "Memoria alta en {{name}}",
+        "resolved": "Memoria normal en {{name}}",
+        "body": "{{name}} en {{server}}: {{value}} do seu límite de memoria"
+      },
+      "restart": {
+        "fired": "{{name}} reiniciouse",
+        "resolved": "{{name}} reiniciouse",
+        "body": "{{name}} en {{server}} caeu e Docker volveuno arrancar."
+      },
+      "oom": {
+        "fired": "{{name}} quedou sen memoria",
+        "resolved": "{{name}} quedou sen memoria",
+        "body": "Docker detivo {{name}} en {{server}} por falta de memoria."
+      },
+      "exitError": {
+        "fired": "{{name}} rematou con erro",
+        "resolved": "{{name}} rematou con erro",
+        "body": "{{name}} en {{server}} rematou co código {{value}}."
+      },
+      "disconnected": {
+        "fired": "Sen conexión con {{name}}",
+        "resolved": "Conexión recuperada con {{name}}",
+        "body": "{{server}}: mentres non haxa conexión, os gráficos amosarán un oco."
+      }
     }
   }
 }

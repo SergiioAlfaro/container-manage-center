@@ -216,6 +216,19 @@ En la aplicación:
 - `lib.rs::headless_main`: modo sin ventana, antes de crear la ventana, con un candado por tarea.
 - La interfaz está en `ui/src/features/backup/`.
 
+### Monitorización (1.5.0, `monitor/`, D-102–D-107)
+- `monitor/model.rs`: tipos compartidos con la interfaz (`ServerSample`, `ContainerPoint`, `MinuteRecord`, `AlertRules`, `Alert`…); `ServerSample::gap(t)` es un hueco sin datos.
+- `monitor/sampler.rs`: `Engine::monitor_sample(&mut SamplerState)` lista los contenedores sin registrar (`list_containers_silent`), lee `stats` de una sola vez (8 a la vez, 10 s) y calcula CPU, memoria, red y disco con las fórmulas de la CLI entre dos muestras propias. `SamplerState` guarda los contadores previos y los metadatos de `inspect` (se releen al marcar un contenedor con `mark_dirty`). `monitor_host()` lee `info`.
+- `monitor/history.rs`: `Ring` (anillo compacto por servidor, ids con `Arc<str>`) y `MinuteAggregator` (resumen por minuto).
+- `monitor/alerts.rs`: `AlertEngine`, lógica pura de umbrales con histéresis, eventos, conexión y periodo de silencio.
+
+En la aplicación:
+- `monitor.rs`: `Monitor` (configuración `monitor.json`, pausa, un muestreador por servidor con su `CancellationToken`, anillo, agregador y motor de alertas), `MinuteStore` (`metricas.jsonl` en `<estado>/monitor/<servidor>/`, lectura por líneas filtrada, compactación por antigüedad y tamaño) y el bucle `run`, que emite `monitor://sample` y `monitor://alert`. `start_enabled` arranca los servidores activados al abrir la aplicación; al quitar un servidor o cerrar la ventana se paran.
+- `journal.rs`: el observador de eventos que ya existía pasa cada evento a `Monitor::on_event` (alertas de reinicio, OOM y salida con error).
+- `notify.rs`: notificación por D-Bus con `zbus` (`send_on` para las pruebas con un bus privado).
+- `commands/monitor.rs`: comandos IPC (`monitor_status`, `monitor_live`, `monitor_minutes`, `monitor_alerts`, `monitor_settings_set`, `monitor_pause`, `monitor_notify`…).
+- La interfaz está en `ui/src/features/monitor/` (`model.ts` puro y `MonitorView.tsx`), con el gráfico `ui/src/shared/ui/LineChart.tsx`. `App.tsx` (`useMonitorNotifications`) traduce las alertas y pide la notificación.
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 

@@ -143,8 +143,31 @@ impl Engine {
                 |v| Some(format!("{} contenedores", v.len())),
             )
             .await?;
-        Ok(list
-            .into_iter()
+        Ok(summaries(list))
+    }
+
+    /// Lista de contenedores sin registrarla (muestreo de la monitorización,
+    /// D-102): una lectura cada pocos segundos llenaría el panel de actividad.
+    pub(crate) async fn list_containers_silent(
+        &self,
+    ) -> Result<Vec<ContainerSummary>, EngineError> {
+        let opts = ListContainersOptions {
+            all: true,
+            ..Default::default()
+        };
+        let d = self.docker().clone();
+        let list = self
+            .call_silent(Some(std::time::Duration::from_secs(15)), async move {
+                d.list_containers(Some(opts)).await
+            })
+            .await?;
+        Ok(summaries(list))
+    }
+}
+
+fn summaries(list: Vec<bollard::models::ContainerSummary>) -> Vec<ContainerSummary> {
+    {
+        list.into_iter()
             .map(|c| {
                 let labels: BTreeMap<String, String> =
                     c.labels.unwrap_or_default().into_iter().collect();
@@ -197,9 +220,11 @@ impl Engine {
                     labels,
                 }
             })
-            .collect())
+            .collect()
     }
+}
 
+impl Engine {
     /// Ejecuta una acción de ciclo de vida. `display` es el nombre para el registro.
     /// Ejecuta una acción de ciclo de vida y devuelve el estado **confirmado**.
     ///

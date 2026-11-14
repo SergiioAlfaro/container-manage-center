@@ -21,6 +21,11 @@ import type { BackupTimerPreview } from "./bindings/BackupTimerPreview";
 import type { IntegrityReport } from "./bindings/IntegrityReport";
 import type { RestorePreview } from "./bindings/RestorePreview";
 import type { RestoreRequest } from "./bindings/RestoreRequest";
+import type { Alert } from "./bindings/Alert";
+import type { MonitorLive } from "./bindings/MonitorLive";
+import type { MonitorMinute } from "./bindings/MonitorMinute";
+import type { MonitorSettings } from "./bindings/MonitorSettings";
+import type { MonitorStatus } from "./bindings/MonitorStatus";
 import type { UpdateCheck } from "./bindings/UpdateCheck";
 import type { UpdateOutcome } from "./bindings/UpdateOutcome";
 import type { ActivityEvent } from "./bindings/ActivityEvent";
@@ -293,6 +298,15 @@ export function dockerApi(server: string) {
     backupRestoreOpen: (id: string, request: RestoreRequest, onEvent: (e: BackupEvent) => void, destination: string | null = null) =>
       call<number>("backup_restore_open", { id, request, destination, onEvent: channel(onEvent) }),
     backupHistory: () => call<BackupRun[]>("backup_history"),
+    /** E5: estado de la monitorización del servidor (lo último en memoria; no bloquea). */
+    monitorStatus: () => call<MonitorStatus>("monitor_status"),
+    /** Activa o desactiva la monitorización de este servidor. */
+    monitorSetServer: (enabled: boolean) => call<MonitorStatus>("monitor_set_server", { enabled }),
+    /** Serie en vivo (memoria, hasta 30 min) del servidor y de hasta 8 contenedores. */
+    monitorLive: (containers: string[], minutes: number) => call<MonitorLive>("monitor_live", { containers, minutes }),
+    /** Registros por minuto del disco (hasta 168 h), solo con los contenedores pedidos. */
+    monitorMinutes: (hours: number, containers: string[]) => call<MonitorMinute[]>("monitor_minutes", { hours, containers }),
+    monitorAlerts: () => call<Alert[]>("monitor_alerts"),
   };
 }
 
@@ -334,6 +348,23 @@ const appApi = {
   /** E3: guarda un informe; la ruta se elige en el diálogo nativo (Rust). `null` si se cancela. */
   auditExportSave: (format: "json" | "markdown" | "html", content: string, name: string) => call<string | null>("audit_export_save", { format, content, name }),
   systemInfo: () => call<SystemInfo>("system_info"),
+  /** E5: configuración de la monitorización (intervalo, retención, alertas, servidores). */
+  monitorSettings: () => call<MonitorSettings>("monitor_settings"),
+  monitorSettingsSet: (settings: MonitorSettings) => call<MonitorSettings>("monitor_settings_set", { settings }),
+  /** Pausa o reanuda todo el muestreo (no se guarda). */
+  monitorPause: (paused: boolean) => call<null>("monitor_pause", { paused }),
+  /** Notificación de escritorio con el texto ya traducido. */
+  monitorNotify: (summary: string, body: string) => call<number>("monitor_notify", { summary, body }),
+  /** Cada muestra nueva de un servidor monitorizado. */
+  onMonitorSample: async (handler: (e: { server: string; t: number }) => void): Promise<UnlistenFn> => {
+    if (!isTauri()) return () => {};
+    return listen<{ server: string; t: number }>("monitor://sample", (e) => handler(e.payload));
+  },
+  /** Cada alerta que salta o se resuelve. */
+  onMonitorAlert: async (handler: (a: Alert) => void): Promise<UnlistenFn> => {
+    if (!isTauri()) return () => {};
+    return listen<Alert>("monitor://alert", (e) => handler(e.payload));
+  },
   /** E4: destino por defecto, tareas y estado de sus temporizadores. */
   backupSettings: () => call<BackupSettings>("backup_settings"),
   /** Diálogo nativo para elegir una carpeta; `saveDefault` la guarda como destino. */

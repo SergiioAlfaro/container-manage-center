@@ -6,12 +6,12 @@
 
 | | |
 |---|---|
-| **Etapa actual** | Evolución E4. Copias de seguridad y restauración ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
-| **Versión** | 1.4.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M10 de la 1.4.0) |
+| **Etapa actual** | Evolución E5. Monitorización avanzada ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
+| **Versión** | 1.5.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M9 de la 1.5.0) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Pendiente de validar** | Fase 10 (F1–F8), Etapas E1 a E3 (M1–M8 de cada una) y E4 (M1–M10) |
-| **Próximas etapas** | E5 monitorización · E6 integración |
+| **Pendiente de validar** | Fase 10 (F1–F8), Etapas E1 a E3 (M1–M8 de cada una), E4 (M1–M10) y E5 (M1–M9) |
+| **Próximas etapas** | E6 integración |
 
 | Fase | Estado |
 |---|---|
@@ -1248,10 +1248,67 @@ Entorno de desarrollo (Ubuntu 24.04 en contenedor), 2026-11-14, con el código f
 ### Validación manual
 M1–M10 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.4.0.sh`.
 
+## Evolución · Etapa 5 · Monitorización avanzada (1.5.0)
+
+Autorizada por el propietario el 2026-11-14 («Puedes pasar a la siguiente etapa»).
+Alcance: apartados 5.3 (E5) y 12 de
+[PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md).
+Decisiones: D-102 a D-107.
+
+### Qué se ha hecho
+| Parte | Implementación | Demostración (pruebas) |
+|---|---|---|
+| Muestreo | Un muestreador por servidor: lista de contenedores y `stats` de una lectura (8 a la vez, 10 s), `inspect` solo al cambiar; intervalo 2–60 s, pausa; activado por servidor y persistente; sin agentes | `monitor::sampler::tests` (fórmula de la CLI); `live_monitor::metrics_match_docker_stats` (igual que `docker stats`, solo `GET`, sin llenar el registro) |
+| Historial | Anillo de 30 min en memoria; resumen por minuto en `metricas.jsonl` (0600) con retención 1–168 h y 64 MiB | `monitor::history::tests`, `monitor::tests::minute_store_…`; IPC `live_e5_…` (minutos en disco) |
+| Servidor | Estado, recuentos, conexión; equipo solo según `docker info` | `live_monitor`, `MonitorView.test.tsx` |
+| Desconexión | Huecos sin datos, fallo inmediato, reanudación sola; sigue tras reiniciar la aplicación | `live_monitor::disconnection_fails_fast_and_sampling_resumes`; IPC `e5_monitor_without_docker_shows_gaps_and_survives_a_restart` |
+| Alertas | CPU y memoria con histéresis y muestras seguidas; reinicio, OOM, salida con error, desconexión; periodo de silencio; historial | `monitor::alerts::tests`; `live_monitor::real_cpu_and_oom_alerts_fire_once`; IPC `live_e5_monitor_samples_minutes_and_event_alerts` |
+| Notificaciones | D-Bus con `zbus` (ya en el árbol), texto traducido en la interfaz | `notify::tests` (bus privado con un servidor falso) |
+| Gráficos e interfaz | SVG propio; sección «Monitorización» (Resumen, Comparar, Alertas), 8 idiomas | `MonitorView.test.tsx` (12 pruebas) |
+| Consumo | Límite: ≤ 10 % de una CPU, ≤ 64 MiB adicionales, muestra < 2 s con 50 contenedores × 3 servidores a 2 s | `live_monitor::consumption_with_50_containers_and_3_servers` |
+
+### Verificación (`scripts/verify-evolution-1.5.0.sh`)
+Entorno de desarrollo (Ubuntu 24.04 en contenedor), 2026-11-14, con el código final:
+
+| Daemon | Opciones | Resultado |
+|---|---|---|
+| Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` | **142 correctas, 0 fallos**, 4 omitidas, 1 aviso (root en desarrollo) |
+| Docker 26.1.3 (API 1.45) | — | **107 correctas, 0 fallos**, 5 omitidas, 1 aviso |
+| Docker 24.0.7 (API 1.43) | — | **107 correctas, 0 fallos**, 5 omitidas, 1 aviso |
+| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | Correcto (glibc ≥ 2.34) |
+
+- **Igual que `docker stats`** (contenedor con una CPU ocupada y límite de 256 MiB): Docker 29, 100,4 % frente a 99,38 % y 472 KiB frente a 472 KiB; Docker 26, 99,9 % frente a 100,10 %; Docker 24, 100,0 % frente a 99,85 %. Límite y PIDs exactos en los tres. Durante el muestreo solo hay peticiones `GET`.
+- **Consumo** (50 contenedores × 3 servidores, cada 2 s durante 60 s; límite ≤ 10 % de una CPU, ≤ 64 MiB, < 2 s): Docker 29, 5,1 % y 6 MiB, muestra más lenta 409 ms; Docker 26, 4,9 % y 6 MiB, 283 ms; Docker 24, 5,1 % y 6 MiB, 269 ms; por SSH (laboratorio), 7,7 % y 6 MiB, 1164 ms.
+- Compose 2.26.1 correcto con los tres daemons. Sin contenedores, volúmenes ni redes de prueba restantes (queda la imagen de prueba reutilizable, como en etapas anteriores).
+- Pruebas de Rust deterministas: 725 superadas, 0 fallidas, más las de Docker real, IPC y SSH. Vitest: 46 archivos y 416 pruebas. `fmt`, `clippy -D warnings`, `tsc`, ESLint, `cargo deny` y `npm audit`: correctos.
+- Instalación limpia de los `.deb` 1.5.0 en Ubuntu 24.04 (normal) y 22.04 (compatible): `install.sh` elige el paquete, instala, la aplicación arranca con un usuario normal y se desinstala: 0 fallos.
+- Revisión visual en la aplicación real (Xvfb, Docker 29): activar, resumen con el equipo según Docker, tabla, detalle, comparación, alertas reales (CPU, salida con error, reinicio) con silencio, desconexión parando Docker y vuelta sola, huecos rayados en el periodo de 1 h, pausa y continuidad tras reiniciar la aplicación. Cuatro detalles corregidos (abajo). El aviso de escritorio no se ve aquí (no hay servidor de notificaciones): «Probar notificación» muestra el error.
+
+### Problemas encontrados y resueltos
+- **Última muestra de un hueco**: el anillo guardaba como «última muestra» una sin conexión y el estado se quedaba vacío. Ahora la última es siempre una con datos y aparte se indica si hay hueco.
+- **Prueba de desconexión por SSH**: simula el corte parando el proxy local, por el que no pasa una conexión SSH; se omite por SSH (el corte de SSH ya lo prueba `live_ssh`).
+- **Revisión visual** (aplicación real en Xvfb, con tres contenedores de prueba y Docker parado y vuelto a arrancar):
+  - el texto de las alertas del equipo local salía sin nombre de servidor («vis-falla en  terminó…»), porque su nombre guardado está vacío; ahora se usa el nombre traducido («Este equipo») y lo comprueba `MonitorView.test.tsx`;
+  - tras reiniciar la aplicación se volvía a avisar de una alerta dentro del periodo de silencio; ahora se recuerdan los avisos del historial (`monitor::alerts::tests::silence_survives_a_restart_from_the_history`) y se ha comprobado en la aplicación real (`notified: false` tras reiniciar);
+  - un minuto aislado entre dos huecos no se veía en el gráfico; ahora se dibuja como un punto;
+  - un gráfico vacío mostraba un máximo de «1,0 %»; ahora no muestra escala.
+- **Disco del entorno de desarrollo**: las pruebas con información de depuración completa llenaban el disco; el entorno compila ahora con `CARGO_PROFILE_DEV_DEBUG=line-tables-only` (no afecta a los paquetes).
+
+### Limitaciones
+- **El aviso visible en GNOME/KDE** no se puede comprobar aquí (no hay escritorio con servidor de notificaciones): se prueba con un bus D-Bus privado. M6.
+- **Disco por contenedor** solo donde Docker lo da (depende del controlador de almacenamiento y de cgroups).
+- Si el proceso se termina de golpe se pierde, como mucho, el minuto en curso del historial en disco (queda como hueco); cerrar la ventana lo guarda. El anillo en memoria empieza vacío al abrir la aplicación.
+- La pausa no se guarda (al abrir la aplicación sigue la monitorización); el intervalo y las reglas son comunes a todos los servidores.
+- El consumo se mide en el proceso del motor; la ventana solo pide datos al llegar cada muestra.
+- Debian 12 y 13 sin probar aquí.
+
+### Validación manual
+M1–M9 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.5.0.sh`.
+
 ## Próximos pasos
 
-1. El propietario ejecuta `bash scripts/verify-evolution-1.4.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.4.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M10 de la 1.4.0 y, si no los ha hecho aún, los de la 1.1.0 a la 1.3.0 y F1–F8.
-2. Con su validación, las Etapas 1 a 4 quedan completadas y se puede autorizar la Etapa 5 (monitorización, 1.5.0).
+1. El propietario ejecuta `bash scripts/verify-evolution-1.5.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.5.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M9 de la 1.5.0 y, si no los ha hecho aún, los de la 1.1.0 a la 1.4.0 y F1–F8.
+2. Con su validación, las Etapas 1 a 5 quedan completadas y se puede autorizar la Etapa 6 (integración, 1.6.0).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

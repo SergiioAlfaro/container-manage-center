@@ -39,6 +39,8 @@ dcc-engine.workspace = true
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
 semver = "1"
 libc = "0.2"
+# Notificaciones de escritorio por D-Bus (1.5.0); ya estaba en el árbol por el llavero.
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 # Historial de APT rotado (history.log.N.gz) para «Desinstalación y componentes» (0.9.1).
 flate2 = "1"
 # Abrir el perfil de GitHub del autor desde «Ayuda» (0.9.1): solo esa URL, limitada en capabilities/default.json.

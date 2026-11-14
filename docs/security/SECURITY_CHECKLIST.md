@@ -3,10 +3,10 @@
 Se usa antes de cada versión y al revisar cada cambio. La marca indica el
 estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026), actualizado
 con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
-13-11-2026), la **1.3.0** (Etapa 3, auditoría de seguridad) y la **1.4.0**
-(Etapa 4, copias de seguridad). Las líneas cambiadas llevan su evidencia entre
-corchetes (prueba automática que lo demuestra; `verify-evolution-1.4.0.sh` las
-ejecuta todas):
+13-11-2026), la **1.3.0** (Etapa 3, auditoría de seguridad), la **1.4.0**
+(Etapa 4, copias de seguridad) y la **1.5.0** (Etapa 5, monitorización). Las
+líneas cambiadas llevan su evidencia entre corchetes (prueba automática que lo
+demuestra; `verify-evolution-1.5.0.sh` las ejecuta todas):
 
 - ✅ cumple;
 - ⚠️ cumple en parte (ver hallazgo);
@@ -249,3 +249,39 @@ seguridad de Docker Engine y RustSec.
   para copias fuera del equipo.
 - ⚠️ systemd real y MongoDB no se han podido probar en el entorno de desarrollo
   (D-098, D-100): pendientes de la validación manual.
+
+## Monitorización (1.5.0)
+
+- ✅ Sin agentes ni nada instalado en los servidores: solo lecturas de la API de
+  Docker (`containers/json`, `stats`, `inspect`, `info`), igual en local y por
+  SSH; ninguna petición de escritura (D-102)
+  [`live_monitor::metrics_match_docker_stats`: solo `GET` en el proxy].
+- ✅ Muestreo acotado: `stats` de una lectura, 8 a la vez y 10 s de límite;
+  un servidor sin conexión falla enseguida y no bloquea los comandos (D-102)
+  [`live_monitor::disconnection_fails_fast_and_sampling_resumes`, IPC
+  `e5_monitor_without_docker_shows_gaps_and_survives_a_restart`].
+- ✅ Sin datos inventados: un corte es un hueco y un contador que vuelve a
+  empezar deja el dato vacío (D-102, D-103)
+  [`monitor::sampler::tests::cpu_and_rates_between_two_samples_like_the_cli`,
+  `monitor::history::tests::ring_keeps_size_and_age_limits_and_gaps`].
+- ✅ Datos en disco solo para el usuario y limitados: `monitor.json`,
+  `metricas.jsonl` y `alertas.jsonl` 0600 en una carpeta 0700; retención de 1 a
+  168 h, 64 MiB y 1000 alertas como máximo (D-103)
+  [`monitor::tests::minute_store_filters_compacts_by_age_and_size_and_is_private`,
+  `settings_are_validated_and_survive_a_restart`].
+- ✅ Configuración validada en el backend (intervalo 2–60 s, retención,
+  servidores existentes, reglas) [`settings_are_validated_and_survive_a_restart`,
+  `monitor::alerts::tests::rules_are_validated`].
+- ✅ Consumo de la aplicación limitado y medido con 50 contenedores y 3
+  servidores (D-107) [`live_monitor::consumption_with_50_containers_and_3_servers`].
+- ✅ Alertas sin repetición (histéresis y periodo de silencio, también tras reiniciar la aplicación) (D-104)
+  [`monitor::alerts::tests` (incluido `silence_survives_a_restart_from_the_history`), `live_monitor::real_cpu_and_oom_alerts_fire_once`,
+  IPC `live_e5_monitor_samples_minutes_and_event_alerts`].
+- ✅ Notificaciones solo al bus de sesión local, sin complemento ni permiso
+  nuevo en la interfaz; título y cuerpo limitados y sin caracteres de control
+  (D-105) [`notify::tests::notifications_go_through_dbus`].
+- ✅ El registro no se llena: las lecturas del muestreo no se apuntan una a una;
+  solo `monitor.start`, `monitor.stop` y el cambio de configuración (D-102)
+  [`live_monitor::metrics_match_docker_stats` (sin entradas del muestreo)].
+- ⚠️ El aviso visible en GNOME/KDE no se ha podido probar en el entorno de
+  desarrollo (D-105): pendiente de la validación manual (M6).

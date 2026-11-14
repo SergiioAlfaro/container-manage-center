@@ -24,6 +24,8 @@ pub struct AppState {
     pub last_update: Mutex<Option<crate::commands::app::UpdateOutcome>>,
     /// La ventana se está cerrando (esperando a que terminen los flujos).
     pub closing: std::sync::atomic::AtomicBool,
+    /// Monitorización (1.5.0).
+    pub monitor: crate::monitor::Monitor,
 }
 
 /// Traduce la configuración persistida al modo de conexión del motor.
@@ -88,6 +90,7 @@ impl AppState {
             .flatten()
             .collect();
         let startup_warning = (!warnings.is_empty()).then(|| warnings.join(" "));
+        let monitor = crate::monitor::Monitor::new(store.path(), journals.dir.clone());
         Self {
             activity,
             store,
@@ -98,6 +101,7 @@ impl AppState {
             journals,
             last_update: Mutex::new(None),
             closing: Default::default(),
+            monitor,
         }
     }
 

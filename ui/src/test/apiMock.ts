@@ -3,6 +3,12 @@
  * prueba: nunca se importan desde código de la aplicación.
  */
 import type { HostRisk } from "@/shared/ipc/bindings/HostRisk";
+import type { Alert } from "@/shared/ipc/bindings/Alert";
+import type { MonitorLive } from "@/shared/ipc/bindings/MonitorLive";
+import type { MonitorMinute } from "@/shared/ipc/bindings/MonitorMinute";
+import type { MonitorSample } from "@/shared/ipc/bindings/MonitorSample";
+import type { MonitorSettings } from "@/shared/ipc/bindings/MonitorSettings";
+import type { MonitorStatus } from "@/shared/ipc/bindings/MonitorStatus";
 import { vi } from "vitest";
 import type { BackupEntry } from "@/shared/ipc/bindings/BackupEntry";
 import type { BackupEvent } from "@/shared/ipc/bindings/BackupEvent";
@@ -1133,6 +1139,18 @@ export const api = {
   ),
   backupRestoreOpen: vi.fn(async (_id: string, _r: RestoreRequest, h: (e: BackupEvent) => void) => streams.add(h)),
   backupHistory: vi.fn(async (): Promise<BackupRun[]> => []),
+  // E5 (1.5.0): monitorización.
+  monitorStatus: vi.fn(async (): Promise<MonitorStatus> => monitorStatus()),
+  monitorSetServer: vi.fn(async (enabled: boolean): Promise<MonitorStatus> => monitorStatus({ enabled })),
+  monitorLive: vi.fn(async (ids: string[], _m: number): Promise<MonitorLive> => monitorLive(ids)),
+  monitorMinutes: vi.fn(async (_h: number, _ids: string[]): Promise<MonitorMinute[]> => []),
+  monitorAlerts: vi.fn(async (): Promise<Alert[]> => []),
+  monitorSettings: vi.fn(async (): Promise<MonitorSettings> => monitorSettings()),
+  monitorSettingsSet: vi.fn(async (s: MonitorSettings): Promise<MonitorSettings> => s),
+  monitorPause: vi.fn(async (_p: boolean) => null),
+  monitorNotify: vi.fn(async (_s: string, _b: string) => 1),
+  onMonitorSample: vi.fn(async (_h: (e: { server: string; t: number }) => void) => () => {}),
+  onMonitorAlert: vi.fn(async (_h: (a: Alert) => void) => () => {}),
   systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
   componentsInspect: vi.fn(async (): Promise<ComponentsReport> => componentsReport()),
   componentsPlan: vi.fn(async (packages: string[]): Promise<RemovalPlan> => removalPlan(packages)),
@@ -1228,5 +1246,71 @@ export function auditReport(over: Partial<AuditReport> = {}): AuditReport {
     vulnerabilities: { requested: false, tools: [], notAnalyzed: "audit.vuln.notRequested", images: [] },
     counts: { critical: 1, high: 0, medium: 2, low: 2 },
     ...over,
+  };
+}
+
+/** E5: muestra de un servidor con dos contenedores (uno en marcha). */
+export const MONITOR_T = Date.parse("2026-11-14T12:00:00Z");
+export function monitorSample(over: Partial<MonitorSample> = {}): MonitorSample {
+  return {
+    t: MONITOR_T,
+    connected: true,
+    counts: { running: 1, paused: 0, stopped: 1, total: 2 },
+    cpuTotal: 12.5,
+    memTotal: 64 * 1024 * 1024,
+    containers: [
+      {
+        meta: { id: "c1c1c1c1c1c1", name: "web", image: "nginx:1.27", state: "running", composeProject: null, startedAt: "2026-11-14T09:00:00Z", restartCount: 2 },
+        point: { t: MONITOR_T, cpu: 12.5, mem: 64 * 1024 * 1024, memLimit: 256 * 1024 * 1024, memPercent: 25, netRx: 2048, netTx: 1024, blkRead: null, blkWrite: null, pids: 5 },
+      },
+      {
+        meta: { id: "d2d2d2d2d2d2", name: "db", image: "postgres:16", state: "exited", composeProject: null, startedAt: null, restartCount: 0 },
+        point: null,
+      },
+    ],
+    errors: 0,
+    tookMs: 42,
+    ...over,
+  };
+}
+export function monitorStatus(over: Partial<MonitorStatus> = {}): MonitorStatus {
+  return {
+    server: "local",
+    enabled: true,
+    paused: false,
+    running: true,
+    intervalSecs: 5,
+    host: { ncpu: 8, memTotal: 16 * 1024 ** 3, serverVersion: "29.0.0", operatingSystem: "Debian GNU/Linux 13 (trixie)", kernelVersion: "6.12" },
+    last: monitorSample(),
+    gap: false,
+    lastError: null,
+    firing: [],
+    ...over,
+  };
+}
+export function monitorSettings(over: Partial<MonitorSettings> = {}): MonitorSettings {
+  return {
+    intervalSecs: 5,
+    retentionHours: 24,
+    notifications: true,
+    servers: ["local"],
+    rules: {
+      cpu: { enabled: true, above: 90, clearBelow: 70, samples: 3 },
+      memory: { enabled: true, above: 90, clearBelow: 80, samples: 3 },
+      restart: true,
+      oom: true,
+      exitError: true,
+      disconnected: true,
+      silenceMinutes: 15,
+    },
+    ...over,
+  };
+}
+export function monitorLive(ids: string[] = []): MonitorLive {
+  const ts = [MONITOR_T - 10_000, MONITOR_T - 5_000, MONITOR_T];
+  const p = monitorSample().containers[0]!.point!;
+  return {
+    server: ts.map((t, i) => ({ t, connected: i !== 1, counts: { running: 1, paused: 0, stopped: 1, total: 2 }, cpuTotal: i === 1 ? null : 10 + i, memTotal: p.mem })),
+    containers: ids.map((id) => ({ id, points: ts.map((t, i) => [t, i === 1 ? null : { ...p, t, cpu: 10 + i }] as [number, typeof p | null]) })),
   };
 }
