@@ -857,7 +857,7 @@ dependencies = [
 
 [[package]]
 name = "dcc-activity"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "chrono",
  "parking_lot",
@@ -870,7 +870,7 @@ dependencies = [
 
 [[package]]
 name = "dcc-engine"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "base64 0.22.1",
  "bollard",
@@ -902,7 +902,7 @@ dependencies = [
 
 [[package]]
 name = "dcc-store"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "dirs 6.0.0",
  "parking_lot",
@@ -1076,7 +1076,7 @@ dependencies = [
 
 [[package]]
 name = "docker-control-center"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "base64 0.22.1",
  "bollard",

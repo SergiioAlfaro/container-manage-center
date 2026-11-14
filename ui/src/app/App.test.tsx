@@ -24,7 +24,7 @@ describe("App", () => {
     configSet.mockImplementation(async (c) => c);
   });
 
-  it("muestra los doce apartados en el orden requerido (0.9.1 añade «Terminales»; 0.10.0, «Servidores»; 1.3.0, «Auditoría»)", async () => {
+  it("muestra los trece apartados en el orden requerido (0.9.1 añade «Terminales»; 0.10.0, «Servidores»; 1.3.0, «Auditoría»; 1.4.0, «Copias»)", async () => {
     await boot();
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });
     const labels = within(nav)
@@ -41,6 +41,7 @@ describe("App", () => {
       "Docker Compose",
       "Terminales",
       "Auditoría",
+      "Copias",
       "Eventos y registros",
       "Configuración",
     ]);

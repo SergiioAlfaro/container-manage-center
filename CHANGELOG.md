@@ -1,5 +1,16 @@
 # Cambios
 
+## 1.4.0 — 2026-11-14 (evolución, Etapa 4: copias de seguridad y restauración)
+- **Copias de seguridad** (sección nueva «Copias» en «Herramientas», D-096): de volúmenes, bases de datos, la configuración de contenedores, proyectos Compose y la configuración de la aplicación, en una carpeta que eliges. Cada copia tiene un manifiesto con la SHA-256 de cada archivo; carpetas 0700 y archivos 0600. Sin cifrado (evaluado y documentado).
+- **Nunca una copia a medias**: se escribe aparte y solo se da por completa con el manifiesto escrito. Una copia cancelada no deja nada; una interrumpida aparece como «Incompleta» y no se puede restaurar. «Comprobar» detecta archivos alterados, que faltan o que sobran.
+- **Volúmenes** (D-097): por la API de archivos de Docker con un contenedor auxiliar que nunca se arranca y sin descargar ninguna imagen. En caliente (marcada como no garantizada si un contenedor lo usa) o deteniendo los contenedores, que vuelven a arrancar.
+- **Bases de datos** (D-098): MariaDB, MySQL, PostgreSQL, Redis y MongoDB, con la herramienta de volcado del propio motor dentro del contenedor. Las credenciales salen de las variables del contenedor y nunca pasan por la aplicación. Volcados coherentes aunque haya escrituras (probado con MariaDB y PostgreSQL).
+- **Restauración** (D-099) completa o selectiva, con vista previa, aviso de pérdida de datos, confirmación escrita y registro. Los volúmenes van a uno nuevo (restauración de prueba) o a uno vacío, nunca sobre datos; los contenedores se crean nuevos y sin arrancar; Compose y la configuración, en una carpeta nueva.
+- **Tareas programadas** (D-100): con temporizadores de usuario de systemd, que funcionan con la aplicación cerrada. Antes de crearlos se muestran sus archivos y órdenes, y solo se crean con tu autorización expresa. Se pueden consultar, desactivar y quitar. Retención 7 diarias, 4 semanales y 3 mensuales por defecto, solo sobre las copias de la propia tarea.
+- **Sin secretos** (D-101): la configuración de los contenedores se guarda sin las variables secretas; los `.env` de Compose solo con aceptación expresa.
+- **Historial** de copias y categoría «Copias» en el panel de actividad.
+- **Verificación**: `scripts/verify-evolution-1.4.0.sh`, con toda la regresión anterior y las copias contra Docker real, por IPC, sin ventana (como el temporizador) y por SSH. `scripts/dev/build-db-test-images.sh` crea las imágenes de prueba de bases de datos.
+
 ## 1.3.0 — 2026-11-13 (evolución, Etapa 3: auditoría de seguridad)
 - **Auditoría de seguridad** (sección nueva en «Herramientas», D-093): revisa todos los contenedores o uno, las imágenes y los proyectos Compose del servidor elegido, también remoto, **sin cambiar nada**. Comprueba:
   - los riesgos para el equipo (socket de Docker, montajes, capacidades, modo privilegiado, red, PID, IPC, opciones de seguridad, dispositivos y puertos);

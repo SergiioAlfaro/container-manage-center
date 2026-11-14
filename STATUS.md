@@ -1,17 +1,17 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-13
+Última actualización: 2026-11-14
 
 ## Resumen
 
 | | |
 |---|---|
-| **Etapa actual** | Evolución E3. Auditoría de seguridad ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
-| **Versión** | 1.3.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M8 de la 1.3.0) |
+| **Etapa actual** | Evolución E4. Copias de seguridad y restauración ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
+| **Versión** | 1.4.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M10 de la 1.4.0) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Pendiente de validar** | Fase 10 (F1–F8) y Etapas E1, E2 y E3 (M1–M8 de cada una) |
-| **Próximas etapas** | E4 copias · E5 monitorización · E6 integración |
+| **Pendiente de validar** | Fase 10 (F1–F8), Etapas E1 a E3 (M1–M8 de cada una) y E4 (M1–M10) |
+| **Próximas etapas** | E5 monitorización · E6 integración |
 
 | Fase | Estado |
 |---|---|
@@ -1196,9 +1196,62 @@ M1–M8 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1
 
 ---
 
+## Evolución · Etapa 4 · Copias de seguridad y restauración (1.4.0)
+
+Autorizada por el propietario el 2026-11-14 («Puedes pasar a la siguiente etapa»).
+Alcance: apartados 5.3 (E4) y 12 de
+[PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md).
+Decisiones: D-096 a D-101.
+
+### Qué se ha hecho
+| Parte | Implementación | Demostración (pruebas) |
+|---|---|---|
+| Formato e integridad | Manifiesto con SHA-256 y tamaño de cada archivo, carpetas 0700 y archivos 0600, escritura en `.partial` y manifiesto al final; `BackupTarget` local | `backup::store::tests` (copia completa, alterada, interrumpida, rutas); `live_backup` (suma alterada rechazada, copia cancelada sin restos, permisos) |
+| Volúmenes | API de archivos de Docker con un auxiliar que nunca se arranca; en caliente o deteniendo los contenedores | `live_backup::volumes_round_trip…`: contenido, permisos y propietarios idénticos, ningún auxiliar arrancado ni restante, sin volúmenes anónimos; también por SSH |
+| Bases de datos | Volcado dentro del contenedor con guiones fijos y credenciales del propio contenedor (MariaDB, MySQL, PostgreSQL, Redis, MongoDB) | `backup::db::tests` (sh real con herramientas simuladas); `live_backup`: MariaDB y PostgreSQL coherentes con escrituras simultáneas, Redis; contraseñas ausentes del registro |
+| Configuración | Contenedores sin variables secretas; Compose con `.env` solo con aceptación; configuración de la aplicación | `live_backup`, `backup::run::tests` |
+| Restauración | Completa o selectiva, vista previa, pérdida de datos con confirmación escrita, nunca sobre datos, contenedores nuevos sin arrancar | `live_backup`, `backup::restore::tests`, `BackupView.test.tsx` |
+| Retención e historial | 7/4/3 por defecto, solo copias completas de la misma tarea; `copias.jsonl` | `backup::store::tests::retention_is_exact`, IPC `live_e4_scheduled_job_runs_headless_with_retention` |
+| Programación | Temporizadores de usuario de systemd con autorización expresa; consultar, desactivar y quitar; `--run-backup` sin ventana con candado | `systemd::tests`, IPC `e4_jobs_and_timers_need_authorization_and_survive_a_restart` (systemctl simulado, reinicio de la aplicación), `live_e4_…` |
+| Interfaz | Sección «Copias» en Herramientas (copias, nueva copia, tareas, historial), 8 idiomas | `BackupView.test.tsx` (6 pruebas) |
+
+### Verificación (`scripts/verify-evolution-1.4.0.sh`)
+Entorno de desarrollo (Ubuntu 24.04 en contenedor), 2026-11-14, con el código final:
+
+| Daemon | Opciones | Resultado |
+|---|---|---|
+| Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` | **133 correctas, 0 fallos**, 4 omitidas, 1 aviso (root en desarrollo) |
+| Docker 26.1.3 (API 1.45) | — | **99 correctas, 0 fallos**, 5 omitidas |
+| Docker 24.0.7 (API 1.43) | — | **99 correctas, 0 fallos**, 5 omitidas |
+| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | Correcto (glibc ≥ 2.34) |
+
+- Volcados con escrituras simultáneas, en los tres daemons: la copia restaurada tiene siempre las mismas filas en las dos tablas mientras el origen seguía escribiendo (Docker 29: MariaDB 901 transacciones en la copia y 1508 en el origen, PostgreSQL 937 y 1855; Docker 26: 832/1535 y 887/1557; Docker 24: 516/1139 y 1666/2523). Por SSH también correcto.
+- Compose 2.26.1 correcto con los tres daemons. Sin recursos de prueba restantes.
+- Pruebas de Rust deterministas: 686 superadas, 0 fallidas, más las de Docker real, IPC y SSH. Vitest: 45 archivos y 404 pruebas. `fmt`, `clippy -D warnings`, `tsc`, ESLint, `cargo deny` y `npm audit`: correctos.
+- Instalación limpia de los `.deb` 1.4.0 en Ubuntu 24.04 (normal) y 22.04 (compatible): `install.sh` comprueba `SHA256SUMS`, instala, la aplicación arranca y se desinstala: 0 fallos.
+- Revisión visual en la aplicación real (Xvfb): copia manual y desde `--run-backup` con el binario real, comprobación, restauración con vista previa y confirmación, autorización de systemd (sin crear nada). Una vez la ventana se quedó en blanco y se recargó al pedir la vista previa; no se ha podido reproducir en tres intentos más (el proceso no se reinició). Detalle menor: el aviso de copia terminada muestra dos iconos.
+
+### Problemas encontrados y resueltos
+- **Volúmenes anónimos de los auxiliares**: si la imagen elegida para el auxiliar declara `VOLUME` (por ejemplo, la de PostgreSQL), Docker crea un volumen anónimo que quedaba al quitar el auxiliar. Ahora se quita con `v=true` (nunca afecta a volúmenes con nombre) y la prueba real comprueba que no queda ninguno.
+- **Guion de restauración de MariaDB**: el bloque de credenciales borraba una variable del propio guion. Las variables internas llevan ahora el prefijo `dcc_`.
+- **Subidas grandes**: el límite de 120 s del cliente cuenta hasta la respuesta, que llega después de enviar todo el cuerpo; las restauraciones usan un cliente sin ese límite.
+- La imagen de prueba de PostgreSQL no creaba la base de datos indicada (solo afectaba a las pruebas).
+
+### Limitaciones
+- **Sin cifrado** (D-096): los volcados y volúmenes contienen los datos tal cual (archivos 0600).
+- **systemd real sin probar aquí** (no hay sesión de usuario de systemd en el entorno): se prueba con un `systemctl` simulado y la ejecución sin ventana con Docker real. Los temporizadores de usuario solo se ejecutan con la sesión iniciada salvo `loginctl enable-linger`, que la aplicación no activa.
+- **MongoDB y MySQL de Oracle sin probar** (no hay imágenes ni red). Las pruebas usan MariaDB 10.6, PostgreSQL 14 y Redis 6 de Ubuntu 22.04.
+- Compose solo en este equipo; la configuración de la aplicación se restaura como archivos para copiarlos a mano; un contenedor restaurado solo queda en su red principal.
+- Destino solo local (puede ser un disco externo o una carpeta de red montada).
+- Debian 12 y 13 sin probar aquí.
+
+### Validación manual
+M1–M10 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.4.0.sh`.
+
 ## Próximos pasos
-1. El propietario ejecuta `bash scripts/verify-evolution-1.3.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.3.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M8 de la 1.3.0 y, si no los ha hecho aún, los de la 1.1.0, la 1.2.0 y F1–F8.
-2. Con su validación, las Etapas 1 a 3 quedan completadas y se puede autorizar la Etapa 4 (copias de seguridad y restauración, 1.4.0).
+
+1. El propietario ejecuta `bash scripts/verify-evolution-1.4.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.4.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M10 de la 1.4.0 y, si no los ha hecho aún, los de la 1.1.0 a la 1.3.0 y F1–F8.
+2. Con su validación, las Etapas 1 a 4 quedan completadas y se puede autorizar la Etapa 5 (monitorización, 1.5.0).
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

@@ -40,7 +40,7 @@ describe("órdenes con Docker ligadas a un servidor (0.10.0)", () => {
   it("todas las órdenes del cliente de servidor envían el servidor", async () => {
     const d = dockerApi("srv-cccccccc");
     const names = Object.keys(d) as (keyof typeof d)[];
-    expect(names.length).toBe(62); // 1.3.0: auditRunOpen, auditHistory, auditGet
+    expect(names.length).toBe(69); // 1.4.0: + 7 órdenes de copias (backupList…backupHistory)
     for (const name of names) {
       calls.length = 0;
       const fn = d[name] as (...args: unknown[]) => Promise<unknown>;

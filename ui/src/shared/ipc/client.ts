@@ -10,6 +10,17 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import i18n from "@/shared/i18n";
 import type { SystemInfo } from "./bindings/SystemInfo";
+import type { BackupEntry } from "./bindings/BackupEntry";
+import type { BackupEvent } from "./bindings/BackupEvent";
+import type { BackupJob } from "./bindings/BackupJob";
+import type { BackupJobView } from "./bindings/BackupJobView";
+import type { BackupRequest } from "./bindings/BackupRequest";
+import type { BackupRun } from "./bindings/BackupRun";
+import type { BackupSettings } from "./bindings/BackupSettings";
+import type { BackupTimerPreview } from "./bindings/BackupTimerPreview";
+import type { IntegrityReport } from "./bindings/IntegrityReport";
+import type { RestorePreview } from "./bindings/RestorePreview";
+import type { RestoreRequest } from "./bindings/RestoreRequest";
 import type { UpdateCheck } from "./bindings/UpdateCheck";
 import type { UpdateOutcome } from "./bindings/UpdateOutcome";
 import type { ActivityEvent } from "./bindings/ActivityEvent";
@@ -269,6 +280,19 @@ export function dockerApi(server: string) {
     auditRunOpen: (request: AuditRequest, onEvent: (e: AuditEvent) => void) => call<number>("audit_run_open", { request, onEvent: channel(onEvent) }),
     auditHistory: () => call<AuditSummary[]>("audit_history"),
     auditGet: (id: string) => call<AuditReport>("audit_get", { id }),
+    /** E4: copias del servidor en el destino (por defecto, el guardado). */
+    backupList: (destination: string | null = null) => call<BackupEntry[]>("backup_list", { destination }),
+    backupVerify: (id: string, destination: string | null = null) => call<IntegrityReport>("backup_verify", { id, destination }),
+    backupDelete: (id: string, destination: string | null = null) => call<null>("backup_delete", { id, destination, confirmed: true }),
+    /** Copia manual (`job` = null) o de una tarea; avance por el canal. */
+    backupRunOpen: (request: BackupRequest, job: string | null, onEvent: (e: BackupEvent) => void, destination: string | null = null) =>
+      call<number>("backup_run_open", { request, job, destination, onEvent: channel(onEvent) }),
+    backupRestorePreview: (id: string, request: RestoreRequest, destination: string | null = null) =>
+      call<RestorePreview>("backup_restore_preview", { id, request, destination }),
+    /** Restauración: `request.confirmed` debe venir de la confirmación escrita. */
+    backupRestoreOpen: (id: string, request: RestoreRequest, onEvent: (e: BackupEvent) => void, destination: string | null = null) =>
+      call<number>("backup_restore_open", { id, request, destination, onEvent: channel(onEvent) }),
+    backupHistory: () => call<BackupRun[]>("backup_history"),
   };
 }
 
@@ -310,6 +334,18 @@ const appApi = {
   /** E3: guarda un informe; la ruta se elige en el diálogo nativo (Rust). `null` si se cancela. */
   auditExportSave: (format: "json" | "markdown" | "html", content: string, name: string) => call<string | null>("audit_export_save", { format, content, name }),
   systemInfo: () => call<SystemInfo>("system_info"),
+  /** E4: destino por defecto, tareas y estado de sus temporizadores. */
+  backupSettings: () => call<BackupSettings>("backup_settings"),
+  /** Diálogo nativo para elegir una carpeta; `saveDefault` la guarda como destino. */
+  backupPickFolder: (saveDefault: boolean) => call<string | null>("backup_pick_folder", { saveDefault }),
+  backupJobSave: (job: BackupJob) => call<BackupJobView>("backup_job_save", { job }),
+  backupJobDelete: (id: string) => call<null>("backup_job_delete", { id }),
+  /** Archivos de systemd que se crearían: se muestran antes de autorizar. */
+  backupTimerPreview: (id: string) => call<BackupTimerPreview>("backup_timer_preview", { id }),
+  /** Solo tras la autorización expresa del usuario en el diálogo. */
+  backupTimerInstall: (id: string) => call<BackupJobView>("backup_timer_install", { id, authorized: true }),
+  backupTimerSetEnabled: (id: string, enabled: boolean) => call<BackupJobView>("backup_timer_set_enabled", { id, enabled }),
+  backupTimerRemove: (id: string) => call<BackupJobView>("backup_timer_remove", { id, confirmed: true }),
   /** Abre el perfil de GitHub del autor en el navegador del sistema (plugin
    *  opener de Tauri; la capacidad solo permite esta dirección). */
   openGithubProfile: async () => {

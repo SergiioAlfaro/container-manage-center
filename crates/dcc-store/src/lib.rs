@@ -112,7 +112,7 @@ impl ConfigStore {
 }
 
 /// Escritura atómica (temporal en el mismo directorio + `rename`) con permisos 0600.
-pub(crate) fn write_atomic(path: &Path, body: &str) -> Result<(), StoreError> {
+pub fn write_atomic(path: &Path, body: &str) -> Result<(), StoreError> {
     let dir = path.parent().ok_or(StoreError::NoConfigDir)?;
     fs::create_dir_all(dir).map_err(|source| StoreError::Io {
         path: dir.to_path_buf(),

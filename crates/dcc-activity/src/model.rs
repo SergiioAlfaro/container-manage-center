@@ -49,6 +49,8 @@ pub enum Category {
     Volume,
     Bind,
     Compose,
+    /// Copias de seguridad y restauraciones (1.4.0).
+    Backup,
 }
 
 /// Cómo se ejecutó realmente la operación.

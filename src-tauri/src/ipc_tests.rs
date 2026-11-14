@@ -3163,3 +3163,338 @@ fn live_e3_audit_via_ipc_is_read_only_and_saved() {
         );
     }
 }
+
+// ------------------------------------------------------------- E4 (1.4.0)
+
+/// Segunda «sesión» de la aplicación sobre la misma configuración.
+fn reopen(store: &ConfigStore) -> Harness {
+    let mut app = super::configure(mock_builder(), store.clone())
+        .build(tauri::generate_context!(test = true))
+        .unwrap();
+    #[allow(deprecated)]
+    app.run_iteration(|_, _| {});
+    let window = app.get_webview_window("main").expect("ventana main");
+    Harness {
+        app,
+        window,
+        _dir: tempfile::tempdir().unwrap(),
+        store: store.clone(),
+    }
+}
+
+/// Tareas y temporizadores sin Docker, con un `systemctl` simulado: la
+/// programación necesita autorización expresa, se consulta, se desactiva, se
+/// elimina y sobrevive a un reinicio de la aplicación.
+#[test]
+fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
+    use std::os::unix::fs::PermissionsExt;
+    let h = harness();
+    let base = h.store.path().parent().unwrap().to_path_buf();
+    let fake = base.join("systemctl");
+    std::fs::write(
+        &fake,
+        format!(
+            "#!/bin/sh\necho \"$*\" >> {}/calls\ncase \"$2\" in show) printf 'ActiveState=active\\nUnitFileState=enabled\\nNextElapseUSecRealtime=mañana\\n';; esac\n",
+            base.display()
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    std::env::set_var("DCC_SYSTEMCTL", &fake);
+    std::env::set_var("XDG_CONFIG_HOME", base.join("xdg"));
+    let dest = base.join("copias");
+    std::fs::create_dir(&dest).unwrap();
+
+    let s = invoke(&h, "backup_settings", json!({})).unwrap();
+    assert_eq!(s["jobs"], json!([]));
+    assert!(s["destination"].is_null());
+    assert_eq!(invoke(&h, "backup_list", json!({})).unwrap(), json!([]));
+    let job = json!({
+        "id": "", "name": "Diaria", "server": "local", "destination": dest,
+        "request": { "volumes": [], "databases": [], "containers": [], "compose": [], "appConfig": true },
+        "retention": { "daily": 7, "weekly": 4, "monthly": 3 },
+        "schedule": { "kind": "daily", "hour": 3, "minute": 15 }
+    });
+    let v = invoke(&h, "backup_job_save", json!({ "job": job })).unwrap();
+    let id = v["job"]["id"].as_str().unwrap().to_owned();
+    assert!(id.starts_with("job-"));
+    assert_eq!(v["timer"]["installed"], false);
+    // Sin autorización no se crea nada.
+    let e = invoke(
+        &h,
+        "backup_timer_install",
+        json!({ "id": id, "authorized": false }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "backup.timerNotAuthorized");
+    assert!(!base.join("xdg").exists(), "no se ha escrito nada");
+    assert!(!base.join("calls").exists(), "no se ha ejecutado systemctl");
+    let pv = invoke(&h, "backup_timer_preview", json!({ "id": id })).unwrap();
+    assert!(pv["serviceText"]
+        .as_str()
+        .unwrap()
+        .contains(&format!("--run-backup {id}")));
+    assert!(pv["timerText"]
+        .as_str()
+        .unwrap()
+        .contains("OnCalendar=*-*-* 03:15:00"));
+    let v = invoke(
+        &h,
+        "backup_timer_install",
+        json!({ "id": id, "authorized": true }),
+    )
+    .unwrap();
+    assert_eq!(v["timer"]["installed"], true, "{v}");
+    assert_eq!(v["timer"]["nextRun"], "mañana");
+    let unit = base.join(format!("xdg/systemd/user/dcc-backup-{id}.timer"));
+    assert_eq!(
+        std::fs::read_to_string(&unit).unwrap(),
+        pv["timerText"].as_str().unwrap()
+    );
+    // Con temporizador, la tarea no se puede borrar.
+    let e = invoke(&h, "backup_job_delete", json!({ "id": id })).unwrap_err();
+    assert_eq!(e["code"], "backup.timerInstalled");
+
+    // Reinicio de la aplicación: la tarea y su programación siguen ahí.
+    let Harness {
+        app,
+        window,
+        _dir: keep,
+        store,
+    } = h;
+    drop(window);
+    drop(app);
+    let h = reopen(&store);
+    let s = invoke(&h, "backup_settings", json!({})).unwrap();
+    assert_eq!(s["jobs"][0]["job"]["id"], id.as_str());
+    assert_eq!(s["jobs"][0]["timer"]["installed"], true);
+    assert_eq!(s["systemd"], true);
+
+    // Cambiar la programación la deja desactualizada hasta volver a autorizarla.
+    let mut j = s["jobs"][0]["job"].clone();
+    j["schedule"] = json!({ "kind": "weekly", "weekday": 1, "hour": 2, "minute": 0 });
+    let v = invoke(&h, "backup_job_save", json!({ "job": j })).unwrap();
+    assert_eq!(v["timer"]["outdated"], true);
+    invoke(
+        &h,
+        "backup_timer_set_enabled",
+        json!({ "id": id, "enabled": false }),
+    )
+    .unwrap();
+    let e = invoke(
+        &h,
+        "backup_timer_remove",
+        json!({ "id": id, "confirmed": false }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.notConfirmed");
+    let v = invoke(
+        &h,
+        "backup_timer_remove",
+        json!({ "id": id, "confirmed": true }),
+    )
+    .unwrap();
+    assert_eq!(v["timer"]["installed"], false);
+    assert!(!unit.exists());
+    invoke(&h, "backup_job_delete", json!({ "id": id })).unwrap();
+    let calls = std::fs::read_to_string(base.join("calls")).unwrap();
+    assert!(calls.contains(&format!("--user enable --now dcc-backup-{id}.timer")));
+    assert!(calls.contains(&format!("--user disable --now dcc-backup-{id}.timer")));
+    // Todo queda en el panel de actividad.
+    let ops = invoke(&h, "activity_list", json!({})).unwrap();
+    let kinds: Vec<&str> = ops
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|o| o["kind"].as_str())
+        .collect();
+    for k in [
+        "backup.timer.systemctl",
+        "backup.timer.delete",
+        "backup.job.save",
+        "backup.job.delete",
+    ] {
+        assert!(kinds.contains(&k), "{k}: {kinds:?}");
+    }
+    // Sin Docker la copia falla y queda en el historial.
+    let ended: Arc<Mutex<Option<serde_json::Value>>> = Default::default();
+    let e2 = ended.clone();
+    let ch = tauri::ipc::Channel::<crate::commands::backup::BackupEvent>::new(move |body| {
+        if let InvokeResponseBody::Json(j) = body {
+            let v: serde_json::Value = serde_json::from_str(&j).unwrap();
+            if v["event"] == "backupEnd" {
+                *e2.lock().unwrap() = Some(v);
+            }
+        }
+        Ok(())
+    });
+    let req: dcc_engine::backup::BackupRequest = serde_json::from_value(json!({ "volumes": [], "databases": [], "containers": [], "compose": [], "appConfig": true })).unwrap();
+    tauri::async_runtime::block_on(crate::commands::backup::backup_run_open(
+        h.app.handle().clone(),
+        h.app.state::<AppState>(),
+        "local".into(),
+        Some(dest.display().to_string()),
+        req,
+        None,
+        ch,
+    ))
+    .unwrap();
+    wait_long("fin de la copia", 180, || ended.lock().unwrap().is_some());
+    let end = ended.lock().unwrap().clone().unwrap();
+    assert!(end["entry"].is_null() && !end["error"].is_null(), "{end}");
+    let hist = invoke(&h, "backup_history", json!({})).unwrap();
+    assert_eq!(hist[0]["ok"], false);
+    assert_eq!(hist[0]["trigger"], "manual");
+    std::env::remove_var("DCC_SYSTEMCTL");
+    std::env::remove_var("XDG_CONFIG_HOME");
+    drop(keep);
+}
+
+/// E4 contra Docker real: una tarea ejecutada como lo haría el temporizador
+/// (`--run-backup`) hace la copia, la apunta en el historial y aplica la
+/// retención solo a sus propias copias; dos ejecuciones a la vez no se pisan.
+#[test]
+fn live_e4_scheduled_job_runs_headless_with_retention() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let base = dir.path().to_path_buf();
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let vol = format!("dcc-test-e4-{}", std::process::id());
+    invoke(
+        &h,
+        "volume_create",
+        json!({ "spec": { "name": vol, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+    )
+    .unwrap();
+    struct Cleanup<'a>(&'a Harness, String);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = invoke(
+                self.0,
+                "volume_remove",
+                json!({ "name": self.1, "confirmed": true }),
+            );
+        }
+    }
+    let _c = Cleanup(&h, vol.clone());
+    let dest = base.join("copias");
+    std::fs::create_dir(&dest).unwrap();
+    let job = json!({
+        "id": "", "name": "Volumen", "server": "local", "destination": dest,
+        "request": { "volumes": [{ "name": vol, "mode": "hot" }], "databases": [], "containers": [], "compose": [], "appConfig": true },
+        "retention": { "daily": 1, "weekly": 0, "monthly": 0 },
+        "schedule": { "kind": "daily", "hour": 3, "minute": 0 }
+    });
+    let id = invoke(&h, "backup_job_save", json!({ "job": job })).unwrap()["job"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    // Una copia manual: la retención de la tarea nunca la borra.
+    crate::backups::set_default_destination(h.store.path(), dest.to_str().unwrap()).unwrap();
+    let ended: Arc<Mutex<Option<serde_json::Value>>> = Default::default();
+    let e2 = ended.clone();
+    let ch = tauri::ipc::Channel::<crate::commands::backup::BackupEvent>::new(move |body| {
+        if let InvokeResponseBody::Json(j) = body {
+            let v: serde_json::Value = serde_json::from_str(&j).unwrap();
+            if v["event"] == "backupEnd" {
+                *e2.lock().unwrap() = Some(v);
+            }
+        }
+        Ok(())
+    });
+    let req: dcc_engine::backup::BackupRequest =
+        serde_json::from_value(json!({ "volumes": [{ "name": vol, "mode": "hot" }], "databases": [], "containers": [], "compose": [], "appConfig": false })).unwrap();
+    tauri::async_runtime::block_on(crate::commands::backup::backup_run_open(
+        h.app.handle().clone(),
+        h.app.state::<AppState>(),
+        "local".into(),
+        None,
+        req,
+        None,
+        ch,
+    ))
+    .unwrap();
+    wait_long("copia manual", 180, || ended.lock().unwrap().is_some());
+    let end = ended.lock().unwrap().clone().unwrap();
+    assert!(end["error"].is_null(), "{end}");
+    let manual = end["entry"]["id"].as_str().unwrap().to_owned();
+
+    // Tres ejecuciones «del temporizador» (mismo día): la retención deja una.
+    for _ in 0..3 {
+        let code = tauri::async_runtime::block_on(crate::run_backup_job(h.store.clone(), &id));
+        assert_eq!(code, 0);
+        std::thread::sleep(Duration::from_millis(1100));
+    }
+    let list = invoke(&h, "backup_list", json!({})).unwrap();
+    let list = list.as_array().unwrap();
+    let of_job: Vec<_> = list
+        .iter()
+        .filter(|e| e["manifest"]["job"] == id.as_str())
+        .collect();
+    assert_eq!(of_job.len(), 1, "{list:?}");
+    assert!(
+        list.iter().any(|e| e["id"] == manual.as_str()),
+        "la manual sigue"
+    );
+    let hist = invoke(&h, "backup_history", json!({})).unwrap();
+    let timer_runs: Vec<_> = hist
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["trigger"] == "timer")
+        .collect();
+    assert_eq!(timer_runs.len(), 3);
+    assert!(timer_runs.iter().all(|r| r["ok"] == true));
+    let deleted: usize = timer_runs
+        .iter()
+        .map(|r| r["deleted"].as_array().unwrap().len())
+        .sum();
+    assert_eq!(deleted, 2);
+    // La copia de la tarea pasa la comprobación de integridad.
+    let rep = invoke(&h, "backup_verify", json!({ "id": of_job[0]["id"] })).unwrap();
+    assert_eq!(rep["ok"], true, "{rep}");
+    // Lo hecho sin ventana está en el historial de operaciones.
+    let state_dir = base.join("estado");
+    let ops = std::fs::read_to_string(state_dir.join("historial.jsonl")).unwrap();
+    assert!(ops.contains("backup.run") && ops.contains("backup.retention.delete"));
+    // Dos ejecuciones a la vez: la segunda espera su turno (código 75).
+    let st = h.app.state::<AppState>();
+    let lock = super::job_lock(&st, &id).unwrap();
+    let code = tauri::async_runtime::block_on(crate::run_backup_job(h.store.clone(), &id));
+    assert_eq!(code, 75);
+    drop(lock);
+    // Restauración de prueba en un volumen nuevo, por IPC.
+    let r = json!({ "items": [{ "kind": "volume", "name": vol, "target": format!("{vol}-prueba") }], "confirmed": true, "acceptedRisks": [] });
+    let pv = invoke(
+        &h,
+        "backup_restore_preview",
+        json!({ "id": of_job[0]["id"], "request": r }),
+    )
+    .unwrap();
+    assert_eq!(pv["items"][0]["action"], "restore.action.newVolume", "{pv}");
+    // Eliminación de copias: con confirmación.
+    let e = invoke(
+        &h,
+        "backup_delete",
+        json!({ "id": manual, "confirmed": false }),
+    )
+    .unwrap_err();
+    assert_eq!(e["code"], "engine.notConfirmed");
+    invoke(
+        &h,
+        "backup_delete",
+        json!({ "id": manual, "confirmed": true }),
+    )
+    .unwrap();
+}

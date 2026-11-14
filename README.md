@@ -5,7 +5,7 @@ este equipo y en servidores remotos por SSH: contenedores, imágenes, redes,
 volúmenes, directorios vinculados y proyectos Docker Compose, mostrando en todo
 momento las operaciones reales que se ejecutan.
 
-**Versión 1.3.0** (evolución, Etapa 3: auditoría de seguridad).
+**Versión 1.4.0** (evolución, Etapa 4: copias de seguridad y restauración).
 Tauri 2 · Rust · React · TypeScript · bollard.
 
 ## Qué hace
@@ -21,6 +21,12 @@ Tauri 2 · Rust · React · TypeScript · bollard.
 - **Docker Compose**: importar o crear proyectos, editor con validación,
   desplegar, detener, construir, servicios y registros.
 - **Terminales**: varias sesiones a la vez, en contenedores y en servidores.
+- **Copias de seguridad** (1.4.0): de volúmenes, bases de datos (MariaDB, MySQL,
+  PostgreSQL, Redis, MongoDB, con su propio volcado), configuración de
+  contenedores, Compose y la aplicación; con manifiesto y SHA-256, comprobación
+  de integridad, restauración completa o selectiva con vista previa, retención y
+  tareas programadas con temporizadores de usuario de systemd (solo con tu
+  autorización).
 - **Auditoría de seguridad** (1.3.0): revisa contenedores, imágenes y proyectos
   Compose sin cambiar nada, explica cada hallazgo, propone correcciones con vista
   previa, analiza vulnerabilidades con Trivy o Grype si están instalados y
@@ -49,7 +55,7 @@ bash scripts/install.sh --check  # solo comprueba el sistema
 bash scripts/install.sh --uninstall
 ```
 
-O directamente: `sudo apt install ./docker-control-center_1.3.0_amd64.deb`.
+O directamente: `sudo apt install ./docker-control-center_1.4.0_amd64.deb`.
 Después se abre desde el menú de aplicaciones o con `docker-control-center`
 (desde el código fuente: `bash scripts/run.sh`). Requisitos, acceso a Docker,
 compilación y diagnóstico en [INSTALL.md](INSTALL.md).
@@ -71,7 +77,7 @@ compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 ## Comprobación
 
 ```bash
-bash scripts/verify-evolution-1.3.0.sh --deb   # regresión completa, paquete y comprobaciones de las Etapas 1 a 3
+bash scripts/verify-evolution-1.4.0.sh --deb   # regresión completa, paquete y comprobaciones de las Etapas 1 a 4
 cargo run -q -p dcc-engine --bin dcc-diagnose   # diagnóstico de la conexión con Docker
 npm run lint                                    # ESLint (configuración mínima, reglas de seguridad)
 cargo deny check                                # dependencias de Rust (deny.toml)

@@ -601,6 +601,72 @@ en otros.
 - **Auditorías anteriores**: las de este servidor (las 200 últimas), para
   abrirlas de nuevo.
 
+## Copias
+
+**Herramientas → Copias** (1.4.0) hace copias de seguridad del servidor
+elegido (este equipo o uno remoto) y las restaura.
+
+- **Carpeta de destino**: «Elegir carpeta» abre el diálogo del sistema. Dentro
+  se crea `docker-control-center-copias/<servidor>/<copia>/`, solo para tu
+  usuario (carpetas 0700, archivos 0600). No se pueden usar carpetas del
+  sistema. Puede ser un disco externo o una carpeta de red ya montada.
+- **Nueva copia**: marca lo que quieras copiar.
+  - **Volúmenes**: se copian por la API de Docker con un contenedor auxiliar
+    que nunca se arranca (no se descarga ni ejecuta nada). Si un contenedor en
+    marcha usa el volumen, elige **en caliente** (la copia se marca como no
+    garantizada) o **deteniendo los contenedores**: se paran mientras se copia
+    y vuelven a arrancar; antes te dice cuáles.
+  - **Bases de datos**: los contenedores en marcha con MariaDB, MySQL,
+    PostgreSQL, Redis o MongoDB. El volcado lo hace la herramienta del propio
+    motor dentro del contenedor, con la contraseña de sus variables
+    (`MARIADB_ROOT_PASSWORD`, `POSTGRES_PASSWORD`…): no tienes que escribirla
+    y la aplicación no la ve. El volcado es coherente aunque haya escrituras.
+  - **Configuración de contenedores**: para volver a crearlos, sin las
+    variables con secretos.
+  - **Proyectos Compose** (solo en este equipo): sus archivos. Los `.env` solo
+    si marcas «Incluir los archivos .env», porque pueden tener contraseñas.
+  - **Configuración de la aplicación**: preferencias, servidores y tareas (las
+    contraseñas están en el llavero y no se copian).
+
+  «Hacer copia ahora» muestra el avance y se puede cancelar. Una copia cancelada
+  o interrumpida nunca se da por buena.
+- **Copias**: las del servidor, con su estado (Completa, Incompleta),
+  elementos, tamaño y avisos. «Comprobar» recalcula la suma SHA-256 de cada
+  archivo y dice si alguno está alterado, falta o sobra.
+- **Restaurar**: elige qué elementos (todos o solo algunos) y adónde. Pulsa
+  «Vista previa», que comprueba la integridad y dice qué se hará con cada uno.
+  - Un volumen se restaura en uno **nuevo** (se propone `<nombre>-restaurado`,
+    útil como restauración de prueba) o en uno vacío; nunca sobre uno con datos.
+  - Una base de datos se restaura en el contenedor que elijas, del mismo motor
+    y en marcha. **Sustituye sus datos actuales**: hay que escribir
+    «restaurar» para confirmarlo. Redis se detiene y vuelve a arrancar.
+  - Un contenedor se crea **nuevo**, con otro nombre y **sin arrancar**. Añade
+    las variables secretas que se quitaron antes de arrancarlo.
+  - Los archivos de Compose y de la configuración se escriben en una carpeta
+    **nueva**. La configuración de la aplicación no se aplica sola: revisa los
+    archivos y cópialos tú.
+- **Tareas programadas**: «Guardar como tarea» guarda lo elegido con un
+  nombre, una frecuencia (diaria, semanal o mensual) y una retención (por
+  defecto, 7 diarias, 4 semanales y 3 mensuales). La retención solo borra
+  copias antiguas **de esa tarea**; las manuales y las de otras tareas, nunca.
+  - «Ejecutar ahora» la lanza en el momento.
+  - «Programar» crea un temporizador de usuario de systemd, que funciona
+    aunque la aplicación esté cerrada. Antes te muestra los dos archivos que
+    va a crear en `~/.config/systemd/user/` y las órdenes que ejecutará; solo se
+    crean si marcas la casilla de autorización. No hace falta ser
+    administrador.
+  - Desde la misma lista ves la próxima ejecución y puedes desactivar, activar
+    o quitar la programación. Si cambias la frecuencia, hay que volver a
+    autorizarla.
+  - Los temporizadores de usuario solo se ejecutan con tu sesión iniciada. Si
+    quieres que funcionen sin ella, actívalo tú con `loginctl enable-linger`
+    (la aplicación no cambia la configuración del sistema).
+- **Historial**: cada copia, manual o programada, con su resultado y las
+  copias antiguas que borró la retención.
+
+Las copias **no están cifradas**: los volcados y los volúmenes contienen tus
+datos tal cual. Si las guardas fuera del equipo, usa un disco cifrado.
+
 ## Eventos y registros
 
 Docker anuncia cada cambio (un contenedor que se crea, arranca o se detiene,

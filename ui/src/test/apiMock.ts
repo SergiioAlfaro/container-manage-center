@@ -4,6 +4,17 @@
  */
 import type { HostRisk } from "@/shared/ipc/bindings/HostRisk";
 import { vi } from "vitest";
+import type { BackupEntry } from "@/shared/ipc/bindings/BackupEntry";
+import type { BackupEvent } from "@/shared/ipc/bindings/BackupEvent";
+import type { BackupJob } from "@/shared/ipc/bindings/BackupJob";
+import type { BackupJobView } from "@/shared/ipc/bindings/BackupJobView";
+import type { BackupRequest } from "@/shared/ipc/bindings/BackupRequest";
+import type { BackupRun } from "@/shared/ipc/bindings/BackupRun";
+import type { BackupSettings } from "@/shared/ipc/bindings/BackupSettings";
+import type { BackupTimerPreview } from "@/shared/ipc/bindings/BackupTimerPreview";
+import type { IntegrityReport } from "@/shared/ipc/bindings/IntegrityReport";
+import type { RestorePreview } from "@/shared/ipc/bindings/RestorePreview";
+import type { RestoreRequest } from "@/shared/ipc/bindings/RestoreRequest";
 import type { ServerView } from "@/shared/ipc/bindings/ServerView";
 import type { ServerConfig } from "@/shared/ipc/bindings/ServerConfig";
 import type { ProfileIssue } from "@/shared/ipc/bindings/ProfileIssue";
@@ -1082,6 +1093,46 @@ export const api = {
   ),
   auditHistory: vi.fn(async (): Promise<AuditSummary[]> => []),
   auditGet: vi.fn(async (id: string): Promise<AuditReport> => auditReport({ id })),
+  // E4 (1.4.0): copias.
+  backupSettings: vi.fn(async (): Promise<BackupSettings> => ({ destination: "/home/u/Copias", jobs: [], systemd: true })),
+  backupPickFolder: vi.fn(async (_save: boolean): Promise<string | null> => "/home/u/Copias"),
+  backupJobSave: vi.fn(async (job: BackupJob): Promise<BackupJobView> => ({ job: { ...job, id: job.id || "job-0a1b2c3d" }, timer: timerStatus() })),
+  backupJobDelete: vi.fn(async (_id: string) => null),
+  backupTimerPreview: vi.fn(
+    async (id: string): Promise<BackupTimerPreview> => ({
+      servicePath: `/home/u/.config/systemd/user/dcc-backup-${id}.service`,
+      serviceText: `# dcc-managed-backup-job: ${id}\n[Service]\nExecStart="/usr/bin/docker-control-center" --run-backup ${id}\n`,
+      timerPath: `/home/u/.config/systemd/user/dcc-backup-${id}.timer`,
+      timerText: `# dcc-managed-backup-job: ${id}\n[Timer]\nOnCalendar=*-*-* 03:00:00\nPersistent=true\n`,
+      commands: ["systemctl --user daemon-reload", `systemctl --user enable --now dcc-backup-${id}.timer`],
+    }),
+  ),
+  backupTimerInstall: vi.fn(async (id: string): Promise<BackupJobView> => ({ job: { ...backupJob(), id }, timer: timerStatus({ installed: true, unitFileState: "enabled", activeState: "active", nextRun: "Sun 2026-11-15 03:00:00 CET" }) })),
+  backupTimerSetEnabled: vi.fn(async (id: string, enabled: boolean): Promise<BackupJobView> => ({ job: { ...backupJob(), id }, timer: timerStatus({ installed: true, unitFileState: enabled ? "enabled" : "disabled" }) })),
+  backupTimerRemove: vi.fn(async (id: string): Promise<BackupJobView> => ({ job: { ...backupJob(), id }, timer: timerStatus() })),
+  backupList: vi.fn(async (_d?: string | null): Promise<BackupEntry[]> => [backupEntry()]),
+  backupVerify: vi.fn(async (_id: string, _d?: string | null): Promise<IntegrityReport> => ({ ok: true, checked: 3, altered: [], missing: [], unexpected: [] })),
+  backupDelete: vi.fn(async (_id: string, _d?: string | null) => null),
+  backupRunOpen: vi.fn(async (_r: BackupRequest, _job: string | null, h: (e: BackupEvent) => void) => streams.add(h, { event: "backupEnd", entry: null, error: { code: "engine.other", message: "operación cancelada", httpStatus: null, issues: null } })),
+  backupRestorePreview: vi.fn(
+    async (_id: string, r: RestoreRequest): Promise<RestorePreview> => ({
+      backupId: "20261114T030000Z-a1b2c3",
+      integrity: { ok: true, checked: 3, altered: [], missing: [], unexpected: [] },
+      items: r.items.map((i) => ({
+        kind: i.kind,
+        name: i.name,
+        target: i.target,
+        action: i.kind === "database" ? "restore.action.database" : i.kind === "volume" ? "restore.action.newVolume" : "restore.action.newContainer",
+        dataLoss: i.kind === "database",
+        blocked: null,
+        warnings: [],
+        size: 10,
+      })),
+      risks: [],
+    }),
+  ),
+  backupRestoreOpen: vi.fn(async (_id: string, _r: RestoreRequest, h: (e: BackupEvent) => void) => streams.add(h)),
+  backupHistory: vi.fn(async (): Promise<BackupRun[]> => []),
   systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
   componentsInspect: vi.fn(async (): Promise<ComponentsReport> => componentsReport()),
   componentsPlan: vi.fn(async (packages: string[]): Promise<RemovalPlan> => removalPlan(packages)),
@@ -1103,6 +1154,48 @@ export const dockerApi = vi.fn((server: string) => {
 });
 
 export const module = { api, dockerApi, LOCAL_SERVER: "local", toCommandError: (e: unknown) => e };
+
+export function timerStatus(over: Partial<BackupJobView["timer"]> = {}): BackupJobView["timer"] {
+  return { installed: false, foreign: false, outdated: false, unitFileState: null, activeState: null, nextRun: null, lastRun: null, problem: null, ...over };
+}
+
+export function backupJob(over: Partial<BackupJob> = {}): BackupJob {
+  return {
+    id: "job-0a1b2c3d",
+    name: "Diaria",
+    server: "local",
+    destination: "/home/u/Copias",
+    request: { volumes: [{ name: "datos", mode: "hot" }], databases: [], containers: [], compose: [], appConfig: true },
+    retention: { daily: 7, weekly: 4, monthly: 3 },
+    schedule: { kind: "daily", hour: 3, minute: 0 },
+    ...over,
+  };
+}
+
+/** Copia completa de ejemplo (E4): un volumen en caliente y una base de datos. */
+export function backupEntry(over: Partial<BackupEntry> = {}): BackupEntry {
+  const id = over.id ?? "20261114T030000Z-a1b2c3";
+  return {
+    id,
+    path: `/home/u/Copias/docker-control-center-copias/local/${id}`,
+    state: "complete",
+    size: 3_145_728,
+    manifest: {
+      format: 1,
+      id,
+      server: "local",
+      createdAt: "2026-11-14T03:00:00Z",
+      finishedAt: "2026-11-14T03:00:09Z",
+      appVersion: "1.4.0",
+      job: null,
+      items: [
+        { kind: "volume", name: "datos", files: [{ path: "volumes/datos.tar", sha256: "ab", size: 3_000_000 }], consistency: "hot", details: {}, warnings: ["backup.warn.hot"] },
+        { kind: "database", name: "db", files: [{ path: "databases/db.sql", sha256: "cd", size: 145_728 }], consistency: "dump", details: { engine: "postgres", container: "db" }, warnings: [] },
+      ],
+    },
+    ...over,
+  };
+}
 
 /** Informe de auditoría de ejemplo (E3): un contenedor peligroso, uno sin
  *  hallazgos, un servicio de Compose y una imagen; vulnerabilidades sin analizar. */

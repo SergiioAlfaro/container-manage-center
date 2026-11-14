@@ -3,4 +3,4 @@
 /**
  * Área funcional de la operación. Se usa para filtrar en el panel de actividad.
  */
-export type Category = "system" | "container" | "image" | "network" | "volume" | "bind" | "compose";
+export type Category = "system" | "container" | "image" | "network" | "volume" | "bind" | "compose" | "backup";

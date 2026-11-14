@@ -35,6 +35,8 @@ const TECHNICAL = [
   // 1.3.0: auditoría (nombres de tecnologías y de formatos de archivo).
   "rootless", "userns-remap", "seccomp", "AppArmor", "SELinux", "cgroup", "JSON", "Markdown", "HTML", "Docker",
   "{{name}} {{version}}: {{reason}}",
+  // 1.4.0: copias (nombres de los motores de bases de datos).
+  "MariaDB", "MySQL", "PostgreSQL", "Redis", "MongoDB",
 ];
 const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   fr: [
@@ -51,16 +53,20 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Server {{name}}", "Password", "Server",
     // 1.3.0
     "Audit", "no", "container {{name}}",
+    // 1.4.0: en italiano también se dice «database».
+    "Database",
   ],
   ca: [
     // 1.3.0
     "no",
     "Context", "Equivalent", "Error", "Error: {{message}}", "Executable", "General", "Local", "No", "Node", "Ports", "Protocol", "Secret",
     "Terminal", "Terminals", "Variables", "Versions", "{{count}} error", "{{count}} errors",
+    // 1.4.0
+    "Manual",
   ],
-  gl: ["Daemon (dockerd)", "Executable", "Local", "Terminal", "Variables", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes"],
+  gl: ["Daemon (dockerd)", "Executable", "Local", "Terminal", "Variables", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual"],
   eu: [],
-  pt: ["Aliases", "Ctrl+Shift+A", "Daemon (dockerd)", "Gateway", "Local", "Terminal", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes"],
+  pt: ["Aliases", "Ctrl+Shift+A", "Daemon (dockerd)", "Gateway", "Local", "Terminal", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual"],
 };
 
 describe("traducciones", () => {

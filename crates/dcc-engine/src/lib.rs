@@ -9,6 +9,7 @@
 //! - [`manager::EngineManager`]: conexión, diagnóstico, vigilancia y reconexión.
 
 pub mod audit;
+pub mod backup;
 pub mod binds;
 pub mod build;
 pub mod catalog;

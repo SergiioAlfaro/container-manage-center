@@ -202,6 +202,20 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 ### Auditoría de seguridad (1.3.0, `audit/`, D-093–D-095)
 `Engine::audit` lee `docker info`, los contenedores (`inspect_raw`), las imágenes (`image_details`) y `compose config` de los proyectos, y devuelve un `AuditReport`. Las comprobaciones son funciones puras (`audit/checks.rs`) que reutilizan `risk` y añaden el endurecimiento. `audit/vuln.rs` detecta Trivy y Grype, lee la fecha de su base y analiza sin red. En la aplicación, `commands/audit.rs` ejecuta la auditoría como un flujo cancelable (`audit_run_open`), oculta los secretos del informe y lo guarda en `auditorias.jsonl`. `audit_export_save` abre el diálogo de guardar desde Rust y escribe el archivo con permisos 0600. La interfaz (`ui/src/features/audit/`) genera el Markdown y el HTML en su idioma y propone correcciones a «Editar configuración» (`applyAuditFixes`).
 
+### Copias y restauración (1.4.0, `backup/`, D-096–D-101)
+- `backup/model.rs`: manifiesto, petición, avance, retención.
+- `backup/store.rs`: `BackupTarget` y `LocalTarget` (carpetas 0700, archivos 0600, `.partial` y manifiesto al final), `verify`, `retention_keep`/`retention_victims`.
+- `backup/docker.rs`: contenedor auxiliar que nunca se arranca, `archive_download`/`archive_upload` (con un cliente sin el límite de 120 s para las subidas) y `exec_script` con la salida a un archivo con SHA-256.
+- `backup/db.rs`: detección del motor y guiones fijos de volcado y restauración, que leen las credenciales del contenedor.
+- `backup/run.rs` (`Engine::backup`) y `backup/restore.rs` (`restore_preview`, `restore`, `body_risks`).
+
+En la aplicación:
+- `backups.rs`: tareas (`copias.json`), historial (`copias.jsonl`, leído del disco en cada consulta), retención y la ejecución común a la interfaz y a `--run-backup`.
+- `systemd.rs`: unidades de usuario con marca propia, `systemctl --user` sin shell.
+- `commands/backup.rs`: comandos IPC.
+- `lib.rs::headless_main`: modo sin ventana, antes de crear la ventana, con un candado por tarea.
+- La interfaz está en `ui/src/features/backup/`.
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 

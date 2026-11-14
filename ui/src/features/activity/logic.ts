@@ -4,7 +4,7 @@ import type { OpStatus } from "@/shared/ipc/bindings/OpStatus";
 import type { OperationRecord } from "@/shared/ipc/bindings/OperationRecord";
 import type { Transport } from "@/shared/ipc/bindings/Transport";
 
-export const CATEGORIES: Category[] = ["system", "container", "image", "network", "volume", "bind", "compose"];
+export const CATEGORIES: Category[] = ["system", "container", "image", "network", "volume", "bind", "compose", "backup"];
 export const STATUSES: OpStatus[] = ["running", "succeeded", "failed", "cancelled"];
 
 /** Misma regla que `dcc_activity::quote` en Rust (probado en ambos lados). */

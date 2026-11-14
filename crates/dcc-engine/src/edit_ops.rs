@@ -664,7 +664,7 @@ impl Engine {
         .await
     }
 
-    async fn op_create_raw(
+    pub(crate) async fn op_create_raw(
         &self,
         name: &str,
         body: ContainerCreateBody,

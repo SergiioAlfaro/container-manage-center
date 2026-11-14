@@ -9,8 +9,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.3.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.3.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `docker-control-center_1.4.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.4.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -56,7 +56,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.3.0_amd64.deb
+sudo apt install ./docker-control-center_1.4.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -278,6 +278,23 @@ de vulnerabilidades**: sin ellos, el informe dice «No analizado».
   analiza sin conexión con la base que haya y muestra su fecha.
 - Solo se analizan las imágenes del Docker de este equipo; en un servidor
   remoto, instala la herramienta allí y úsala desde su terminal.
+
+## Copias programadas (opcional)
+
+Las tareas de copia (1.4.0) se programan con **temporizadores de usuario de
+systemd** (`systemctl --user`), sin permisos de administrador. La aplicación
+solo crea sus archivos (`~/.config/systemd/user/dcc-backup-*.service` y
+`.timer`) cuando lo autorizas, tras mostrarte su contenido, y los quita desde la
+propia aplicación.
+
+- Debian y Ubuntu de escritorio ya tienen systemd de usuario; no hay que
+  instalar nada.
+- Los temporizadores de usuario solo se ejecutan con tu sesión iniciada. Para
+  que funcionen sin sesión, actívalo tú con `loginctl enable-linger $USER` (la
+  aplicación no cambia la configuración del sistema).
+- Si quitas la aplicación sin quitar antes las programaciones, borra los
+  archivos `~/.config/systemd/user/dcc-backup-*` y ejecuta
+  `systemctl --user daemon-reload`.
 
 ## Credenciales de registros privados
 

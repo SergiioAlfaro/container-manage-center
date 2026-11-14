@@ -8,5 +8,9 @@ fn main() {
     if let Some(code) = dcc_engine::ssh::askpass::client_main() {
         std::process::exit(code);
     }
+    // Copia programada (temporizador de systemd, 1.4.0): sin ventana.
+    if let Some(code) = dcc_app::headless_main() {
+        std::process::exit(code);
+    }
     dcc_app::run();
 }

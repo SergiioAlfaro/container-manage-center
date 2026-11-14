@@ -1176,3 +1176,63 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 * **Historial**: cada auditoría terminada se guarda en `auditorias.jsonl` (carpeta de estado, 0600, las 200 últimas) con el servidor. La sección muestra solo las del servidor elegido y permite abrirlas.
 * **Secretos**: antes de guardar o enviar el informe, los nombres, parámetros, detalles y mensajes pasan por `redact` (D-085).
 * **Exportación** a JSON, Markdown y HTML en el idioma de la interfaz. El contenido se genera en la interfaz (con su propia ocultación de secretos y el HTML escapado). Rust vuelve a ocultar los secretos, pide la ruta con el diálogo nativo (la interfaz no puede indicar una ruta) y escribe el archivo con permisos 0600 de forma atómica. No hace falta ningún permiso nuevo de Tauri.
+
+## Evolución · Etapa 4: copias de seguridad y restauración (1.4.0)
+
+### D-096 · Formato de las copias, destino e integridad
+* **Destino**: una carpeta local que elige el usuario con el diálogo nativo (abierto desde Rust). Dentro se crea `docker-control-center-copias/<servidor>/<id>/` con carpetas **0700** y archivos **0600**. El id es `AAAAMMDDTHHMMSSZ-xxxxxx` (UTC). No se aceptan carpetas del sistema (`/`, `/etc`, `/usr`, `/var/lib/docker`…).
+* **Manifiesto** (`manifest.json`, formato 1): servidor, fechas, versión de la aplicación, tarea (si la hay) y, por elemento, su tipo, nombre, coherencia, datos para restaurar, avisos y la **SHA-256 y el tamaño de cada archivo**. Las rutas del manifiesto se comprueban al leerlo (sin `..`, sin absolutas).
+* **Nunca una copia a medias que parezca buena**: se escribe en `<id>.partial`; cada archivo se sincroniza al cerrarlo; el manifiesto se escribe el último (temporal + `rename`) y solo entonces la carpeta se renombra a `<id>`. Si la copia falla o se cancela, la carpeta parcial se borra. Si el proceso muere, queda `<id>.partial`, que se lista como **incompleta**, no se abre ni se restaura y se puede eliminar.
+* **Integridad**: «Comprobar» recalcula la SHA-256 de cada archivo y detecta los alterados, los que faltan y los que sobran. Antes de restaurar se comprueba siempre: una copia que no pasa no se restaura.
+* **`BackupTarget`**: interfaz del destino (empezar, listar, abrir, eliminar). En la 1.4.0 solo hay carpetas locales (que pueden ser un disco externo o una carpeta de red ya montada). Un destino remoto (SFTP, S3) queda para el futuro sin cambiar el formato.
+* **Cifrado: no en la 1.4.0.** Se evaluó y se descartó por ahora:
+  * cifrar exige gestionar una clave o frase; si se pierde, se pierden todas las copias, y guardarla junto a las copias no protege nada;
+  * hacerlo bien añade una dependencia criptográfica nueva y una recuperación que no se puede probar a fondo en esta etapa.
+  
+  Se documenta como limitación: los archivos son 0600 y los secretos de la configuración se quitan (D-101), pero **los volcados de bases de datos y los volúmenes contienen los datos tal cual**. Para copias fuera del equipo se recomienda un disco cifrado (LUKS) o cifrar la carpeta con una herramienta externa.
+
+### D-097 · Volúmenes y retención
+* **Copia por la API de archivos de Docker** (`GET /containers/{id}/archive`), que funciona igual en local y por SSH. Se usa un **contenedor auxiliar que se crea pero nunca se arranca**, con el volumen montado en solo lectura en `/dcc-volume`, sin red y con la etiqueta `dcc.backup.helper=1`. Docker monta los volúmenes para la operación de archivos sin arrancar el contenedor: **no se ejecuta ningún código** y no hace falta ninguna herramienta dentro de la imagen.
+* **Desviación del plan** («auxiliar fijado por digest»): no se descarga ninguna imagen. Se usa una que ya esté en el servidor: la de un contenedor que use el volumen o, si no, cualquiera. Como nunca se arranca, su contenido no importa. Sin imágenes en el servidor, la copia de volúmenes no es posible y se dice (`backup.noHelperImage`).
+* El auxiliar se elimina siempre, con `v=true`: así también desaparecen los volúmenes **anónimos** que Docker crea si la imagen declara `VOLUME`. Docker nunca elimina un volumen con nombre al quitar un contenedor (comprobado en la prueba real).
+* **Coherencia**:
+  * **en caliente**: si algún contenedor en marcha usa el volumen, la copia se marca como **no garantizada** («backup.warn.hot»);
+  * **deteniendo**: se detienen esos contenedores, se copia y se vuelven a arrancar siempre, aunque la copia falle; requiere confirmación en la interfaz, con la lista de contenedores;
+  * un volumen sin contenedores en marcha se marca como «sin contenedores en marcha».
+* **Retención** (7 diarias, 4 semanales y 3 mensuales por defecto): de las copias **completas de una misma tarea** se conserva la más reciente de cada uno de los últimos N días con copia, de cada una de las últimas N semanas ISO y de cada uno de los últimos N meses (una copia puede contar en varias). Se aplica solo tras una copia correcta de esa tarea. **Nunca** borra copias manuales, de otras tareas, incompletas o ilegibles. Cada borrado queda en el panel de actividad y en el historial de la ejecución.
+
+### D-098 · Bases de datos: volcado dentro del contenedor, sin tocar las credenciales
+* **Motores**: MariaDB, MySQL, PostgreSQL, Redis y MongoDB, detectados por la imagen (y, si no basta, por sus variables). El contenedor debe estar en marcha.
+* **Volcado con la herramienta del propio motor**, por `docker exec`, con un **guion fijo** (`sh -c`, sin concatenar ningún dato) cuya salida estándar se guarda tal cual con su SHA-256:
+  * MariaDB/MySQL: `mariadb-dump` (o `mysqldump`) con `--all-databases --single-transaction --routines --events --triggers --hex-blob`;
+  * PostgreSQL: `pg_dumpall --clean --if-exists`;
+  * Redis: `redis-cli --rdb` a un temporal del contenedor, que se borra;
+  * MongoDB: `mongodump --archive`.
+* **Credenciales**: el guion las lee de las variables del **propio contenedor** (`MARIADB_ROOT_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MONGO_INITDB_ROOT_*` y sus variantes `_FILE`) y las pasa a la herramienta por su variable de entorno (`MYSQL_PWD`, `PGPASSWORD`, `REDISCLI_AUTH`) o, en MongoDB, por un archivo de opciones 0600 temporal. **Nunca** pasan por la aplicación, ni por argumentos visibles con `ps`, ni por el panel de actividad. Sin credenciales, el error lo dice (`backup.dbNoCredentials`).
+* **Coherencia**: con `--single-transaction` (InnoDB) y `pg_dumpall`, el volcado es una instantánea coherente aunque haya escrituras. Se comprueba con Docker real: un escritor hace transacciones de dos filas (una en cada tabla) durante el volcado, y la copia restaurada tiene siempre las mismas filas en las dos. Las tablas MyISAM de MySQL no tienen esa garantía.
+* **No verificable aquí**: MongoDB (no hay imagen ni red para descargarla) y MySQL de Oracle. Las pruebas usan imágenes de prueba de MariaDB 10.6, PostgreSQL 14 y Redis 6 de Ubuntu 22.04 (`scripts/dev/build-db-test-images.sh`), sustituibles por las oficiales.
+
+### D-099 · Restauración: completa o selectiva, con vista previa y sin sobrescribir datos
+* **Siempre**: vista previa (integridad, qué se hará con cada elemento, avisos y riesgos), aviso de pérdida de datos, confirmación y registro en el panel de actividad. La interfaz exige escribir una palabra cuando se sustituyen datos.
+* **Volúmenes**: en un volumen **nuevo** (propuesto `<nombre>-restaurado`, la «restauración de prueba») o en uno existente **solo si está vacío**. Un volumen con datos nunca se sobrescribe (`restore.volumeNotEmpty`). Se usa el mismo contenedor auxiliar, ahora con el volumen en escritura, y se sube el `tar` tal cual: se conservan permisos y propietarios. Las subidas grandes no tienen el límite de 120 s del cliente.
+* **Bases de datos**: sobre el contenedor elegido, en marcha y del mismo motor (`restore.engineMismatch`). El volcado se sube a `/tmp` del contenedor (0600) y lo carga el cliente del motor, ejecutado como root, con un guion fijo que lo borra al terminar. PostgreSQL ignora los errores esperables de `--clean` (borrar o crear su propio usuario) y avisa de los demás. Redis: se lee su `dir` y `dbfilename`, se detiene, se sustituye el RDB y se vuelve a arrancar. Si tiene AOF, se rechaza (el RDB no se cargaría).
+* **Contenedores**: se crea uno **nuevo** con otro nombre, **sin arrancar**, a partir de la configuración guardada. Se avisa de las variables secretas que faltan. Los riesgos para el equipo de esa configuración (D-086, D-088) se tienen que aceptar como al crear.
+* **Compose y configuración de la aplicación**: los archivos se escriben en una **carpeta nueva** (0700, archivos 0600) que no puede existir y que cumple la política de rutas de D-089. Nunca se sobrescribe un archivo. La configuración de la aplicación no se aplica sola: se restaura como archivos para revisarlos y copiarlos a mano.
+* Cada elemento se intenta por separado y se informa de cada uno.
+
+### D-100 · Tareas programadas con temporizadores de usuario de systemd
+* **Decisión 2 del propietario**: temporizadores de usuario de systemd, creados solo con **autorización expresa**, que se pueden consultar, desactivar y eliminar desde la aplicación. No se modifica ningún archivo de systemd sin consentimiento.
+* **Tareas**: nombre, servidor, destino, qué copiar, retención y frecuencia (diaria, semanal o mensual, hora local). Se guardan en `copias.json` junto a `config.toml` (0600). Crear o cambiar una tarea no toca systemd.
+* **Programar**: la aplicación muestra el contenido exacto de `~/.config/systemd/user/dcc-backup-<tarea>.service` y `.timer` y las órdenes `systemctl --user daemon-reload` y `enable --now`. Solo con la casilla de autorización marcada se escriben (0600, escritura atómica) y se ejecutan. `Persistent=true` recupera una ejecución perdida si el equipo estaba apagado.
+* **Solo archivos propios**: la primera línea lleva la marca `# dcc-managed-backup-job: <tarea>`. Un archivo con ese nombre sin la marca se muestra como ajeno y nunca se sobrescribe ni se elimina.
+* **Consultar**: `systemctl --user show` (estado, próxima y última ejecución). Si la tarea cambió, el temporizador aparece «desactualizado» hasta volver a autorizarlo. **Desactivar/activar**: `systemctl --user disable|enable --now`. **Quitar**: con confirmación, se desactiva y se borran solo los dos archivos propios. Una tarea programada no se puede eliminar sin quitar antes su programación.
+* **Ejecución sin ventana**: el servicio ejecuta `docker-control-center --run-backup <tarea>`. Usa la misma configuración y conexión (también SSH, con la huella ya confirmada), aplica la retención, apunta la ejecución en `copias.jsonl` y las operaciones en el historial, y nunca se ejecuta como root. Un candado (`flock`) impide dos ejecuciones simultáneas de la misma tarea (código 75).
+* **Sobrevive a un reinicio de la aplicación**: la tarea está en disco y el temporizador en systemd; la aplicación no tiene que estar abierta. Los temporizadores de usuario solo se ejecutan mientras la sesión del usuario está iniciada, salvo que el usuario active `loginctl enable-linger` (la aplicación no lo hace: es configuración del sistema).
+* Todo `systemctl` se ejecuta sin shell y con sus argumentos exactos en el panel de actividad. Nunca `sudo` ni unidades del sistema.
+* **No verificable aquí**: systemd real (el entorno de desarrollo no tiene sesión de usuario de systemd). Se prueba con un `systemctl` simulado que registra las órdenes, y la ejecución sin ventana con Docker real.
+
+### D-101 · Configuración de contenedores, Compose y de la aplicación, sin secretos
+* **Contenedores**: se guarda el cuerpo de creación (`ContainerCreateBody`), el mismo que usa la recreación segura (D-070). Antes de guardarlo se **quitan las variables con nombre de secreto** (D-085) y se apuntan sus nombres para avisar al restaurar. Las redes adicionales se apuntan: al restaurar el contenedor solo queda en la principal.
+* **Compose**: los archivos del proyecto, solo en este equipo (en un servidor remoto no están aquí). Los `.env` y los archivos de variables **solo con aceptación expresa** («Incluir los archivos .env», con el aviso de que pueden tener contraseñas sin cifrar). Sin ella, la copia avisa de que no los incluye.
+* **Aplicación**: `config.toml`, `servers.toml` y `copias.json`, pasados además por `redact`. Las contraseñas y frases están en el llavero (D-076) y nunca entran en la copia.
+* **Registro**: las peticiones a Docker de las copias van al panel de actividad (categoría nueva «Copias») sin secretos. La salida de error de los volcados se oculta con `redact` antes de mostrarla.

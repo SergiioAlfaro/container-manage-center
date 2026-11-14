@@ -1,6 +1,7 @@
 import {
   Boxes,
   Cable,
+  DatabaseBackup,
   FolderSymlink,
   HardDrive,
   Layers,
@@ -25,6 +26,7 @@ export type SectionId =
   | "compose"
   | "terminals"
   | "audit"
+  | "backup"
   | "events"
   | "settings";
 
@@ -49,6 +51,8 @@ export const SECTIONS: SectionDef[] = [
   { id: "terminals", icon: SquareTerminal, group: "tools" },
   // E3 (1.3.0): auditoría de seguridad.
   { id: "audit", icon: ShieldCheck, group: "tools" },
+  // E4 (1.4.0): copias de seguridad y restauración.
+  { id: "backup", icon: DatabaseBackup, group: "tools" },
   { id: "events", icon: Radio, group: "monitoring" },
   { id: "settings", icon: Settings, group: "bottom" },
 ];

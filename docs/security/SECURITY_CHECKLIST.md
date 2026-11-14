@@ -3,9 +3,10 @@
 Se usa antes de cada versión y al revisar cada cambio. La marca indica el
 estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026), actualizado
 con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
-13-11-2026) y la **1.3.0** (Etapa 3, auditoría de seguridad). Las líneas cambiadas
-llevan su evidencia entre corchetes (prueba automática que lo demuestra;
-`verify-evolution-1.3.0.sh` las ejecuta todas):
+13-11-2026), la **1.3.0** (Etapa 3, auditoría de seguridad) y la **1.4.0**
+(Etapa 4, copias de seguridad). Las líneas cambiadas llevan su evidencia entre
+corchetes (prueba automática que lo demuestra; `verify-evolution-1.4.0.sh` las
+ejecuta todas):
 
 - ✅ cumple;
 - ⚠️ cumple en parte (ver hallazgo);
@@ -210,3 +211,41 @@ seguridad de Docker Engine y RustSec.
 - [ ] Sin secretos en registros, panel, historial, capturas ni documentación.
 - [ ] Traducciones en los ocho idiomas para cada aviso nuevo.
 - [ ] CHANGELOG.md y DECISIONS.md actualizados. Esta lista revisada.
+
+## Copias de seguridad y restauración (1.4.0)
+
+- ✅ Copias solo para el usuario: carpetas 0700 y archivos 0600; destino fuera de
+  las carpetas del sistema (D-096) [`backup::store::tests::complete_backup_is_private…`,
+  `live_backup` (`assert_private`), `backups::tests`].
+- ✅ Una copia interrumpida o cancelada nunca se da por buena ni se restaura;
+  una suma alterada se detecta y la copia no se restaura (D-096)
+  [`backup::store::tests::interrupted…`, `altered_missing_and_extra…`,
+  `live_backup::volumes_round_trip_and_bad_backups_are_never_used`].
+- ✅ Rutas del manifiesto sin `..` ni absolutas; nombres de servidor e id
+  saneados [`backup::store::tests::interrupted_backups…`].
+- ✅ El contenedor auxiliar nunca se arranca, no descarga ninguna imagen y no
+  deja volúmenes anónimos (D-097) [`live_backup`: ningún `POST …/start` de un
+  auxiliar en el registro, sin auxiliares ni volúmenes anónimos restantes].
+- ✅ Credenciales de las bases de datos: las lee el guion dentro del contenedor y
+  nunca pasan por la aplicación, por argumentos ni por el registro (D-098)
+  [`backup::db::tests`, `live_backup` (contraseñas ausentes del registro)].
+- ✅ Guiones de volcado y restauración fijos, sin concatenar datos del usuario
+  [`backup::db::tests::scripts_are_constant…`].
+- ✅ Configuración de contenedores sin variables secretas; `.env` de Compose
+  solo con aceptación expresa; configuración de la aplicación sin secretos
+  (D-101) [`live_backup`, `backup::run::tests`].
+- ✅ Restauración: vista previa, confirmación, nunca sobre un volumen con datos
+  ni sobre archivos existentes; contenedores nuevos sin arrancar y con
+  aceptación de sus riesgos (D-099) [`live_backup`, `backup::restore::tests`,
+  `BackupView.test.tsx`].
+- ✅ Temporizadores de systemd solo con autorización expresa, solo archivos
+  propios (con marca), `systemctl --user` sin shell y sin `sudo` (D-100)
+  [`systemd::tests`, IPC `e4_jobs_and_timers_need_authorization…`].
+- ✅ El modo sin ventana (`--run-backup`) aplica la misma negativa a ejecutarse
+  como root que la ventana [`root_tests`] y no ejecuta dos veces la misma tarea a
+  la vez [`live_e4_scheduled_job_runs_headless…`].
+- ⚠️ Las copias **no están cifradas** (D-096): los volcados y volúmenes
+  contienen los datos tal cual. Documentado; se recomienda un disco cifrado
+  para copias fuera del equipo.
+- ⚠️ systemd real y MongoDB no se han podido probar en el entorno de desarrollo
+  (D-098, D-100): pendientes de la validación manual.

@@ -4,7 +4,7 @@
 |---|---|
 | Versión de partida | 1.0.0 (commit `d1068d4`) |
 | Fecha | 12 de noviembre de 2026 |
-| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0), E2 (1.2.0) y E3 (1.3.0) implementadas**; pendientes de su validación manual (M1–M8 de cada una) |
+| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0), E2 (1.2.0), E3 (1.3.0) y E4 (1.4.0) implementadas**; pendientes de su validación manual (M1–M8 de E1 a E3 y M1–M10 de E4) |
 | Documentos relacionados | [STATUS.md](../../STATUS.md) (fases 1–10) · [DECISIONS.md](../../DECISIONS.md) · [docs/security/](../security/) |
 
 Este plan continúa el proyecto existente. No es una reescritura ni sustituye a
@@ -687,18 +687,19 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☐ Validación manual del propietario (M1–M8, en el informe de verificación).
 
 ### E4 (1.4.0)
-- ☐ Formato de copia (manifiesto, hashes, permisos).
-- ☐ Trait `BackupTarget` (local).
-- ☐ Copia de volúmenes con un contenedor auxiliar fijado por *digest*.
-- ☐ Volcados por motor (MySQL, MariaDB, PostgreSQL, Redis, MongoDB) y parada controlada.
-- ☐ Configuración y Compose sin secretos.
-- ☐ Cifrado (según la evaluación).
-- ☐ Verificación de integridad.
-- ☐ Retención.
-- ☐ Restauración completa, selectiva y de prueba, con vista previa.
-- ☐ Planificación (según la decisión 2).
-- ☐ Historial.
-- ☐ Pruebas de copia interrumpida, alterada, de base de datos y selectiva.
+- ☑ Formato de copia (manifiesto, hashes, permisos 0700/0600; escritura en `.partial` y manifiesto al final) (D-096).
+- ☑ Trait `BackupTarget` (local).
+- ☑ Copia de volúmenes con un contenedor auxiliar **que nunca se arranca**, con una imagen ya presente en lugar de una fijada por *digest* (desviación justificada en D-097: no se descarga ni ejecuta nada).
+- ☑ Volcados por motor (MySQL, MariaDB, PostgreSQL, Redis, MongoDB) y parada controlada de los contenedores de un volumen (D-097, D-098). MongoDB y MySQL de Oracle, sin probar aquí.
+- ☑ Configuración y Compose sin secretos (`.env` solo con aceptación expresa) (D-101).
+- ☑ Cifrado: evaluado y **no incluido** en la 1.4.0; documentado como limitación (D-096).
+- ☑ Verificación de integridad.
+- ☑ Retención (7/4/3 por defecto, solo sobre las copias de la misma tarea) (D-097).
+- ☑ Restauración completa, selectiva y de prueba (volumen nuevo), con vista previa, aviso de pérdida de datos y confirmación (D-099).
+- ☑ Planificación con temporizadores de usuario de systemd, con autorización expresa; consultar, desactivar y quitar desde la aplicación (D-100). systemd real, sin probar aquí (simulado).
+- ☑ Historial.
+- ☑ Pruebas de copia interrumpida, alterada, de base de datos (MariaDB y PostgreSQL con escrituras simultáneas, Redis) y selectiva.
+- ☐ Validación manual del propietario (M1–M10, en el informe de verificación).
 
 ### E5 (1.5.0)
 - ☐ Muestreador por servidor (`stats` compartido, frecuencia y pausa).
