@@ -10,6 +10,7 @@ import type { BackupTimerStatus } from "@/shared/ipc/bindings/BackupTimerStatus"
 import type { CommandError } from "@/shared/ipc/bindings/CommandError";
 import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";
 import type { DbEngine } from "@/shared/ipc/bindings/DbEngine";
+import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import type { Retention } from "@/shared/ipc/bindings/Retention";
 import type { RestoreItem } from "@/shared/ipc/bindings/RestoreItem";
 
@@ -46,6 +47,23 @@ export function databaseContainers(list: ContainerSummary[]): (ContainerSummary 
     const engine = dbEngineOf(c.image);
     return engine && c.state === "running" ? [{ ...c, engine }] : [];
   });
+}
+
+/** E6 (1.6.0): selección para proteger un contenedor, buscado por id (si se
+ *  ha vuelto a crear, por nombre): su configuración, su base de datos si es
+ *  una en marcha y los volúmenes con nombre que monta (en caliente; el
+ *  formulario avisa y deja elegir detenerlo). `null` si ya no existe. */
+export function prefillRequest(id: string, name: string, containers: ContainerSummary[], volumes: VolumeSummary[]): BackupRequest | null {
+  const c = containers.find((x) => x.id === id) ?? containers.find((x) => x.name === name);
+  if (!c) return null;
+  const isDb = databaseContainers([c]).length > 0;
+  const vols = volumes.filter((v) => !v.anonymous && v.containers.some((u) => u.id === c.id));
+  return {
+    ...EMPTY_REQUEST,
+    containers: [c.name],
+    databases: isDb ? [c.name] : [],
+    volumes: vols.map((v) => ({ name: v.name, mode: "hot" as const })),
+  };
 }
 
 /** Código (`restore.volumeNotEmpty`, `backup.warn.hot:web`…) → texto. Los

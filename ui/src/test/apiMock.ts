@@ -9,6 +9,8 @@ import type { MonitorMinute } from "@/shared/ipc/bindings/MonitorMinute";
 import type { MonitorSample } from "@/shared/ipc/bindings/MonitorSample";
 import type { MonitorSettings } from "@/shared/ipc/bindings/MonitorSettings";
 import type { MonitorStatus } from "@/shared/ipc/bindings/MonitorStatus";
+import type { LinkTarget } from "@/shared/ipc/bindings/LinkTarget";
+import type { ToolLinks } from "@/shared/ipc/bindings/ToolLinks";
 import { vi } from "vitest";
 import type { BackupEntry } from "@/shared/ipc/bindings/BackupEntry";
 import type { BackupEvent } from "@/shared/ipc/bindings/BackupEvent";
@@ -1145,6 +1147,8 @@ export const api = {
   monitorLive: vi.fn(async (ids: string[], _m: number): Promise<MonitorLive> => monitorLive(ids)),
   monitorMinutes: vi.fn(async (_h: number, _ids: string[]): Promise<MonitorMinute[]> => []),
   monitorAlerts: vi.fn(async (): Promise<Alert[]> => []),
+  // E6 (1.6.0): enlaces entre herramientas.
+  toolsLinks: vi.fn(async (targets: LinkTarget[]): Promise<ToolLinks[]> => targets.map((x) => toolLinks(x.id))),
   monitorSettings: vi.fn(async (): Promise<MonitorSettings> => monitorSettings()),
   monitorSettingsSet: vi.fn(async (s: MonitorSettings): Promise<MonitorSettings> => s),
   monitorPause: vi.fn(async (_p: boolean) => null),
@@ -1313,4 +1317,18 @@ export function monitorLive(ids: string[] = []): MonitorLive {
     server: ts.map((t, i) => ({ t, connected: i !== 1, counts: { running: 1, paused: 0, stopped: 1, total: 2 }, cpuTotal: i === 1 ? null : 10 + i, memTotal: p.mem })),
     containers: ids.map((id) => ({ id, points: ts.map((t, i) => [t, i === 1 ? null : { ...p, t, cpu: 10 + i }] as [number, typeof p | null]) })),
   };
+}
+
+/** E6: «web» (c0ffee…) monitorizado con una alerta y con copia por id y una
+ *  tarea; el resto, sin nada. */
+export function toolLinks(id: string): ToolLinks {
+  if (id === "c0ffee0123456789") {
+    return {
+      id,
+      monitor: { enabled: true, sampled: true, state: "running", firing: ["cpu"] },
+      backup: { backupId: "20261115T090000-aaaa", createdAt: "2026-11-15T09:00:00Z", destination: "/copias", kinds: ["volume", "container"], match: "id", hot: true, job: null },
+      jobs: [{ id: "job-00000001", name: "Noche" }],
+    };
+  }
+  return { id, monitor: { enabled: true, sampled: false, state: null, firing: [] }, backup: null, jobs: [] };
 }

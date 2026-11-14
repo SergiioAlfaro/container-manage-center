@@ -3023,6 +3023,43 @@
       "banner_one": "La auditoría ha propuesto {{count}} cambio. Revísalo antes de aplicarlo: no se ha cambiado nada todavía.",
       "banner_other": "La auditoría ha propuesto {{count}} cambios. Revísalos antes de aplicarlos: no se ha cambiado nada todavía.",
       "resources": "Indica también límites de CPU y memoria en «Recursos»."
+    },
+    "links": {
+      "title": "Contenedores en las demás herramientas",
+      "hint": "Cada contenedor se reconoce por su id: si la monitorización lo vigila y qué copia lo protege. Consultarlo no cambia nada.",
+      "error": "No se pudo consultar: {{error}}",
+      "col": {
+        "container": "Contenedor",
+        "findings": "Hallazgos",
+        "monitor": "Monitorización",
+        "backup": "Copias"
+      },
+      "noFindings": "Sin hallazgos",
+      "monitorOff": "Monitorización desactivada en este servidor",
+      "monitored": "Monitorizado ({{state}})",
+      "notSampled": "No está en la última muestra",
+      "alerts_one": "{{count}} alerta activa: {{kinds}}",
+      "alerts_other": "{{count}} alertas activas: {{kinds}}",
+      "alertKind": {
+        "cpu": "CPU alta",
+        "memory": "memoria alta",
+        "restart": "reinicio",
+        "oom": "sin memoria",
+        "exitError": "salida con error",
+        "disconnected": "desconexión"
+      },
+      "openMonitor": "Ver en Monitorización",
+      "backup": "Copia del {{date}}",
+      "match": {
+        "id": "mismo contenedor (por id)",
+        "name": "por nombre: copia anterior a la 1.6.0 o contenedor creado de nuevo",
+        "project": "por su proyecto Compose"
+      },
+      "hot": "con volúmenes copiados en caliente (no garantizada)",
+      "noBackup": "Sin copia",
+      "jobs_one": "En la tarea {{names}}",
+      "jobs_other": "En las tareas {{names}}",
+      "newBackup": "Preparar una copia"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "Se creará una carpeta nueva.",
       "engine_pathNotAllowed": "Por seguridad, esa carpeta no está permitida.",
       "engine_notConnected": "No hay conexión con Docker Engine."
-    }
+    },
+    "fromAudit": "Selección preparada desde la auditoría para «{{name}}»: su configuración, su base de datos si lo es y los volúmenes que monta. Revísala antes de copiar.",
+    "fromAuditGone": "«{{name}}» ya no existe en este servidor: elige qué copiar."
   },
   "monitor": {
     "intro": "Docker Control Center toma muestras con «docker stats» e «inspect» (sin instalar nada en el servidor). Los cortes de conexión se ven como huecos: no se inventan datos.",

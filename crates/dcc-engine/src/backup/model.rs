@@ -10,6 +10,13 @@ pub const FORMAT: u32 = 1;
 /// Nombre del manifiesto.
 pub const MANIFEST: &str = "manifest.json";
 
+/// Detalle con el id del contenedor de una base de datos o de una
+/// configuración (1.6.0, D-108). Las copias anteriores no lo tienen.
+pub const DETAIL_CONTAINER_ID: &str = "containerId";
+/// Detalle de un volumen con los ids de los contenedores que lo montaban,
+/// separados por comas (1.6.0, D-108).
+pub const DETAIL_USED_BY_IDS: &str = "usedByIds";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename = "BackupItemKind")]

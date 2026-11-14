@@ -3023,6 +3023,43 @@
       "banner_one": "A auditoria propôs {{count}} alteração. Reveja-a antes de a aplicar: ainda não foi alterado nada.",
       "banner_other": "A auditoria propôs {{count}} alterações. Reveja-as antes de as aplicar: ainda não foi alterado nada.",
       "resources": "Indique também limites de CPU e memória em «Recursos»."
+    },
+    "links": {
+      "title": "Contentores nas outras ferramentas",
+      "hint": "Cada contentor é reconhecido pelo seu id: se a monitorização o vigia e que cópia o protege. Consultar não altera nada.",
+      "error": "Não foi possível consultar: {{error}}",
+      "col": {
+        "container": "Contentor",
+        "findings": "Problemas encontrados",
+        "monitor": "Monitorização",
+        "backup": "Cópias"
+      },
+      "noFindings": "Sem problemas",
+      "monitorOff": "Monitorização desativada neste servidor",
+      "monitored": "Monitorizado ({{state}})",
+      "notSampled": "Não está na última amostra",
+      "alerts_one": "{{count}} alerta ativo: {{kinds}}",
+      "alerts_other": "{{count}} alertas ativos: {{kinds}}",
+      "alertKind": {
+        "cpu": "CPU alta",
+        "memory": "memória alta",
+        "restart": "reinício",
+        "oom": "sem memória",
+        "exitError": "saída com erro",
+        "disconnected": "desligação"
+      },
+      "openMonitor": "Ver na Monitorização",
+      "backup": "Cópia de {{date}}",
+      "match": {
+        "id": "mesmo contentor (por id)",
+        "name": "por nome: cópia anterior à 1.6.0 ou contentor criado de novo",
+        "project": "pelo seu projeto Compose"
+      },
+      "hot": "com volumes copiados a quente (não garantida)",
+      "noBackup": "Sem cópia",
+      "jobs_one": "Na tarefa {{names}}",
+      "jobs_other": "Nas tarefas {{names}}",
+      "newBackup": "Preparar uma cópia"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "Será criada uma pasta nova.",
       "engine_pathNotAllowed": "Por segurança, essa pasta não é permitida.",
       "engine_notConnected": "Não há ligação ao Docker Engine."
-    }
+    },
+    "fromAudit": "Seleção preparada a partir da auditoria para «{{name}}»: a sua configuração, a sua base de dados se o for e os volumes que monta. Reveja-a antes de copiar.",
+    "fromAuditGone": "«{{name}}» já não existe neste servidor: escolha o que copiar."
   },
   "monitor": {
     "intro": "O Docker Control Center recolhe amostras com «docker stats» e «inspect» (sem instalar nada no servidor). As quebras de ligação aparecem como lacunas: não se inventam dados.",

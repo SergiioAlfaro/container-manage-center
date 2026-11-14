@@ -1,5 +1,13 @@
 # Cambios
 
+## 1.6.0 — 2026-11-14 (evolución, Etapa 6: integración y validación final)
+- **La auditoría enlaza con la monitorización y las copias** (D-108): una tabla «Contenedores en las demás herramientas» muestra, para cada contenedor auditado, su peor hallazgo, si la monitorización lo vigila (con sus alertas activas), la copia más reciente que lo incluye y las tareas que lo incluyen. Se reconocen por el **mismo id de contenedor**. Consultarlo solo lee y no se apunta en el panel de actividad.
+- **«Ver en Monitorización»** abre las gráficas de ese contenedor. **«Preparar una copia»** abre «Nueva copia» con su configuración, su base de datos (si es una en marcha) y sus volúmenes marcados; no se copia nada hasta pulsar.
+- **Las copias guardan el id del contenedor** (configuración, bases de datos y volúmenes). Las copias anteriores, o las de un contenedor que se ha vuelto a crear, se reconocen por nombre y así se indica. Los manifiestos siguen siendo compatibles.
+- **Validación manual guiada** (D-109): `docs/validation/VALIDACION-GUIADA-1.6.0.md` reúne en un solo recorrido todas las comprobaciones manuales pendientes (Fase 10 y Etapas 1 a 5) y las nuevas, con una hoja de resultados.
+- **Verificación**: `scripts/verify-evolution-1.6.0.sh`, con toda la regresión anterior y la integración contra Docker real por IPC.
+- Cierre de la hoja de ruta E0–E6 del plan de evolución. H-10 sigue fuera, como decidió el propietario.
+
 ## 1.5.0 — 2026-11-14 (evolución, Etapa 5: monitorización avanzada)
 - **Monitorización** (sección nueva en «Supervisión», D-102): CPU, memoria y su límite, red, disco (donde Docker lo da), PIDs, estado, tiempo en marcha y reinicios de cada contenedor, con los mismos cálculos que `docker stats`. Sin instalar nada en los servidores: solo la API de Docker, igual en local y por SSH. El panel de inicio se mantiene.
 - **Por servidor**: se activa en cada servidor y sigue activa al volver a abrir la aplicación. Intervalo de 2 a 60 s y pausa. El equipo se muestra solo con lo que da `docker info` (CPU y memoria), sin presentarlo como monitorización del sistema.

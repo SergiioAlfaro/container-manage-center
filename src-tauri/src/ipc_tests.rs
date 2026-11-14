@@ -3776,3 +3776,256 @@ fn live_e5_monitor_samples_minutes_and_event_alerts() {
     .unwrap();
     assert_eq!(s["running"], false);
 }
+
+// ------------------------------------------------------------- E6 (1.6.0)
+
+/// Criterio de aceptación de la E6: la auditoría identifica el contenedor que
+/// vigila la monitorización y que protege una copia, por el **mismo id**.
+/// También: las tareas que lo incluyen, otro contenedor que no está en nada,
+/// y que los enlaces no escriben nada en el panel de actividad.
+#[test]
+fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
+    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+        Ok(p) => DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: p,
+        },
+        Err(_) => DockerConfig::default(),
+    };
+    let base = dir.path().to_path_buf();
+    let h = harness_with(dir, docker);
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let pid = std::process::id();
+    let (name, other, vol) = (
+        format!("dcc-test-e6-{pid}"),
+        format!("dcc-test-e6-otro-{pid}"),
+        format!("dcc-test-e6-datos-{pid}"),
+    );
+    struct Cleanup<'a>(&'a Harness, Vec<String>, String);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            for c in &self.1 {
+                let _ = invoke(
+                    self.0,
+                    "container_remove",
+                    json!({ "id": c, "force": true, "volumes": false, "confirmed": true }),
+                );
+            }
+            let _ = invoke(
+                self.0,
+                "volume_remove",
+                json!({ "name": self.2, "confirmed": true }),
+            );
+            let _ = invoke(
+                self.0,
+                "monitor_set_server",
+                json!({ "server": "local", "enabled": false }),
+            );
+        }
+    }
+    let _c = Cleanup(&h, vec![name.clone(), other.clone()], vol.clone());
+    invoke(
+        &h,
+        "volume_create",
+        json!({ "spec": { "name": vol, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+    )
+    .unwrap();
+    let create = |n: &str, mounts: serde_json::Value| {
+        invoke(
+            &h,
+            "container_create",
+            json!({ "spec": { "name": n, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }], "mounts": mounts }, "start": true }),
+        )
+        .unwrap()["id"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    };
+    let id = create(
+        &name,
+        json!([{ "kind": "volume", "source": vol, "target": "/datos", "readOnly": false }]),
+    );
+    let other_id = create(&other, json!([]));
+
+    // 1. Monitorización: el contenedor aparece en la muestra con su id.
+    let mut s = invoke(&h, "monitor_settings", json!({})).unwrap();
+    s["intervalSecs"] = json!(2);
+    s["servers"] = json!(["local"]);
+    invoke(&h, "monitor_settings_set", json!({ "settings": s })).unwrap();
+    wait_long("muestra con el contenedor", 30, || {
+        let st = invoke(&h, "monitor_status", json!({ "server": "local" })).unwrap();
+        st["last"]["containers"]
+            .as_array()
+            .is_some_and(|v| v.iter().any(|c| c["meta"]["id"] == id.as_str()))
+    });
+
+    // 2. Copia: configuración del contenedor y su volumen.
+    let dest = base.join("copias");
+    std::fs::create_dir(&dest).unwrap();
+    crate::backups::set_default_destination(h.store.path(), dest.to_str().unwrap()).unwrap();
+    let ended: Arc<Mutex<Option<serde_json::Value>>> = Default::default();
+    let e2 = ended.clone();
+    let ch = tauri::ipc::Channel::<crate::commands::backup::BackupEvent>::new(move |body| {
+        if let InvokeResponseBody::Json(j) = body {
+            let v: serde_json::Value = serde_json::from_str(&j).unwrap();
+            if v["event"] == "backupEnd" {
+                *e2.lock().unwrap() = Some(v);
+            }
+        }
+        Ok(())
+    });
+    let req: dcc_engine::backup::BackupRequest = serde_json::from_value(json!({
+        "volumes": [{ "name": vol, "mode": "hot" }], "databases": [], "containers": [name], "compose": [], "appConfig": false
+    }))
+    .unwrap();
+    tauri::async_runtime::block_on(crate::commands::backup::backup_run_open(
+        h.app.handle().clone(),
+        h.app.state::<AppState>(),
+        "local".into(),
+        None,
+        req,
+        None,
+        ch,
+    ))
+    .unwrap();
+    wait_long("copia", 180, || ended.lock().unwrap().is_some());
+    let end = ended.lock().unwrap().clone().unwrap();
+    assert!(end["error"].is_null(), "{end}");
+    let backup_id = end["entry"]["id"].as_str().unwrap().to_owned();
+    // El manifiesto guarda el id del contenedor (1.6.0).
+    let items = end["entry"]["manifest"]["items"]
+        .as_array()
+        .unwrap()
+        .clone();
+    let cfg = items.iter().find(|i| i["kind"] == "container").unwrap();
+    assert_eq!(cfg["details"]["containerId"], id.as_str(), "{cfg}");
+    let v = items.iter().find(|i| i["kind"] == "volume").unwrap();
+    assert_eq!(v["details"]["usedByIds"], id.as_str(), "{v}");
+    // Una tarea que incluye el contenedor por nombre.
+    let job = json!({
+        "id": "", "name": "Web", "server": "local", "destination": dest,
+        "request": { "volumes": [], "databases": [], "containers": [name], "compose": [], "appConfig": false },
+        "retention": { "daily": 1, "weekly": 0, "monthly": 0 },
+        "schedule": { "kind": "daily", "hour": 3, "minute": 0 }
+    });
+    let job_id = invoke(&h, "backup_job_save", json!({ "job": job })).unwrap()["job"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // 3. Auditoría de todos los contenedores.
+    let audited: Arc<Mutex<Option<serde_json::Value>>> = Default::default();
+    let a2 = audited.clone();
+    let ch = tauri::ipc::Channel::<crate::commands::audit::AuditEvent>::new(move |body| {
+        if let tauri::ipc::InvokeResponseBody::Json(j) = body {
+            let v: serde_json::Value = serde_json::from_str(&j).unwrap();
+            if v["event"] == "end" {
+                *a2.lock().unwrap() = Some(v);
+            }
+        }
+        Ok(())
+    });
+    let request: dcc_engine::audit::AuditRequest = serde_json::from_value(json!({
+        "container": null, "includeCompose": false, "includeImages": false, "scanVulnerabilities": false, "tool": null
+    }))
+    .unwrap();
+    tauri::async_runtime::block_on(crate::commands::audit::audit_run_open(
+        h.app.state::<AppState>(),
+        "local".into(),
+        request,
+        ch,
+    ))
+    .unwrap();
+    wait_long("auditoría", 120, || audited.lock().unwrap().is_some());
+    let end = audited.lock().unwrap().clone().unwrap();
+    assert!(end["error"].is_null(), "{end}");
+    let targets: Vec<serde_json::Value> = end["report"]["targets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|t| t["target"]["kind"] == "container")
+        .map(|t| {
+            json!({ "id": t["target"]["id"], "name": t["target"]["name"], "project": t["target"]["project"] })
+        })
+        .filter(|t| t["name"] == name.as_str() || t["name"] == other.as_str())
+        .collect();
+    assert_eq!(targets.len(), 2, "la auditoría ve los dos contenedores");
+    let t = targets.iter().find(|t| t["name"] == name.as_str()).unwrap();
+    assert_eq!(t["id"], id.as_str(), "la auditoría usa el id completo");
+
+    // 4. Enlaces: mismo id en las tres herramientas, sin escribir en el panel.
+    let ops_before = invoke(&h, "activity_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len();
+    let links = invoke(
+        &h,
+        "tools_links",
+        json!({ "server": "local", "targets": targets }),
+    )
+    .unwrap();
+    let ops_after = invoke(&h, "activity_list", json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len();
+    assert_eq!(ops_before, ops_after, "los enlaces no se registran");
+    let mine = links
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["id"] == id.as_str())
+        .unwrap();
+    assert_eq!(mine["monitor"]["enabled"], true);
+    assert_eq!(mine["monitor"]["sampled"], true, "{mine}");
+    assert_eq!(mine["monitor"]["state"], "running");
+    assert_eq!(mine["backup"]["backupId"], backup_id.as_str());
+    assert_eq!(mine["backup"]["match"], "id", "{mine}");
+    assert_eq!(mine["backup"]["kinds"], json!(["volume", "container"]));
+    assert_eq!(mine["backup"]["hot"], true, "el volumen estaba en uso");
+    assert_eq!(mine["backup"]["destination"], dest.to_str().unwrap());
+    assert_eq!(mine["jobs"], json!([{ "id": job_id, "name": "Web" }]));
+    let theirs = links
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["id"] == other_id.as_str())
+        .unwrap();
+    assert_eq!(theirs["monitor"]["sampled"], true);
+    assert!(theirs["backup"].is_null(), "{theirs}");
+    assert_eq!(theirs["jobs"], json!([]));
+
+    // 5. Recreado con el mismo nombre: la copia ya solo coincide por nombre.
+    invoke(
+        &h,
+        "container_remove",
+        json!({ "id": id, "force": true, "volumes": false, "confirmed": true }),
+    )
+    .unwrap();
+    let id2 = create(
+        &name,
+        json!([{ "kind": "volume", "source": vol, "target": "/datos", "readOnly": false }]),
+    );
+    assert_ne!(id, id2);
+    let links = invoke(
+        &h,
+        "tools_links",
+        json!({ "server": "local", "targets": [{ "id": id2, "name": name, "project": null }] }),
+    )
+    .unwrap();
+    assert_eq!(links[0]["backup"]["match"], "name", "{links}");
+    // Servidor desconocido: error, como el resto de órdenes.
+    let e = invoke(
+        &h,
+        "tools_links",
+        json!({ "server": "srv-no-existe", "targets": [] }),
+    )
+    .unwrap_err();
+    assert!(e["code"].as_str().unwrap().starts_with("server"), "{e}");
+}

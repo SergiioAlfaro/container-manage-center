@@ -229,6 +229,12 @@ En la aplicación:
 - `commands/monitor.rs`: comandos IPC (`monitor_status`, `monitor_live`, `monitor_minutes`, `monitor_alerts`, `monitor_settings_set`, `monitor_pause`, `monitor_notify`…).
 - La interfaz está en `ui/src/features/monitor/` (`model.ts` puro y `MonitorView.tsx`), con el gráfico `ui/src/shared/ui/LineChart.tsx`. `App.tsx` (`useMonitorNotifications`) traduce las alertas y pide la notificación.
 
+### Enlaces entre herramientas (1.6.0, `src-tauri/src/links.rs`, D-108)
+- Capa de la aplicación, fuera de las tres herramientas: ninguna lee el estado de otra (plan §4.1). `links::compute` (puro) cruza, por id de servidor y de contenedor, el `MonitorStatus` del servidor, los manifiestos de las copias completas (`complete_backups`, de la carpeta elegida y de las de sus tareas) y las tareas (`BackupJob`).
+- Coincidencias (`LinkMatch`): `id` (detalles `containerId` y `usedByIds` de los manifiestos, desde la 1.6.0), `name` (copias anteriores o contenedor recreado) y `project` (Compose).
+- `commands/links.rs` (`tools_links`): solo lectura y sin registro; para los volúmenes de cada contenedor usa `Engine::list_containers_silent` (como la monitorización), con 5 s como máximo y solo si hay conexión.
+- En la interfaz, `features/audit/Links.tsx` muestra la tabla. La navegación a las otras herramientas pasa por dos almacenes pequeños (`features/monitor/store.ts` y `useBackupNav` en `features/backup/store.ts`), que se consumen una vez, por servidor. `prefillRequest` (`features/backup/model.ts`) convierte un contenedor en una selección de copia.
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 

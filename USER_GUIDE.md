@@ -600,6 +600,23 @@ en otros.
   queda solo para tu usuario (permisos 0600). Los secretos se ocultan.
 - **Auditorías anteriores**: las de este servidor (las 200 últimas), para
   abrirlas de nuevo.
+- **Contenedores en las demás herramientas** (1.6.0): debajo de los hallazgos,
+  una fila por contenedor auditado con:
+  - su peor hallazgo;
+  - si la **monitorización** lo vigila y sus alertas activas;
+  - la **copia** más reciente que lo incluye (qué incluye y si algún volumen
+    se copió en caliente);
+  - las **tareas** de copias que lo incluyen.
+
+  Las herramientas reconocen el contenedor por su **id**. Si la copia es
+  anterior a la 1.6.0, o el contenedor se ha vuelto a crear (tiene otro id),
+  se reconoce por nombre y la fila lo dice. Consultarlo no cambia nada ni se
+  apunta en el panel de actividad.
+  - «Ver en Monitorización» abre las gráficas de ese contenedor.
+  - «Preparar una copia» abre «Nueva copia» con su configuración, su base de
+    datos (si es una en marcha) y los volúmenes con nombre que monta ya
+    marcados. Revisa la selección: no se copia nada hasta que pulses «Hacer
+    copia ahora».
 
 ## Copias
 

@@ -3023,6 +3023,43 @@
       "banner_one": "L'auditoria ha proposat {{count}} canvi. Revisa'l abans d'aplicar-lo: encara no s'ha canviat res.",
       "banner_other": "L'auditoria ha proposat {{count}} canvis. Revisa'ls abans d'aplicar-los: encara no s'ha canviat res.",
       "resources": "Indica també límits de CPU i memòria a «Recursos»."
+    },
+    "links": {
+      "title": "Contenidors a les altres eines",
+      "hint": "Cada contenidor es reconeix pel seu id: si la monitorització el vigila i quina còpia el protegeix. Consultar-ho no canvia res.",
+      "error": "No s’ha pogut consultar: {{error}}",
+      "col": {
+        "container": "Contenidor",
+        "findings": "Troballes",
+        "monitor": "Monitorització",
+        "backup": "Còpies"
+      },
+      "noFindings": "Sense troballes",
+      "monitorOff": "Monitorització desactivada en aquest servidor",
+      "monitored": "Monitoritzat ({{state}})",
+      "notSampled": "No és a l’última mostra",
+      "alerts_one": "{{count}} alerta activa: {{kinds}}",
+      "alerts_other": "{{count}} alertes actives: {{kinds}}",
+      "alertKind": {
+        "cpu": "CPU alta",
+        "memory": "memòria alta",
+        "restart": "reinici",
+        "oom": "sense memòria",
+        "exitError": "sortida amb error",
+        "disconnected": "desconnexió"
+      },
+      "openMonitor": "Mostra a Monitorització",
+      "backup": "Còpia del {{date}}",
+      "match": {
+        "id": "mateix contenidor (per id)",
+        "name": "per nom: còpia anterior a la 1.6.0 o contenidor creat de nou",
+        "project": "pel seu projecte Compose"
+      },
+      "hot": "amb volums copiats en calent (no garantida)",
+      "noBackup": "Sense còpia",
+      "jobs_one": "A la tasca {{names}}",
+      "jobs_other": "A les tasques {{names}}",
+      "newBackup": "Prepara una còpia"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "Es crearà una carpeta nova.",
       "engine_pathNotAllowed": "Per seguretat, aquesta carpeta no està permesa.",
       "engine_notConnected": "No hi ha connexió amb Docker Engine."
-    }
+    },
+    "fromAudit": "Selecció preparada des de l’auditoria per a «{{name}}»: la seva configuració, la seva base de dades si ho és i els volums que munta. Revisa-la abans de copiar.",
+    "fromAuditGone": "«{{name}}» ja no existeix en aquest servidor: tria què vols copiar."
   },
   "monitor": {
     "intro": "Docker Control Center pren mostres amb «docker stats» i «inspect» (sense instal·lar res al servidor). Els talls de connexió es veuen com a buits: no s’inventen dades.",

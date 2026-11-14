@@ -32,6 +32,7 @@ import {
   type LevelFilter,
   type TargetGroup,
 } from "./model";
+import { ToolLinksSection } from "./Links";
 import { useAudits } from "./store";
 
 const KINDS: AuditTargetKind[] = ["container", "service", "image"];
@@ -281,6 +282,8 @@ function Report({ report }: { report: AuditReport }) {
       {clean.length > 0 && level === "all" && kind === "all" && !query && (
         <p className="mt-3 text-[12.5px] text-ink-3">{t("audit.clean", { count: clean.length, names: clean.map((c) => c.target.name).join(", ") })}</p>
       )}
+
+      <ToolLinksSection report={report} />
 
       <Vulns report={report} />
 

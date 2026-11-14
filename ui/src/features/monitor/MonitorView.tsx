@@ -14,6 +14,7 @@ import { formatBytes, formatTimestamp, numberFormat } from "@/shared/format";
 import { Button, cx, Segmented } from "@/shared/ui/controls";
 import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { LineChart, type ChartSeries } from "@/shared/ui/LineChart";
+import { useMonitorNav } from "./store";
 import {
   alertText,
   INTERVALS,
@@ -199,7 +200,8 @@ function Summary({ range }: { range: RangeKey }) {
   const server = useServerId();
   const f = useFormats();
   const st = useQuery({ queryKey: ["monitorStatus", server], queryFn: bound.monitorStatus }).data;
-  const [selected, setSelected] = useState<string | null>(null);
+  // E6: al llegar desde la auditoría se abre el detalle de ese contenedor.
+  const [selected, setSelected] = useState<string | null>(() => useMonitorNav.getState().take(server));
   const containers = useMemo(() => st?.last?.containers ?? [], [st?.last?.containers]);
   const names = useMemo(() => Object.fromEntries(containers.map((c) => [c.meta.id, c.meta.name])), [containers]);
   const sel = selected && containers.some((c) => c.meta.id === selected) ? selected : null;

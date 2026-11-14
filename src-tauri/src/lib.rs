@@ -5,6 +5,7 @@ mod commands;
 mod error;
 mod events;
 mod journal;
+mod links;
 mod monitor;
 mod notify;
 mod secrets;
@@ -117,6 +118,7 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::monitor::monitor_minutes,
             commands::monitor::monitor_alerts,
             commands::monitor::monitor_notify,
+            commands::links::tools_links,
             commands::backup::backup_pick_folder,
             commands::backup::backup_list,
             commands::backup::backup_verify,

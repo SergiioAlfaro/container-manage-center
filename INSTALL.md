@@ -9,8 +9,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.5.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.5.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `docker-control-center_1.6.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `docker-control-center_1.6.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -56,7 +56,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.5.0_amd64.deb
+sudo apt install ./docker-control-center_1.6.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).

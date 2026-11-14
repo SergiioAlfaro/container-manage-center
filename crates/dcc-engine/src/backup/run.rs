@@ -220,6 +220,8 @@ impl<F: FnMut(BackupProgress) + Send> Run<'_, F> {
             .collect();
         if !users.is_empty() {
             details.insert("usedBy".into(), users.join(", "));
+            let ids: Vec<&str> = vol.containers.iter().map(|u| u.id.as_str()).collect();
+            details.insert(DETAIL_USED_BY_IDS.into(), ids.join(","));
         }
         if vol.driver != "local" {
             warnings.push("backup.warn.driver".into());
@@ -344,6 +346,10 @@ impl<F: FnMut(BackupProgress) + Send> Run<'_, F> {
         let file = f.finish().await.map_err(io)?;
         let mut details = db::details(engine, &image);
         details.insert("container".into(), name.clone());
+        // 1.6.0 (D-108): el id une la copia con la auditoría y la monitorización.
+        if let Some(id) = &c.id {
+            details.insert(DETAIL_CONTAINER_ID.into(), id.clone());
+        }
         Ok(BackupItem {
             kind: ItemKind::Database,
             name,
@@ -379,6 +385,9 @@ impl<F: FnMut(BackupProgress) + Send> Run<'_, F> {
         let mut warnings = Vec::new();
         let mut details = BTreeMap::new();
         details.insert("image".into(), image);
+        if let Some(id) = &c.id {
+            details.insert(DETAIL_CONTAINER_ID.into(), id.clone());
+        }
         if let Some(i) = &c.image {
             details.insert("imageId".into(), i.clone());
         }

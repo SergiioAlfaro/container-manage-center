@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArchiveRestore, CalendarClock, CheckCircle2, DatabaseBackup, FolderOpen, History, Play, ShieldCheck, Square, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -17,8 +17,8 @@ import { keys } from "@/shared/query";
 import { Button, cx, Segmented } from "@/shared/ui/controls";
 import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { ConfirmDialog, JobDialog, RestoreDialog, StopConfirmDialog, TimerDialog } from "./dialogs";
-import { backupDate, codeText, databaseContainers, EMPTY_REQUEST, errorText, isEmptyRequest, itemWarnings, newJob, retentionText, scheduleText, timerText } from "./model";
-import { useBackups } from "./store";
+import { backupDate, codeText, databaseContainers, EMPTY_REQUEST, errorText, isEmptyRequest, itemWarnings, newJob, prefillRequest, retentionText, scheduleText, timerText } from "./model";
+import { useBackupNav, useBackups } from "./store";
 
 type Tab = "list" | "new" | "jobs" | "history";
 
@@ -38,7 +38,9 @@ function when(iso: string, lang: string): string {
 
 function Backups() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<Tab>("list");
+  const server = useServerId();
+  // E6: al llegar desde la auditoría se abre «Nueva copia» con la selección.
+  const [tab, setTab] = useState<Tab>(() => (useBackupNav.getState().prefill?.server === server ? "new" : "list"));
   const settings = useQuery({ queryKey: ["backupSettings"], queryFn: api.backupSettings });
   const qc = useQueryClient();
   const pick = useMutation({
@@ -216,6 +218,17 @@ function NewBackup({ destination, onSaved }: { destination: string | null; onSav
   const containers = useQuery({ queryKey: keys.containers, queryFn: bound.containersList });
   const projects = useQuery({ queryKey: keys.composeProjects, queryFn: bound.composeProjects, enabled: !remote });
   const [req, setReq] = useState<BackupRequest>(EMPTY_REQUEST);
+  const [fromAudit, setFromAudit] = useState<{ name: string; found: boolean } | null>(null);
+  // E6: selección preparada desde la auditoría, cuando ya se conocen los
+  // contenedores y volúmenes del servidor.
+  useEffect(() => {
+    if (!containers.data || !volumes.data || useBackupNav.getState().prefill?.server !== server) return;
+    const p = useBackupNav.getState().take(server);
+    if (!p) return;
+    const r = prefillRequest(p.id, p.name, containers.data, volumes.data);
+    if (r) setReq(r);
+    setFromAudit({ name: p.name, found: !!r });
+  }, [containers.data, volumes.data, server]);
   const [stopAsk, setStopAsk] = useState(false);
   const [job, setJob] = useState<BackupJob | null>(null);
   const running = run?.status === "running";
@@ -240,6 +253,7 @@ function NewBackup({ destination, onSaved }: { destination: string | null; onSav
   return (
     <div className="space-y-4">
       {!destination && <Banner tone="info">{t("backup.chooseFirst")}</Banner>}
+      {fromAudit && <Banner tone={fromAudit.found ? "info" : "warn"}>{t(fromAudit.found ? "backup.fromAudit" : "backup.fromAuditGone", { name: fromAudit.name })}</Banner>}
       <fieldset className="rounded-xl border border-line bg-surface p-4" disabled={running}>
         <legend className="px-1 text-[13.5px] font-semibold">{t("backup.section.volumes")}</legend>
         <p className="mb-2 text-[12px] text-ink-3">{t("backup.volumesHint")}</p>

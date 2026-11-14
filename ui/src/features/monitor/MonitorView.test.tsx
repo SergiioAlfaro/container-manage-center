@@ -13,6 +13,7 @@ import { useApp } from "@/app/store";
 import { useServers } from "@/app/server";
 import { LineChart } from "@/shared/ui/LineChart";
 import { MonitorView } from "./MonitorView";
+import { useMonitorNav } from "./store";
 import { alertText, liveGaps, liveSeries, minuteGaps, minuteSeries, minuteValue, serverLive, uptime } from "./model";
 
 const t = i18n.t.bind(i18n) as unknown as (k: string, o?: Record<string, unknown>) => string;
@@ -137,6 +138,18 @@ describe("apartado Monitorización", () => {
     await userEvent.click(within(table).getByRole("button", { name: "web" }));
     expect(await screen.findByRole("region", { name: "Detalle de web" })).toBeInTheDocument();
     await waitFor(() => expect(api.monitorLive).toHaveBeenCalledWith(["c1c1c1c1c1c1"], 15));
+  });
+
+  it("al llegar desde la auditoría abre el detalle de ese contenedor (por id), una sola vez", async () => {
+    useMonitorNav.getState().show("local", "c1c1c1c1c1c1");
+    renderWithQuery(<MonitorView />);
+    expect(await screen.findByRole("region", { name: "Detalle de web" })).toBeInTheDocument();
+    await waitFor(() => expect(api.monitorLive).toHaveBeenCalledWith(["c1c1c1c1c1c1"], 15));
+    expect(useMonitorNav.getState().focus).toBeNull();
+    // Para otro servidor no se usa.
+    useMonitorNav.getState().show("srv-otro", "c1c1c1c1c1c1");
+    expect(useMonitorNav.getState().take("local")).toBeNull();
+    useMonitorNav.setState({ focus: null });
   });
 
   it("pausa, intervalo y periodo guardado en disco", async () => {

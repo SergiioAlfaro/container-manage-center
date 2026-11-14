@@ -3023,6 +3023,43 @@
       "banner_one": "Auditoriak aldaketa {{count}} proposatu du. Berrikusi aplikatu aurretik: oraindik ez da ezer aldatu.",
       "banner_other": "Auditoriak {{count}} aldaketa proposatu ditu. Berrikusi aplikatu aurretik: oraindik ez da ezer aldatu.",
       "resources": "Adierazi CPU eta memoria-mugak ere «Baliabideak» atalean."
+    },
+    "links": {
+      "title": "Edukiontziak beste tresnetan",
+      "hint": "Edukiontzi bakoitza bere id-aren bidez ezagutzen da: monitorizazioak zaintzen duen eta zein kopiak babesten duen. Kontsultatzeak ez du ezer aldatzen.",
+      "error": "Ezin izan da kontsultatu: {{error}}",
+      "col": {
+        "container": "Edukiontzia",
+        "findings": "Aurkikuntzak",
+        "monitor": "Monitorizazioa",
+        "backup": "Kopiak"
+      },
+      "noFindings": "Aurkikuntzarik ez",
+      "monitorOff": "Monitorizazioa desaktibatuta dago zerbitzari honetan",
+      "monitored": "Monitorizatuta ({{state}})",
+      "notSampled": "Ez dago azken laginean",
+      "alerts_one": "Alerta aktibo {{count}}: {{kinds}}",
+      "alerts_other": "{{count}} alerta aktibo: {{kinds}}",
+      "alertKind": {
+        "cpu": "CPU altua",
+        "memory": "memoria altua",
+        "restart": "berrabiaraztea",
+        "oom": "memoriarik gabe",
+        "exitError": "errorezko irteera",
+        "disconnected": "deskonexioa"
+      },
+      "openMonitor": "Ikusi Monitorizazioan",
+      "backup": "Kopia: {{date}}",
+      "match": {
+        "id": "edukiontzi bera (id bidez)",
+        "name": "izenaren bidez: 1.6.0 baino lehenagoko kopia edo berriro sortutako edukiontzia",
+        "project": "bere Compose proiektuaren bidez"
+      },
+      "hot": "beroan kopiatutako bolumenekin (ez bermatua)",
+      "noBackup": "Kopiarik ez",
+      "jobs_one": "Ataza honetan: {{names}}",
+      "jobs_other": "Ataza hauetan: {{names}}",
+      "newBackup": "Prestatu kopia bat"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "Karpeta berri bat sortuko da.",
       "engine_pathNotAllowed": "Segurtasunagatik, karpeta hori ez dago baimenduta.",
       "engine_notConnected": "Ez dago konexiorik Docker Enginerekin."
-    }
+    },
+    "fromAudit": "Auditoriatik prestatutako hautapena «{{name}}»-rentzat: bere konfigurazioa, datu-basea bada bere datu-basea eta muntatzen dituen bolumenak. Berrikusi kopiatu aurretik.",
+    "fromAuditGone": "«{{name}}» ez dago jada zerbitzari honetan: aukeratu zer kopiatu."
   },
   "monitor": {
     "intro": "Docker Control Center-ek «docker stats» eta «inspect» erabiliz hartzen ditu laginak (zerbitzarian ezer instalatu gabe). Konexio-etenak hutsune gisa ikusten dira: ez da daturik asmatzen.",

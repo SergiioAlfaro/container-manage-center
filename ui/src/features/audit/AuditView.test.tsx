@@ -14,6 +14,8 @@ import { applyAuditFixes } from "@/features/containers/edit/model";
 import type { EditRequest } from "@/shared/ipc/bindings/EditRequest";
 import { AuditView } from "./AuditView";
 import { useAudits } from "./store";
+import { useBackupNav } from "@/features/backup/store";
+import { useMonitorNav } from "@/features/monitor/store";
 import { escapeHtml, groupByTarget, matchesFinding, toHtml, toJson, toMarkdown, vulnStatusText } from "./model";
 
 const t = i18n.t.bind(i18n) as unknown as (k: string, o?: Record<string, unknown>) => string;
@@ -186,5 +188,63 @@ describe("Auditoría", () => {
     expect(box).toBeDisabled();
     expect(screen.getByText("Solo se analizan imágenes del Docker de este equipo.")).toBeInTheDocument();
     expect(api.auditTools).not.toHaveBeenCalled();
+  });
+});
+
+describe("auditoría · enlaces con las demás herramientas (E6)", () => {
+  beforeEach(reset);
+
+  it("cada contenedor auditado, por id: monitorización, copia y tarea; los enlaces abren la otra herramienta", async () => {
+    useAudits.setState({ runs: { local: { status: "done", stream: null, progress: null, report: auditReport(), error: null, cancelRequested: false } } });
+    renderWithQuery(<AuditView />);
+    const section = await screen.findByRole("region", { name: "Contenedores en las demás herramientas" });
+    // Solo contenedores (no el servicio ni la imagen), por su id.
+    expect(api.toolsLinks).toHaveBeenCalledWith([
+      { id: "c0ffee0123456789", name: "web", project: null },
+      { id: "def", name: "seguro", project: null },
+    ]);
+    const table = await within(section).findByRole("table");
+    const web = table.querySelector('[data-container="c0ffee0123456789"]') as HTMLElement;
+    expect(web).toHaveTextContent("Crítico");
+    expect(web).toHaveTextContent("Monitorizado (running)");
+    expect(web).toHaveTextContent("1 alerta activa: CPU alta");
+    expect(web).toHaveTextContent("Volumen, Configuración del contenedor");
+    expect(web).toHaveTextContent("mismo contenedor (por id)");
+    expect(web).toHaveTextContent("con volúmenes copiados en caliente (no garantizada)");
+    expect(web).toHaveTextContent("En la tarea «Noche»");
+    const safe = table.querySelector('[data-container="def"]') as HTMLElement;
+    expect(safe).toHaveTextContent("Sin hallazgos");
+    expect(safe).toHaveTextContent("No está en la última muestra");
+    expect(safe).toHaveTextContent("Sin copia");
+    // «Ver en Monitorización» lleva a esa sección con el contenedor elegido.
+    await userEvent.click(within(web).getByRole("button", { name: "Ver en Monitorización" }));
+    expect(useApp.getState().section).toBe("monitor");
+    expect(useMonitorNav.getState().focus).toEqual({ server: "local", id: "c0ffee0123456789" });
+  });
+
+  it("«Preparar una copia» abre Copias con la selección; no copia nada", async () => {
+    useAudits.setState({ runs: { local: { status: "done", stream: null, progress: null, report: auditReport(), error: null, cancelRequested: false } } });
+    renderWithQuery(<AuditView />);
+    const section = await screen.findByRole("region", { name: "Contenedores en las demás herramientas" });
+    const web = (await within(section).findByRole("table")).querySelector('[data-container="c0ffee0123456789"]') as HTMLElement;
+    await userEvent.click(within(web).getByRole("button", { name: "Preparar una copia" }));
+    expect(useApp.getState().section).toBe("backup");
+    expect(useBackupNav.getState().prefill).toEqual({ server: "local", id: "c0ffee0123456789", name: "web" });
+    expect(api.backupRunOpen).not.toHaveBeenCalled();
+  });
+
+  it("si la consulta falla lo dice; un informe sin contenedores no la hace", async () => {
+    api.toolsLinks.mockRejectedValueOnce({ code: "server.unknown", message: "servidor desconocido" });
+    useAudits.setState({ runs: { local: { status: "done", stream: null, progress: null, report: auditReport(), error: null, cancelRequested: false } } });
+    const { unmount } = renderWithQuery(<AuditView />);
+    expect(await screen.findByText("No se pudo consultar: servidor desconocido")).toBeInTheDocument();
+    unmount();
+    vi.clearAllMocks();
+    const r = auditReport();
+    useAudits.setState({ runs: { local: { status: "done", stream: null, progress: null, report: { ...r, targets: r.targets.filter((x) => x.target.kind !== "container") }, error: null, cancelRequested: false } } });
+    renderWithQuery(<AuditView />);
+    await screen.findByText("Resultado");
+    expect(screen.queryByRole("region", { name: "Contenedores en las demás herramientas" })).toBeNull();
+    expect(api.toolsLinks).not.toHaveBeenCalled();
   });
 });

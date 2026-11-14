@@ -4,7 +4,7 @@
 |---|---|
 | Versión de partida | 1.0.0 (commit `d1068d4`) |
 | Fecha | 12 de noviembre de 2026 |
-| Estado de este documento | E0 completada. Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026). **E1 (1.1.0), E2 (1.2.0), E3 (1.3.0) y E4 (1.4.0) implementadas**; pendientes de su validación manual (M1–M8 de E1 a E3 y M1–M10 de E4) |
+| Estado de este documento | Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026) e **implementada** hasta la E6 (1.6.0, 14-11-2026). Pendiente: la validación manual guiada del propietario ([VALIDACION-GUIADA-1.6.0.md](../validation/VALIDACION-GUIADA-1.6.0.md)), que reúne F1–F8 y las comprobaciones de E1 a E6 (§13) |
 | Documentos relacionados | [STATUS.md](../../STATUS.md) (fases 1–10) · [DECISIONS.md](../../DECISIONS.md) · [docs/security/](../security/) |
 
 Este plan continúa el proyecto existente. No es una reescritura ni sustituye a
@@ -146,7 +146,7 @@ Se añaden módulos, no se reorganizan los existentes:
 | Registro de operaciones | `ActivityLog` (existente) | Las tres | — |
 | Historiales | `dcc-store::journal` (existente) + nuevos tipos por herramienta, en archivos **separados por servidor** | Auditoría, copias, monitorización | — |
 | Informes | `dcc-engine::report` (JSON, Markdown y HTML sin scripts; los secretos pasan por `redact`) | Auditoría y copias | `risk`, `redact` |
-| Notificaciones | `src-tauri::notify` (complemento oficial `tauri-plugin-notification`, MIT/Apache-2.0, a confirmar) | Monitorización y copias programadas | — |
+| Notificaciones | `src-tauri::notify` (D-Bus con `zbus`, que ya estaba en el árbol; se descartó `tauri-plugin-notification`, D-105) | Monitorización | — |
 | Tareas programadas | `src-tauri::scheduler` (§5.2, E4) | Copias y, más adelante, auditorías | `dcc-store` |
 | Permisos y confirmaciones | Confirmación con los códigos de riesgo aceptados, comprobada en Rust (§6.1) | Las tres | `risk` |
 
@@ -713,8 +713,37 @@ Estados: ☐ pendiente · ◐ en curso · ☑ hecha.
 - ☐ Validación manual del propietario (M1–M9, en el informe de verificación).
 
 ### E6 (1.6.0)
-- ☐ Enlaces entre herramientas: de la auditoría a la monitorización y a las copias por id.
+- ☑ Enlaces entre herramientas: de la auditoría a la monitorización y a las copias por id de contenedor; las copias guardan el id (D-108).
 - ➖ H-10: no se incorpora (decisión del propietario); queda como candidata futura.
-- ☐ Regresión completa.
-- ☐ Validación manual guiada.
-- ☐ Documentación final.
+- ☑ Regresión completa (`verify-evolution-1.6.0.sh`, Docker 24, 26 y 29, laboratorio SSH, paquetes e instalación limpia).
+- ☑ Validación manual guiada preparada (D-109): `docs/validation/VALIDACION-GUIADA-1.6.0.md`.
+- ☐ Validación manual guiada realizada por el propietario.
+- ☑ Documentación final.
+
+---
+
+## 13. Cierre de la hoja de ruta (1.6.0)
+
+| Etapa | Versión | Resultado | Validación manual |
+|---|---|---|---|
+| E0 Revisión y preparación | — | Plan, inventario y línea base | — |
+| E1 Correcciones de seguridad P1 | 1.1.0 | DCC-SEC-01, 02, 03 y 05 corregidos y probados | Pendiente (guía, §3–4) |
+| E2 Endurecimiento restante | 1.2.0 | DCC-SEC-04, 06–13 y 16–18; dependencias; ESLint | Pendiente (guía, §1, §3–4) |
+| E3 Auditoría de seguridad | 1.3.0 | Sección «Auditoría» | Pendiente (guía, §6) |
+| E4 Copias de seguridad | 1.4.0 | Sección «Copias», temporizadores de systemd con autorización | Pendiente (guía, §7) |
+| E5 Monitorización avanzada | 1.5.0 | Sección «Monitorización», alertas y notificaciones | Pendiente (guía, §8) |
+| E6 Integración y validación final | 1.6.0 | Enlaces por id entre las tres herramientas; validación guiada | Pendiente (guía, §9) |
+
+- Las fases 1–10 no se han vuelto a validar a mano: la regresión automática las cubre en cada etapa, y F1–F8 de la Fase 10 están en la guía.
+- **Sin incorporar**:
+  - H-10 (modo de producción por servidor), por decisión del propietario;
+  - las candidatas H-09 y H-11 a H-14 de FEATURE_ROADMAP.md;
+  - el cifrado de copias (D-096).
+- **Pendiente de una decisión del propietario**: la firma GPG de `SHA256SUMS` (desde la 1.2.0).
+- **No verificable en el entorno de desarrollo**:
+  - Debian 12 y 13;
+  - systemd de usuario real (temporizadores);
+  - el aviso de escritorio en GNOME o KDE;
+  - MongoDB y MySQL de Oracle.
+  
+  Todo ello está en la guía o en las limitaciones de cada etapa.

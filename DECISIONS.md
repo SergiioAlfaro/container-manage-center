@@ -1286,3 +1286,32 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 * **Límites fijados en la E5**, con 50 contenedores en marcha en cada uno de 3 servidores, muestreando cada 2 s durante 60 s: **CPU media ≤ 10 % de una CPU**, **memoria adicional ≤ 64 MiB** y **cada muestra de un servidor en menos de 2 s**.
 * **Medido** (`live_monitor::consumption_with_50_containers_and_3_servers`, Docker 29 local): CPU media 5,8 % de una CPU, 6 MiB de memoria adicional, anillos de 902 KiB, muestra más lenta 529 ms. La cifra de cada daemon está en el informe de verificación.
 * Se mide el proceso de pruebas (motor y muestreador), no la ventana: la interfaz solo vuelve a pedir datos al llegar cada muestra y solo de lo que se ve.
+
+## Evolución · Etapa 6: integración y validación final (1.6.0)
+
+### D-108 · Enlaces entre herramientas por id de contenedor
+* **Qué**: la auditoría muestra, para cada contenedor auditado, si la monitorización lo vigila (y sus alertas activas), la copia más reciente que lo incluye y las tareas de copias que lo incluyen. Desde ahí se abre la monitorización de ese contenedor o se prepara una copia. Es el criterio de aceptación de la E6 (plan §6.2).
+* **Cómo**, respetando la regla del plan (§4.1: ninguna herramienta lee estado de otra salvo por identificadores):
+  * la orden `tools_links(server, targets)` está en la capa de la aplicación (`src-tauri/src/links.rs`), no dentro de ninguna herramienta;
+  * cruza lo que cada una ya guarda: el estado del muestreador (última muestra y alertas activas), los manifiestos de las copias completas de la carpeta elegida y de las de las tareas del servidor, y las tareas;
+  * **solo lee**: no cambia nada ni se apunta en el panel de actividad. La lista de contenedores para saber sus volúmenes es la silenciosa de la monitorización, y no se pide si no hay conexión (5 s como máximo);
+  * el cruce es una función pura (`links::compute`), probada sin Docker.
+* **Identidad**:
+  * la auditoría, la monitorización y las copias usan el **id completo** del contenedor de Docker;
+  * las copias guardan ahora el id: `containerId` en la configuración y en las bases de datos, y `usedByIds` en los volúmenes (los manifiestos siguen siendo compatibles: son detalles nuevos);
+  * una copia anterior a la 1.6.0, o de un contenedor que se ha vuelto a crear (otro id, mismo nombre), se reconoce **por nombre** y la interfaz lo dice («por nombre: copia anterior a la 1.6.0 o contenedor creado de nuevo»);
+  * los proyectos Compose se reconocen por su nombre de proyecto;
+  * un contenedor de otro servidor con el mismo nombre nunca se confunde: todo va por servidor.
+* **Tareas**: incluyen el contenedor si lo nombran (configuración o base de datos), si incluyen su proyecto Compose o, con conexión, si copian un volumen que monta. Las tareas guardan nombres a propósito, para seguir sirviendo cuando el contenedor se vuelve a crear (D-100).
+* **«Preparar una copia»** no copia nada: abre «Nueva copia» con una selección que el usuario revisa:
+  * la configuración del contenedor (buscado por id, o por nombre si se recreó);
+  * su base de datos, si es una en marcha;
+  * los volúmenes con nombre que monta, en caliente: el formulario avisa y deja elegir detener.
+  
+  Si el contenedor ya no existe, lo dice y no marca nada.
+* **«Ver en Monitorización»** abre el detalle de ese contenedor por id. Si la monitorización está desactivada, se ve el aviso para activarla; no se activa sola.
+* **Alcance**: solo de la auditoría a las otras dos, como dice el plan (§12). Los servicios de Compose y las imágenes auditadas no tienen fila, porque no se monitorizan ni se copian como tales.
+
+### D-109 · Validación manual guiada y cierre de la hoja de ruta
+* La validación manual pendiente (F1–F8 y las de las Etapas 1 a 5) y la nueva de la Etapa 6 se reúnen en **un solo recorrido**: `docs/validation/VALIDACION-GUIADA-1.6.0.md`. Las comprobaciones repetidas entre listas se unen. Tiene preparación común (contenedores `prueba-*`), una hoja de resultados y la correspondencia con las listas anteriores. El informe de verificación remite a ella (apartado 8).
+* Con la 1.6.0 se cierra la hoja de ruta E0–E6. **H-10** («modo de producción») **no** se incorpora (decisión del propietario, plan §10) y queda como candidata, junto con H-09 y H-11 a H-14. La firma GPG de `SHA256SUMS` sigue pendiente de una decisión del propietario.

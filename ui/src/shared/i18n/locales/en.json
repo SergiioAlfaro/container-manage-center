@@ -3023,6 +3023,43 @@
       "banner_one": "The audit has proposed {{count}} change. Review it before applying it: nothing has been changed yet.",
       "banner_other": "The audit has proposed {{count}} changes. Review them before applying them: nothing has been changed yet.",
       "resources": "Also set CPU and memory limits under “Resources”."
+    },
+    "links": {
+      "title": "Containers in the other tools",
+      "hint": "Each container is recognised by its id: whether monitoring watches it and which backup protects it. Looking does not change anything.",
+      "error": "Could not check: {{error}}",
+      "col": {
+        "container": "Container",
+        "findings": "Findings",
+        "monitor": "Monitoring",
+        "backup": "Backups"
+      },
+      "noFindings": "No findings",
+      "monitorOff": "Monitoring is off for this server",
+      "monitored": "Monitored ({{state}})",
+      "notSampled": "Not in the last sample",
+      "alerts_one": "{{count}} active alert: {{kinds}}",
+      "alerts_other": "{{count}} active alerts: {{kinds}}",
+      "alertKind": {
+        "cpu": "high CPU",
+        "memory": "high memory",
+        "restart": "restart",
+        "oom": "out of memory",
+        "exitError": "exit with error",
+        "disconnected": "disconnection"
+      },
+      "openMonitor": "View in Monitoring",
+      "backup": "Backup from {{date}}",
+      "match": {
+        "id": "same container (by id)",
+        "name": "by name: backup older than 1.6.0 or container created again",
+        "project": "by its Compose project"
+      },
+      "hot": "with volumes copied while in use (not guaranteed)",
+      "noBackup": "No backup",
+      "jobs_one": "In the job {{names}}",
+      "jobs_other": "In the jobs {{names}}",
+      "newBackup": "Prepare a backup"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "A new folder will be created.",
       "engine_pathNotAllowed": "For security, that folder is not allowed.",
       "engine_notConnected": "There is no connection to Docker Engine."
-    }
+    },
+    "fromAudit": "Selection prepared from the audit for “{{name}}”: its configuration, its database if it is one, and the volumes it mounts. Review it before backing up.",
+    "fromAuditGone": "“{{name}}” no longer exists on this server: choose what to back up."
   },
   "monitor": {
     "intro": "Docker Control Center samples with “docker stats” and “inspect” (nothing is installed on the server). Connection drops show as gaps: no data is invented.",

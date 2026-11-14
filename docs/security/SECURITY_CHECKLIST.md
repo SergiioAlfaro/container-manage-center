@@ -4,9 +4,10 @@ Se usa antes de cada versión y al revisar cada cambio. La marca indica el
 estado comprobado en la auditoría de la versión 1.0.0 (12-11-2026), actualizado
 con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
 13-11-2026), la **1.3.0** (Etapa 3, auditoría de seguridad), la **1.4.0**
-(Etapa 4, copias de seguridad) y la **1.5.0** (Etapa 5, monitorización). Las
-líneas cambiadas llevan su evidencia entre corchetes (prueba automática que lo
-demuestra; `verify-evolution-1.5.0.sh` las ejecuta todas):
+(Etapa 4, copias de seguridad), la **1.5.0** (Etapa 5, monitorización) y la
+**1.6.0** (Etapa 6, integración). Las líneas cambiadas llevan su evidencia
+entre corchetes (prueba automática que lo demuestra; `verify-evolution-1.6.0.sh`
+las ejecuta todas):
 
 - ✅ cumple;
 - ⚠️ cumple en parte (ver hallazgo);
@@ -285,3 +286,26 @@ seguridad de Docker Engine y RustSec.
   [`live_monitor::metrics_match_docker_stats` (sin entradas del muestreo)].
 - ⚠️ El aviso visible en GNOME/KDE no se ha podido probar en el entorno de
   desarrollo (D-105): pendiente de la validación manual (M6).
+
+## Integración entre herramientas (1.6.0)
+
+- ✅ Los enlaces solo leen: no cambian contenedores, copias ni configuración, y
+  no se apuntan en el panel de actividad (D-108)
+  [IPC `live_e6_audit_links_monitoring_and_backups_by_container_id`].
+- ✅ Sin confusiones entre contenedores: monitorización por id (un contenedor
+  con el mismo nombre y otro id no cuenta) y todo separado por servidor
+  (las tareas de otro servidor no cuentan) [`links::tests`].
+- ✅ La coincidencia por nombre (copia anterior a la 1.6.0 o contenedor
+  recreado) se muestra como tal, nunca como «mismo contenedor»
+  [`links::tests::a_recreated_container_is_only_matched_by_name`, IPC
+  `live_e6_…`].
+- ✅ Solo cuentan las copias completas (una interrumpida no protege nada)
+  [`links::tests::only_complete_backups_count_and_duplicates_are_removed`].
+- ✅ «Preparar una copia» no copia nada: solo marca una selección que el
+  usuario revisa; las copias siguen con sus confirmaciones (D-108)
+  [`BackupView.test.tsx`, `AuditView.test.tsx`].
+- ✅ Los manifiestos nuevos solo añaden ids de contenedor (no son secretos) en
+  sus detalles; el formato no cambia y las copias anteriores se siguen
+  leyendo, comprobando y restaurando [IPC `live_e6_…`, regresión de copias de
+  la 1.4.0].
+- ✅ Servidor desconocido: la orden se rechaza como las demás [IPC `live_e6_…`].

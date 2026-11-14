@@ -65,3 +65,29 @@ export const useBackups = create<Backups>((set, get) => {
     },
   };
 });
+
+/** E6 (1.6.0): copia preparada desde la auditoría para un contenedor (por
+ *  id). El formulario la convierte en una selección que el usuario revisa;
+ *  nunca se copia nada sin pulsar «Copiar». */
+export interface BackupPrefill {
+  server: string;
+  id: string;
+  name: string;
+}
+
+interface BackupNav {
+  prefill: BackupPrefill | null;
+  prepare: (p: BackupPrefill) => void;
+  take: (server: string) => BackupPrefill | null;
+}
+
+export const useBackupNav = create<BackupNav>((set, get) => ({
+  prefill: null,
+  prepare: (p) => set({ prefill: p }),
+  take: (server) => {
+    const p = get().prefill;
+    if (!p || p.server !== server) return null;
+    set({ prefill: null });
+    return p;
+  },
+}));

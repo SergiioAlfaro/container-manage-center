@@ -5,12 +5,12 @@ import userEvent from "@testing-library/user-event";
 vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).module);
 
 import i18n from "@/shared/i18n";
-import { api, backupEntry, backupJob, connected, container, containers, streams, timerStatus } from "@/test/apiMock";
+import { api, backupEntry, backupJob, connected, container, containers, streams, timerStatus, volumes } from "@/test/apiMock";
 import { renderWithQuery, setServerState } from "@/test/render";
 import { useApp } from "@/app/store";
 import { BackupView } from "./BackupView";
-import { useBackups } from "./store";
-import { codeText, databaseContainers, dbEngineOf, defaultTarget, retentionText, scheduleText, timerText } from "./model";
+import { useBackupNav, useBackups } from "./store";
+import { codeText, databaseContainers, dbEngineOf, defaultTarget, prefillRequest, retentionText, scheduleText, timerText } from "./model";
 
 const t = i18n.t.bind(i18n) as unknown as (k: string, o?: Record<string, unknown>) => string;
 const exists = (k: string) => i18n.exists(k);
@@ -159,5 +159,59 @@ describe("apartado Copias", () => {
     expect(await within(dlg).findByText("2 sentencias dieron error al restaurar.")).toBeInTheDocument();
     api.containersList.mockReset();
     api.containersList.mockImplementation(async () => containers);
+  });
+});
+
+describe("copias preparadas desde la auditoría (E6)", () => {
+  beforeEach(() => {
+    reset();
+    useBackupNav.setState({ prefill: null });
+  });
+
+  it("la selección sale del contenedor por id: configuración, base de datos en marcha y volúmenes con nombre", () => {
+    expect(prefillRequest("a1b2c3d4e5f6a7b8c9d0", "web", containers, volumes)).toEqual({
+      volumes: [{ name: "datos", mode: "hot" }],
+      databases: [],
+      containers: ["web"],
+      compose: [],
+      appConfig: false,
+    });
+    // Base de datos en marcha: también el volcado.
+    const pg = container({ id: "dbdbdbdbdbdb", name: "db2", image: "postgres:17", state: "running", mountPoints: [] });
+    expect(prefillRequest("dbdbdbdbdbdb", "db2", [...containers, pg], volumes)?.databases).toEqual(["db2"]);
+    // Vuelto a crear con otro id: se busca por nombre. Si ya no está, nada.
+    expect(prefillRequest("otro-id", "web", containers, volumes)?.containers).toEqual(["web"]);
+    expect(prefillRequest("otro-id", "no-existe", containers, volumes)).toBeNull();
+  });
+
+  it("abre «Nueva copia» con la selección marcada y un aviso; no copia hasta pulsar", async () => {
+    api.backupSettings.mockResolvedValue({ destination: "/home/u/Copias", jobs: [], systemd: true });
+    useBackupNav.getState().prepare({ server: "local", id: "a1b2c3d4e5f6a7b8c9d0", name: "web" });
+    renderWithQuery(<BackupView />);
+    expect(
+      await screen.findByText("Selección preparada desde la auditoría para «web»: su configuración, su base de datos si lo es y los volúmenes que monta. Revísala antes de copiar."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Nueva copia" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "datos" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "web" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "db" })).not.toBeChecked();
+    expect(api.backupRunOpen).not.toHaveBeenCalled();
+    // Se usa una vez.
+    expect(useBackupNav.getState().prefill).toBeNull();
+    api.backupSettings.mockReset();
+  });
+
+  it("si el contenedor ya no existe lo dice y no marca nada; otro servidor no la usa", async () => {
+    api.backupSettings.mockResolvedValue({ destination: "/home/u/Copias", jobs: [], systemd: true });
+    useBackupNav.getState().prepare({ server: "local", id: "zzz", name: "borrado" });
+    const { unmount } = renderWithQuery(<BackupView />);
+    expect(await screen.findByText("«borrado» ya no existe en este servidor: elige qué copiar.")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "web" })).not.toBeChecked();
+    unmount();
+    useBackupNav.getState().prepare({ server: "srv-otro", id: "a1b2c3d4e5f6a7b8c9d0", name: "web" });
+    renderWithQuery(<BackupView />);
+    expect(await screen.findByRole("radio", { name: "Copias" })).toBeChecked();
+    expect(useBackupNav.getState().prefill?.server).toBe("srv-otro");
+    api.backupSettings.mockReset();
   });
 });

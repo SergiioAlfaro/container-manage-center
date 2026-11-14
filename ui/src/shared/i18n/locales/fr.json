@@ -3023,6 +3023,43 @@
       "banner_one": "L’audit a proposé {{count}} changement. Vérifiez-le avant de l’appliquer : rien n’a encore été modifié.",
       "banner_other": "L’audit a proposé {{count}} changements. Vérifiez-les avant de les appliquer : rien n’a encore été modifié.",
       "resources": "Indiquez aussi des limites de CPU et de mémoire dans « Ressources »."
+    },
+    "links": {
+      "title": "Conteneurs dans les autres outils",
+      "hint": "Chaque conteneur est reconnu par son id : la surveillance le suit-elle et quelle sauvegarde le protège. Consulter ne modifie rien.",
+      "error": "Consultation impossible : {{error}}",
+      "col": {
+        "container": "Conteneur",
+        "findings": "Constats",
+        "monitor": "Surveillance",
+        "backup": "Sauvegardes"
+      },
+      "noFindings": "Aucun constat",
+      "monitorOff": "Surveillance désactivée pour ce serveur",
+      "monitored": "Surveillé ({{state}})",
+      "notSampled": "Absent du dernier échantillon",
+      "alerts_one": "{{count}} alerte active : {{kinds}}",
+      "alerts_other": "{{count}} alertes actives : {{kinds}}",
+      "alertKind": {
+        "cpu": "CPU élevé",
+        "memory": "mémoire élevée",
+        "restart": "redémarrage",
+        "oom": "mémoire épuisée",
+        "exitError": "sortie en erreur",
+        "disconnected": "déconnexion"
+      },
+      "openMonitor": "Voir dans Surveillance",
+      "backup": "Sauvegarde du {{date}}",
+      "match": {
+        "id": "même conteneur (par id)",
+        "name": "par nom : sauvegarde antérieure à 1.6.0 ou conteneur recréé",
+        "project": "par son projet Compose"
+      },
+      "hot": "avec des volumes copiés à chaud (non garantie)",
+      "noBackup": "Aucune sauvegarde",
+      "jobs_one": "Dans la tâche {{names}}",
+      "jobs_other": "Dans les tâches {{names}}",
+      "newBackup": "Préparer une sauvegarde"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "Un nouveau dossier sera créé.",
       "engine_pathNotAllowed": "Par sécurité, ce dossier n'est pas autorisé.",
       "engine_notConnected": "Aucune connexion avec Docker Engine."
-    }
+    },
+    "fromAudit": "Sélection préparée depuis l’audit pour « {{name}} » : sa configuration, sa base de données s’il en est une et les volumes qu’il monte. Vérifiez-la avant de sauvegarder.",
+    "fromAuditGone": "« {{name}} » n’existe plus sur ce serveur : choisissez quoi sauvegarder."
   },
   "monitor": {
     "intro": "Docker Control Center échantillonne avec « docker stats » et « inspect » (rien n’est installé sur le serveur). Les coupures de connexion apparaissent comme des trous : aucune donnée n’est inventée.",

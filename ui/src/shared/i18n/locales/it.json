@@ -3023,6 +3023,43 @@
       "banner_one": "L’audit ha proposto {{count}} modifica. Controllala prima di applicarla: non è ancora stato cambiato nulla.",
       "banner_other": "L’audit ha proposto {{count}} modifiche. Controllale prima di applicarle: non è ancora stato cambiato nulla.",
       "resources": "Indica anche limiti di CPU e memoria in «Risorse»."
+    },
+    "links": {
+      "title": "Container negli altri strumenti",
+      "hint": "Ogni container è riconosciuto dal suo id: se il monitoraggio lo segue e quale backup lo protegge. Consultare non modifica nulla.",
+      "error": "Impossibile consultare: {{error}}",
+      "col": {
+        "container": "Container",
+        "findings": "Rilievi",
+        "monitor": "Monitoraggio",
+        "backup": "Backup"
+      },
+      "noFindings": "Nessun rilievo",
+      "monitorOff": "Monitoraggio disattivato per questo server",
+      "monitored": "Monitorato ({{state}})",
+      "notSampled": "Non è nell’ultimo campione",
+      "alerts_one": "{{count}} avviso attivo: {{kinds}}",
+      "alerts_other": "{{count}} avvisi attivi: {{kinds}}",
+      "alertKind": {
+        "cpu": "CPU alta",
+        "memory": "memoria alta",
+        "restart": "riavvio",
+        "oom": "memoria esaurita",
+        "exitError": "uscita con errore",
+        "disconnected": "disconnessione"
+      },
+      "openMonitor": "Vedi in Monitoraggio",
+      "backup": "Backup del {{date}}",
+      "match": {
+        "id": "stesso container (per id)",
+        "name": "per nome: backup precedente alla 1.6.0 o container ricreato",
+        "project": "per il suo progetto Compose"
+      },
+      "hot": "con volumi copiati a caldo (non garantito)",
+      "noBackup": "Nessun backup",
+      "jobs_one": "Nell’attività {{names}}",
+      "jobs_other": "Nelle attività {{names}}",
+      "newBackup": "Prepara un backup"
     }
   },
   "backup": {
@@ -3254,7 +3291,9 @@
       "restore_action_newFolder": "Verrà creata una nuova cartella.",
       "engine_pathNotAllowed": "Per sicurezza, quella cartella non è consentita.",
       "engine_notConnected": "Nessuna connessione a Docker Engine."
-    }
+    },
+    "fromAudit": "Selezione preparata dall’audit per «{{name}}»: la sua configurazione, il suo database se lo è e i volumi che monta. Controllala prima di eseguire il backup.",
+    "fromAuditGone": "«{{name}}» non esiste più su questo server: scegli cosa copiare."
   },
   "monitor": {
     "intro": "Docker Control Center campiona con «docker stats» e «inspect» (senza installare nulla sul server). Le interruzioni di connessione appaiono come vuoti: nessun dato viene inventato.",

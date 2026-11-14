@@ -2,6 +2,7 @@ import type { AuditFinding } from "@/shared/ipc/bindings/AuditFinding";
 import type { AuditReport } from "@/shared/ipc/bindings/AuditReport";
 import type { AuditTargetKind } from "@/shared/ipc/bindings/AuditTargetKind";
 import type { ImageVulns } from "@/shared/ipc/bindings/ImageVulns";
+import type { LinkTarget } from "@/shared/ipc/bindings/LinkTarget";
 import type { RiskLevel } from "@/shared/ipc/bindings/RiskLevel";
 import { redactText } from "@/shared/secrets";
 
@@ -49,6 +50,26 @@ export interface TargetGroup {
 }
 
 const rank = (l: RiskLevel) => LEVELS.indexOf(l);
+
+/** E6: contenedores auditados (los servicios e imágenes no se monitorizan ni
+ *  se copian como tales). */
+export function containerTargets(report: AuditReport): LinkTarget[] {
+  const seen = new Set<string>();
+  return report.targets
+    .filter((x) => x.target.kind === "container" && !seen.has(x.target.id) && seen.add(x.target.id))
+    .map((x) => ({ id: x.target.id, name: x.target.name, project: x.target.project }));
+}
+
+/** E6: el peor nivel de los hallazgos de cada contenedor, por id. */
+export function worstByTarget(report: AuditReport): Map<string, RiskLevel> {
+  const m = new Map<string, RiskLevel>();
+  for (const f of report.findings) {
+    if (f.target.kind !== "container") continue;
+    const cur = m.get(f.target.id);
+    if (cur === undefined || rank(f.level) < rank(cur)) m.set(f.target.id, f.level);
+  }
+  return m;
+}
 
 /** Hallazgos agrupados por contenedor, servicio o imagen, los peores primero. */
 export function groupByTarget(findings: AuditFinding[]): TargetGroup[] {

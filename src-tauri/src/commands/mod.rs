@@ -11,6 +11,7 @@ pub mod containers;
 pub mod engine;
 pub mod events;
 pub mod images;
+pub mod links;
 pub mod monitor;
 pub mod networks;
 pub mod resources;

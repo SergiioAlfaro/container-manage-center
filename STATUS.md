@@ -6,12 +6,12 @@
 
 | | |
 |---|---|
-| **Etapa actual** | Evolución E5. Monitorización avanzada ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)) |
-| **Versión** | 1.5.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación del propietario (M1–M9 de la 1.5.0) |
+| **Etapa actual** | Evolución E6. Integración y validación final ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)); hoja de ruta E0–E6 completa |
+| **Versión** | 1.6.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación manual guiada del propietario ([guía](docs/validation/VALIDACION-GUIADA-1.6.0.md)) |
 | **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Pendiente de validar** | Fase 10 (F1–F8), Etapas E1 a E3 (M1–M8 de cada una), E4 (M1–M10) y E5 (M1–M9) |
-| **Próximas etapas** | E6 integración |
+| **Pendiente de validar** | Fase 10 (F1–F8) y Etapas E1 a E6, todo reunido en la validación guiada |
+| **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
 |---|---|
@@ -1305,10 +1305,67 @@ Entorno de desarrollo (Ubuntu 24.04 en contenedor), 2026-11-14, con el código f
 ### Validación manual
 M1–M9 (Debian 13), en el apartado 8 del informe de `scripts/verify-evolution-1.5.0.sh`.
 
+## Evolución · Etapa 6 · Integración y validación final (1.6.0)
+
+Autorizada por el propietario el 2026-11-14 («Pasa a la siguiente etapa»).
+Alcance: apartados 5 (E6), 6.2 y 12 de
+[PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md).
+Decisiones: D-108 y D-109. H-10 no se incorpora (decisión del propietario).
+
+### Qué se ha hecho
+| Parte | Implementación | Demostración (pruebas) |
+|---|---|---|
+| Enlaces | Orden `tools_links` en la capa de la aplicación: para cada contenedor auditado, monitorización (muestra y alertas), copia más reciente y tareas, por id; solo lectura y sin registro | `links::tests` (5 pruebas); IPC `live_e6_audit_links_monitoring_and_backups_by_container_id` (Docker real) |
+| Identidad en las copias | `containerId` en configuración y bases de datos, `usedByIds` en volúmenes; las anteriores (o un contenedor recreado) por nombre, y así se indica | IPC `live_e6_…` (manifiesto con el id; recreado → «por nombre») |
+| Interfaz | Tabla «Contenedores en las demás herramientas» en la auditoría; «Ver en Monitorización» (detalle por id); «Preparar una copia» (selección que se revisa); 8 idiomas | `AuditView.test.tsx`, `BackupView.test.tsx`, `MonitorView.test.tsx` |
+| Validación guiada | `docs/validation/VALIDACION-GUIADA-1.6.0.md`: F1–F8 y E1–E6 en un solo recorrido, con hoja de resultados | — (manual) |
+| Documentación final | Plan con el cierre de la hoja de ruta (§13), DECISIONS, CHANGELOG, USER_GUIDE, README, ARCHITECTURE, SECURITY_CHECKLIST | — |
+
+### Verificación (`scripts/verify-evolution-1.6.0.sh`)
+Entorno de desarrollo (Ubuntu 24.04 en contenedor), 2026-11-14, con el código final:
+
+| Daemon | Opciones | Resultado |
+|---|---|---|
+| Docker 29.9.2 (API 1.56) | `--deb --net --ssh-lab` | **145 correctas, 0 fallos**, 4 omitidas, 1 aviso (root en desarrollo) |
+| Docker 26.1.3 (API 1.45) | — | **110 correctas, 0 fallos**, 5 omitidas, 1 aviso |
+| Docker 24.0.7 (API 1.43) | — | **110 correctas, 0 fallos**, 5 omitidas, 1 aviso |
+| Docker 29.9.2 | paquete compatible (Debian 12+/Ubuntu 22.04+) | Correcto (glibc ≥ 2.34) |
+
+- **Criterio de aceptación de la E6** (IPC `live_e6_…`, en los tres daemons):
+  - la auditoría, la monitorización y una copia reconocen el mismo contenedor por su id completo;
+  - el manifiesto guarda ese id;
+  - la tarea que lo incluye aparece;
+  - otro contenedor sale «sin copia»;
+  - al recrearlo, la copia solo coincide por nombre;
+  - consultar los enlaces no añade entradas al panel de actividad.
+- **Regresión de la E5** con el código final: igual que `docker stats` (Docker 29, 99,5 % frente a 99,55 % y 724 KiB frente a 724 KiB; Docker 26 y 24, igual de cerca). Consumo dentro del límite: 5,5 %, 5,2 % y 5,8 % de una CPU; 6 MiB; por SSH, 7,4 %.
+- Compose 2.26.1 correcto con los tres daemons. Sin contenedores, volúmenes ni redes de prueba restantes.
+- Pruebas de Rust deterministas: 737 superadas, 0 fallidas, más las de Docker real, IPC y SSH. Vitest: 46 archivos y 423 pruebas. `fmt`, `clippy -D warnings`, `tsc`, ESLint (sin avisos nuevos), `cargo deny` y `npm audit`: correctos.
+- Instalación limpia de los `.deb` 1.6.0 en Ubuntu 24.04 (normal) y 22.04 (compatible): `install.sh` elige el paquete, instala, la aplicación arranca con un usuario normal y se desinstala: 0 fallos.
+- **Revisión visual** en la aplicación real (Xvfb, Docker 29, tres contenedores de prueba):
+  - auditoría con la tabla de enlaces;
+  - «Preparar una copia» con su selección y la copia hecha desde ahí (el manifiesto lleva el mismo id que `docker inspect`);
+  - la tabla con la copia «por id» y la alerta de CPU activa;
+  - «Ver en Monitorización» con el detalle del contenedor;
+  - el contenedor recreado: la copia «por nombre», y el informe anterior dice que el id antiguo ya no está en la muestra.
+  
+  Se corrigió una cosa: la tabla solo se consultaba al terminar la auditoría y no mostraba una alerta que saltó después; ahora se actualiza cada 15 s.
+
+### Limitaciones
+- **Sentido de los enlaces**: solo de la auditoría a las otras dos herramientas, como pide el plan. Los servicios de Compose y las imágenes no tienen fila (no se monitorizan ni se copian como tales).
+- **Copias anteriores a la 1.6.0**: no tienen el id del contenedor; se reconocen por nombre y la interfaz lo indica.
+- **Carpetas de copias**: se miran la elegida y las de las tareas del servidor. Una carpeta que no está montada (un disco externo) no cuenta.
+- **Volúmenes de las tareas**: sin conexión con Docker no se sabe qué volúmenes monta cada contenedor, y una tarea que solo copia un volumen no aparece.
+- Debian 12 y 13 sin probar aquí.
+
+### Validación manual
+La validación manual guiada ([docs/validation/VALIDACION-GUIADA-1.6.0.md](docs/validation/VALIDACION-GUIADA-1.6.0.md)) reúne todo lo pendiente. Lo nuevo de la E6 está en su apartado 9 (E6-M1–M8).
+
 ## Próximos pasos
 
-1. El propietario ejecuta `bash scripts/verify-evolution-1.5.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.5.0-report.txt`. Si el veredicto es «parte automática superada», realiza M1–M9 de la 1.5.0 y, si no los ha hecho aún, los de la 1.1.0 a la 1.4.0 y F1–F8.
-2. Con su validación, las Etapas 1 a 5 quedan completadas y se puede autorizar la Etapa 6 (integración, 1.6.0).
+1. El propietario ejecuta `bash scripts/verify-evolution-1.6.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.6.0-report.txt`.
+2. Si el veredicto es «parte automática superada», sigue la validación manual guiada ([docs/validation/VALIDACION-GUIADA-1.6.0.md](docs/validation/VALIDACION-GUIADA-1.6.0.md)) y envía su hoja de resultados. Con ella quedan validadas la Fase 10 y las Etapas 1 a 6.
+3. La hoja de ruta E0–E6 queda cerrada. Cualquier ampliación (H-10 u otras candidatas) necesita una nueva autorización del propietario.
 
 ## Decisiones pendientes del propietario
 - Licencia definitiva (provisional: GPL-3.0-or-later, D-016).

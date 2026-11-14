@@ -147,10 +147,9 @@ impl Engine {
     }
 
     /// Lista de contenedores sin registrarla (muestreo de la monitorización,
-    /// D-102): una lectura cada pocos segundos llenaría el panel de actividad.
-    pub(crate) async fn list_containers_silent(
-        &self,
-    ) -> Result<Vec<ContainerSummary>, EngineError> {
+    /// D-102, y enlaces entre herramientas, D-108): son lecturas repetidas que
+    /// llenarían el panel de actividad.
+    pub async fn list_containers_silent(&self) -> Result<Vec<ContainerSummary>, EngineError> {
         let opts = ListContainersOptions {
             all: true,
             ..Default::default()

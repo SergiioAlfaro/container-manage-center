@@ -26,6 +26,8 @@ import type { MonitorLive } from "./bindings/MonitorLive";
 import type { MonitorMinute } from "./bindings/MonitorMinute";
 import type { MonitorSettings } from "./bindings/MonitorSettings";
 import type { MonitorStatus } from "./bindings/MonitorStatus";
+import type { LinkTarget } from "./bindings/LinkTarget";
+import type { ToolLinks } from "./bindings/ToolLinks";
 import type { UpdateCheck } from "./bindings/UpdateCheck";
 import type { UpdateOutcome } from "./bindings/UpdateOutcome";
 import type { ActivityEvent } from "./bindings/ActivityEvent";
@@ -307,6 +309,8 @@ export function dockerApi(server: string) {
     /** Registros por minuto del disco (hasta 168 h), solo con los contenedores pedidos. */
     monitorMinutes: (hours: number, containers: string[]) => call<MonitorMinute[]>("monitor_minutes", { hours, containers }),
     monitorAlerts: () => call<Alert[]>("monitor_alerts"),
+    /** E6: monitorización, copia y tareas de cada contenedor (por id). Solo lee. */
+    toolsLinks: (targets: LinkTarget[]) => call<ToolLinks[]>("tools_links", { targets }),
   };
 }
 
