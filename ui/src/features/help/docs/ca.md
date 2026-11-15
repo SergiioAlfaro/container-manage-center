@@ -40,7 +40,7 @@ No cal configurar res per començar: la connexió amb Docker és automàtica. A 
 - Si es desa l’historial d’operacions i esdeveniments entre sessions.
 - Un sòcol concret de Docker, si no vols la detecció automàtica.
 
-Tot es desa a l’instant a `~/.config/docker-control-center/config.toml`.
+Tot es desa a l’instant a `~/.config/container-manage-center/config.toml`.
 
 ## 5. Connexió amb Docker Engine {#connection}
 
@@ -137,7 +137,7 @@ En prémer el nom d’un contenidor s’obre el seu **detall**: Resum, Registres
 
 - **Xarxa**: mostra les xarxes, la IP, la MAC i els àlies. Docker no permet canviar els àlies ni la IP d’una connexió existent: cal desconnectar i tornar a connectar. Si és l’única xarxa del contenidor, s’avisa abans de desconnectar-la.
 - **Variables**: els valors que semblen secrets s’amaguen a la pantalla i no es desen mai al tauler d’activitat.
-- **Descripció**: es desa a l’etiqueta `dcc.description` del contenidor.
+- **Descripció**: es desa a l’etiqueta `cmc.description` del contenidor.
 
 **Revisar els canvis** compara la configuració actual amb la nova: què canvia (abans i després, element per element), què es manté i què cal recrear. No s’aplica res fins que ho confirmes.
 
@@ -145,7 +145,7 @@ En prémer el nom d’un contenidor s’obre el seu **detall**: Resum, Registres
 
 1. Comprova la imatge, els conflictes de nom i de ports amb altres contenidors i els motius que impedeixen recrear amb seguretat: contenidors de Compose o Swarm, creats amb `--rm`, en pausa o reiniciant-se. En aquests casos no deixa continuar.
 2. Mostra els riscos que has d’acceptar un per un: fitxers escrits fora dels volums (no passen al contenidor nou), muntatges que deixen d’estar muntats, contenidors que fan servir la xarxa d’aquest…
-3. En confirmar: atura el contenidor si està en marxa, li canvia el nom a `<nom>-dcc-backup-<data>` (còpia de seguretat), crea el nou amb **tota** la configuració original més els teus canvis, en connecta les xarxes i, si estava en marxa, l’inicia i comprova que continua funcionant uns segons.
+3. En confirmar: atura el contenidor si està en marxa, li canvia el nom a `<nom>-cmc-backup-<data>` (còpia de seguretat), crea el nou amb **tota** la configuració original més els teus canvis, en connecta les xarxes i, si estava en marxa, l’inicia i comprova que continua funcionant uns segons.
 4. Si alguna cosa falla, elimina el contenidor nou (sense tocar-ne els volums), torna el nom a l’original i el torna a iniciar.
 
 **No s’eliminen mai volums, carpetes ni imatges.** Els volums anònims es tornen a muntar amb el seu contingut. La còpia queda aturada a **General › Còpies de seguretat**, des d’on la pots **Restaurar** (el contenidor actual s’aparta, no s’elimina) o **Eliminar** quan ja no la necessitis. Totes les operacions queden al tauler d’activitat, sense valors sensibles.
@@ -260,7 +260,7 @@ Cada operació apareix al **tauler d’activitat**: hora, distintiu **API** (pet
 
 L’apartat **Esdeveniments i registres** mostra els esdeveniments de Docker en directe, els desats, la consulta a Docker d’un període (`docker events --since … --until …`; Docker només conserva els últims 256) i l’**historial d’operacions** d’aquesta i d’altres sessions.
 
-L’historial desa què s’ha fet, quan i amb quin resultat, però mai el cos de les peticions, l’ordre ni les sortides, perquè poden contenir contrasenyes. És a `~/.local/state/docker-control-center/`, només llegible pel teu usuari.
+L’historial desa què s’ha fet, quan i amb quin resultat, però mai el cos de les peticions, l’ordre ni les sortides, perquè poden contenir contrasenyes. És a `~/.local/state/container-manage-center/`, només llegible pel teu usuari.
 
 ## 23. Configuració, temes i idiomes {#settings}
 
@@ -345,13 +345,13 @@ Si `pkexec` no està instal·lat, l’aplicació no pot demanar permisos: el di�
 
 **Es perden les meves dades en desinstal·lar?** No. Es conserven la teva configuració, el teu historial i tot el de Docker.
 
-**On es desen la configuració i l’historial?** A `~/.config/docker-control-center/` i `~/.local/state/docker-control-center/`.
+**On es desen la configuració i l’historial?** A `~/.config/container-manage-center/` i `~/.local/state/container-manage-center/`.
 
 **Com canvio l’idioma?** A Configuració › Aparença › Idioma.
 
 ## 28. Legal {#legal}
 
-**Nom:** Container Manage Center (abreujat **CMC**). Fins a la versió 1.6.0 es deia «Docker Control Center»; el paquet `container-manage-center` substitueix l'antic `docker-control-center` i conserva la teva configuració, el teu historial, els teus servidors, les teves còpies i les teves tasques programades.
+**Nom:** Container Manage Center (abreujat **CMC**).
 
 **Llicència:** GNU General Public License, versió 3 o posterior (identificador SPDX `GPL-3.0-or-later`).
 

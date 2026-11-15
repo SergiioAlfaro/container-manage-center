@@ -6,7 +6,7 @@ con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
 13-11-2026), la **1.3.0** (Etapa 3, auditoría de seguridad), la **1.4.0**
 (Etapa 4, copias de seguridad), la **1.5.0** (Etapa 5, monitorización) y la
 **1.6.0** (Etapa 6, integración). Las líneas cambiadas llevan su evidencia
-entre corchetes (prueba automática que lo demuestra; `verify-evolution-1.6.0.sh`
+entre corchetes (prueba automática que lo demuestra; `verify-evolution-1.8.0.sh`
 las ejecuta todas):
 
 - ✅ cumple;
@@ -21,12 +21,12 @@ seguridad de Docker Engine y RustSec.
 
 - ✅ CSP sin `unsafe-eval` ni orígenes remotos en `script-src`. `connect-src`
   limitado a IPC.
-- ✅ `style-src 'unsafe-inline'` se mantiene **justificado** (DCC-SEC-15, R-17,
+- ✅ `style-src 'unsafe-inline'` se mantiene **justificado** (CMC-SEC-15, R-17,
   D-091): React usa atributos `style` para tamaños calculados; `script-src`
   sigue sin `unsafe-inline` ni `unsafe-eval`, así que no permite ejecutar código.
 - ✅ `freezePrototype: true` y `withGlobalTauri: false`.
 - ✅ Capacidades mínimas: solo `core:event:allow-listen`/`allow-unlisten`, el
-  diálogo de abrir, el portapapeles y el enlace del autor (**DCC-SEC-17**,
+  diálogo de abrir, el portapapeles y el enlace del autor (**CMC-SEC-17**,
   corregido en la 1.2.0, D-091) [`only_the_minimal_tauri_permissions_are_granted`,
   con la ACL real].
 - ✅ `opener` limitado a URL concretas. Ninguna capacidad de `shell` ni `fs`.
@@ -35,10 +35,10 @@ seguridad de Docker Engine y RustSec.
 - ✅ La interfaz no navega a orígenes remotos.
 - ✅ Enlaces de la salida de terminal (OSC 8) con un manejador propio: solo
   http(s), confirmación con la dirección completa y apertura validada en Rust
-  (**DCC-SEC-12**, 1.2.0) [`terminal_links_are_http_only`,
+  (**CMC-SEC-12**, 1.2.0) [`terminal_links_are_http_only`,
   `ui/src/shared/ui/terminalLinks.test.tsx`].
 - ✅ La página de una versión solo se abre desde `github.com` o la fuente de
-  actualizaciones (**DCC-SEC-16**, 1.2.0)
+  actualizaciones (**CMC-SEC-16**, 1.2.0)
   [`release_pages_only_from_github_or_the_own_source`, IPC `phase9_`].
 - ✅ ESLint con reglas de seguridad (`no-eval`, `no-new-func`, sin `innerHTML` ni
   `dangerouslySetInnerHTML`) en la verificación (1.2.0) [`npm run lint`].
@@ -51,10 +51,10 @@ seguridad de Docker Engine y RustSec.
   referencias de imagen).
 - ✅ Las órdenes de archivos limitan las rutas a lo necesario: solo YAML, sin
   carpetas ocultas ni del sistema, también tras los enlaces, en el equipo y en
-  los servidores (**DCC-SEC-06**, 1.2.0, D-089) [`compose::file::tests`,
+  los servidores (**CMC-SEC-06**, 1.2.0, D-089) [`compose::file::tests`,
   `compose_files_via_ipc_create_read_save_and_conflict`,
   `live_ssh::compose_runs_on_the_server_with_server_files`].
-- ✅ El guardado de Compose conserva los enlaces simbólicos (**DCC-SEC-13**,
+- ✅ El guardado de Compose conserva los enlaces simbólicos (**CMC-SEC-13**,
   1.2.0) [`symlinks_are_checked_by_their_real_target_and_kept_on_save`, prueba
   real en el servidor].
 - ✅ Las operaciones destructivas requieren confirmación (`confirmed`) y
@@ -64,8 +64,8 @@ seguridad de Docker Engine y RustSec.
 - ✅ Los bloques `unsafe` se limitan a llamadas a libc (`getuid`, PTY, `kill`,
   `ioctl`) con argumentos controlados.
 - ✅ La negativa a ejecutarse como root no se puede desactivar en el binario de
-  publicación (**DCC-SEC-11**, 1.2.0) [`root_tests`; con `--deb` como root, el
-  binario de publicación con `DCC_ALLOW_ROOT=1` termina con código 1].
+  publicación (**CMC-SEC-11**, 1.2.0) [`root_tests`; con `--deb` como root, el
+  binario de publicación con `CMC_ALLOW_ROOT=1` termina con código 1].
 - ✅ Hay límites de tamaño: archivos Compose de 1 MiB, respuestas de
   actualizaciones de 1 MiB, 5000 eventos, 10 000 líneas de registro, tamaño de
   terminal acotado.
@@ -76,13 +76,13 @@ seguridad de Docker Engine y RustSec.
 - ✅ Solo socket Unix: no hay `tcp://` sin TLS.
 - ✅ Aviso de montajes sensibles con rutas normalizadas, subrutas, enlaces
   simbólicos y sockets de *runtime*, aunque sean de solo lectura
-  (**DCC-SEC-01**, corregido en la 1.1.0, D-086) [`dcc-engine risk::`,
+  (**CMC-SEC-01**, corregido en la 1.1.0, D-086) [`cmc-engine risk::`,
   `spec::tests::mounts_are_validated`, `binds::tests::risks`,
   `live_e1_risks_and_secrets_via_ipc`].
 - ✅ Aviso de `privileged` (ahora crítico y con aceptación).
 - ✅ Aviso de capacidades peligrosas (`ALL`, `SYS_ADMIN`, `SYS_PTRACE`,
   `NET_ADMIN`, `DAC_OVERRIDE`, `NET_RAW`…) y de `network=host`
-  (**DCC-SEC-03**, corregido en la 1.1.0) [`risk::tests::capabilities`,
+  (**CMC-SEC-03**, corregido en la 1.1.0) [`risk::tests::capabilities`,
   `spec::tests::resources_restart_and_security_are_validated`].
 - ✅ Los riesgos altos y críticos exigen una aceptación explícita que el motor
   vuelve a comprobar en crear, editar y Compose `up` [`live_e1_risks_and_secrets_via_ipc`,
@@ -91,18 +91,18 @@ seguridad de Docker Engine y RustSec.
 - ✅ Sin falsos positivos en las configuraciones legítimas del plan (§9.5)
   [`legitimate_configurations_have_no_host_risks`,
   `compose_services_risks_without_false_positives`].
-- ✅ Aviso de puertos en todas las interfaces (**DCC-SEC-08**, 1.2.0, D-088)
+- ✅ Aviso de puertos en todas las interfaces (**CMC-SEC-08**, 1.2.0, D-088)
   [`risk::tests::namespaces_security_options_devices_and_ports`,
   `spec::tests::ports_are_validated`].
 - ✅ Análisis de riesgos de Compose antes de desplegar: montajes, capacidades,
   privilegiado y red del equipo (1.1.0); `pid`/`ipc`/`userns_mode`/`uts`/`cgroup`,
-  `security_opt`, `devices`, `cgroup_parent` y puertos (**DCC-SEC-04**, 1.2.0)
+  `security_opt`, `devices`, `cgroup_parent` y puertos (**CMC-SEC-04**, 1.2.0)
   [`compose_namespaces_security_devices_and_ports`, sin falsos positivos en
   `compose_services_risks_without_false_positives`].
 - ✅ La recreación segura conserva una copia y se puede deshacer (D-070).
 - ✅ El contexto de construcción no sigue enlaces y respeta `.dockerignore`.
 - ✅ Credenciales de registro: las de este equipo no se envían a servidores
-  remotos sin permiso explícito en cada operación (**DCC-SEC-07**, 1.2.0, D-090)
+  remotos sin permiso explícito en cada operación (**CMC-SEC-07**, 1.2.0, D-090)
   [`local_credentials_reach_remote_servers_only_with_consent`, real
   `live_ssh::local_registry_credentials_reach_a_server_only_with_consent`,
   `ImagesView.test.tsx`].
@@ -116,11 +116,11 @@ seguridad de Docker Engine y RustSec.
 - ✅ `--` antes del host. El usuario, el host, el puerto y el salto se validan.
 - ✅ Órdenes remotas entrecomilladas para POSIX, con una prueba de ida y vuelta
   por `sh`.
-- ✅ Requisito de shell POSIX documentado en INSTALL y la guía (DCC-SEC-18,
+- ✅ Requisito de shell POSIX documentado en INSTALL y la guía (CMC-SEC-18,
   1.2.0).
 - ✅ El servidor intermedio (ProxyJump) recibe las mismas opciones de seguridad,
   su huella se confirma en la aplicación, solo admite clave o agente y no
-  recibe el askpass (**DCC-SEC-02**, corregido en la 1.1.0, D-087). Antes de
+  recibe el askpass (**CMC-SEC-02**, corregido en la 1.1.0, D-087). Antes de
   corregirlo se reprodujo la fuga en el laboratorio (`Failed password` en el
   registro del intermedio) [`ssh::args::tests::proxy_command_roundtrips…`,
   `live_ssh::proxy_jump_checks_both_identities_and_never_shares_the_target_secret`].
@@ -163,8 +163,8 @@ seguridad de Docker Engine y RustSec.
 - ✅ Ocultación de secretos centralizada en el panel, sus eventos, el
   historial, la orden equivalente, los argumentos, las salidas, los errores
   IPC y los registros de la aplicación (`*_PWD`, `*_PASS`, `*_AUTH`, URL con
-  credenciales, claves privadas, `Authorization`) (**DCC-SEC-05**, corregido en
-  la 1.1.0, D-085) [`dcc-activity redact::`,
+  credenciales, claves privadas, `Authorization`) (**CMC-SEC-05**, corregido en
+  la 1.1.0, D-085) [`cmc-activity redact::`,
   `secrets_never_reach_records_events_or_history`, `error::tests`,
   `live_e1_risks_and_secrets_via_ipc`, `ui/src/shared/secrets.test.ts`].
 - ✅ Reglas de secretos idénticas en Rust y en la interfaz
@@ -179,10 +179,10 @@ seguridad de Docker Engine y RustSec.
 
 - ✅ `cargo audit`: 0 vulnerabilidades.
 - ✅ Crates transitivas sin mantenimiento con excepciones justificadas en
-  `deny.toml` (DCC-SEC-14, 1.2.0, D-092) [`cargo deny check`].
+  `deny.toml` (CMC-SEC-14, 1.2.0, D-092) [`cargo deny check`].
 - ✅ `cargo deny`: licencias y orígenes correctos (solo crates.io).
 - ✅ `npm audit --omit=dev`: 0. `npm audit` completo: 0 con vitest 5 y
-  `minimatch` 11.0.8 fijado (DCC-SEC-10, 1.2.0).
+  `minimatch` 11.0.8 fijado (CMC-SEC-10, 1.2.0).
 - ✅ Comprobación automática de dependencias en la verificación: `cargo deny`,
   `npm audit` y ESLint (R-08, 1.2.0).
 - ✅ Archivos de bloqueo versionados y usados con `--locked`.
@@ -195,8 +195,8 @@ seguridad de Docker Engine y RustSec.
 - ✅ `install.sh` usa `sudo` solo para `apt-get` y no ejecuta la aplicación como
   root.
 - ⚠️ `SHA256SUMS` verificado por `install.sh` (no instala si no coincide o falta
-  la entrada) ✅ desde la 1.2.0 [paso de `verify-evolution-1.2.0.sh --deb`];
-  **sin firmar**: la firma GPG necesita la clave del propietario (DCC-SEC-09,
+  la entrada) ✅ desde la 1.2.0 [paso de `verify-evolution-1.8.0.sh --deb`];
+  **sin firmar**: la firma GPG necesita la clave del propietario (CMC-SEC-09,
   decisión pendiente).
 - ✅ La aplicación no instala Docker ni cambia grupos ni permisos del sistema.
 - ✅ La documentación avisa de que el grupo `docker` equivale a root y
@@ -205,7 +205,7 @@ seguridad de Docker Engine y RustSec.
 ## Proceso para cada cambio
 
 - [ ] Pruebas unitarias o IPC de la validación nueva.
-- [ ] `bash scripts/verify-evolution-1.2.0.sh --deb` (o su sucesor) sin regresiones,
+- [ ] `bash scripts/verify-evolution-1.8.0.sh --deb` (o su sucesor) sin regresiones,
       con Docker 24, 26 y 29.
 - [ ] `cargo audit`, `cargo deny check`, `npm audit` y `npm run lint` sin
       hallazgos nuevos (las excepciones de `deny.toml`, revisadas).
@@ -310,22 +310,22 @@ seguridad de Docker Engine y RustSec.
   la 1.4.0].
 - ✅ Servidor desconocido: la orden se rechaza como las demás [IPC `live_e6_…`].
 
-## Identidad, licencia y distribución (1.7.0)
-- ✅ El cambio de nombre no mueve ni reescribe datos del usuario: rutas de
-  configuración y estado, almacén de contraseñas (atributo
-  `application=docker-control-center`), carpeta de copias y unidades de
-  systemd se mantienen (D-110) [`clean-install-test.sh` con `UPGRADE_FROM`:
-  sha256 de los datos antes y después].
-- ✅ `/usr/bin/docker-control-center` es un script de una línea, propiedad de
-  root, 0755, que hace `exec` de la ruta absoluta del programa nuevo con los
-  mismos argumentos: sin `PATH`, sin `eval` y sin shell intermedio
-  [`verify-evolution-1.7.0.sh --deb`].
-- ✅ El programa sigue negándose a arrancar como root también cuando se abre
-  por la ruta antigua (el script no cambia de usuario) [prueba de instalación].
-- ✅ La desinstalación desde la aplicación reconoce los dos nombres de paquete
-  y solo propone quitar dependencias que instaló la aplicación (la
-  transacción de cambio de nombre no se toma como desinstalación)
-  [`uninstall.rs`].
+## Identidad, licencia y distribución (1.7.0 y 1.8.0)
+- ✅ El paso de los datos de una versión anterior al nombre nuevo (D-113) no
+  pierde nada: las carpetas se renombran (atómico) o se copian, comprueban y
+  solo entonces se borran; si existen las dos, nada se sobrescribe; las
+  tareas programadas se activan con el nombre nuevo antes de quitar las
+  antiguas; las contraseñas del keyring se crean con los atributos nuevos
+  antes de borrar las antiguas, y las bloqueadas no piden desbloqueo al
+  arrancar [`cmc-store::migrate`, `systemd.rs`, `clean-install-test.sh` con
+  `UPGRADE_FROM`: sha256 de los datos antes y después].
+- ✅ Solo se tocan unidades de systemd con la marca de la aplicación; las
+  ajenas con el mismo prefijo no se tocan [`systemd.rs`].
+- ✅ El paquete ya no instala ningún archivo con el nombre anterior y no
+  arranca como root [`verify-evolution-1.8.0.sh --deb`, prueba de instalación].
+- ✅ La desinstalación desde la aplicación reconoce en el historial de APT el
+  paquete anterior y solo propone quitar dependencias que instaló la
+  aplicación [`uninstall.rs`].
 - ✅ Ninguna licencia de las dependencias distribuidas queda pendiente,
   potencialmente incompatible o indeterminada; `--check` impide publicar si
   aparece alguna (D-112) [`third-party-licenses.py --check`, `cargo deny`].

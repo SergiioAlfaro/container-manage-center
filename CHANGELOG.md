@@ -1,5 +1,12 @@
 # Cambios
 
+## 1.8.0 — 2026-11-15 (fin del nombre anterior)
+- **El nombre anterior desaparece** (D-113): ni la aplicación, ni el paquete, ni la ayuda, ni los datos usan ya *Docker Control Center*. Carpetas `~/.config/container-manage-center` y `~/.local/state/container-manage-center`, copias en `container-manage-center-copias`, tareas programadas `cmc-backup-*`, identificador `org.containermanagecenter.app`; internamente, crates `cmc-*`, variables `CMC_*` y etiquetas `cmc.*`.
+- **Tus datos pasan solos al nombre nuevo, sin perder nada**: configuración, servidores, historial, monitorización, copias, tareas programadas (activadas o no, como estaban) y contraseñas del llavero. Renombrado atómico o copia comprobada; nada se sobrescribe; repetible. `install.sh` lo hace al instalar (`container-manage-center --migrate`); si no, al abrir la aplicación. Guía: `docs/MIGRATION-CMC.md`.
+- El paquete ya no instala `/usr/bin/docker-control-center`; sigue sustituyendo al paquete anterior.
+- Los contenedores creados con versiones anteriores no se tocan: su descripción y los contenedores apartados al editar se siguen reconociendo.
+- **Verificación**: `scripts/verify-evolution-1.8.0.sh` (toda la regresión; sustituye a los scripts de verificación de versiones anteriores, que siguen en el historial de Git) y prueba de actualización desde la 1.6.0 y la 1.7.0 con datos de usuario.
+
 ## 1.7.0 — 2026-11-15 (identidad Container Manage Center, licencia y copyright)
 - **Nuevo nombre: Container Manage Center (CMC)** (D-110). Antes, *Docker Control Center*. Cambian la ventana, el menú, las notificaciones, la ayuda y las traducciones, la documentación y el paquete; «Docker» se sigue usando solo para nombrar la tecnología. Mismas funciones, mismo diseño y mismo color morado.
 - **Actualización sin perder nada**: el paquete `container-manage-center` sustituye a `docker-control-center` en una sola operación de apt (`Conflicts`/`Replaces`/`Provides`), sin dos lanzadores. Configuración, historial, servidores, contraseñas, copias y tareas programadas se quedan donde estaban: los identificadores internos no cambian, así que no hay que mover datos. `/usr/bin/docker-control-center` sigue funcionando (abre el programa nuevo), y con él las copias programadas antes. Guía: `docs/MIGRATION-CMC.md`.

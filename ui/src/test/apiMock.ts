@@ -123,10 +123,10 @@ export function updateCheck(over: Partial<UpdateCheck> = {}): UpdateCheck {
     current: "0.9.0",
     latest: "0.9.3",
     newer: true,
-    url: "https://github.com/mi-org/dcc/releases/tag/v0.9.3",
+    url: "https://github.com/mi-org/cmc/releases/tag/v0.9.3",
     notes: "Correcciones de errores",
     published: "2026-12-01T10:00:00Z",
-    checkedUrl: "https://api.github.com/repos/mi-org/dcc/releases/latest",
+    checkedUrl: "https://api.github.com/repos/mi-org/cmc/releases/latest",
     checkedAt: "2026-12-02T09:00:00Z",
     ...over,
   };
@@ -143,8 +143,8 @@ export const SYSTEM_INFO: SystemInfo = {
   webkitGtk: "2.50.1",
   desktop: "GNOME",
   sessionType: "wayland",
-  configPath: "/home/u/.config/docker-control-center/config.toml",
-  stateDir: "/home/u/.local/state/docker-control-center",
+  configPath: "/home/u/.config/container-manage-center/config.toml",
+  stateDir: "/home/u/.local/state/container-manage-center",
 };
 
 // Copia literal de DEFAULT_CONFIG: importar app/store crearía un ciclo con este doble.
@@ -742,10 +742,10 @@ export function componentsReport(over: Partial<ComponentsReport> = {}): Componen
       { kind: "compose", packages: ["docker-compose 2.26.1-4"], binary: "/usr/bin/docker-compose" },
     ],
     userData: [
-      { kind: "config", path: "/home/u/.config/docker-control-center", exists: true, bytes: 2048 },
-      { kind: "state", path: "/home/u/.local/state/docker-control-center", exists: true, bytes: 1_048_576 },
-      { kind: "webData", path: "/home/u/.local/share/org.dockercontrolcenter.app", exists: false, bytes: 0 },
-      { kind: "webCache", path: "/home/u/.cache/org.dockercontrolcenter.app", exists: true, bytes: 4096 },
+      { kind: "config", path: "/home/u/.config/container-manage-center", exists: true, bytes: 2048 },
+      { kind: "state", path: "/home/u/.local/state/container-manage-center", exists: true, bytes: 1_048_576 },
+      { kind: "webData", path: "/home/u/.local/share/org.containermanagecenter.app", exists: false, bytes: 0 },
+      { kind: "webCache", path: "/home/u/.cache/org.containermanagecenter.app", exists: true, bytes: 4096 },
     ],
     history: "found",
     simulation: { command: "apt-get -s remove --auto-remove container-manage-center", removes: ["container-manage-center", "libjavascriptcoregtk-4.1-0", "libwebkit2gtk-4.1-0"], output: "NOTE: This is only a simulation!\nRemv container-manage-center [0.9.1]\n" },
@@ -848,7 +848,7 @@ export function editPlanOf(id: string, request: EditRequest, base: EditableConfi
       .map(({ i }) => ({ code: "risk.credentials", level: "high" as const, field: `mounts.${i}.source`, key: "risk.credentials:/etc", params: { level: "high", path: "/etc", readOnly: "true" } })),
     notices: [],
     willStop: needsRecreate && base.status === "running",
-    backupName: needsRecreate ? `${base.current.name}-dcc-backup-20261111-120000` : null,
+    backupName: needsRecreate ? `${base.current.name}-cmc-backup-20261111-120000` : null,
     imageRef: needsRecreate ? base.image : null,
     equivalent: pending.map((p) => (p.kind === "direct" ? `docker update ${base.current.name}` : `docker create --name ${request.name}`)),
     createBody: needsRecreate ? "{}" : null,
@@ -954,7 +954,7 @@ export const api = {
   serverForgetSecret: vi.fn(async (_id: string) => 1),
   serverDiagnose: vi.fn(async (id: string): Promise<ServerDiagnosis> => ({ server: localServer({ id }), report: testReportOk(), recentErrors: [] })),
   serversOverview: vi.fn(async (): Promise<ServerOverview[]> => [{ server: localServer(), overview, error: null, updatedAt: "2026-11-11T10:00:00Z" }]),
-  appInfo: vi.fn(async () => ({ name: "Container Manage Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
+  appInfo: vi.fn(async () => ({ name: "Container Manage Center", version: "0.2.0", configPath: "/home/u/.config/container-manage-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
   configSet: vi.fn(async (c: typeof DEFAULT_CONFIG) => c),
   activityList: vi.fn(async () => []),
@@ -1089,7 +1089,7 @@ export const api = {
   eventsJournalClear: vi.fn(async () => null),
   historyList: vi.fn(async (f: Partial<HistoryFilter> = {}): Promise<HistoryPage> => {
     const m = historyEntries.filter((h) => (!f.statuses?.length || f.statuses.includes(h.status)) && (!f.categories?.length || f.categories.includes(h.category)));
-    return { entries: m, total: m.length, stored: historyEntries.length, persistent: true, sessionStart: SESSION_START, location: "/home/u/.local/state/docker-control-center" };
+    return { entries: m, total: m.length, stored: historyEntries.length, persistent: true, sessionStart: SESSION_START, location: "/home/u/.local/state/container-manage-center" };
   }),
   historyClear: vi.fn(async () => null),
   updatesCheck: vi.fn(async (_source?: string): Promise<UpdateCheck> => updateCheck()),
@@ -1110,11 +1110,11 @@ export const api = {
   backupJobDelete: vi.fn(async (_id: string) => null),
   backupTimerPreview: vi.fn(
     async (id: string): Promise<BackupTimerPreview> => ({
-      servicePath: `/home/u/.config/systemd/user/dcc-backup-${id}.service`,
-      serviceText: `# dcc-managed-backup-job: ${id}\n[Service]\nExecStart="/usr/bin/container-manage-center" --run-backup ${id}\n`,
-      timerPath: `/home/u/.config/systemd/user/dcc-backup-${id}.timer`,
-      timerText: `# dcc-managed-backup-job: ${id}\n[Timer]\nOnCalendar=*-*-* 03:00:00\nPersistent=true\n`,
-      commands: ["systemctl --user daemon-reload", `systemctl --user enable --now dcc-backup-${id}.timer`],
+      servicePath: `/home/u/.config/systemd/user/cmc-backup-${id}.service`,
+      serviceText: `# cmc-managed-backup-job: ${id}\n[Service]\nExecStart="/usr/bin/container-manage-center" --run-backup ${id}\n`,
+      timerPath: `/home/u/.config/systemd/user/cmc-backup-${id}.timer`,
+      timerText: `# cmc-managed-backup-job: ${id}\n[Timer]\nOnCalendar=*-*-* 03:00:00\nPersistent=true\n`,
+      commands: ["systemctl --user daemon-reload", `systemctl --user enable --now cmc-backup-${id}.timer`],
     }),
   ),
   backupTimerInstall: vi.fn(async (id: string): Promise<BackupJobView> => ({ job: { ...backupJob(), id }, timer: timerStatus({ installed: true, unitFileState: "enabled", activeState: "active", nextRun: "Sun 2026-11-15 03:00:00 CET" }) })),
@@ -1201,7 +1201,7 @@ export function backupEntry(over: Partial<BackupEntry> = {}): BackupEntry {
   const id = over.id ?? "20261114T030000Z-a1b2c3";
   return {
     id,
-    path: `/home/u/Copias/docker-control-center-copias/local/${id}`,
+    path: `/home/u/Copias/container-manage-center-copias/local/${id}`,
     state: "complete",
     size: 3_145_728,
     manifest: {

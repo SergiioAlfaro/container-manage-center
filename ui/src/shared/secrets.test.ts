@@ -3,8 +3,8 @@
 import { describe, expect, it } from "vitest";
 import { hasCredentials, isSecretEntry, isSecretName } from "./secrets";
 
-// Mismas tablas que `crates/dcc-activity/src/redact.rs` (valores ficticios).
-describe("Secretos (E1, DCC-SEC-05)", () => {
+// Mismas tablas que `crates/cmc-activity/src/redact.rs` (valores ficticios).
+describe("Secretos (E1, CMC-SEC-05)", () => {
   it("nombres secretos exigidos", () => {
     for (const n of ["MYSQL_PWD", "DB_PASS", "PGPASS", "REDIS_AUTH", "SMTP_PASS", "MYSQL_ROOT_PASSWORD", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY", "SSH_PRIVATE_KEY", "API_KEY", "SENTRY_DSN", "db.password", "jwt_secret"]) {
       expect(isSecretName(n), n).toBe(true);

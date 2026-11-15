@@ -30,7 +30,7 @@ En `/usr/share/doc/container-manage-center/`:
 | `COPYRIGHT.md` | Titularidad y año |
 | `THIRD_PARTY_NOTICES.md` | **Licencias y avisos completos de todos los componentes de terceros incluidos** |
 | `DISTRIBUTION_COMPLIANCE.md` | Este documento |
-| `MIGRATION.md` | Paso desde *Docker Control Center* |
+| `MIGRATION.md` | Actualizar desde una versión anterior |
 | `README.md`, `INSTALL.md`, `USER_GUIDE.md` | Documentación |
 
 Además, la aplicación muestra la licencia, el copyright y la ruta de los
@@ -87,7 +87,7 @@ generan las suyas al vuelo, fuera del árbol del proyecto.
 
 ## 6. Historial
 
-Hasta la 1.6.0 (*Docker Control Center*), el paquete incluía
+Hasta la 1.6.0, el paquete incluía
 `THIRD-PARTY.md`, que solo era una **tabla** de componentes y licencias, sin
 los textos de licencia ni los avisos de copyright. Eso no cumplía del todo la
 obligación de conservar los avisos (MIT, Apache-2.0, BSD…). Desde la 1.7.0 el

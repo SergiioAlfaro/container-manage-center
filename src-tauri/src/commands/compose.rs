@@ -2,14 +2,14 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 7: Docker Compose (CLI oficial sin shell, D-053).
 
-use dcc_engine::cli::{OutputLine, RunEnd};
-use dcc_engine::compose::file as cfile;
-use dcc_engine::compose::ops::action_command;
-use dcc_engine::compose::project::valid_project_name;
-use dcc_engine::{
+use cmc_engine::cli::{OutputLine, RunEnd};
+use cmc_engine::compose::file as cfile;
+use cmc_engine::compose::ops::action_command;
+use cmc_engine::compose::project::valid_project_name;
+use cmc_engine::{
     ComposeAction, ComposeConfig, ComposeFile, ComposeProject, EngineError, ProjectRef,
 };
-use dcc_store::SavedProject;
+use cmc_store::SavedProject;
 use serde::{Deserialize, Serialize};
 use tauri::ipc::Channel;
 use tauri::State;
@@ -102,7 +102,7 @@ pub struct ComposePreview {
     pub command: String,
     /// Riesgos para el equipo de los servicios que arrancaría `up` (D-086).
     /// Los altos y críticos se aceptan con su `key` al ejecutar.
-    pub risks: Vec<dcc_engine::risk::Risk>,
+    pub risks: Vec<cmc_engine::risk::Risk>,
 }
 
 /// Comando exacto de una acción, sin ejecutarla. Valida la entrada.
@@ -150,7 +150,7 @@ pub enum ComposeEvent {
     End { closed: RunClosed },
 }
 
-fn closed(r: Result<dcc_engine::cli::StreamedRun, EngineError>) -> RunClosed {
+fn closed(r: Result<cmc_engine::cli::StreamedRun, EngineError>) -> RunClosed {
     match r {
         Ok(run) => RunClosed {
             end: Some(run.end),
@@ -198,7 +198,7 @@ pub async fn compose_run_open(
     // recalculan aquí, no se confía en lo que diga la interfaz.
     let risks = engine.compose_up_risks(&cli, &project, &action).await?;
     let missing_risks: Vec<_> =
-        dcc_engine::risk::unaccepted(&risks, accepted_risks.as_deref().unwrap_or_default())
+        cmc_engine::risk::unaccepted(&risks, accepted_risks.as_deref().unwrap_or_default())
             .into_iter()
             .cloned()
             .collect();
@@ -350,7 +350,7 @@ pub fn compose_unregister(
 
 /// Los archivos están en el servidor del proyecto: en el equipo local se leen
 /// del disco; en un servidor remoto, del servidor por su sesión SSH (0.10.0).
-async fn remote_engine(state: &AppState, server: &str) -> CmdResult<Option<dcc_engine::Engine>> {
+async fn remote_engine(state: &AppState, server: &str) -> CmdResult<Option<cmc_engine::Engine>> {
     let mgr = state.server(server)?;
     if !mgr.is_remote() {
         return Ok(None);
@@ -365,7 +365,7 @@ pub async fn compose_file_read(
     path: String,
 ) -> CmdResult<ComposeFile> {
     if let Some(e) = remote_engine(&state, &server).await? {
-        return Ok(dcc_engine::compose::remote_file::read(&e, &path).await?);
+        return Ok(cmc_engine::compose::remote_file::read(&e, &path).await?);
     }
     Ok(
         tauri::async_runtime::spawn_blocking(move || cfile::read(&path))
@@ -384,7 +384,7 @@ pub async fn compose_file_save(
     version: String,
 ) -> CmdResult<ComposeFile> {
     if let Some(e) = remote_engine(&state, &server).await? {
-        return Ok(dcc_engine::compose::remote_file::save(&e, &path, &content, &version).await?);
+        return Ok(cmc_engine::compose::remote_file::save(&e, &path, &content, &version).await?);
     }
     Ok(
         tauri::async_runtime::spawn_blocking(move || cfile::save(&path, &content, &version))
@@ -402,7 +402,7 @@ pub async fn compose_file_create(
     content: String,
 ) -> CmdResult<ComposeFile> {
     if let Some(e) = remote_engine(&state, &server).await? {
-        return Ok(dcc_engine::compose::remote_file::create(&e, &dir, &content).await?);
+        return Ok(cmc_engine::compose::remote_file::create(&e, &dir, &content).await?);
     }
     Ok(
         tauri::async_runtime::spawn_blocking(move || cfile::create(&dir, &content))
@@ -422,7 +422,7 @@ pub async fn compose_find_file(
         return Ok(None);
     }
     if let Some(e) = remote_engine(&state, &server).await? {
-        return Ok(dcc_engine::compose::remote_file::existing_default(&e, &dir).await?);
+        return Ok(cmc_engine::compose::remote_file::existing_default(&e, &dir).await?);
     }
     Ok(cfile::existing_default(std::path::Path::new(&dir)).map(|p| p.display().to_string()))
 }

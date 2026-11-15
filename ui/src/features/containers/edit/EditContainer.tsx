@@ -313,7 +313,7 @@ function VolumesDatalist() {
   const api = useApi();
   const volumes = useQuery({ queryKey: ["volumesBrief"], queryFn: api.volumesBrief });
   return (
-    <datalist id="dcc-volumes">
+    <datalist id="cmc-volumes">
       {(volumes.data ?? []).map((v) => (
         <option key={v.name} value={v.name} />
       ))}

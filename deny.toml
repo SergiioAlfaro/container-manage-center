@@ -1,4 +1,4 @@
-# Política de dependencias de Rust (E2, R-08, DCC-SEC-14, D-092).
+# Política de dependencias de Rust (E2, R-08, CMC-SEC-14, D-092).
 # `cargo deny check` la aplica en la verificación (scripts/verify-evolution-*.sh).
 # Cada excepción lleva su justificación y se revisa en cada versión.
 

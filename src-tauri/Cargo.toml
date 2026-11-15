@@ -1,15 +1,15 @@
 [package]
-name = "docker-control-center"
+name = "container-manage-center"
 description = "Container Manage Center (CMC): administración gráfica de Docker Engine para Linux"
 version.workspace = true
 edition.workspace = true
 publish = false
 license.workspace = true
 rust-version.workspace = true
-default-run = "docker-control-center"
+default-run = "container-manage-center"
 
 [lib]
-name = "dcc_app"
+name = "cmc_app"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -31,9 +31,9 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 ts-rs.workspace = true
-dcc-activity.workspace = true
-dcc-store.workspace = true
-dcc-engine.workspace = true
+cmc-activity.workspace = true
+cmc-store.workspace = true
+cmc-engine.workspace = true
 # Comprobación de versiones nuevas (Fase 9, D-060): HTTPS con rustls + ring y
 # los certificados del sistema; respeta HTTPS_PROXY.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
@@ -52,7 +52,7 @@ zeroize = "1"
 
 [dev-dependencies]
 tempfile.workspace = true
-# Registro de imágenes de prueba compartido con dcc-engine (descarga real por IPC).
+# Registro de imágenes de prueba compartido con cmc-engine (descarga real por IPC).
 bollard = { version = "0.21", default-features = false, features = ["pipe"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 sha2 = "0.10"

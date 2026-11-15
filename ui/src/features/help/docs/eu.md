@@ -40,7 +40,7 @@ Ez da ezer konfiguratu behar hasteko: Dockerrekiko konexioa automatikoa da. **Ko
 - Eragiketen eta gertaeren historia saioen artean gordetzen den.
 - Dockerren socket zehatz bat, detekzio automatikoa nahi ez baduzu.
 
-Dena berehala gordetzen da `~/.config/docker-control-center/config.toml` fitxategian.
+Dena berehala gordetzen da `~/.config/container-manage-center/config.toml` fitxategian.
 
 ## 5. Docker Enginerekiko konexioa {#connection}
 
@@ -137,7 +137,7 @@ Edukiontzi baten izena sakatzean, haren **xehetasuna** irekitzen da: Laburpena, 
 
 - **Sarea**: sareak, IPa, MACa eta aliasak erakusten ditu. Dockerrek ez du uzten lehendik dagoen konexio baten aliasak edo IPa aldatzen: deskonektatu eta konektatu berriro behar da. Edukiontziaren sare bakarra bada, deskonektatu aurretik abisatzen da.
 - **Aldagaiak**: sekretuak diruditen balioak pantailan ezkutatzen dira eta ez dira inoiz jarduera-panelean gordetzen.
-- **Deskribapena**: edukiontziaren `dcc.description` etiketan gordetzen da.
+- **Deskribapena**: edukiontziaren `cmc.description` etiketan gordetzen da.
 
 **Berrikusi aldaketak** botoiak uneko konfigurazioa eta berria alderatzen ditu: zer aldatzen den (aurretik eta ondoren, elementuz elementu), zer mantentzen den eta zerk eskatzen duen birsortzea. Ez da ezer aplikatzen zuk berretsi arte.
 
@@ -145,7 +145,7 @@ Edukiontzi baten izena sakatzean, haren **xehetasuna** irekitzen da: Laburpena, 
 
 1. Irudia, beste edukiontzi batzuekiko izen- eta ataka-gatazkak eta segurtasunez birsortzea eragozten duten arrazoiak egiaztatzen ditu: Compose edo Swarm edukiontziak, `--rm` aukerarekin sortuak, pausatuta edo berrabiarazten daudenak. Kasu horietan ez du jarraitzen uzten.
 2. Banan-banan onartu behar dituzun arriskuak erakusten ditu: bolumenetatik kanpo idatzitako fitxategiak (ez dira edukiontzi berrira pasatzen), muntatuta egoteari uzten dioten muntaketak, honen sarea erabiltzen duten edukiontziak…
-3. Berrestean: edukiontzia gelditzen du martxan badago, izena `<izena>-dcc-backup-<data>` izatera aldatzen dio (babeskopia), berria sortzen du jatorrizko konfigurazio **osoarekin** gehi zure aldaketak, haren sareak konektatzen ditu eta, martxan bazegoen, abiarazi eta segundo batzuetan funtzionatzen jarraitzen duela egiaztatzen du.
+3. Berrestean: edukiontzia gelditzen du martxan badago, izena `<izena>-cmc-backup-<data>` izatera aldatzen dio (babeskopia), berria sortzen du jatorrizko konfigurazio **osoarekin** gehi zure aldaketak, haren sareak konektatzen ditu eta, martxan bazegoen, abiarazi eta segundo batzuetan funtzionatzen jarraitzen duela egiaztatzen du.
 4. Zerbaitek huts egiten badu, edukiontzi berria ezabatzen du (haren bolumenak ukitu gabe), jatorrizkoari bere izena itzultzen dio eta berriro abiarazten du.
 
 **Ez da inoiz bolumenik, karpetarik edo irudirik ezabatzen.** Bolumen anonimoak berriro muntatzen dira beren edukiarekin. Kopia geldituta geratzen da **Orokorra › Babeskopiak** atalean; hortik **Leheneratu** dezakezu (uneko edukiontzia baztertu egiten da, ez da ezabatzen) edo **Ezabatu**, behar ez duzunean. Eragiketa guztiak jarduera-panelean geratzen dira, balio sentikorrik gabe.
@@ -260,7 +260,7 @@ Eragiketa bakoitza **jarduera-panelean** agertzen da: ordua, **API** ikurra (Doc
 
 **Gertaerak eta erregistroak** atalak Dockerren gertaerak erakusten ditu zuzenean, gordetakoak, Dockerri epe bati buruz egindako kontsulta (`docker events --since … --until …`; Dockerrek azken 256ak bakarrik gordetzen ditu) eta saio honetako eta beste batzuetako **eragiketen historia**.
 
-Historiak zer egin zen, noiz eta zer emaitzarekin gordetzen du, baina inoiz ez eskaeren gorputza, komandoa edo irteerak, pasahitzak izan ditzaketelako. `~/.local/state/docker-control-center/` karpetan dago, eta zure erabiltzaileak bakarrik irakur dezake.
+Historiak zer egin zen, noiz eta zer emaitzarekin gordetzen du, baina inoiz ez eskaeren gorputza, komandoa edo irteerak, pasahitzak izan ditzaketelako. `~/.local/state/container-manage-center/` karpetan dago, eta zure erabiltzaileak bakarrik irakur dezake.
 
 ## 23. Konfigurazioa, gaiak eta hizkuntzak {#settings}
 
@@ -345,13 +345,13 @@ Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **koma
 
 **Nire datuak galtzen dira desinstalatzean?** Ez. Zure konfigurazioa, zure historia eta Dockerreko guztia mantentzen dira.
 
-**Non gordetzen dira konfigurazioa eta historia?** `~/.config/docker-control-center/` eta `~/.local/state/docker-control-center/` karpetetan.
+**Non gordetzen dira konfigurazioa eta historia?** `~/.config/container-manage-center/` eta `~/.local/state/container-manage-center/` karpetetan.
 
 **Nola aldatzen dut hizkuntza?** Konfigurazioa › Itxura › Hizkuntza atalean.
 
 ## 28. Lege-oharrak {#legal}
 
-**Izena:** Container Manage Center (laburtuta **CMC**). 1.6.0 bertsiora arte «Docker Control Center» zuen izena; `container-manage-center` paketeak `docker-control-center` zaharra ordezkatzen du, eta zure konfigurazioa, historia, zerbitzariak, kopiak eta programatutako lanak gordetzen ditu.
+**Izena:** Container Manage Center (laburtuta **CMC**).
 
 **Lizentzia:** GNU General Public License, 3. bertsioa edo ondorengoa (SPDX identifikatzailea: `GPL-3.0-or-later`).
 

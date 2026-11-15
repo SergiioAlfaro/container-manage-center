@@ -921,7 +921,7 @@
       "invalid": "Nom no vàlid: fes servir lletres, xifres, «_», «.» o «-», i comença per una lletra o una xifra.",
       "required": "El nom és obligatori.",
       "reserved": "{{value}} és una xarxa predefinida de Docker.",
-      "backupReserved": "Aquest nom està reservat per a les còpies de seguretat («-dcc-backup-», «-dcc-replaced-»).",
+      "backupReserved": "Aquest nom està reservat per a les còpies de seguretat («-cmc-backup-», «-cmc-replaced-»).",
       "inUse": "Ja hi ha un altre contenidor amb aquest nom."
     },
     "image": {
@@ -2253,7 +2253,7 @@
       "network": "Xarxa"
     },
     "h": {
-      "description": "Nota interna; es desa a l’etiqueta dcc.description del contenidor.",
+      "description": "Nota interna; es desa a l’etiqueta cmc.description del contenidor.",
       "lifecycle": "Aquestes accions s’apliquen a l’instant.",
       "backups": "Contenidors originals que es van conservar en recrear aquest. Estan aturats i comparteixen els mateixos volums.",
       "networks": "Connectar i desconnectar xarxes s’aplica a l’instant, sense recrear el contenidor.",

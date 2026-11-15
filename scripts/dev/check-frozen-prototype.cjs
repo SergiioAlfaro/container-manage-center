@@ -30,7 +30,7 @@ server.listen(0, "127.0.0.1", async () => {
   await page.addInitScript(() => Object.freeze(Object.prototype));
   await page.goto(url);
   await page.waitForTimeout(1500);
-  const booted = await page.evaluate(() => window.__dccBooted === true && document.querySelector("nav, aside") !== null);
+  const booted = await page.evaluate(() => window.__cmcBooted === true && document.querySelector("nav, aside") !== null);
   await browser.close();
   server.close();
   console.log(`interfaz arrancada: ${booted}`);

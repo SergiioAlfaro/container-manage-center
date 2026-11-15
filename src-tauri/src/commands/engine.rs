@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Conexión con Docker Engine e información del sistema.
 
-use dcc_engine::{
+use cmc_engine::{
     ComposeStatus, ConnectionState, Diagnosis, Endpoint, EngineSummary, SystemOverview,
 };
-use dcc_store::DockerConfig;
+use cmc_store::DockerConfig;
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
@@ -60,7 +60,7 @@ pub async fn engine_test(
 }
 
 fn docker_normalized(d: DockerConfig) -> DockerConfig {
-    dcc_store::AppConfig {
+    cmc_store::AppConfig {
         docker: d,
         ..Default::default()
     }

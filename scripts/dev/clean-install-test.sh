@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 #
-# Prueba de instalación limpia y de actualización (Fase 10; 1.7.0, D-110).
+# Prueba de instalación limpia y de actualización (Fase 10; 1.8.0, D-113).
 # SOLO para una máquina de pruebas desechable: necesita root, debootstrap y
 # acceso a archive.ubuntu.com, y monta /proc, /sys, /dev y el socket de Docker
 # dentro de sistemas Ubuntu recién creados. No se ejecuta en tu equipo de
@@ -10,10 +10,11 @@
 #
 # Uso: sudo bash scripts/dev/clean-install-test.sh RELEASE_DIR [noble|jammy ...]
 #   RELEASE_DIR contiene install.sh y los paquetes .deb (normal y compatible).
-#   UPGRADE_FROM=DIR (opcional): carpeta de una publicación anterior
-#   (docker-control-center 1.6.0, con su install.sh y sus .deb). Entonces,
-#   antes de instalar la nueva, se instala la anterior, se crean datos de
-#   usuario con ella y, tras actualizar, se comprueba que nada se pierde.
+#   UPGRADE_FROM=DIR (opcional): carpeta de una publicación anterior a la
+#   1.8.0 (con su install.sh y sus .deb). Entonces, antes de instalar la nueva,
+#   se instala la anterior, se crean datos de usuario en las rutas del nombre
+#   anterior y, tras actualizar, se comprueba que están en las rutas nuevas
+#   con el mismo contenido y que no queda nada con el nombre anterior.
 #
 # Para cada versión de Ubuntu: crea el sistema mínimo con debootstrap, crea un
 # usuario normal «tester» (sudo solo para apt-get), ejecuta install.sh como
@@ -21,7 +22,7 @@
 # instalados, arranca la aplicación con ese usuario en el DISPLAY indicado
 # (por defecto :99) y la desinstala con install.sh --uninstall, comprobando
 # que los datos del usuario se conservan. Deja el registro en
-# /tmp/dcc-clean-install-<versión>.log.
+# /tmp/cmc-clean-install-<versión>.log.
 set -u
 REL=${1:?Uso: $0 RELEASE_DIR [noble|jammy ...]}; shift
 REL=$(realpath "$REL")
@@ -35,21 +36,23 @@ RELEASES=("$@"); [ ${#RELEASES[@]} -gt 0 ] || RELEASES=(noble jammy)
 DISP=${DISPLAY:-:99}
 FAIL=0
 PKG=container-manage-center
-LEGACY=docker-control-center
+# Nombre anterior (hasta la 1.7.0): rutas y paquete de los datos de prueba.
+OLDN=docker-control-center
 pass() { echo "  [OK]    $*"; }
 bad()  { echo "  [FALLO] $*"; FAIL=$((FAIL+1)); }
 
-# Datos de usuario que no se pueden perder (rutas relativas a /home/tester).
-DATA=(.config/docker-control-center/servers.toml
-      .config/docker-control-center/known_hosts
-      .config/docker-control-center/copias.json
-      .config/docker-control-center/monitor.json
-      .local/state/docker-control-center/actividad.jsonl
-      .config/systemd/user/dcc-backup-job-0a1b2c3d.service
-      Copias/docker-control-center-copias/local/20261110T030000-0a1b/manifest.json)
+# Datos de usuario que no se pueden perder: rutas con el nombre anterior y
+# dónde deben quedar (relativas a /home/tester).
+OLDDATA=(".config/$OLDN/servers.toml" ".config/$OLDN/known_hosts" ".config/$OLDN/copias.json"
+         ".config/$OLDN/monitor.json" ".local/state/$OLDN/actividad.jsonl"
+         "Copias/$OLDN-copias/local/20261110T030000-0a1b/manifest.json")
+NEWDATA=(".config/$PKG/servers.toml" ".config/$PKG/known_hosts" ".config/$PKG/copias.json"
+         ".config/$PKG/monitor.json" ".local/state/$PKG/actividad.jsonl"
+         "Copias/$PKG-copias/local/20261110T030000-0a1b/manifest.json")
+OLDUNIT=.config/systemd/user/dcc-backup-job-0a1b2c3d.service
 
 for r in "${RELEASES[@]}"; do
-  D=$(mktemp -d "/tmp/dcc-clean-$r.XXXX"); LOG=/tmp/dcc-clean-install-$r.log
+  D=$(mktemp -d "/tmp/cmc-clean-$r.XXXX"); LOG=/tmp/cmc-clean-install-$r.log
   # mktemp crea la carpeta con 0700: sería la raíz del sistema y el usuario no podría entrar.
   chmod 755 "$D"
   echo "== Ubuntu $r en $D (registro: $LOG)${OLD:+ · actualización desde $(basename "$OLD")}"
@@ -74,95 +77,80 @@ for r in "${RELEASES[@]}"; do
   # ----------------------------------------------- Versión anterior y datos
   if [ -n "$OLD" ]; then
     mkdir -p "$D/home/tester/anterior"; cp "$OLD"/install.sh "$OLD"/*.deb "$D/home/tester/anterior/"; [ -f "$OLD/SHA256SUMS" ] && cp "$OLD/SHA256SUMS" "$D/home/tester/anterior/"; chroot "$D" chown -R tester: /home/tester/anterior
-    if as_tester "bash ~/anterior/install.sh --yes"; then pass "Instalada la versión anterior ($(chroot "$D" dpkg-query -W -f='${Package} ${Version}' $LEGACY 2>/dev/null))"; else bad "instalar la versión anterior"; fi
-    # La versión anterior crea su configuración al arrancar.
-    [ $X -eq 1 ] && as_tester "DISPLAY=$DISP timeout 15 $LEGACY"
-    as_tester 'mkdir -p ~/.config/docker-control-center ~/.local/state/docker-control-center ~/.config/systemd/user ~/Copias/docker-control-center-copias/local/20261110T030000-0a1b
-      printf "[[servers]]\nid = \"srv-prueba\"\nname = \"Servidor de prueba\"\n" > ~/.config/docker-control-center/servers.toml
-      printf "srv.example ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPrueba\n" > ~/.config/docker-control-center/known_hosts
-      printf "{\"version\":1,\"destination\":\"/home/tester/Copias\",\"jobs\":[]}\n" > ~/.config/docker-control-center/copias.json
-      printf "{\"intervalSecs\":5,\"servers\":[\"local\"]}\n" > ~/.config/docker-control-center/monitor.json
-      printf "{\"op\":\"prueba\"}\n" > ~/.local/state/docker-control-center/actividad.jsonl
-      printf "# dcc-managed-backup-job: job-0a1b2c3d\n[Service]\nExecStart=/usr/bin/docker-control-center --run-backup job-0a1b2c3d\n" > ~/.config/systemd/user/dcc-backup-job-0a1b2c3d.service
-      printf "{\"format\":1,\"id\":\"20261110T030000-0a1b\"}\n" > ~/Copias/docker-control-center-copias/local/20261110T030000-0a1b/manifest.json'
-    (cd "$D/home/tester" && sha256sum "${DATA[@]}") > "$D/tmp/datos.sha256" 2>>"$LOG" || bad "crear los datos de prueba"
+    if as_tester "bash ~/anterior/install.sh --yes"; then
+      pass "Instalada la versión anterior ($(chroot "$D" dpkg-query -W -f='${Package} ${Version} ' $OLDN $PKG 2>/dev/null))"
+    else
+      bad "instalar la versión anterior"
+    fi
+    as_tester "mkdir -p ~/.config/$OLDN ~/.local/state/$OLDN ~/.config/systemd/user ~/Copias/$OLDN-copias/local/20261110T030000-0a1b
+      printf '[[servers]]\nid = \"srv-prueba\"\nname = \"Servidor de prueba\"\n' > ~/.config/$OLDN/servers.toml
+      printf 'srv.example ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPrueba\n' > ~/.config/$OLDN/known_hosts
+      printf '{\"version\":1,\"destination\":\"/home/tester/Copias\",\"jobs\":[]}\n' > ~/.config/$OLDN/copias.json
+      printf '{\"intervalSecs\":5,\"servers\":[\"local\"]}\n' > ~/.config/$OLDN/monitor.json
+      printf '{\"op\":\"prueba\"}\n' > ~/.local/state/$OLDN/actividad.jsonl
+      printf '# dcc-managed-backup-job: job-0a1b2c3d\n[Service]\nExecStart=/usr/bin/$OLDN --run-backup job-0a1b2c3d\n' > ~/$OLDUNIT
+      printf '{\"format\":1,\"id\":\"20261110T030000-0a1b\"}\n' > ~/Copias/$OLDN-copias/local/20261110T030000-0a1b/manifest.json"
+    (cd "$D/home/tester" && sha256sum "${OLDDATA[@]}" | cut -d' ' -f1) > "$D/tmp/datos.sha256" 2>>"$LOG" || bad "crear los datos de prueba"
   fi
 
   # -------------------------------------------------------- Versión nueva
   mkdir -p "$D/home/tester/release"; cp "$REL"/install.sh "$REL"/*.deb "$D/home/tester/release/"; [ -f "$REL/SHA256SUMS" ] && cp "$REL/SHA256SUMS" "$D/home/tester/release/"; chroot "$D" chown -R tester: /home/tester/release
   if as_tester "bash ~/release/install.sh --yes"; then pass "install.sh como usuario normal"; else bad "install.sh"; fi
-  grep -E "Paquete elegido|apt quitará" "$LOG" | tail -2 | sed 's/^ */  /'
+  grep -E "Paquete elegido|apt quitará|Datos de versiones anteriores" "$LOG" | tail -3 | sed 's/^ */  /'
   V=$(chroot "$D" dpkg-query -W -f='${Version}' $PKG 2>/dev/null)
   [ -n "$V" ] && pass "Paquete instalado: $PKG $V" || bad "Paquete no instalado"
-  if chroot "$D" dpkg-query -W -f='${Status}' $LEGACY 2>/dev/null | grep -q "install ok installed"; then
-    bad "Sigue instalado el paquete anterior $LEGACY (instalación duplicada)"
+  if chroot "$D" dpkg-query -W -f='${Status}' $OLDN 2>/dev/null | grep -q "install ok installed"; then
+    bad "Sigue instalado el paquete $OLDN (instalación duplicada)"
   else
-    pass "Sin instalación duplicada: $LEGACY no está instalado"
+    pass "Sin instalación duplicada: $OLDN no está instalado"
   fi
-  for f in /usr/bin/$PKG /usr/bin/$LEGACY /usr/share/applications/$PKG.desktop /usr/share/icons/hicolor/256x256/apps/$PKG.png \
+  for f in /usr/bin/$PKG /usr/share/applications/$PKG.desktop /usr/share/icons/hicolor/256x256/apps/$PKG.png \
            /usr/share/doc/$PKG/copyright /usr/share/doc/$PKG/LICENSE /usr/share/doc/$PKG/THIRD_PARTY_NOTICES.md /usr/share/doc/$PKG/MIGRATION.md; do
     [ -e "$D$f" ] && pass "$f" || bad "falta $f"
   done
-  [ -x "$D/usr/bin/$LEGACY" ] && pass "/usr/bin/$LEGACY es ejecutable (copias programadas anteriores)" || bad "/usr/bin/$LEGACY no es ejecutable"
-  n=0; for f in "$D/usr/share/applications/$PKG.desktop" "$D/usr/share/applications/$LEGACY.desktop"; do [ -e "$f" ] && n=$((n+1)); done
-  [ "$n" -eq 1 ] && pass "Un solo lanzador en el menú" || bad "$n lanzadores en el menú"
+  left=""
+  for f in /usr/bin/$OLDN /usr/share/applications/$OLDN.desktop /usr/share/doc/$OLDN; do
+    [ -e "$D$f" ] && left="$left $f"
+  done
+  [ -z "$left" ] && pass "Nada instalado con el nombre anterior" || bad "Quedan archivos con el nombre anterior:$left"
   grep -q "^Name=Container Manage Center$" "$D/usr/share/applications/$PKG.desktop" && pass "El lanzador se llama «Container Manage Center»" || bad "Nombre del lanzador"
-  # El nombre anterior llama al programa nuevo (lo usan las unidades de systemd ya creadas).
-  out=$(chroot "$D" su - tester -c "$LEGACY --run-backup job-no-existe" 2>&1)
-  case "$out" in *"Container Manage Center"*) pass "«$LEGACY --run-backup» ejecuta Container Manage Center" ;; *) bad "«$LEGACY --run-backup»: $out" ;; esac
   if [ -n "$OLD" ]; then
-    if (cd "$D/home/tester" && sha256sum -c --quiet "$D/tmp/datos.sha256") >>"$LOG" 2>&1; then
-      pass "Datos del usuario intactos tras actualizar (${#DATA[@]} archivos: servidores, huellas SSH, copias, tareas, historial)"
+    # install.sh ya ha ejecutado «container-manage-center --migrate» con el usuario.
+    if (cd "$D/home/tester" && sha256sum "${NEWDATA[@]}" 2>>"$LOG" | cut -d' ' -f1 | diff -q - "$D/tmp/datos.sha256") >>"$LOG" 2>&1; then
+      pass "Datos del usuario en las rutas nuevas, con el mismo contenido (${#NEWDATA[@]} archivos: servidores, huellas SSH, copias, monitorización, historial)"
     else
-      bad "Datos del usuario cambiados o perdidos al actualizar"
+      bad "Datos del usuario cambiados o perdidos al pasarlos al nombre nuevo"
     fi
+    left=""
+    for f in .config/$OLDN .local/state/$OLDN Copias/$OLDN-copias $OLDUNIT; do
+      [ -e "$D/home/tester/$f" ] && left="$left ~/$f"
+    done
+    [ -z "$left" ] && pass "No queda ninguna carpeta ni unidad de systemd con el nombre anterior" || bad "Quedan con el nombre anterior:$left"
+    # Repetir la migración no hace nada.
+    as_tester "/usr/bin/$PKG --migrate" && pass "«$PKG --migrate» repetido: nada que hacer" || bad "«$PKG --migrate» repetido"
   fi
   if [ $X -eq 1 ]; then
     as_tester "DISPLAY=$DISP timeout 20 $PKG"; rc=$?
     # timeout devuelve 124 si la aplicación seguía en marcha a los 20 s.
     [ $rc -eq 124 ] && pass "La aplicación arranca con el usuario normal y sigue en marcha" || bad "La aplicación terminó (código $rc)"
     if [ -n "$OLD" ]; then
-      grep -q "srv-prueba" "$D/home/tester/.config/docker-control-center/servers.toml" && pass "Tras abrirla, los servidores siguen ahí" || bad "Servidores perdidos tras abrir la aplicación"
+      grep -q "srv-prueba" "$D/home/tester/.config/$PKG/servers.toml" && pass "Tras abrirla, los servidores siguen ahí" || bad "Servidores perdidos tras abrir la aplicación"
     fi
   fi
-  # Como root no arranca, tampoco por la ruta anterior (DCC-SEC-11).
-  out=$(chroot "$D" env DCC_ALLOW_ROOT=1 timeout 20 /usr/bin/$LEGACY 2>&1); rc=$?
-  if [ $rc -eq 1 ] && printf '%s' "$out" | grep -q "no debe ejecutarse como root"; then pass "Por la ruta anterior tampoco arranca como root"; else bad "Como root por /usr/bin/$LEGACY (código $rc): $out"; fi
-  if [ -n "$OLD" ]; then
-    # Vuelta atrás: apt cambia la versión nueva por la anterior, que encuentra los datos.
-    # El paquete anterior que sirve para la glibc de este sistema (el compatible en 22.04).
-    G=$(chroot "$D" ldd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+$')
-    OLDDEB=$(ls "$OLD"/"${LEGACY}"_*_amd64.deb | head -1)
-    if [ "$(printf '%s\n2.39\n' "$G" | sort -V | head -1)" != "2.39" ]; then OLDDEB=$(ls "$OLD"/"${LEGACY}"_*_amd64-compat-*.deb | head -1); fi
-    if as_tester "cd ~/anterior && sudo apt-get install -y -q --allow-downgrades ./$(basename "$OLDDEB")" \
-       && chroot "$D" dpkg-query -W -f='${Status}' $LEGACY 2>/dev/null | grep -q "install ok installed" \
-       && ! chroot "$D" dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed"; then
-      pass "Vuelta atrás a $(chroot "$D" dpkg-query -W -f='${Package} ${Version}' $LEGACY): apt quita $PKG y pone la anterior"
-    else
-      bad "Vuelta atrás a la versión anterior"
-    fi
-    if grep -q "srv-prueba" "$D/home/tester/.config/docker-control-center/servers.toml" && [ -f "$D/home/tester/.config/systemd/user/dcc-backup-job-0a1b2c3d.service" ]; then
-      pass "Tras volver atrás, los datos siguen donde estaban"
-    else
-      bad "Datos perdidos al volver atrás"
-    fi
-    if as_tester "bash ~/release/install.sh --yes" && chroot "$D" dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed"; then
-      pass "De nuevo a $PKG $V"
-    else
-      bad "Reinstalar $PKG tras volver atrás"
-    fi
-  fi
+  # Como root no arranca (CMC-SEC-11).
+  out=$(chroot "$D" env CMC_ALLOW_ROOT=1 timeout 20 /usr/bin/$PKG 2>&1); rc=$?
+  if [ $rc -eq 1 ] && printf '%s' "$out" | grep -q "no debe ejecutarse como root"; then pass "No arranca como root"; else bad "Como root (código $rc): $out"; fi
   if as_tester "bash ~/release/install.sh --uninstall --yes" \
      && ! chroot "$D" dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed" \
-     && [ ! -e "$D/usr/bin/$PKG" ] && [ ! -e "$D/usr/bin/$LEGACY" ] && [ ! -e "$D/usr/share/applications/$PKG.desktop" ]; then
+     && [ ! -e "$D/usr/bin/$PKG" ] && [ ! -e "$D/usr/share/applications/$PKG.desktop" ]; then
     pass "Desinstalación completa"
   else
     bad "Desinstalación"
   fi
   if [ -n "$OLD" ]; then
-    (cd "$D/home/tester" && ls "${DATA[@]}") >>"$LOG" 2>&1 && pass "Tras desinstalar, los datos del usuario se conservan" || bad "Datos del usuario borrados al desinstalar"
+    (cd "$D/home/tester" && ls "${NEWDATA[@]}") >>"$LOG" 2>&1 && pass "Tras desinstalar, los datos del usuario se conservan" || bad "Datos del usuario borrados al desinstalar"
   else
-    [ -d "$D/home/tester/.config/docker-control-center" ] && pass "Tras desinstalar, la configuración del usuario se conserva" || bad "Configuración borrada al desinstalar"
+    [ -d "$D/home/tester/.config/$PKG" ] && pass "Tras desinstalar, la configuración del usuario se conserva" || bad "Configuración borrada al desinstalar"
   fi
   cleanup
   rm -rf "$D"

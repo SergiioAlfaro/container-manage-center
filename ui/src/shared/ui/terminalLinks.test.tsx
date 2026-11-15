@@ -9,7 +9,7 @@ vi.mock("@/shared/ipc/client", async () => (await import("@/test/apiMock")).modu
 import { api } from "@/test/apiMock";
 import { linkAllowed, terminalLinkHandler, TerminalLinkPrompt, useLinkPrompt } from "./terminalLinks";
 
-describe("enlaces de las terminales (E2, DCC-SEC-12)", () => {
+describe("enlaces de las terminales (E2, CMC-SEC-12)", () => {
   it("solo http y https, sin credenciales ni caracteres de control", () => {
     for (const ok of ["https://example.com/a?b#c", "http://localhost:8080/"]) expect(linkAllowed(ok), ok).toBe(true);
     for (const bad of ["file:///etc/passwd", "javascript:alert(1)", "ssh://h", "https://u:p@example.com/", "https://a b", "https://x\n--flag", "HTTPS://example.com", `https://e.com/${"a".repeat(2050)}`]) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-use dcc_activity::OperationRecord;
+use cmc_activity::OperationRecord;
 use tauri::State;
 
 use crate::state::AppState;

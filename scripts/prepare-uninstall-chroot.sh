@@ -8,7 +8,7 @@
 #    para comprobar que nunca se ofrecen para quitar;
 #  - libglib2.0-0 instalada antes como dependencia automática (componente
 #    que ya existía);
-#  - el .deb de la aplicación copiado en /root/dcc.deb.
+#  - el .deb de la aplicación copiado en /root/cmc.deb.
 # Uso (como root, en una máquina de pruebas): prepare-uninstall-chroot.sh DIR paquete.deb
 set -euo pipefail
 dir=${1:?directorio del chroot}
@@ -30,5 +30,5 @@ done
 export DEBIAN_FRONTEND=noninteractive
 chroot "$dir" apt-get update -q
 chroot "$dir" apt-get install -y -q --no-install-recommends docker.io docker-compose-v2 libglib2.0-bin
-cp "$deb" "$dir/root/dcc.deb"
-echo "Listo: DCC_TEST_CHROOT=$dir DCC_TEST_DEB=/root/dcc.deb"
+cp "$deb" "$dir/root/cmc.deb"
+echo "Listo: CMC_TEST_CHROOT=$dir CMC_TEST_DEB=/root/cmc.deb"

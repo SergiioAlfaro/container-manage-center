@@ -64,7 +64,7 @@ export function PortsEditor({ ports, onChange, issues }: { ports: PortSpec[]; on
   );
 }
 
-/** Volúmenes y carpetas. Las sugerencias de volúmenes vienen de un `<datalist id="dcc-volumes">`. */
+/** Volúmenes y carpetas. Las sugerencias de volúmenes vienen de un `<datalist id="cmc-volumes">`. */
 export function MountsEditor({ mounts, onChange, issues }: { mounts: MountSpec[]; onChange: (v: MountSpec[]) => void; issues: SpecIssue[] }) {
   // En un servidor remoto la carpeta es del servidor: no hay selector local (0.10.0).
   const remote = useIsRemote();
@@ -100,7 +100,7 @@ export function MountsEditor({ mounts, onChange, issues }: { mounts: MountSpec[]
             >
               {(id, inv) =>
                 m.kind === "volume" ? (
-                  <TextInput id={id} invalid={inv} list="dcc-volumes" value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder={t("create.ph.anonymous")} />
+                  <TextInput id={id} invalid={inv} list="cmc-volumes" value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder={t("create.ph.anonymous")} />
                 ) : (
                   <div className="flex gap-1.5">
                     <TextInput id={id} invalid={inv} value={m.source} onChange={(e) => setM({ ...m, source: e.target.value })} placeholder={remote ? "/srv/datos" : "/home/usuario/datos"} />

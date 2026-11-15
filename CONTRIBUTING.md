@@ -50,9 +50,10 @@ sin encabezado.
 El producto se llama **Container Manage Center** (CMC). Usa «Docker» solo para
 nombrar la tecnología (Docker Engine, su API, Docker Compose, la CLI de
 Docker), nunca como parte del nombre del producto. Los identificadores
-internos que todavía llevan el nombre antiguo (`~/.config/docker-control-center`,
-`dcc-*`, `org.dockercontrolcenter.app`…) se mantienen a propósito (D-110): no
-los cambies sin una migración de datos revisada.
+internos usan el prefijo `cmc` (crates `cmc-*`, variables `CMC_*`, etiquetas
+`cmc.*`). Los del nombre anterior solo existen en los módulos `legacy` de
+`cmc-store` y `cmc-engine`, para pasar al nombre nuevo los datos de una
+versión anterior (D-113); no los uses para nada más.
 
 ## Antes de enviar un cambio
 

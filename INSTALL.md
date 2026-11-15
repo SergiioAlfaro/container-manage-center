@@ -5,11 +5,11 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 
 ## Opción A: paquete .deb (recomendada)
 
-> **Desde Docker Control Center (1.6.0 o anterior).** El paquete
-> `container-manage-center` sustituye a `docker-control-center` en la misma
-> instalación: no hace falta desinstalar nada antes, y se conservan la
-> configuración, el historial, los servidores, las contraseñas, las copias y
-> las tareas programadas. Detalles en [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
+> **Desde una versión anterior a la 1.8.0.** El paquete nuevo sustituye al
+> anterior en la misma instalación (no hace falta desinstalar nada antes) y
+> tus datos pasan a las carpetas nuevas sin perder nada: configuración,
+> historial, servidores, contraseñas, copias y tareas programadas. Detalles
+> en [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 
 Hay dos paquetes de la misma versión:
 
@@ -73,7 +73,7 @@ paquete, apt lo rechaza al instalar en vez de instalar algo que no arranca.
 ### Ejecutar
 
 La aplicación aparece en el menú como **Container Manage Center**; también se abre
-con `container-manage-center` (o con el nombre anterior, `docker-control-center`) o, desde el código fuente, con `bash scripts/run.sh`
+con `container-manage-center` o, desde el código fuente, con `bash scripts/run.sh`
 (abre la versión instalada o la compilación de `target/release`; `--build` la
 compila). Se ejecuta con tu usuario normal: **no la ejecutes con sudo** (se
 niega a arrancar como root; en el programa publicado no hay forma de
@@ -85,8 +85,8 @@ Con `bash scripts/install.sh --uninstall`, desde **Configuración › Desinstala
 y componentes** (muestra qué se puede quitar, la simulación de APT y la orden
 exacta; pide la contraseña de administrador solo para `apt-get remove`), o a
 mano con `sudo apt remove container-manage-center`. En todos los casos se
-conservan tu configuración y tus servidores (`~/.config/docker-control-center/`),
-el historial (`~/.local/state/docker-control-center/`) y las contraseñas
+conservan tu configuración y tus servidores (`~/.config/container-manage-center/`),
+el historial (`~/.local/state/container-manage-center/`) y las contraseñas
 recordadas (en el llavero del sistema); bórralos a mano si no los quieres.
 Docker, sus datos y Docker Compose no se tocan.
 
@@ -175,7 +175,7 @@ Socket personalizado**. "Probar conexión" comprueba una ruta sin guardarla.
 
 La aplicación funciona sin Docker Compose, pero el apartado **Docker Compose**
 lo necesita (si falta, el apartado explica cómo instalarlo) y
-`scripts/verify-phase-7.sh` lo exige. Se admite **Compose v2 o posterior**, como plugin
+la verificación (`scripts/verify-evolution-1.8.0.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
 (`docker compose`) o como binario independiente (`docker-compose` v2). Compose
 v1 (`docker-compose 1.x`) no se admite.
 
@@ -215,12 +215,12 @@ Desde **Servidores** se administran servidores Docker remotos por **SSH**, a la 
 Pertenecer al grupo `docker` del servidor equivale a tener acceso de **root** en él. Docker rootless, con su socket indicado en el perfil, es la alternativa más segura.
 
 ### Lo que la aplicación no hace en un servidor
-No instala Docker, no cambia permisos ni grupos, no modifica la configuración SSH, no abre puertos y no modifica `~/.ssh/known_hosts`. La identidad de cada servidor se confirma con su huella la primera vez y se guarda en `~/.config/docker-control-center/known_hosts` (0600).
+No instala Docker, no cambia permisos ni grupos, no modifica la configuración SSH, no abre puertos y no modifica `~/.ssh/known_hosts`. La identidad de cada servidor se confirma con su huella la primera vez y se guarda en `~/.config/container-manage-center/known_hosts` (0600).
 
 ### Archivos
-- `~/.config/docker-control-center/servers.toml`: perfiles (sin secretos, 0600).
-- `~/.config/docker-control-center/known_hosts`: identidades confirmadas.
-- `$XDG_RUNTIME_DIR/docker-control-center/ssh/`: sockets de control temporales (0700).
+- `~/.config/container-manage-center/servers.toml`: perfiles (sin secretos, 0600).
+- `~/.config/container-manage-center/known_hosts`: identidades confirmadas.
+- `$XDG_RUNTIME_DIR/container-manage-center/ssh/`: sockets de control temporales (0700).
 
 ## Diagnóstico de problemas
 
@@ -229,10 +229,10 @@ los pasos para resolverlo. También puedes diagnosticar desde una terminal con e
 mismo código que usa la aplicación (compilando desde el código fuente):
 
 ```bash
-cargo run -q -p dcc-engine --bin dcc-diagnose            # detección automática
-cargo run -q -p dcc-engine --bin dcc-diagnose -- --socket /run/user/1000/docker.sock
-cargo run -q -p dcc-engine --bin dcc-diagnose -- --json  # salida completa
-cargo run -q -p dcc-engine --bin dcc-diagnose -- --compose  # incluye Docker Compose
+cargo run -q -p cmc-engine --bin cmc-diagnose            # detección automática
+cargo run -q -p cmc-engine --bin cmc-diagnose -- --socket /run/user/1000/docker.sock
+cargo run -q -p cmc-engine --bin cmc-diagnose -- --json  # salida completa
+cargo run -q -p cmc-engine --bin cmc-diagnose -- --compose  # incluye Docker Compose
 ```
 
 | Causa mostrada | Significado | Qué hacer |
@@ -254,10 +254,10 @@ vigila la conexión activa cada 10 s.
 
 | Variable | Uso |
 |---|---|
-| `DCC_CONFIG` | Ruta alternativa del archivo de configuración |
-| `DCC_STATE_DIR` | Carpeta alternativa del historial y del diario de eventos |
+| `CMC_CONFIG` | Ruta alternativa del archivo de configuración |
+| `CMC_STATE_DIR` | Carpeta alternativa del historial y del diario de eventos |
 | `HTTPS_PROXY`, `NO_PROXY` | Proxy para la comprobación de actualizaciones (si se activa) |
-| `DCC_LOG` | Nivel de registro del backend (`error`, `warn`, `info`, `debug`, `trace`) |
+| `CMC_LOG` | Nivel de registro del backend (`error`, `warn`, `info`, `debug`, `trace`) |
 | `DOCKER_HOST`, `DOCKER_CONTEXT` | Se respetan en la detección automática |
 | `DOCKER_CONFIG` | Carpeta de la configuración de Docker: contexto y credenciales de registro (`config.json`) |
 
@@ -290,7 +290,7 @@ de vulnerabilidades**: sin ellos, el informe dice «No analizado».
 
 Las tareas de copia (1.4.0) se programan con **temporizadores de usuario de
 systemd** (`systemctl --user`), sin permisos de administrador. La aplicación
-solo crea sus archivos (`~/.config/systemd/user/dcc-backup-*.service` y
+solo crea sus archivos (`~/.config/systemd/user/cmc-backup-*.service` y
 `.timer`) cuando lo autorizas, tras mostrarte su contenido, y los quita desde la
 propia aplicación.
 
@@ -300,7 +300,7 @@ propia aplicación.
   que funcionen sin sesión, actívalo tú con `loginctl enable-linger $USER` (la
   aplicación no cambia la configuración del sistema).
 - Si quitas la aplicación sin quitar antes las programaciones, borra los
-  archivos `~/.config/systemd/user/dcc-backup-*` y ejecuta
+  archivos `~/.config/systemd/user/cmc-backup-*` y ejecuta
   `systemctl --user daemon-reload`.
 
 ## Notificaciones de la monitorización (opcional)
@@ -313,7 +313,7 @@ alertas se siguen viendo en la aplicación y «Probar notificación» dice por q
 no se pudo enviar.
 
 La monitorización no instala nada en los servidores. Guarda un resumen por
-minuto en `~/.local/state/docker-control-center/monitor/` (como máximo 64 MiB
+minuto en `~/.local/state/container-manage-center/monitor/` (como máximo 64 MiB
 por servidor); si quitas la aplicación, puedes borrar esa carpeta.
 
 ## Credenciales de registros privados

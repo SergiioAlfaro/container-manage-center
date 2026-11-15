@@ -22,14 +22,14 @@
 # 700 MB de paquetes de compilación.
 #
 # Variables opcionales:
-#   DCC_BUILD_BASE     imagen base (por defecto ubuntu:22.04)
-#   DCC_BUILD_NETWORK  red para "docker build" (p. ej. host, si usas un proxy local)
+#   CMC_BUILD_BASE     imagen base (por defecto ubuntu:22.04)
+#   CMC_BUILD_NETWORK  red para "docker build" (p. ej. host, si usas un proxy local)
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
-BASE=${DCC_BUILD_BASE:-ubuntu:22.04}
-IMAGE=dcc-build-ubuntu2204:$(sha256sum packaging/build/Dockerfile.ubuntu2204 | cut -c1-12)
+BASE=${CMC_BUILD_BASE:-ubuntu:22.04}
+IMAGE=cmc-build-ubuntu2204:$(sha256sum packaging/build/Dockerfile.ubuntu2204 | cut -c1-12)
 OUT="$ROOT/target/compat"
 VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
 UIDGID="$(id -u):$(id -g)"
@@ -40,13 +40,13 @@ need docker "instala Docker Engine"
 need npm "instala Node.js 20 o posterior"
 need cargo "instala Rust (rustup)"
 docker info >/dev/null 2>&1 || { echo "No hay acceso a Docker (¿tu usuario está en el grupo docker?)." >&2; exit 1; }
-[ "$(id -u)" -ne 0 ] || [ "${DCC_BUILD_ALLOW_ROOT:-0}" = 1 ] || { echo "No ejecutes este script como root." >&2; exit 1; }
+[ "$(id -u)" -ne 0 ] || [ "${CMC_BUILD_ALLOW_ROOT:-0}" = 1 ] || { echo "No ejecutes este script como root." >&2; exit 1; }
 mkdir -p "$OUT"
 
 say "1/5 Imagen de compilación ($BASE)"
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
   NET=()
-  [ -n "${DCC_BUILD_NETWORK:-}" ] && NET=(--network "$DCC_BUILD_NETWORK")
+  [ -n "${CMC_BUILD_NETWORK:-}" ] && NET=(--network "$CMC_BUILD_NETWORK")
   PROXY=()
   for v in http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY; do
     [ -n "${!v:-}" ] && PROXY+=(--build-arg "$v=${!v}")
@@ -63,8 +63,8 @@ say "3/5 Compilación en Ubuntu 22.04 (sin red)"
 docker run --rm --network none --user "$UIDGID" \
   -e HOME=/tmp -e CARGO_HOME=/src/target/compat/cargo-home -e CARGO_TARGET_DIR=/src/target/compat/target \
   -v "$ROOT:/src" -w /src "$IMAGE" \
-  cargo-1.91 build --offline --locked --release --bins --features tauri/custom-protocol -p docker-control-center
-BIN="$OUT/target/release/docker-control-center"
+  cargo-1.91 build --offline --locked --release --bins --features tauri/custom-protocol -p container-manage-center
+BIN="$OUT/target/release/container-manage-center"
 NEED=$(objdump -T "$BIN" | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sed 's/GLIBC_//' | sort -Vu | tail -1)
 echo "El binario exige glibc $NEED o posterior."
 if [ "$(printf '%s\n2.35\n' "$NEED" | sort -V | tail -1)" != "2.35" ]; then
@@ -73,9 +73,8 @@ if [ "$(printf '%s\n2.35\n' "$NEED" | sort -V | tail -1)" != "2.35" ]; then
 fi
 
 say "4/5 Paquete .deb (Tauri, con ese binario)"
-# Tauri empaqueta target/release/container-manage-center (el ejecutable con su
-# nombre de distribución, `mainBinaryName`; Cargo lo compila con el nombre
-# interno docker-control-center) en target/release/bundle: lo que hubiera ahí
+# Tauri empaqueta target/release/container-manage-center en
+# target/release/bundle: lo que hubiera ahí
 # (una compilación normal y su paquete) se guarda y se restaura al terminar,
 # pase lo que pase.
 APPBIN=container-manage-center

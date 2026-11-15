@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Puentes entre el backend y la ventana: reenvían cambios como eventos Tauri.
 
-use dcc_activity::ActivityLog;
-use dcc_engine::{ConnectionState, EngineManager};
+use cmc_activity::ActivityLog;
+use cmc_engine::{ConnectionState, EngineManager};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::broadcast::error::RecvError;

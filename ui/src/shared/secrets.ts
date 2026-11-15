@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
- * Reglas de secretos de la interfaz (E1, DCC-SEC-05, D-085). Son las mismas que
- * `crates/dcc-activity/src/redact.rs`: una prueba de Rust comprueba que estas
+ * Reglas de secretos de la interfaz (E1, CMC-SEC-05, D-085). Son las mismas que
+ * `crates/cmc-activity/src/redact.rs`: una prueba de Rust comprueba que estas
  * listas coinciden con las suyas. Solo afectan a lo que se muestra; el valor
  * real se envía a Docker sin cambios.
  */
@@ -51,7 +51,7 @@ const AUTH_HEADER = /(Authorization:\s*\w+\s+)\S+/gi;
  * Oculta los secretos de un texto libre (E3: informes exportados): claves
  * privadas PEM, contraseñas de URL, `NOMBRE=valor` con nombre secreto y
  * cabeceras `Authorization`. Es una primera pasada: al guardar, Rust vuelve a
- * aplicar sus reglas (`dcc_activity::redact`).
+ * aplicar sus reglas (`cmc_activity::redact`).
  */
 export function redactText(text: string): string {
   return text

@@ -3,11 +3,11 @@
 //! Fase 5: redes. Listado, detalle, creación (con vista previa), eliminación,
 //! limpieza y conexión o desconexión de contenedores.
 
-use dcc_engine::networks::{
+use cmc_engine::networks::{
     ConnectOptions, CreatedNetwork, NetworkDetails, NetworkSpec, NetworkSummary,
 };
-use dcc_engine::spec::SpecIssue;
-use dcc_engine::EngineError;
+use cmc_engine::spec::SpecIssue;
+use cmc_engine::EngineError;
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;

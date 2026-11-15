@@ -7,10 +7,10 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use dcc_activity::{
+use cmc_activity::{
     ActivityEvent, Category, OpStatus, OperationRecord, OperationSpec, Outcome, Transport,
 };
-use dcc_store::{AppConfig, ConfigStore, DockerConfig, DockerMode, Theme};
+use cmc_store::{AppConfig, ConfigStore, DockerConfig, DockerMode, Theme};
 use serde_json::json;
 use tauri::ipc::{CallbackFn, InvokeBody, InvokeResponseBody};
 use tauri::test::{get_ipc_response, mock_builder, INVOKE_KEY};
@@ -280,7 +280,7 @@ fn backup_restore_requires_explicit_confirmation() {
     let err = invoke(
         &h,
         "container_restore_backup",
-        json!({ "id": "web-dcc-backup-20261111-000000", "start": true, "confirmed": false }),
+        json!({ "id": "web-cmc-backup-20261111-000000", "start": true, "confirmed": false }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "engine.notConfirmed");
@@ -327,15 +327,15 @@ fn changing_docker_config_reconnects_and_emits_state() {
     assert_eq!(h.store.load().unwrap().config.docker.custom_socket, other);
 }
 
-/// Contra Docker real (DCC_DOCKER_TESTS=1): la app arranca, conecta y sirve datos.
+/// Contra Docker real (CMC_DOCKER_TESTS=1): la app arranca, conecta y sirve datos.
 #[test]
 fn live_app_connects_and_serves_real_data() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -405,7 +405,7 @@ fn live_app_connects_and_serves_real_data() {
     let err = invoke(
         &h,
         "container_action",
-        json!({ "id": "dcc-no-existe-xyz", "name": null, "action": "start" }),
+        json!({ "id": "cmc-no-existe-xyz", "name": null, "action": "start" }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "engine.docker");
@@ -420,12 +420,12 @@ fn preview_validates_and_translates_without_docker() {
     let v = invoke(
         &h,
         "container_preview",
-        json!({ "spec": { "name": "web", "image": "nginx:1.27", "ports": [{ "hostIp": "", "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }], "mounts": [{ "kind": "bind", "source": "/no/existe/dcc", "target": "/x", "readOnly": false }] } }),
+        json!({ "spec": { "name": "web", "image": "nginx:1.27", "ports": [{ "hostIp": "", "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }], "mounts": [{ "kind": "bind", "source": "/no/existe/cmc", "target": "/x", "readOnly": false }] } }),
     )
     .unwrap();
     assert_eq!(
         v["runCommand"],
-        "docker run --detach --name web --publish 8080:80/tcp --mount type=bind,source=/no/existe/dcc,target=/x --restart no nginx:1.27"
+        "docker run --detach --name web --publish 8080:80/tcp --mount type=bind,source=/no/existe/cmc,target=/x --restart no nginx:1.27"
     );
     assert!(v["createCommand"]
         .as_str()
@@ -528,12 +528,12 @@ fn phase3_commands_fail_cleanly_without_connection() {
 /// Contra Docker real: crear con el asistente, inspeccionar, duplicar y eliminar.
 #[test]
 fn live_create_inspect_duplicate_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -556,8 +556,8 @@ fn live_create_inspect_duplicate_via_ipc() {
         eprintln!("omitida: no hay imágenes locales con comando");
         return;
     };
-    let name = format!("dcc-test-ipc-{}", std::process::id());
-    let spec = json!({ "name": name, "image": image, "labels": [{ "key": "dcc.test", "value": "true" }], "env": [{ "key": "A", "value": "1" }] });
+    let name = format!("cmc-test-ipc-{}", std::process::id());
+    let spec = json!({ "name": name, "image": image, "labels": [{ "key": "cmc.test", "value": "true" }], "env": [{ "key": "A", "value": "1" }] });
     // Sin iniciar: algunas imágenes terminan enseguida y no importa aquí.
     let r = invoke(
         &h,
@@ -626,7 +626,7 @@ fn build_preview_validates_scans_context_and_hides_secrets_without_docker() {
     let v = invoke(
         &h,
         "build_preview",
-        json!({ "spec": { "context": "/no/existe/dcc", "tags": ["app:1"] } }),
+        json!({ "spec": { "context": "/no/existe/cmc", "tags": ["app:1"] } }),
     )
     .unwrap();
     assert_eq!(v["issues"][0]["code"], "context.missing");
@@ -731,7 +731,7 @@ fn phase4_commands_fail_cleanly_without_connection() {
     let e = invoke(
         &h,
         "build_open",
-        json!({ "spec": { "context": "/no/existe/dcc" }, "onEvent": "__CHANNEL__:11" }),
+        json!({ "spec": { "context": "/no/existe/cmc" }, "onEvent": "__CHANNEL__:11" }),
     )
     .unwrap_err();
     assert_eq!(e["code"], "engine.invalidSpec");
@@ -741,12 +741,12 @@ fn phase4_commands_fail_cleanly_without_connection() {
 /// Contra Docker real: inspeccionar, capas y construir a través de la IPC.
 #[test]
 fn live_images_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -780,10 +780,10 @@ fn live_images_via_ipc() {
     let ctx = tempfile::tempdir().unwrap();
     std::fs::write(
         ctx.path().join("Dockerfile"),
-        format!("FROM {image}\nLABEL dcc.test=true\n"),
+        format!("FROM {image}\nLABEL cmc.test=true\n"),
     )
     .unwrap();
-    let tag = format!("dcc-test/ipc-construida-{}:1", std::process::id());
+    let tag = format!("cmc-test/ipc-construida-{}:1", std::process::id());
     let sid = invoke(
         &h,
         "build_open",
@@ -802,7 +802,7 @@ fn live_images_via_ipc() {
         );
         std::thread::sleep(Duration::from_millis(500));
     };
-    assert_eq!(built["labels"]["dcc.test"], "true");
+    assert_eq!(built["labels"]["cmc.test"], "true");
     let r = invoke(
         &h,
         "image_remove",
@@ -816,7 +816,7 @@ fn live_images_via_ipc() {
         .any(|u| u.as_str().unwrap().ends_with(&tag)));
 }
 
-#[path = "../../crates/dcc-engine/tests/common/registry.rs"]
+#[path = "../../crates/cmc-engine/tests/common/registry.rs"]
 mod test_registry;
 
 fn pull_records(h: &Harness) -> Vec<serde_json::Value> {
@@ -843,13 +843,13 @@ fn wait_long<F: Fn() -> bool>(what: &str, secs: u64, f: F) {
 /// `stream_close`). Un registro de actividad por descarga.
 #[test]
 fn live_pull_and_cancel_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let rt = tokio::runtime::Runtime::new().unwrap();
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -876,7 +876,7 @@ fn live_pull_and_cancel_via_ipc() {
             ..Default::default()
         },
     ));
-    let reference = format!("{}/dcc-test/ipc-descarga:1", reg.addr);
+    let reference = format!("{}/cmc-test/ipc-descarga:1", reg.addr);
     let sid = invoke(
         &h,
         "image_pull_open",
@@ -912,7 +912,7 @@ fn live_pull_and_cancel_via_ipc() {
             ..Default::default()
         },
     ));
-    let reference = format!("{}/dcc-test/ipc-cancelada:1", slow.addr);
+    let reference = format!("{}/cmc-test/ipc-cancelada:1", slow.addr);
     let sid = invoke(
         &h,
         "image_pull_open",
@@ -1059,12 +1059,12 @@ fn phase5_commands_fail_cleanly_without_connection() {
 /// eliminar una red con los comandos que usa la ventana.
 #[test]
 fn live_networks_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -1073,11 +1073,11 @@ fn live_networks_via_ipc() {
     };
     let h = harness_with(dir, docker);
     wait_for("conexión", || engine_state(&h)["state"] == "connected");
-    let name = format!("dcc-test-ipc-net-{}", std::process::id());
+    let name = format!("cmc-test-ipc-net-{}", std::process::id());
     let created = invoke(
         &h,
         "network_create",
-        json!({ "spec": { "name": name, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+        json!({ "spec": { "name": name, "labels": [{ "key": "cmc.test", "value": "true" }] } }),
     )
     .unwrap();
     let id = created["id"].as_str().unwrap().to_owned();
@@ -1109,7 +1109,7 @@ fn live_networks_via_ipc() {
         .cloned();
     let n = n.expect("la red aparece en la lista");
     assert_eq!(n["predefined"], false);
-    assert_eq!(n["labels"]["dcc.test"], "true");
+    assert_eq!(n["labels"]["cmc.test"], "true");
     let subnets = n["subnets"].clone();
 
     // Un contenedor detenido cualquiera de prueba: se crea con la imagen de prueba
@@ -1124,14 +1124,14 @@ fn live_networks_via_ipc() {
                 .as_array()
                 .unwrap()
                 .iter()
-                .any(|t| t == "dcc-test/sleeper:2")
+                .any(|t| t == "cmc-test/sleeper:2")
         });
     if has_fixture {
-        let cname = format!("dcc-test-ipc-net-c-{}", std::process::id());
+        let cname = format!("cmc-test-ipc-net-c-{}", std::process::id());
         let c = invoke(
             &h,
             "container_create",
-            json!({ "spec": { "name": cname, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }] }, "start": false }),
+            json!({ "spec": { "name": cname, "image": "cmc-test/sleeper:2", "labels": [{ "key": "cmc.test", "value": "true" }] }, "start": false }),
         )
         .unwrap();
         let cid = c["id"].as_str().unwrap().to_owned();
@@ -1254,12 +1254,12 @@ fn phase6_commands_fail_cleanly_without_connection() {
 /// volumen, y listar directorios vinculados, con los comandos de la ventana.
 #[test]
 fn live_volumes_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -1268,7 +1268,7 @@ fn live_volumes_via_ipc() {
     };
     let h = harness_with(dir, docker);
     wait_for("conexión", || engine_state(&h)["state"] == "connected");
-    let name = format!("dcc-test-ipc-vol-{}", std::process::id());
+    let name = format!("cmc-test-ipc-vol-{}", std::process::id());
     struct Guard<'a>(&'a Harness, String);
     impl Drop for Guard<'_> {
         fn drop(&mut self) {
@@ -1282,7 +1282,7 @@ fn live_volumes_via_ipc() {
     let created = invoke(
         &h,
         "volume_create",
-        json!({ "spec": { "name": name, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+        json!({ "spec": { "name": name, "labels": [{ "key": "cmc.test", "value": "true" }] } }),
     )
     .unwrap();
     let _g = Guard(&h, name.clone());
@@ -1298,7 +1298,7 @@ fn live_volumes_via_ipc() {
         .iter()
         .any(|v| v["name"] == name.as_str()));
     let d = invoke(&h, "volume_details", json!({ "name": name })).unwrap();
-    assert_eq!(d["summary"]["labels"]["dcc.test"], "true");
+    assert_eq!(d["summary"]["labels"]["cmc.test"], "true");
     let sizes = invoke(&h, "volume_sizes", json!({})).unwrap();
     assert!(
         sizes
@@ -1325,7 +1325,7 @@ fn live_volumes_via_ipc() {
 fn compose_files_via_ipc_create_read_save_and_conflict() {
     let h = harness();
     let d = tempfile::Builder::new()
-        .prefix("dcc-test")
+        .prefix("cmc-test")
         .tempdir()
         .unwrap();
     let dir = d.path().display().to_string();
@@ -1375,7 +1375,7 @@ fn compose_files_via_ipc_create_read_save_and_conflict() {
     );
     let e = invoke(&h, "compose_file_read", json!({ "path": "relativo.yaml" })).unwrap_err();
     assert_eq!(e["code"], "engine.invalidInput");
-    // E2 (DCC-SEC-06, D-089): las órdenes de archivos no sirven para leer ni
+    // E2 (CMC-SEC-06, D-089): las órdenes de archivos no sirven para leer ni
     // sobrescribir otros archivos del usuario o del sistema.
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home/x".into());
     for bad in [
@@ -1445,7 +1445,7 @@ fn registered_projects_survive_a_stale_config_set() {
     h.app
         .state::<AppState>()
         .update_compose(|ps| {
-            ps.push(dcc_store::SavedProject {
+            ps.push(cmc_store::SavedProject {
                 name: "tienda".into(),
                 files: vec!["/srv/tienda/compose.yaml".into()],
             });
@@ -1469,12 +1469,12 @@ fn registered_projects_survive_a_stale_config_set() {
 /// ventana. Eliminar sin confirmar se rechaza antes de ejecutar nada.
 #[test]
 fn live_compose_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -1502,22 +1502,22 @@ fn live_compose_via_ipc() {
         .collect();
     let image = tags
         .iter()
-        .find(|t| t.as_str() == "dcc-test/sleeper:2")
+        .find(|t| t.as_str() == "cmc-test/sleeper:2")
         .or(tags.first())
         .cloned()
-        .expect("hace falta al menos una imagen local con etiqueta (las pruebas del motor crean dcc-test/sleeper:2)");
+        .expect("hace falta al menos una imagen local con etiqueta (las pruebas del motor crean cmc-test/sleeper:2)");
 
     let proj_dir = tempfile::Builder::new()
-        .prefix("dcc-test-ipc7-")
+        .prefix("cmc-test-ipc7-")
         .tempdir()
         .unwrap();
-    let name = format!("dcc-test-ipc7-{}", std::process::id());
+    let name = format!("cmc-test-ipc7-{}", std::process::id());
     let created = invoke(
         &h,
         "compose_file_create",
         json!({
             "dir": proj_dir.path().display().to_string(),
-            "content": format!("name: {name}\nservices:\n  app:\n    image: {image}\n    labels: {{dcc.test: \"true\"}}\nnetworks:\n  default:\n    labels: {{dcc.test: \"true\"}}\n"),
+            "content": format!("name: {name}\nservices:\n  app:\n    image: {image}\n    labels: {{cmc.test: \"true\"}}\nnetworks:\n  default:\n    labels: {{cmc.test: \"true\"}}\n"),
         }),
     )
     .unwrap();
@@ -1648,11 +1648,11 @@ fn live_compose_via_ipc() {
 /// Simula una operación terminada (las operaciones reales se prueban en el motor).
 fn record_op(h: &Harness, kind: &str, ok: bool) {
     let st = h.app.state::<AppState>();
-    let op = st.activity.begin(dcc_activity::OperationSpec {
-        category: dcc_activity::Category::Container,
+    let op = st.activity.begin(cmc_activity::OperationSpec {
+        category: cmc_activity::Category::Container,
         kind: kind.into(),
         target: Some("web".into()),
-        transport: dcc_activity::Transport::Api {
+        transport: cmc_activity::Transport::Api {
             method: "POST".into(),
             path: "/build?t=web&buildargs=%7B%22NPM_TOKEN%22%3A%22token-secreto%22%7D".into(),
             endpoint: "/var/run/docker.sock".into(),
@@ -1661,13 +1661,13 @@ fn record_op(h: &Harness, kind: &str, ok: bool) {
         equivalent_command: Some("docker run -e CLAVE=valor-secreto web".into()),
     });
     if ok {
-        op.succeed(dcc_activity::Outcome {
+        op.succeed(cmc_activity::Outcome {
             summary: Some("hecho".into()),
             stdout: Some("salida valor-secreto".into()),
             ..Default::default()
         });
     } else {
-        op.fail(dcc_activity::Failure {
+        op.fail(cmc_activity::Failure {
             error: "falló".into(),
             http_status: Some(500),
             ..Default::default()
@@ -1866,7 +1866,7 @@ fn phase9_system_info_and_updates() {
     )
     .unwrap_err();
     assert_eq!(e["code"], "app.open", "{e}");
-    // E2 (DCC-SEC-16): solo github.com o el servidor de la fuente; un enlace
+    // E2 (CMC-SEC-16): solo github.com o el servidor de la fuente; un enlace
     // https de otro sitio se rechaza antes de llamar a xdg-open.
     let e = invoke(
         &h,
@@ -1901,7 +1901,7 @@ fn phase9_system_info_and_updates() {
     assert!(req.starts_with("GET /latest.json HTTP/1.1"), "{req}");
     assert!(
         req.to_lowercase().contains(&format!(
-            "user-agent: docker-control-center/{}",
+            "user-agent: container-manage-center/{}",
             env!("CARGO_PKG_VERSION")
         )),
         "{req}"
@@ -1912,11 +1912,11 @@ fn phase9_system_info_and_updates() {
 
     // La sección [updates] se guarda normalizada.
     let mut cfg = invoke(&h, "config_get", json!({})).unwrap();
-    cfg["updates"] = json!({ "checkOnStart": true, "source": "  mi-org/dcc  " });
+    cfg["updates"] = json!({ "checkOnStart": true, "source": "  mi-org/cmc  " });
     let saved = invoke(&h, "config_set", json!({ "config": cfg })).unwrap();
     assert_eq!(
         saved["updates"],
-        json!({ "checkOnStart": true, "source": "mi-org/dcc" })
+        json!({ "checkOnStart": true, "source": "mi-org/cmc" })
     );
 }
 
@@ -1924,12 +1924,12 @@ fn phase9_system_info_and_updates() {
 /// llegan a la ventana, se guardan y siguen ahí tras reiniciar la aplicación.
 #[test]
 fn live_events_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -1953,11 +1953,11 @@ fn live_events_via_ipc() {
             .iter()
             .any(|r| r["kind"] == "events.watch" && r["status"] == "succeeded")
     });
-    let vol = format!("dcc-test-ipc8-{}", std::process::id());
+    let vol = format!("cmc-test-ipc8-{}", std::process::id());
     let created = invoke(
         &h,
         "volume_create",
-        json!({ "spec": { "name": vol, "driver": "local", "driverOpts": [], "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+        json!({ "spec": { "name": vol, "driver": "local", "driverOpts": [], "labels": [{ "key": "cmc.test", "value": "true" }] } }),
     );
     assert!(created.is_ok(), "{created:?}");
     invoke(
@@ -2013,12 +2013,12 @@ fn live_events_via_ipc() {
 /// ventana) sin dejar procesos en el contenedor (D-063).
 #[test]
 fn live_multiple_terminals_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker_cfg = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker_cfg = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -2031,14 +2031,14 @@ fn live_multiple_terminals_via_ipc() {
     assert!(
         images.as_array().unwrap().iter().any(|i| i["repoTags"]
             .as_array()
-            .is_some_and(|t| t.iter().any(|t| t == "dcc-test/sleeper:2"))),
-        "hace falta dcc-test/sleeper:2 (la crean las pruebas del motor)"
+            .is_some_and(|t| t.iter().any(|t| t == "cmc-test/sleeper:2"))),
+        "hace falta cmc-test/sleeper:2 (la crean las pruebas del motor)"
     );
-    let name = format!("dcc-test-ipc-term-{}", std::process::id());
+    let name = format!("cmc-test-ipc-term-{}", std::process::id());
     let c = invoke(
         &h,
         "container_create",
-        json!({ "spec": { "name": name, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }] }, "start": true }),
+        json!({ "spec": { "name": name, "image": "cmc-test/sleeper:2", "labels": [{ "key": "cmc.test", "value": "true" }] }, "start": true }),
     )
     .unwrap();
     let id = c["id"].as_str().unwrap().to_owned();
@@ -2143,7 +2143,7 @@ fn live_multiple_terminals_via_ipc() {
             "local".into(),
             id.clone(),
             Some(name.clone()),
-            dcc_engine::streams::ShellChoice::Sh,
+            cmc_engine::streams::ShellChoice::Sh,
             100,
             30,
             ch,
@@ -2483,24 +2483,24 @@ fn ssh_processes_for(user: &str) -> usize {
 /// local a la vez, por IPC como la interfaz: identidad confirmada, clave y
 /// contraseña, cada operación en su servidor, vista general, desconexión sin
 /// procesos huérfanos y eliminación de un perfil sin tocar el servidor.
-/// Necesita `DCC_DOCKER_TESTS=1`, `DCC_SSH_LAB=<lab.json>` y
-/// `DCC_TEST_ASKPASS=<dcc-askpass>`.
+/// Necesita `CMC_DOCKER_TESTS=1`, `CMC_SSH_LAB=<lab.json>` y
+/// `CMC_TEST_ASKPASS=<cmc-askpass>`.
 #[test]
 fn live_three_remote_servers_through_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
-    let Ok(lab) = std::env::var("DCC_SSH_LAB") else {
-        eprintln!("omitida: define DCC_SSH_LAB=<lab.json>");
+    let Ok(lab) = std::env::var("CMC_SSH_LAB") else {
+        eprintln!("omitida: define CMC_SSH_LAB=<lab.json>");
         return;
     };
     assert!(
-        std::env::var_os("DCC_TEST_ASKPASS").is_some(),
-        "define DCC_TEST_ASKPASS"
+        std::env::var_os("CMC_TEST_ASKPASS").is_some(),
+        "define CMC_TEST_ASKPASS"
     );
     let lab: Lab = serde_json::from_str(&std::fs::read_to_string(lab).unwrap()).unwrap();
-    let keyring = std::env::var_os("DCC_KEYRING_TEST").is_some();
+    let keyring = std::env::var_os("CMC_KEYRING_TEST").is_some();
     let dir = tempfile::tempdir().unwrap();
     let h = harness_with(dir, DockerConfig::default());
     wait_for("conexión local", || {
@@ -2577,11 +2577,11 @@ fn live_three_remote_servers_through_ipc() {
 
     // Una operación en B ocurre solo en B.
     let (b, _) = &ids[1];
-    let name = format!("dcc-ipc-remote-{}", std::process::id());
+    let name = format!("cmc-ipc-remote-{}", std::process::id());
     let created = invoke(
         &h,
         "container_create",
-        json!({ "server": b, "spec": { "name": name, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }] }, "start": true }),
+        json!({ "server": b, "spec": { "name": name, "image": "cmc-test/sleeper:2", "labels": [{ "key": "cmc.test", "value": "true" }] }, "start": true }),
     )
     .unwrap();
     let cid = created["id"].as_str().unwrap().to_owned();
@@ -2729,18 +2729,18 @@ fn server_shell_is_only_for_known_remote_servers() {
 
 // ------------------------------------------------------------- E1 (1.1.0)
 
-/// E1 (DCC-SEC-01/03/05, D-085, D-086) contra Docker real: los riesgos altos o
+/// E1 (CMC-SEC-01/03/05, D-085, D-086) contra Docker real: los riesgos altos o
 /// críticos sin aceptar se rechazan en el motor (crear, editar y Compose `up`),
 /// con aceptación se crea, y ningún valor secreto llega al panel de actividad.
 #[test]
 fn live_e1_risks_and_secrets_via_ipc() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     const FAKE: &str = "valor-ficticio-e1-ipc";
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -2765,10 +2765,10 @@ fn live_e1_risks_and_secrets_via_ipc() {
         })
         .expect("hace falta una imagen local con etiqueta y comando");
     let socket = "/var/run/docker.sock";
-    let name = format!("dcc-test-e1-{}", std::process::id());
+    let name = format!("cmc-test-e1-{}", std::process::id());
     let spec = json!({
         "name": name, "image": image,
-        "labels": [{ "key": "dcc.test", "value": "true" }],
+        "labels": [{ "key": "cmc.test", "value": "true" }],
         "env": [
             { "key": "MYSQL_PWD", "value": FAKE },
             { "key": "DATABASE_URL", "value": format!("postgres://app:{FAKE}@db/app") },
@@ -2872,16 +2872,16 @@ fn live_e1_risks_and_secrets_via_ipc() {
     let status = invoke(&h, "compose_status", json!({})).unwrap();
     if status["status"] == "available" {
         let proj_dir = tempfile::Builder::new()
-            .prefix("dcc-test-e1c-")
+            .prefix("cmc-test-e1c-")
             .tempdir()
             .unwrap();
-        let pname = format!("dcc-test-e1c-{}", std::process::id());
+        let pname = format!("cmc-test-e1c-{}", std::process::id());
         let created = invoke(
             &h,
             "compose_file_create",
             json!({
                 "dir": proj_dir.path().display().to_string(),
-                "content": format!("name: {pname}\nservices:\n  app:\n    image: {image}\n    labels: {{dcc.test: \"true\"}}\n    volumes:\n      - {socket}:/var/run/docker.sock:ro\n    cap_add: [SYS_ADMIN]\n  web:\n    image: {image}\n    labels: {{dcc.test: \"true\"}}\n    volumes:\n      - ./html:/usr/share/nginx/html:ro\n"),
+                "content": format!("name: {pname}\nservices:\n  app:\n    image: {image}\n    labels: {{cmc.test: \"true\"}}\n    volumes:\n      - {socket}:/var/run/docker.sock:ro\n    cap_add: [SYS_ADMIN]\n  web:\n    image: {image}\n    labels: {{cmc.test: \"true\"}}\n    volumes:\n      - ./html:/usr/share/nginx/html:ro\n"),
             }),
         )
         .unwrap();
@@ -2926,7 +2926,7 @@ fn live_e1_risks_and_secrets_via_ipc() {
     }
 }
 
-/// E2 (DCC-SEC-17, D-091): la ventana solo tiene los permisos que usa. Escuchar
+/// E2 (CMC-SEC-17, D-091): la ventana solo tiene los permisos que usa. Escuchar
 /// eventos funciona; las órdenes de ventana, ruta, aplicación o menú que daba
 /// `core:default` se rechazan.
 #[test]
@@ -2976,7 +2976,7 @@ fn audit_history_and_get_without_docker() {
     let e = invoke_exact(&h, "audit_history", json!({ "server": "srv-0123abcd" })).unwrap_err();
     assert_eq!(e["code"], "server.unknown", "{e}");
     // El informe se guarda y se envía con los secretos ocultos.
-    let mut rep: dcc_engine::audit::AuditReport = serde_json::from_value(json!({
+    let mut rep: cmc_engine::audit::AuditReport = serde_json::from_value(json!({
         "id": "x", "server": "local", "startedAt": "", "finishedAt": "",
         "request": { "container": null, "includeCompose": false, "includeImages": false, "scanVulnerabilities": false, "tool": null },
         "daemon": { "rootless": false, "userns": false, "seccomp": true, "seccompProfile": null, "apparmor": false, "selinux": false, "cgroupVersion": "2" },
@@ -3000,14 +3000,14 @@ fn audit_history_and_get_without_docker() {
 /// actividad.
 #[test]
 fn live_e3_audit_via_ipc_is_read_only_and_saved() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
     let state_dir = dir.path().join("estado");
-    std::env::set_var("DCC_STATE_DIR", &state_dir);
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    std::env::set_var("CMC_STATE_DIR", &state_dir);
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -3015,7 +3015,7 @@ fn live_e3_audit_via_ipc_is_read_only_and_saved() {
         Err(_) => DockerConfig::default(),
     };
     let h = harness_with(dir, docker);
-    std::env::remove_var("DCC_STATE_DIR");
+    std::env::remove_var("CMC_STATE_DIR");
     wait_for("conexión", || engine_state(&h)["state"] == "connected");
     let images = invoke(&h, "images_list", json!({})).unwrap();
     let image = images
@@ -3031,10 +3031,10 @@ fn live_e3_audit_via_ipc_is_read_only_and_saved() {
         })
         .expect("hace falta una imagen local con etiqueta y comando");
     let socket = "/var/run/docker.sock";
-    let name = format!("dcc-test-e3-{}", std::process::id());
+    let name = format!("cmc-test-e3-{}", std::process::id());
     let spec = json!({
         "name": name, "image": image,
-        "labels": [{ "key": "dcc.test", "value": "true" }],
+        "labels": [{ "key": "cmc.test", "value": "true" }],
         "mounts": [{ "kind": "bind", "source": socket, "target": "/var/run/docker.sock", "readOnly": true }],
         "acceptedRisks": [format!("risk.runtimeSocket:{socket}")]
     });
@@ -3073,7 +3073,7 @@ fn live_e3_audit_via_ipc_is_read_only_and_saved() {
         }
         Ok(())
     });
-    let request: dcc_engine::audit::AuditRequest = serde_json::from_value(json!({
+    let request: cmc_engine::audit::AuditRequest = serde_json::from_value(json!({
         "container": null, "includeCompose": true, "includeImages": true, "scanVulnerabilities": true, "tool": null
     }))
     .unwrap();
@@ -3104,8 +3104,8 @@ fn live_e3_audit_via_ipc_is_read_only_and_saved() {
         "{mine:?}"
     );
     // Sin herramienta de vulnerabilidades: «no analizado», nunca 0.
-    if dcc_engine::sys::find_executable("trivy").is_none()
-        && dcc_engine::sys::find_executable("grype").is_none()
+    if cmc_engine::sys::find_executable("trivy").is_none()
+        && cmc_engine::sys::find_executable("grype").is_none()
     {
         assert_eq!(
             report["vulnerabilities"]["notAnalyzed"],
@@ -3202,7 +3202,7 @@ fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
     )
     .unwrap();
     std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
-    std::env::set_var("DCC_SYSTEMCTL", &fake);
+    std::env::set_var("CMC_SYSTEMCTL", &fake);
     std::env::set_var("XDG_CONFIG_HOME", base.join("xdg"));
     let dest = base.join("copias");
     std::fs::create_dir(&dest).unwrap();
@@ -3248,7 +3248,7 @@ fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
     .unwrap();
     assert_eq!(v["timer"]["installed"], true, "{v}");
     assert_eq!(v["timer"]["nextRun"], "mañana");
-    let unit = base.join(format!("xdg/systemd/user/dcc-backup-{id}.timer"));
+    let unit = base.join(format!("xdg/systemd/user/cmc-backup-{id}.timer"));
     assert_eq!(
         std::fs::read_to_string(&unit).unwrap(),
         pv["timerText"].as_str().unwrap()
@@ -3300,8 +3300,8 @@ fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
     assert!(!unit.exists());
     invoke(&h, "backup_job_delete", json!({ "id": id })).unwrap();
     let calls = std::fs::read_to_string(base.join("calls")).unwrap();
-    assert!(calls.contains(&format!("--user enable --now dcc-backup-{id}.timer")));
-    assert!(calls.contains(&format!("--user disable --now dcc-backup-{id}.timer")));
+    assert!(calls.contains(&format!("--user enable --now cmc-backup-{id}.timer")));
+    assert!(calls.contains(&format!("--user disable --now cmc-backup-{id}.timer")));
     // Todo queda en el panel de actividad.
     let ops = invoke(&h, "activity_list", json!({})).unwrap();
     let kinds: Vec<&str> = ops
@@ -3330,7 +3330,7 @@ fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
         }
         Ok(())
     });
-    let req: dcc_engine::backup::BackupRequest = serde_json::from_value(json!({ "volumes": [], "databases": [], "containers": [], "compose": [], "appConfig": true })).unwrap();
+    let req: cmc_engine::backup::BackupRequest = serde_json::from_value(json!({ "volumes": [], "databases": [], "containers": [], "compose": [], "appConfig": true })).unwrap();
     tauri::async_runtime::block_on(crate::commands::backup::backup_run_open(
         h.app.handle().clone(),
         h.app.state::<AppState>(),
@@ -3347,7 +3347,7 @@ fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
     let hist = invoke(&h, "backup_history", json!({})).unwrap();
     assert_eq!(hist[0]["ok"], false);
     assert_eq!(hist[0]["trigger"], "manual");
-    std::env::remove_var("DCC_SYSTEMCTL");
+    std::env::remove_var("CMC_SYSTEMCTL");
     std::env::remove_var("XDG_CONFIG_HOME");
     drop(keep);
 }
@@ -3357,12 +3357,12 @@ fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
 /// retención solo a sus propias copias; dos ejecuciones a la vez no se pisan.
 #[test]
 fn live_e4_scheduled_job_runs_headless_with_retention() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -3372,11 +3372,11 @@ fn live_e4_scheduled_job_runs_headless_with_retention() {
     let base = dir.path().to_path_buf();
     let h = harness_with(dir, docker);
     wait_for("conexión", || engine_state(&h)["state"] == "connected");
-    let vol = format!("dcc-test-e4-{}", std::process::id());
+    let vol = format!("cmc-test-e4-{}", std::process::id());
     invoke(
         &h,
         "volume_create",
-        json!({ "spec": { "name": vol, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+        json!({ "spec": { "name": vol, "labels": [{ "key": "cmc.test", "value": "true" }] } }),
     )
     .unwrap();
     struct Cleanup<'a>(&'a Harness, String);
@@ -3415,7 +3415,7 @@ fn live_e4_scheduled_job_runs_headless_with_retention() {
         }
         Ok(())
     });
-    let req: dcc_engine::backup::BackupRequest =
+    let req: cmc_engine::backup::BackupRequest =
         serde_json::from_value(json!({ "volumes": [{ "name": vol, "mode": "hot" }], "databases": [], "containers": [], "compose": [], "appConfig": false })).unwrap();
     tauri::async_runtime::block_on(crate::commands::backup::backup_run_open(
         h.app.handle().clone(),
@@ -3637,12 +3637,12 @@ fn e5_monitor_without_docker_shows_gaps_and_survives_a_restart() {
 /// que ya recibe la aplicación.
 #[test]
 fn live_e5_monitor_samples_minutes_and_event_alerts() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -3656,7 +3656,7 @@ fn live_e5_monitor_samples_minutes_and_event_alerts() {
     s["servers"] = json!(["local"]);
     invoke(&h, "monitor_settings_set", json!({ "settings": s })).unwrap();
     // Un contenedor que se queda sin memoria (16 MiB).
-    let name = format!("dcc-test-e5-oom-{}", std::process::id());
+    let name = format!("cmc-test-e5-oom-{}", std::process::id());
     struct Cleanup<'a>(&'a Harness, String);
     impl Drop for Cleanup<'_> {
         fn drop(&mut self) {
@@ -3686,7 +3686,7 @@ fn live_e5_monitor_samples_minutes_and_event_alerts() {
                 .count()
                 >= 2
     });
-    let sock = std::env::var("DCC_DOCKER_SOCKET").unwrap_or_else(|_| "/var/run/docker.sock".into());
+    let sock = std::env::var("CMC_DOCKER_SOCKET").unwrap_or_else(|_| "/var/run/docker.sock".into());
     let out = std::process::Command::new("docker")
         .env("DOCKER_HOST", format!("unix://{sock}"))
         .args([
@@ -3695,12 +3695,12 @@ fn live_e5_monitor_samples_minutes_and_event_alerts() {
             "--name",
             &name,
             "--label",
-            "dcc.test=true",
+            "cmc.test=true",
             "--memory",
             "16m",
             "--memory-swap",
             "16m",
-            "dcc-test/shell:1",
+            "cmc-test/shell:1",
             "sh",
             "-c",
             "x=a; while :; do x=\"$x$x\"; done",
@@ -3787,12 +3787,12 @@ fn live_e5_monitor_samples_minutes_and_event_alerts() {
 /// y que los enlaces no escriben nada en el panel de actividad.
 #[test]
 fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
-    if std::env::var("DCC_DOCKER_TESTS").as_deref() != Ok("1") {
-        eprintln!("omitida: define DCC_DOCKER_TESTS=1");
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
         return;
     }
     let dir = tempfile::tempdir().unwrap();
-    let docker = match std::env::var("DCC_DOCKER_SOCKET") {
+    let docker = match std::env::var("CMC_DOCKER_SOCKET") {
         Ok(p) => DockerConfig {
             mode: DockerMode::Custom,
             custom_socket: p,
@@ -3804,9 +3804,9 @@ fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
     wait_for("conexión", || engine_state(&h)["state"] == "connected");
     let pid = std::process::id();
     let (name, other, vol) = (
-        format!("dcc-test-e6-{pid}"),
-        format!("dcc-test-e6-otro-{pid}"),
-        format!("dcc-test-e6-datos-{pid}"),
+        format!("cmc-test-e6-{pid}"),
+        format!("cmc-test-e6-otro-{pid}"),
+        format!("cmc-test-e6-datos-{pid}"),
     );
     struct Cleanup<'a>(&'a Harness, Vec<String>, String);
     impl Drop for Cleanup<'_> {
@@ -3834,14 +3834,14 @@ fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
     invoke(
         &h,
         "volume_create",
-        json!({ "spec": { "name": vol, "labels": [{ "key": "dcc.test", "value": "true" }] } }),
+        json!({ "spec": { "name": vol, "labels": [{ "key": "cmc.test", "value": "true" }] } }),
     )
     .unwrap();
     let create = |n: &str, mounts: serde_json::Value| {
         invoke(
             &h,
             "container_create",
-            json!({ "spec": { "name": n, "image": "dcc-test/sleeper:2", "labels": [{ "key": "dcc.test", "value": "true" }], "mounts": mounts }, "start": true }),
+            json!({ "spec": { "name": n, "image": "cmc-test/sleeper:2", "labels": [{ "key": "cmc.test", "value": "true" }], "mounts": mounts }, "start": true }),
         )
         .unwrap()["id"]
             .as_str()
@@ -3881,7 +3881,7 @@ fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
         }
         Ok(())
     });
-    let req: dcc_engine::backup::BackupRequest = serde_json::from_value(json!({
+    let req: cmc_engine::backup::BackupRequest = serde_json::from_value(json!({
         "volumes": [{ "name": vol, "mode": "hot" }], "databases": [], "containers": [name], "compose": [], "appConfig": false
     }))
     .unwrap();
@@ -3932,7 +3932,7 @@ fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
         }
         Ok(())
     });
-    let request: dcc_engine::audit::AuditRequest = serde_json::from_value(json!({
+    let request: cmc_engine::audit::AuditRequest = serde_json::from_value(json!({
         "container": null, "includeCompose": false, "includeImages": false, "scanVulnerabilities": false, "tool": null
     }))
     .unwrap();

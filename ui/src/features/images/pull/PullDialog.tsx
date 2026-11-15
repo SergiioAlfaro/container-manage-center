@@ -23,7 +23,7 @@ export function PullDialog({ initial = "", onClose, onStarted }: { initial?: str
   const [mode, setMode] = useState<AuthMode>("dockerConfig");
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
-  // E2 (DCC-SEC-07, D-090): en un servidor remoto, las credenciales de este
+  // E2 (CMC-SEC-07, D-090): en un servidor remoto, las credenciales de este
   // equipo solo se envían si se marca expresamente (por omisión, anónima).
   const view = useServerView();
   const remote = !!view?.remote;

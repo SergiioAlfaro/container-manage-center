@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Programa | **Container Manage Center** (CMC), antes *Docker Control Center* |
+| Programa | **Container Manage Center** (CMC) |
 | Licencia | **GNU General Public License, versión 3 o posterior** |
 | Identificador SPDX | `GPL-3.0-or-later` |
 | Titular del copyright del código propio | **Sergio Alfaro Lorite** (véase [COPYRIGHT.md](COPYRIGHT.md)) |
@@ -33,8 +33,8 @@ La misma declaración, traducida, está en la ayuda de la aplicación (sección
 
 ## Qué cubre la licencia
 
-- **Cubre** el código propio del proyecto: los crates `dcc-activity`,
-  `dcc-store`, `dcc-engine` y `src-tauri`; la interfaz (`ui/`); los scripts de
+- **Cubre** el código propio del proyecto: los crates `cmc-activity`,
+  `cmc-store`, `cmc-engine` y `src-tauri`; la interfaz (`ui/`); los scripts de
   `scripts/` y `packaging/`; la documentación; el logotipo y los iconos de la
   aplicación (`src-tauri/icons/`, `ui/public/`). Cada archivo de código lleva
   el encabezado:

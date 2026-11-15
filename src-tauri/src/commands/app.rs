@@ -95,7 +95,7 @@ pub fn spawn_startup_check<R: Runtime>(app: AppHandle<R>) {
         tokio::time::sleep(STARTUP_CHECK_DELAY).await;
         let r = run_check(&cfg.source).await;
         if let Err(e) = &r {
-            tracing::info!(error = %dcc_activity::redact::redact_text(&e.to_string()), "comprobación de actualizaciones al iniciar");
+            tracing::info!(error = %cmc_activity::redact::redact_text(&e.to_string()), "comprobación de actualizaciones al iniciar");
         }
         let outcome = UpdateOutcome {
             check: r.as_ref().ok().cloned(),
@@ -110,7 +110,7 @@ pub fn spawn_startup_check<R: Runtime>(app: AppHandle<R>) {
 
 /// Abre en el navegador la página de una versión. Solo `https://` de
 /// `github.com` o del servidor de la fuente de actualizaciones (E2,
-/// DCC-SEC-16), con `xdg-open` y el enlace como argumento (sin shell).
+/// CMC-SEC-16), con `xdg-open` y el enlace como argumento (sin shell).
 #[tauri::command]
 pub fn open_release_page(state: State<'_, AppState>, url: String) -> CmdResult<()> {
     let last = state
@@ -129,7 +129,7 @@ pub fn open_release_page(state: State<'_, AppState>, url: String) -> CmdResult<(
 }
 
 /// Abre en el navegador un enlace de la salida de una terminal (OSC 8) que el
-/// usuario ha confirmado (E2, DCC-SEC-12, D-091). Solo `http://` y `https://`,
+/// usuario ha confirmado (E2, CMC-SEC-12, D-091). Solo `http://` y `https://`,
 /// sin usuario ni contraseña, sin espacios ni caracteres de control.
 #[tauri::command]
 pub fn open_terminal_link(url: String) -> CmdResult<()> {
@@ -157,7 +157,7 @@ pub(crate) fn terminal_link_allowed(url: &str) -> bool {
 
 /// Abre `url` (ya validada) con `xdg-open`, como argumento y sin shell.
 pub(crate) fn open_in_browser(url: &str) -> CmdResult<()> {
-    let program = dcc_engine::sys::find_executable("xdg-open").ok_or_else(|| {
+    let program = cmc_engine::sys::find_executable("xdg-open").ok_or_else(|| {
         CommandError::new(
             "app.open",
             "No se encuentra xdg-open (paquete xdg-utils): copia el enlace y ábrelo en el navegador.",
@@ -249,10 +249,7 @@ pub fn system_info(state: State<'_, AppState>) -> SystemInfo {
         app_version: env!("CARGO_PKG_VERSION").into(),
         package_version: std::fs::read_to_string("/var/lib/dpkg/status")
             .ok()
-            .and_then(|s| {
-                dpkg_version(&s, crate::uninstall::OWN_PACKAGE)
-                    .or_else(|| dpkg_version(&s, crate::uninstall::LEGACY_PACKAGE))
-            }),
+            .and_then(|s| dpkg_version(&s, crate::uninstall::OWN_PACKAGE)),
         executable: std::env::current_exe()
             .ok()
             .map(|p| p.display().to_string()),
@@ -277,10 +274,10 @@ mod tests {
     #[test]
     fn dpkg_status_is_read_only_for_installed_packages() {
         let status = "Package: otro\nStatus: install ok installed\nVersion: 1\n\n\
-Package: docker-control-center\nStatus: install ok installed\nPriority: optional\nVersion: 0.9.0\n\n\
+Package: container-manage-center\nStatus: install ok installed\nPriority: optional\nVersion: 0.9.0\n\n\
 Package: viejo\nStatus: deinstall ok config-files\nVersion: 2\n";
         assert_eq!(
-            dpkg_version(status, "docker-control-center").as_deref(),
+            dpkg_version(status, "container-manage-center").as_deref(),
             Some("0.9.0")
         );
         assert_eq!(dpkg_version(status, "viejo"), None, "desinstalado");

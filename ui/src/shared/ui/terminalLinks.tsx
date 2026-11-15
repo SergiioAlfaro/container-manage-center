@@ -10,7 +10,7 @@ import { Button } from "@/shared/ui/controls";
 import { Banner, Dialog } from "@/shared/ui/feedback";
 
 /**
- * Enlaces de la salida de las terminales (OSC 8) (E2, DCC-SEC-12, D-091).
+ * Enlaces de la salida de las terminales (OSC 8) (E2, CMC-SEC-12, D-091).
  *
  * xterm, sin manejador propio, abriría el enlace con `window.open` tras un
  * `confirm()` del navegador. Aquí: solo `http://` y `https://`, siempre con

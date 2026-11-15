@@ -85,7 +85,7 @@ impl UpdateSource {
         if s.is_empty() {
             return Ok(None);
         }
-        if s.len() > dcc_store::UpdatesConfig::MAX_SOURCE_LEN || s.chars().any(char::is_control) {
+        if s.len() > cmc_store::UpdatesConfig::MAX_SOURCE_LEN || s.chars().any(char::is_control) {
             return Err(UpdateError::InvalidSource);
         }
         if let Some(rest) = s.strip_prefix("https://") {
@@ -142,7 +142,7 @@ pub fn https_host(url: &str) -> Option<String> {
     Some(authority.to_ascii_lowercase())
 }
 
-/// Servidores cuyas páginas de versión se pueden abrir (E2, DCC-SEC-16,
+/// Servidores cuyas páginas de versión se pueden abrir (E2, CMC-SEC-16,
 /// D-091): `github.com` y el de la fuente de actualizaciones propia (la
 /// guardada y la última consultada). `api.github.com` no sirve páginas.
 pub fn release_page_hosts(saved_source: &str, last_checked_url: Option<&str>) -> Vec<String> {
@@ -276,7 +276,7 @@ pub async fn fetch(source: &UpdateSource, current: &str) -> Result<UpdateCheck, 
         builder = builder.no_proxy();
     }
     let client = builder
-        .user_agent(format!("docker-control-center/{current}"))
+        .user_agent(format!("container-manage-center/{current}"))
         .timeout(TIMEOUT)
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
             // Las redirecciones también deben ser https.
@@ -334,20 +334,20 @@ mod tests {
         // Los espacios y saltos de línea de los extremos (texto pegado) se quitan.
         assert!(UpdateSource::parse(" org/repo\n").unwrap().is_some());
         assert_eq!(
-            UpdateSource::parse("mi-org/docker-control-center").unwrap(),
+            UpdateSource::parse("mi-org/container-manage-center").unwrap(),
             Some(UpdateSource::GitHub {
                 owner: "mi-org".into(),
-                repo: "docker-control-center".into()
+                repo: "container-manage-center".into()
             })
         );
         assert_eq!(
-            UpdateSource::parse("mi-org/dcc").unwrap().unwrap().url(),
-            "https://api.github.com/repos/mi-org/dcc/releases/latest"
+            UpdateSource::parse("mi-org/cmc").unwrap().unwrap().url(),
+            "https://api.github.com/repos/mi-org/cmc/releases/latest"
         );
         assert_eq!(
-            UpdateSource::parse("https://descargas.ejemplo.es/dcc/latest.json").unwrap(),
+            UpdateSource::parse("https://descargas.ejemplo.es/cmc/latest.json").unwrap(),
             Some(UpdateSource::Url(
-                "https://descargas.ejemplo.es/dcc/latest.json".into()
+                "https://descargas.ejemplo.es/cmc/latest.json".into()
             ))
         );
         for local in [
@@ -536,14 +536,14 @@ mod tests {
     }
 
     /// HTTPS real (TLS con los certificados del sistema y el proxy del entorno).
-    /// Solo con DCC_NET_TESTS=1: las pruebas normales no salen a Internet.
+    /// Solo con CMC_NET_TESTS=1: las pruebas normales no salen a Internet.
     #[tokio::test]
     async fn real_https_when_allowed() {
-        if std::env::var("DCC_NET_TESTS").as_deref() != Ok("1") {
-            eprintln!("omitida: define DCC_NET_TESTS=1 para consultar un servidor HTTPS real");
+        if std::env::var("CMC_NET_TESTS").as_deref() != Ok("1") {
+            eprintln!("omitida: define CMC_NET_TESTS=1 para consultar un servidor HTTPS real");
             return;
         }
-        let url = std::env::var("DCC_NET_TEST_URL")
+        let url = std::env::var("CMC_NET_TEST_URL")
             .unwrap_or_else(|_| "https://registry.npmjs.org/@tauri-apps%2fcli/latest".into());
         let c = fetch(&src(&url), "0.0.1").await.unwrap();
         assert!(c.newer, "{c:?}");
@@ -574,15 +574,15 @@ mod tests {
             assert!(!release_page_allowed(bad, &gh), "{bad}");
         }
         let own = release_page_hosts(
-            "https://descargas.ejemplo.es/dcc/latest.json",
+            "https://descargas.ejemplo.es/cmc/latest.json",
             Some("https://otra.ejemplo.es/latest.json"),
         );
         assert!(release_page_allowed(
-            "https://descargas.ejemplo.es/dcc/1.2.0",
+            "https://descargas.ejemplo.es/cmc/1.2.0",
             &own
         ));
         assert!(release_page_allowed(
-            "https://DESCARGAS.ejemplo.es/dcc/1.2.0",
+            "https://DESCARGAS.ejemplo.es/cmc/1.2.0",
             &own
         ));
         assert!(

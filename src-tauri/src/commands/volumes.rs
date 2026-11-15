@@ -2,12 +2,12 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 6: volúmenes y directorios vinculados.
 
-use dcc_engine::binds::BindSummary;
-use dcc_engine::spec::SpecIssue;
-use dcc_engine::volumes::{
+use cmc_engine::binds::BindSummary;
+use cmc_engine::spec::SpecIssue;
+use cmc_engine::volumes::{
     VolumeDetails, VolumePruneResult, VolumeSize, VolumeSpec, VolumeSummary,
 };
-use dcc_engine::EngineError;
+use cmc_engine::EngineError;
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;

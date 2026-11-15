@@ -5,8 +5,8 @@
 # Instalación de Container Manage Center (CMC) en Debian, Ubuntu y derivadas.
 #
 # Uso (con tu usuario normal; pide la contraseña de sudo solo para apt):
-#   (Si tienes instalado «docker-control-center», el nombre anterior hasta la
-#   1.6.0, apt lo sustituye por container-manage-center y tus datos se conservan.)
+#   (Si tienes una versión anterior a la 1.8.0, apt la sustituye y después se
+#   pasan tus datos al nombre nuevo sin perder nada: container-manage-center --migrate.)
 #   bash install.sh                      # busca el paquete .deb y lo instala
 #   bash install.sh --deb RUTA.deb       # instala ese paquete
 #   bash install.sh --check              # solo comprueba el sistema y elige el paquete (no instala)
@@ -37,8 +37,9 @@ set -u
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PKG=container-manage-center
-# Nombre del paquete hasta la 1.6.0 («Docker Control Center»). El nuevo lo
-# sustituye (Conflicts/Replaces/Provides); los datos del usuario no se mueven.
+# Paquete de las versiones anteriores a la 1.7.0, con el nombre anterior del
+# producto: el nuevo lo sustituye (Conflicts/Replaces). Solo se usa para
+# reconocerlo (D-113).
 LEGACY=docker-control-center
 DEB_ARG=""; MODE=install; ASSUME_YES=0; VERIFY=1
 
@@ -101,20 +102,18 @@ fi
 if [ "$MODE" = uninstall ]; then
   title "Desinstalar"
   REMOVE=()
-  for p in "$PKG" "$LEGACY"; do
-    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "install ok installed" && REMOVE+=("$p")
-  done
+  dpkg-query -W -f='${Status}' "$PKG" 2>/dev/null | grep -q "install ok installed" && REMOVE+=("$PKG")
   if [ ${#REMOVE[@]} -eq 0 ]; then
     ok "Container Manage Center no está instalado."; exit 0
   fi
   YES=(); [ $ASSUME_YES -eq 1 ] && YES=(-y)
   as_root apt-get remove "${YES[@]}" "${REMOVE[@]}" || die "apt no ha podido desinstalar el paquete."
   ok "Desinstalado (${REMOVE[*]}). No se ha tocado Docker ni ningún contenedor, imagen, red o volumen."
-  info "Tus datos se conservan; bórralos a mano si ya no los quieres (conservan el nombre anterior):"
-  info "  ~/.config/docker-control-center  (configuración, servidores e identidades de SSH)"
-  info "  ~/.local/state/docker-control-center  (historial)"
-  info "  Las contraseñas recordadas están en el llavero del sistema («Container Manage Center» o «Docker Control Center»)."
-  info "  Las copias de seguridad, en la carpeta docker-control-center-copias de su destino."
+  info "Tus datos se conservan; bórralos a mano si ya no los quieres:"
+  info "  ~/.config/container-manage-center  (configuración, servidores e identidades de SSH)"
+  info "  ~/.local/state/container-manage-center  (historial)"
+  info "  Las contraseñas recordadas están en el llavero del sistema («Container Manage Center»)."
+  info "  Las copias de seguridad, en la carpeta container-manage-center-copias de su destino."
   exit 0
 fi
 
@@ -161,7 +160,7 @@ if [ -z "$BEST" ]; then
 fi
 ok "Paquete elegido: $(basename "$BEST") (versión $BEST_VER)"
 
-# Integridad (E2, DCC-SEC-09, D-092): suma SHA-256 del paquete según el
+# Integridad (E2, CMC-SEC-09, D-092): suma SHA-256 del paquete según el
 # SHA256SUMS de la publicación (junto a este script o junto al paquete).
 # Las sumas detectan un paquete dañado o cambiado; la firma GPG de SHA256SUMS
 # queda pendiente de la clave del propietario (ver INSTALL.md).
@@ -190,9 +189,9 @@ INSTALLED=$(dpkg-query -W -f='${Status} ${Version}' "$PKG" 2>/dev/null | sed -n 
 [ -n "$INSTALLED" ] && info "Versión instalada ahora: $INSTALLED"
 LEGACY_VER=$(dpkg-query -W -f='${Status} ${Version}' "$LEGACY" 2>/dev/null | sed -n 's/^install ok installed //p')
 if [ -n "$LEGACY_VER" ]; then
-  info "Tienes instalado Docker Control Center $LEGACY_VER (paquete $LEGACY): es la misma aplicación con su"
-  info "nombre anterior. apt lo sustituirá por Container Manage Center. Se conservan tu configuración, tus"
-  info "servidores, el historial, las contraseñas del llavero, las copias y sus tareas programadas."
+  info "Tienes instalada una versión anterior ($LEGACY_VER, paquete $LEGACY). apt la sustituirá y después"
+  info "se pasarán tus datos al nombre nuevo: configuración, servidores, historial y tareas programadas."
+  info "Las contraseñas del llavero y las carpetas de copias se pasan al abrir la aplicación o usarlas."
 fi
 
 # Simulación de apt (sin privilegios): dependencias que se instalarían.
@@ -224,11 +223,17 @@ if [ "$MODE" = install ]; then
     *) die "El paquete no ha quedado instalado ($STATUS)." ;;
   esac
   [ -x /usr/bin/container-manage-center ] && ok "Programa: /usr/bin/container-manage-center" || fail "Falta /usr/bin/container-manage-center"
-  [ -x /usr/bin/docker-control-center ] && ok "Nombre anterior (para las copias programadas ya creadas): /usr/bin/docker-control-center" || fail "Falta /usr/bin/docker-control-center"
   [ -f /usr/share/applications/container-manage-center.desktop ] && ok "Lanzador en el menú de aplicaciones" || fail "Falta el lanzador del menú"
-  [ -f /usr/share/applications/docker-control-center.desktop ] && fail "Sigue el lanzador anterior: /usr/share/applications/docker-control-center.desktop"
   if dpkg-query -W -f='${Status}' "$LEGACY" 2>/dev/null | grep -q "install ok installed"; then
     fail "El paquete anterior $LEGACY sigue instalado."
+  fi
+  # Datos de una versión anterior: se pasan ya, con tu usuario (D-113). Así
+  # las tareas de copia programadas siguen funcionando aunque no abras la
+  # aplicación. Si no había nada que pasar, no hace nada.
+  if /usr/bin/container-manage-center --migrate; then
+    ok "Datos de versiones anteriores: al día"
+  else
+    warn "No se pudieron pasar todos los datos de una versión anterior; se conservan sin cambios y se volverá a intentar al abrir la aplicación."
   fi
 else
   title "3. Instalación"

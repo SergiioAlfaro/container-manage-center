@@ -1,8 +1,8 @@
 # Arquitectura de Container Manage Center
 
-> Hasta la 1.6.0, *Docker Control Center*. Los identificadores internos
-> (`dcc-*`, `~/.config/docker-control-center`, `org.dockercontrolcenter.app`)
-> se mantienen a propósito: D-110.
+> Los identificadores del nombre anterior del producto solo existen en los
+> módulos `legacy` de `cmc-store` y `cmc-engine`, para encontrar y pasar al
+> nombre nuevo los datos de una versión anterior (1.8.0, D-113).
 
 Versión 0.7.1 (Fase 7 con correcciones).
 
@@ -16,9 +16,9 @@ Versión 0.7.1 (Fase 7 con correcciones).
 └──────────────┼────────────────────────────────┼───────────────────────────────────────┘
 ┌──────────────┴──────────────── Backend (Rust, tokio) ─────────────────────────────────┐
 │ src-tauri: comandos IPC · AppState · puentes de eventos · negativa a root             │
-│   ├── dcc-store     config.toml (UI, actividad, conexión Docker)                      │
-│   ├── dcc-activity  registro de operaciones reales ──► broadcast ──► ventana          │
-│   └── dcc-engine                                                                      │
+│   ├── cmc-store     config.toml (UI, actividad, conexión Docker)                      │
+│   ├── cmc-activity  registro de operaciones reales ──► broadcast ──► ventana          │
+│   └── cmc-engine                                                                      │
 │         endpoint   candidatos: DOCKER_HOST, contexto, rootless, sistema / personalizado│
 │         probe      existe · es socket · permiso · alguien escucha                     │
 │         manager    conexión, diagnóstico, latido, reconexión, with_engine()           │
@@ -37,14 +37,14 @@ Versión 0.7.1 (Fase 7 con correcciones).
 ## Estructura de directorios
 
 ```
-docker-control-center/
+container-manage-center/
 ├── Cargo.toml                    Workspace (versión 0.2.0)
 ├── crates/
-│   ├── dcc-activity/             Registro de operaciones
-│   ├── dcc-store/                Configuración persistente
-│   └── dcc-engine/
+│   ├── cmc-activity/             Registro de operaciones
+│   ├── cmc-store/                Configuración persistente
+│   └── cmc-engine/
 │       ├── src/{endpoint,probe,sys,client,manager,containers,images,resources,cli,error,model}.rs
-│       ├── src/bin/dcc-diagnose.rs   Diagnóstico desde terminal
+│       ├── src/bin/cmc-diagnose.rs   Diagnóstico desde terminal
 │       └── tests/live_docker.rs      Integración contra Docker real
 ├── src-tauri/src/
 │   ├── commands/{app,config,activity,engine,resources}.rs
@@ -57,10 +57,10 @@ docker-control-center/
 │   │   ├── dashboard/  containers/  images/  settings/  pending/
 │   ├── shared/                   ipc (cliente y tipos generados), i18n, query, format, ui
 │   └── test/                     Dobles y fixtures SOLO para pruebas
-└── scripts/                      install-build-deps.sh, verify-phase-1.sh, verify-phase-2.sh
+└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.8.0.sh
 ```
 
-## dcc-engine
+## cmc-engine
 
 ### Resolución del endpoint (`endpoint.rs`)
 Modo **automático**, en este orden y sin duplicados (`/var/run` ≡ `/run`):
@@ -200,8 +200,8 @@ Tras desplegar, iniciar, detener o reiniciar, `compose_run` confirma con inspect
 
 `src-tauri/src/journal.rs`:
 - `spawn_events_watcher` mantiene una suscripción mientras el estado es `Connected` (se cancela al desconectar y se reintenta a los 3 s si Docker la corta). Cada evento se guarda en memoria (últimos 2000), en el diario si `keep_history`, y se emite como `docker://event`.
-- `spawn_history_bridge` escucha el registro de actividad y guarda cada operación terminada como `HistoryEntry` (`dcc-activity/history.rs`: sin cuerpo, comando equivalente ni salidas; `buildargs` ocultos).
-- Los diarios son `dcc_store::journal::Journal<T>`: JSONL, carpeta 0700 y archivos 0600, líneas dañadas descartadas y contadas, compactación al abrir y al superar el máximo en un 25 %, rechazo de enlaces simbólicos. Carpeta: `DCC_STATE_DIR`, `$XDG_STATE_HOME/docker-control-center` o `estado/` junto a una configuración indicada con `DCC_CONFIG`.
+- `spawn_history_bridge` escucha el registro de actividad y guarda cada operación terminada como `HistoryEntry` (`cmc-activity/history.rs`: sin cuerpo, comando equivalente ni salidas; `buildargs` ocultos).
+- Los diarios son `cmc_store::journal::Journal<T>`: JSONL, carpeta 0700 y archivos 0600, líneas dañadas descartadas y contadas, compactación al abrir y al superar el máximo en un 25 %, rechazo de enlaces simbólicos. Carpeta: `CMC_STATE_DIR`, `$XDG_STATE_HOME/container-manage-center` o `estado/` junto a una configuración indicada con `CMC_CONFIG`.
 
 ### Auditoría de seguridad (1.3.0, `audit/`, D-093–D-095)
 `Engine::audit` lee `docker info`, los contenedores (`inspect_raw`), las imágenes (`image_details`) y `compose config` de los proyectos, y devuelve un `AuditReport`. Las comprobaciones son funciones puras (`audit/checks.rs`) que reutilizan `risk` y añaden el endurecimiento. `audit/vuln.rs` detecta Trivy y Grype, lee la fecha de su base y analiza sin red. En la aplicación, `commands/audit.rs` ejecuta la auditoría como un flujo cancelable (`audit_run_open`), oculta los secretos del informe y lo guarda en `auditorias.jsonl`. `audit_export_save` abre el diálogo de guardar desde Rust y escribe el archivo con permisos 0600. La interfaz (`ui/src/features/audit/`) genera el Markdown y el HTML en su idioma y propone correcciones a «Editar configuración» (`applyAuditFixes`).
@@ -247,8 +247,8 @@ En la aplicación:
 
 ## Administración remota (0.10.0, D-075–D-081)
 
-### Transporte (`dcc-engine/src/ssh/`, D-075)
-- `SshSession` (`session.rs`): una sesión maestra de OpenSSH por servidor (`ControlMaster=yes`, `ControlPersist=no`) con un socket de control `c-<pid>-<servidor>-<aleatorio>` en `$XDG_RUNTIME_DIR/docker-control-center/ssh` (0700). Cada canal de Docker es `ssh -o ControlMaster=no -o ControlPath=… -T -- host docker system dial-stdio` (argumentos entrecomillados uno a uno cuando hace falta) multiplexado por esa sesión; bollard lo usa como transporte propio (`connect.rs`). `close_orphans()` cierra al arrancar solo las sesiones de PID que ya no existen.
+### Transporte (`cmc-engine/src/ssh/`, D-075)
+- `SshSession` (`session.rs`): una sesión maestra de OpenSSH por servidor (`ControlMaster=yes`, `ControlPersist=no`) con un socket de control `c-<pid>-<servidor>-<aleatorio>` en `$XDG_RUNTIME_DIR/container-manage-center/ssh` (0700). Cada canal de Docker es `ssh -o ControlMaster=no -o ControlPath=… -T -- host docker system dial-stdio` (argumentos entrecomillados uno a uno cuando hace falta) multiplexado por esa sesión; bollard lo usa como transporte propio (`connect.rs`). `close_orphans()` cierra al arrancar solo las sesiones de PID que ya no existen.
 - `args.rs`: las opciones de seguridad (`StrictHostKeyChecking=yes` con la lista de huellas de la aplicación y, solo para leer, la del usuario; `UpdateHostKeys=no`; `BatchMode`/`IdentitiesOnly` según el método; sin reenvíos de agente, X11 ni puertos; `PermitLocalCommand=no`; `ServerAlive*` para detectar cortes) van siempre antes del destino y de `--`; los argumentos remotos se entrecomillan uno a uno (`shell_quote`). Nunca se construye una orden concatenando entradas del usuario.
 - `problem.rs` clasifica los fallos (`RemoteProblem`: DNS, inaccesible, rechazado, tiempo, autenticación, huella desconocida o cambiada, Docker ausente, detenido, sin permiso, API incompatible…); `connect.rs` hace las siete comprobaciones de **Probar conexión** y el diagnóstico.
 
@@ -258,7 +258,7 @@ Primer contacto: la clave se captura en un archivo temporal y se muestra la huel
 ### Secretos (`src-tauri/src/secrets.rs`, `ssh/askpass.rs`, D-077)
 `SSH_ASKPASS` es el propio binario (`main.rs` llama primero a `askpass::client_main()`), que pide el secreto por un socket Unix privado de un solo uso. Los secretos viven en memoria (`zeroize`) durante la sesión y, si el usuario lo pide, en Secret Service (crate `secret-service`). Sin almacén seguro se informa (`KeyringStatus::Unavailable`) y se piden cada vez; nunca se escriben en archivos ni en el registro.
 
-### Registro de servidores (`src-tauri/src/servers.rs`, `dcc-store/src/servers.rs`, D-078)
+### Registro de servidores (`src-tauri/src/servers.rs`, `cmc-store/src/servers.rs`, D-078)
 `servers.toml` (0600, escritura atómica) guarda los perfiles, separado de `config.toml` y sin secretos. `Servers` mantiene el `EngineManager` local y uno por servidor remoto (`EngineManager::remote`), cada uno con su propio registro de actividad etiquetado (`ServerTag`), sus tareas canceladas con un `CancellationToken` propio y su estado (`server://state`). Los 59 comandos de Docker reciben `server`; `state.server(&id)` devuelve el gestor o `server.unknown`. Los flujos se registran por servidor (`StreamRegistry::close_server`).
 
 ### Interfaz (D-079)
@@ -372,8 +372,8 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 
 | Pieza | Función |
 |---|---|
-| `src-tauri/tauri.conf.json` (`bundle`) | Metadatos del `.deb` `container-manage-center`: versión, descripción, `Recommends: openssh-client`, `Conflicts`/`Replaces`/`Provides: docker-control-center` (D-110), iconos y archivos de `/usr/share/doc/container-manage-center/` (licencia, copyright, avisos de terceros, migración) |
-| `packaging/docker-control-center` | `/usr/bin/docker-control-center`: script que abre `/usr/bin/container-manage-center` (unidades de systemd y atajos anteriores a la 1.7.0, D-110) |
+| `src-tauri/tauri.conf.json` (`bundle`) | Metadatos del `.deb` `container-manage-center`: versión, descripción, `Recommends: openssh-client`, `Conflicts`/`Replaces` del paquete anterior (D-113), iconos y archivos de `/usr/share/doc/container-manage-center/` (licencia, copyright, avisos de terceros, migración) |
+| `src-tauri/src/migration.rs`, `cmc-store::migrate` | Paso de los datos de versiones anteriores al nombre nuevo: carpetas, tareas programadas, copias y contraseñas; `container-manage-center --migrate` (D-113) |
 | `scripts/deb-set-depends.sh` | Dependencias reales del binario con `dpkg-shlibdeps` (D-059) |
 | `scripts/build-deb-compat.sh` | Paquete compatible compilado en un contenedor de Ubuntu 22.04 |
 | `packaging/copyright`, `LICENSE` | Licencia (DEP-5) |
@@ -382,25 +382,25 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | `scripts/install.sh` | Instalación, comprobación y desinstalación para el usuario final |
 | `scripts/run.sh` | Ejecutar la versión instalada o la compilación del código |
 | `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba); con `UPGRADE_FROM`, actualización desde una versión anterior comprobando que los datos del usuario no cambian (1.7.0) |
-| `scripts/verify-phase-10.sh` | Verificación final: regresión completa, color, paquetes e instalador |
+| `scripts/verify-evolution-1.8.0.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
 
 ## Pruebas
 
 | Capa | Herramienta | Cantidad |
 |---|---|---|
 | Rust unitarias | `cargo test` | 27 actividad · 301 motor · 37 configuración · 124 aplicación (1.0.0) |
-| Integración IPC (runtime simulado de Tauri) | `cargo test -p docker-control-center` | 75: incluye las de actualizaciones (servidor local, límites, redirecciones; HTTPS real solo con `DCC_NET_TESTS=1`) y la de la Fase 9 por IPC; ocho contra Docker real (inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose; eventos) |
-| Integración contra Docker real | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `DCC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
-| Carrera de estado de Docker (determinista) | `cargo test -p dcc-engine --test stale_list --test stale_compose` | 1 + 1 |
-| Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p dcc-engine --test events_interrupted` | 3 |
+| Integración IPC (runtime simulado de Tauri) | `cargo test -p container-manage-center` | 75: incluye las de actualizaciones (servidor local, límites, redirecciones; HTTPS real solo con `CMC_NET_TESTS=1`) y la de la Fase 9 por IPC; ocho contra Docker real (inspección, capas y construcción; descarga completa y cancelada; redes; volúmenes; Compose; eventos) |
+| Integración contra Docker real | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_docker --test live_containers --test live_images --test live_networks --test live_volumes --test live_compose --test live_events` | 11 + 7 + 9 + 4 + 4 + 6 + 2 (redes, volúmenes y Compose: probados con Docker 29 y 24; Compose con 5.6.1 y, con `CMC_TEST_COMPOSE`, con el binario 2.26.1; 2 requieren usuario no root; la descarga usa un registro local con una imagen nueva en cada prueba, D-043, D-045; probadas con los almacenes de imágenes clásico y containerd) |
+| Carrera de estado de Docker (determinista) | `cargo test -p cmc-engine --test stale_list --test stale_compose` | 1 + 1 |
+| Interrupción de la suscripción a eventos (servidor simulado) | `cargo test -p cmc-engine --test events_interrupted` | 3 |
 | Interfaz | Vitest + Testing Library (zona horaria fija Europe/Madrid) | 376 |
-| Administración remota contra servidores SSH reales (0.10.0) | `DCC_DOCKER_TESTS=1 DCC_SSH_LAB=lab.json cargo test -p dcc-engine --test live_ssh -- --test-threads=1`; IPC con `DCC_TEST_ASKPASS`; las suites de recursos con `DCC_SSH_TEST=usuario@host:puerto` (laboratorio de `scripts/dev/remote-lab.sh`, solo en una máquina de pruebas) | 12 + 1 IPC; contenedores, imágenes, redes, volúmenes, terminales, edición y eventos repetidos por SSH |
-| Llavero real (0.10.0) | `DCC_KEYRING_TEST=1` dentro de una sesión D-Bus con un llavero temporal | 1 |
-| Edición, recreación y commit contra Docker real (0.9.2) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |
-| Terminales múltiples contra Docker real (0.9.1) | `DCC_DOCKER_TESTS=1 cargo test -p dcc-engine --test live_terminals` | 5 |
-| Desinstalación real (0.9.1) | `DCC_TEST_CHROOT=… DCC_TEST_DEB=… cargo test -p docker-control-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
+| Administración remota contra servidores SSH reales (0.10.0) | `CMC_DOCKER_TESTS=1 CMC_SSH_LAB=lab.json cargo test -p cmc-engine --test live_ssh -- --test-threads=1`; IPC con `CMC_TEST_ASKPASS`; las suites de recursos con `CMC_SSH_TEST=usuario@host:puerto` (laboratorio de `scripts/dev/remote-lab.sh`, solo en una máquina de pruebas) | 12 + 1 IPC; contenedores, imágenes, redes, volúmenes, terminales, edición y eventos repetidos por SSH |
+| Llavero real (0.10.0) | `CMC_KEYRING_TEST=1` dentro de una sesión D-Bus con un llavero temporal | 1 |
+| Edición, recreación y commit contra Docker real (0.9.2) | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |
+| Terminales múltiples contra Docker real (0.9.1) | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_terminals` | 5 |
+| Desinstalación real (0.9.1) | `CMC_TEST_CHROOT=… CMC_TEST_DEB=… cargo test -p container-manage-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-phase-10.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
+| Paquete | `scripts/verify-evolution-1.8.0.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
 | Instalación limpia | `scripts/dev/clean-install-test.sh` (root, máquina de pruebas) | Ubuntu 24.04 y 22.04: instalación con un usuario normal, archivos, arranque y desinstalación |
-| Manual | `scripts/verify-phase-10.sh` | F1–F8 (solo lo que cambia en la 1.0.0) |
+| Manual | `docs/validation/VALIDACION-1.8.0.md` | Solo lo que cambia en la 1.8.0 |

@@ -12,8 +12,8 @@ use std::io::Write;
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
-use dcc_activity::redact::redact_text;
-use dcc_engine::audit::{
+use cmc_activity::redact::redact_text;
+use cmc_engine::audit::{
     AuditProgress, AuditReport, AuditRequest, AuditSummary, ImageVulns, VulnTool,
 };
 use serde::Serialize;
@@ -89,7 +89,7 @@ pub fn redact_report(rep: &mut AuditReport) {
 /// versión y la fecha de su base. No usa la red.
 #[tauri::command]
 pub async fn audit_tools() -> CmdResult<Vec<VulnTool>> {
-    Ok(dcc_engine::audit::vuln::detect_tools().await)
+    Ok(cmc_engine::audit::vuln::detect_tools().await)
 }
 
 /// Ejecuta una auditoría (solo lectura) y la guarda en el historial.
@@ -230,7 +230,7 @@ pub fn write_export(path: &Path, ext: &str, content: &str) -> std::io::Result<Pa
         .parent()
         .ok_or_else(|| std::io::Error::other("ruta sin carpeta"))?;
     let tmp = dir.join(format!(
-        ".{}.dcc-{}.tmp",
+        ".{}.cmc-{}.tmp",
         path.file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default(),
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn exports_are_redacted_private_and_have_the_right_extension() {
         let d = tempfile::Builder::new()
-            .prefix("dcc-test")
+            .prefix("cmc-test")
             .tempdir()
             .unwrap();
         let p = write_export(

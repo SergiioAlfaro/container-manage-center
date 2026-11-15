@@ -1,7 +1,7 @@
 # Guía de usuario · Container Manage Center
 
-> Versión 1.7.0. Hasta la 1.6.0 la aplicación se llamaba *Docker Control
-> Center* ([cambio de nombre](docs/MIGRATION-CMC.md)).
+> Versión 1.8.0. Para actualizar desde una versión anterior, véase
+> [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 >
 > Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)
 >
@@ -269,7 +269,7 @@ confirmas.
   que no pasan al contenedor nuevo; montajes que quitas; contenedores que usan
   la red de este…) y una confirmación final;
 - detiene el contenedor si está en ejecución, le cambia el nombre a
-  `<nombre>-dcc-backup-<fecha>` (la copia), crea el nuevo con **toda** la
+  `<nombre>-cmc-backup-<fecha>` (la copia), crea el nuevo con **toda** la
   configuración del original más tus cambios, conecta sus redes y comprueba que
   funciona;
 - si algo falla, elimina el nuevo (sin sus volúmenes), devuelve el nombre al
@@ -627,7 +627,7 @@ en otros.
 elegido (este equipo o uno remoto) y las restaura.
 
 - **Carpeta de destino**: «Elegir carpeta» abre el diálogo del sistema. Dentro
-  se crea `docker-control-center-copias/<servidor>/<copia>/`, solo para tu
+  se crea `container-manage-center-copias/<servidor>/<copia>/`, solo para tu
   usuario (carpetas 0700, archivos 0600). No se pueden usar carpetas del
   sistema. Puede ser un disco externo o una carpeta de red ya montada.
 - **Nueva copia**: marca lo que quieras copiar.
@@ -708,7 +708,7 @@ inicio sigue igual.
   - El disco solo aparece si Docker lo da (depende del almacenamiento).
 - **Periodo**: 5, 15 y 30 minutos vienen de la memoria, con cada muestra (desde
   que abriste la aplicación); 1, 6 y 24 horas, del resumen por minuto que se
-  guarda en tu equipo (`~/.local/state/docker-control-center/monitor/`, solo
+  guarda en tu equipo (`~/.local/state/container-manage-center/monitor/`, solo
   para tu usuario).
 - **Comparar**: elige hasta 4 contenedores en marcha y una métrica para verlos
   en el mismo gráfico. Cada uno tiene su color y su tipo de línea.
@@ -765,7 +765,7 @@ El historial guarda **qué** se hizo, **cuándo** y **con qué resultado**, pero
 nunca el cuerpo de las peticiones, el comando equivalente ni las salidas, porque
 pueden contener contraseñas (variables de entorno, argumentos de construcción).
 Esos detalles solo están en el panel de actividad mientras la aplicación está
-abierta. Los archivos están en `~/.local/state/docker-control-center/`, solo
+abierta. Los archivos están en `~/.local/state/container-manage-center/`, solo
 legibles por tu usuario. Puedes borrar lo guardado desde cada pestaña o dejar de
 guardar con la opción **Guardar historial** de Configuración.
 
@@ -839,13 +839,13 @@ mientras haya conexión).
 Las fechas y horas de los registros (panel de actividad, eventos, historial y
 logs) usan siempre el mismo formato de 24 horas.
 
-Todo se guarda al momento en `~/.config/docker-control-center/config.toml`.
+Todo se guarda al momento en `~/.config/container-manage-center/config.toml`.
 
 ## Legal
 
 | | |
 |---|---|
-| Nombre | **Container Manage Center** (abreviado **CMC**); hasta la 1.6.0, *Docker Control Center* |
+| Nombre | **Container Manage Center** (abreviado **CMC**) |
 | Licencia | GNU General Public License, versión 3 o posterior · SPDX `GPL-3.0-or-later` |
 | Copyright | **Copyright © 2026 Sergio Alfaro Lorite** |
 | Texto de la licencia | https://www.gnu.org/licenses/gpl-3.0.html · `/usr/share/doc/container-manage-center/LICENSE` |

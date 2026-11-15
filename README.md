@@ -65,7 +65,7 @@ bash scripts/install.sh --uninstall
 ```
 
 O directamente: `sudo apt install ./container-manage-center_1.7.0_amd64.deb`
-(sustituye a `docker-control-center` si estaba instalado).
+(sustituye a una versión anterior si estaba instalada y pasa tus datos al nombre nuevo).
 Después se abre desde el menú de aplicaciones o con `container-manage-center`
 (desde el código fuente: `bash scripts/run.sh`). Requisitos, acceso a Docker,
 compilación y diagnóstico en [INSTALL.md](INSTALL.md).
@@ -83,15 +83,15 @@ compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 | [docs/roadmap/PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md) | Plan de evolución (etapas E0–E6) |
 | [docs/security/](docs/security/) | Auditoría de seguridad, plan de corrección y lista de comprobación |
 | [docs/validation/VALIDACION-GUIADA-1.6.0.md](docs/validation/VALIDACION-GUIADA-1.6.0.md) | Validación manual guiada (todo lo pendiente, en un solo recorrido) |
-| [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md) | Paso de Docker Control Center a Container Manage Center |
+| [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md) | Actualizar desde una versión anterior a la 1.8.0 (paso de los datos al nombre nuevo) |
 | [docs/legal/](docs/legal/) | Licencia, copyright, auditoría de dependencias, avisos de terceros y cumplimiento al distribuir |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Cómo contribuir (licencia, encabezados SPDX, dependencias) |
 
 ## Comprobación
 
 ```bash
-bash scripts/verify-evolution-1.7.0.sh --deb   # regresión completa, paquete, identidad y licencias
-cargo run -q -p dcc-engine --bin dcc-diagnose   # diagnóstico de la conexión con Docker
+bash scripts/verify-evolution-1.8.0.sh --deb   # regresión completa, paquete, licencias y migración
+cargo run -q -p cmc-engine --bin cmc-diagnose   # diagnóstico de la conexión con Docker
 npm run lint                                    # ESLint (configuración mínima, reglas de seguridad)
 cargo deny check                                # dependencias de Rust (deny.toml)
 python3 scripts/third-party-licenses.py --check  # avisos de terceros y auditoría al día

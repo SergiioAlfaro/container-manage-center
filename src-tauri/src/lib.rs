@@ -8,6 +8,7 @@ mod error;
 mod events;
 mod journal;
 mod links;
+mod migration;
 mod monitor;
 mod notify;
 mod secrets;
@@ -18,7 +19,7 @@ mod systemd;
 mod uninstall;
 mod updates;
 
-use dcc_store::ConfigStore;
+use cmc_store::ConfigStore;
 use tauri::{Builder, Manager, Runtime};
 
 pub use error::CommandError;
@@ -88,7 +89,7 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             // Sesiones SSH que dejó una instancia anterior cerrada a la fuerza.
             let paths = app.state::<state::AppState>().servers.ctx.paths.clone();
             tauri::async_runtime::spawn(async move {
-                let n = dcc_engine::ssh::session::close_orphans(&paths).await;
+                let n = cmc_engine::ssh::session::close_orphans(&paths).await;
                 if n > 0 {
                     tracing::info!(n, "sesiones SSH huérfanas cerradas");
                 }
@@ -97,6 +98,12 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::app::spawn_startup_check(app.handle().clone());
             // Monitorización de los servidores activados (sobrevive a un reinicio).
             monitor::start_enabled(app.handle());
+            // Tareas programadas y contraseñas del nombre anterior (D-113).
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state = handle.state::<state::AppState>();
+                migration::migrate_units_and_secrets(&state).await;
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -236,14 +243,16 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
 pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_env("DCC_LOG")
+            tracing_subscriber::EnvFilter::try_from_env("CMC_LOG")
                 .unwrap_or_else(|_| "info".into()),
         )
         .init();
 
     refuse_root();
+    // Datos del nombre anterior: antes de abrir ningún archivo (D-113).
+    migration::migrate_dirs();
 
-    let store = match std::env::var_os("DCC_CONFIG") {
+    let store = match std::env::var_os("CMC_CONFIG") {
         Some(p) => ConfigStore::at(p),
         None => match ConfigStore::default_location() {
             Ok(s) => s,
@@ -259,6 +268,11 @@ pub fn run() {
         .expect("error al iniciar Container Manage Center");
 }
 
+/// `container-manage-center --migrate` (1.8.0, D-113). `None` si no se pidió.
+pub fn migrate_main() -> Option<i32> {
+    migration::cli_main()
+}
+
 /// Modo sin ventana de los temporizadores de systemd (E4, D-100):
 /// `container-manage-center --run-backup <tarea>`. `None` si no se pidió.
 pub fn headless_main() -> Option<i32> {
@@ -272,12 +286,13 @@ pub fn headless_main() -> Option<i32> {
     };
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_env("DCC_LOG")
+            tracing_subscriber::EnvFilter::try_from_env("CMC_LOG")
                 .unwrap_or_else(|_| "warn".into()),
         )
         .init();
     refuse_root();
-    let store = match std::env::var_os("DCC_CONFIG") {
+    migration::migrate_dirs();
+    let store = match std::env::var_os("CMC_CONFIG") {
         Some(p) => ConfigStore::at(p),
         None => match ConfigStore::default_location() {
             Ok(s) => s,
@@ -329,7 +344,7 @@ pub async fn run_backup_job(store: ConfigStore, id: &str) -> i32 {
     if state.config().activity.keep_history {
         if let Some(j) = &state.journals.history {
             for rec in state.activity.snapshot().into_iter().rev() {
-                if let Some(e) = dcc_activity::HistoryEntry::from_record(&rec) {
+                if let Some(e) = cmc_activity::HistoryEntry::from_record(&rec) {
                     let _ = j.append(e);
                 }
             }
@@ -380,15 +395,15 @@ fn job_lock(state: &state::AppState, id: &str) -> Result<std::fs::File, i32> {
 }
 
 /// La aplicación no debe ejecutarse como root (requisito de seguridad §12).
-/// `DCC_ALLOW_ROOT=1` lo permite solo en las compilaciones de desarrollo y
+/// `CMC_ALLOW_ROOT=1` lo permite solo en las compilaciones de desarrollo y
 /// prueba (entornos aislados). En la compilación de publicación se ignora
-/// (E2, DCC-SEC-11, D-091).
+/// (E2, CMC-SEC-11, D-091).
 fn refuse_root() {
     #[cfg(unix)]
     {
         // SAFETY: geteuid no tiene precondiciones y siempre tiene éxito.
         let euid = unsafe { geteuid() };
-        let override_set = std::env::var_os("DCC_ALLOW_ROOT").is_some();
+        let override_set = std::env::var_os("CMC_ALLOW_ROOT").is_some();
         if !may_run(euid, override_set, cfg!(debug_assertions)) {
             eprintln!(
                 "Container Manage Center no debe ejecutarse como root.\n\
@@ -400,7 +415,7 @@ fn refuse_root() {
 }
 
 /// ¿Puede arrancar? Como root, solo en una compilación de desarrollo y con
-/// `DCC_ALLOW_ROOT` definida.
+/// `CMC_ALLOW_ROOT` definida.
 fn may_run(euid: u32, override_set: bool, dev_build: bool) -> bool {
     euid != 0 || (override_set && dev_build)
 }
@@ -416,7 +431,7 @@ mod root_tests {
         assert!(!may_run(0, false, false));
         assert!(
             !may_run(0, true, false),
-            "publicación: DCC_ALLOW_ROOT se ignora"
+            "publicación: CMC_ALLOW_ROOT se ignora"
         );
         assert!(!may_run(0, false, true));
         assert!(may_run(0, true, true), "desarrollo y pruebas aisladas");

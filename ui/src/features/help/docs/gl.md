@@ -40,7 +40,7 @@ Non cómpre configurar nada para comezar: a conexión con Docker é automática.
 - Se se garda o historial de operacións e eventos entre sesións.
 - Un socket concreto de Docker, se non queres a detección automática.
 
-Todo se garda ao momento en `~/.config/docker-control-center/config.toml`.
+Todo se garda ao momento en `~/.config/container-manage-center/config.toml`.
 
 ## 5. Conexión con Docker Engine {#connection}
 
@@ -137,7 +137,7 @@ Ao premer o nome dun contedor ábrese o seu **detalle**: Resumo, Rexistros, Term
 
 - **Rede**: amosa as redes, a IP, a MAC e os alias. Docker non permite cambiar os alias nin a IP dunha conexión existente: hai que desconectar e volver conectar. Se é a única rede do contedor, avísase antes de desconectala.
 - **Variables**: os valores que parecen segredos ocúltanse na pantalla e nunca se gardan no panel de actividade.
-- **Descrición**: gárdase na etiqueta `dcc.description` do contedor.
+- **Descrición**: gárdase na etiqueta `cmc.description` do contedor.
 
 **Revisar os cambios** compara a configuración actual coa nova: que cambia (antes e despois, elemento a elemento), que se mantén e que require recrear. Non se aplica nada ata que o confirmes.
 
@@ -145,7 +145,7 @@ Ao premer o nome dun contedor ábrese o seu **detalle**: Resumo, Rexistros, Term
 
 1. Comproba a imaxe, os conflitos de nome e de portos con outros contedores e os motivos que impiden recrear con seguridade: contedores de Compose ou Swarm, creados con `--rm`, en pausa ou reiniciándose. Neses casos non deixa continuar.
 2. Amosa os riscos que debes aceptar un a un: ficheiros escritos fóra dos volumes (non pasan ao contedor novo), montaxes que deixan de estar montadas, contedores que usan a rede deste…
-3. Ao confirmar: detén o contedor se está en marcha, cámbialle o nome a `<nome>-dcc-backup-<data>` (copia de seguridade), crea o novo con **toda** a configuración orixinal máis os teus cambios, conecta as súas redes e, se estaba en marcha, inicia o contedor e comproba que segue funcionando uns segundos.
+3. Ao confirmar: detén o contedor se está en marcha, cámbialle o nome a `<nome>-cmc-backup-<data>` (copia de seguridade), crea o novo con **toda** a configuración orixinal máis os teus cambios, conecta as súas redes e, se estaba en marcha, inicia o contedor e comproba que segue funcionando uns segundos.
 4. Se algo falla, elimina o contedor novo (sen tocar os seus volumes), devólvelle o nome ao orixinal e volve inicialo.
 
 **Nunca se eliminan volumes, cartafoles nin imaxes.** Os volumes anónimos vólvense montar co seu contido. A copia queda detida en **Xeral › Copias de seguridade**, desde onde podes **Restaurala** (o contedor actual apártase, non se elimina) ou **Eliminala** cando xa non a necesites. Todas as operacións quedan no panel de actividade, sen valores sensibles.
@@ -260,7 +260,7 @@ Cada operación aparece no **panel de actividade**: hora, distintivo **API** (pe
 
 O apartado **Eventos e rexistros** amosa os eventos de Docker en directo, os gardados, a consulta a Docker dun período (`docker events --since … --until …`; Docker só conserva os últimos 256) e o **historial de operacións** desta e doutras sesións.
 
-O historial garda que se fixo, cando e con que resultado, pero nunca o corpo das peticións, a orde nin as saídas, porque poden conter contrasinais. Está en `~/.local/state/docker-control-center/`, só lexible polo teu usuario.
+O historial garda que se fixo, cando e con que resultado, pero nunca o corpo das peticións, a orde nin as saídas, porque poden conter contrasinais. Está en `~/.local/state/container-manage-center/`, só lexible polo teu usuario.
 
 ## 23. Configuración, temas e idiomas {#settings}
 
@@ -345,13 +345,13 @@ Se `pkexec` non está instalado, a aplicación non pode pedir permisos: o diálo
 
 **Pérdense os meus datos ao desinstalar?** Non. Consérvanse a túa configuración, o teu historial e todo o de Docker.
 
-**Onde se gardan a configuración e o historial?** En `~/.config/docker-control-center/` e `~/.local/state/docker-control-center/`.
+**Onde se gardan a configuración e o historial?** En `~/.config/container-manage-center/` e `~/.local/state/container-manage-center/`.
 
 **Como cambio o idioma?** En Configuración › Aparencia › Idioma.
 
 ## 28. Legal {#legal}
 
-**Nome:** Container Manage Center (abreviado **CMC**). Ata a versión 1.6.0 chamábase «Docker Control Center»; o paquete `container-manage-center` substitúe o antigo `docker-control-center` e conserva a túa configuración, o teu historial, os teus servidores, as túas copias e as túas tarefas programadas.
+**Nome:** Container Manage Center (abreviado **CMC**).
 
 **Licenza:** GNU General Public License, versión 3 ou posterior (identificador SPDX `GPL-3.0-or-later`).
 

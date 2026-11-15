@@ -7,7 +7,7 @@
  */
 (function () {
   function show(msg) {
-    if (window.__dccBooted) return;
+    if (window.__cmcBooted) return;
     var root = document.getElementById("root");
     if (!root) return;
     root.innerHTML = "";

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Contenedores e imágenes.
 
-use dcc_engine::{ContainerAction, ContainerState, ContainerSummary, EngineError, ImageSummary};
+use cmc_engine::{ContainerAction, ContainerState, ContainerSummary, EngineError, ImageSummary};
 use tauri::State;
 
 use crate::error::CmdResult;

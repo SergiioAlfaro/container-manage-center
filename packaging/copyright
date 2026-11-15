@@ -2,8 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Container Manage Center
 Upstream-Contact: Sergio Alfaro Lorite
 Comment:
- Container Manage Center (CMC), antes «Docker Control Center». Proyecto
- independiente: no está afiliado a Docker, Inc. ni respaldado por ella.
+ Container Manage Center (CMC). Proyecto independiente: no está afiliado a Docker, Inc. ni respaldado por ella.
  «Docker» es una marca registrada de Docker, Inc.; aquí solo se usa para
  describir con qué software se integra el programa.
  .

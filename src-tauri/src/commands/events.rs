@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 8: eventos de Docker e historial de operaciones.
 
-use dcc_engine::events::{EventQuery, EventQueryResult};
+use cmc_engine::events::{EventQuery, EventQueryResult};
 use tauri::State;
 
 use crate::error::{CmdResult, CommandError};

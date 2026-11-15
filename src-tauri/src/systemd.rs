@@ -5,7 +5,7 @@
 //!
 //! - Solo se crean, cambian o eliminan archivos de systemd con la
 //!   **autorización expresa** del usuario, tras mostrarle su contenido exacto.
-//! - Solo se tocan archivos propios: `dcc-backup-<tarea>.service/.timer` en
+//! - Solo se tocan archivos propios: `cmc-backup-<tarea>.service/.timer` en
 //!   `~/.config/systemd/user/` con la marca [`MARKER`]. Un archivo con ese
 //!   nombre sin la marca nunca se sobrescribe ni se elimina.
 //! - `systemctl --user` sin shell, con los argumentos exactos registrados en el
@@ -14,14 +14,14 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use dcc_activity::{ActivityLog, Category, Failure, OperationSpec, Outcome, Transport};
+use cmc_activity::{ActivityLog, Category, Failure, OperationSpec, Outcome, Transport};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::backups::{BackupJob, Schedule};
 
 /// Marca que identifica los archivos creados por la aplicación.
-pub const MARKER: &str = "# dcc-managed-backup-job:";
+pub const MARKER: &str = "# cmc-managed-backup-job:";
 const TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Estado del temporizador de una tarea.
@@ -112,11 +112,11 @@ pub fn on_calendar(s: &Schedule) -> String {
 
 impl Systemd {
     /// systemd del usuario: `systemctl` del `PATH` y `$XDG_CONFIG_HOME/systemd/user`.
-    /// En las compilaciones de desarrollo `DCC_SYSTEMCTL` sustituye el
+    /// En las compilaciones de desarrollo `CMC_SYSTEMCTL` sustituye el
     /// programa (pruebas con un `systemctl` simulado).
     pub fn from_env() -> Option<Self> {
         let program = if cfg!(debug_assertions) {
-            std::env::var_os("DCC_SYSTEMCTL")
+            std::env::var_os("CMC_SYSTEMCTL")
                 .map(PathBuf::from)
                 .or_else(|| find_in_path("systemctl"))
         } else {
@@ -133,7 +133,7 @@ impl Systemd {
     }
 
     pub fn unit_base(job_id: &str) -> String {
-        format!("dcc-backup-{job_id}")
+        format!("cmc-backup-{job_id}")
     }
 
     fn paths(&self, job_id: &str) -> (PathBuf, PathBuf) {
@@ -321,7 +321,7 @@ impl Systemd {
     fn write_unit(path: &Path, text: &str) -> std::io::Result<()> {
         use std::io::Write;
         use std::os::unix::fs::OpenOptionsExt;
-        let tmp = path.with_extension("dcc-tmp");
+        let tmp = path.with_extension("cmc-tmp");
         let _ = std::fs::remove_file(&tmp);
         let mut f = std::fs::OpenOptions::new()
             .write(true)
@@ -394,6 +394,110 @@ impl Systemd {
         self.systemctl(log, &[verb, "--now", &Self::timer_unit(job_id)], true)
             .await
             .map(|_| ())
+    }
+
+    /// Pasa al nombre nuevo las unidades creadas antes de la 1.8.0
+    /// (`dcc-backup-<tarea>`, con la marca y la ruta del programa antiguos,
+    /// D-113). Solo toca archivos con la marca antigua de la propia tarea.
+    /// - Tarea existente: se crean las unidades nuevas (que ejecutan `exe`) y,
+    ///   si el temporizador antiguo estaba activado, se activa el nuevo; solo
+    ///   después se desactiva y se borra el antiguo. Así no se pierde ninguna
+    ///   programación.
+    /// - Tarea que ya no existe: la unidad antigua no podría hacer nada; se
+    ///   desactiva y se borra.
+    ///
+    /// Devuelve los problemas (vacío si todo fue bien). Las tareas con
+    /// problemas conservan sus unidades antiguas.
+    pub async fn migrate_legacy(
+        &self,
+        log: &ActivityLog,
+        jobs: &[BackupJob],
+        exe: &Path,
+    ) -> Vec<String> {
+        use cmc_store::legacy;
+        let mut ids = std::collections::BTreeSet::new();
+        if let Ok(rd) = std::fs::read_dir(&self.unit_dir) {
+            for e in rd.flatten() {
+                let name = e.file_name().to_string_lossy().into_owned();
+                let id = name.strip_prefix(legacy::UNIT_PREFIX).and_then(|r| {
+                    r.strip_suffix(".service")
+                        .or_else(|| r.strip_suffix(".timer"))
+                });
+                if let Some(id) = id {
+                    ids.insert(id.to_owned());
+                }
+            }
+        }
+        let mut problems = Vec::new();
+        for id in ids {
+            let base = format!("{}{id}", legacy::UNIT_PREFIX);
+            let (osp, otp) = (
+                self.unit_dir.join(format!("{base}.service")),
+                self.unit_dir.join(format!("{base}.timer")),
+            );
+            let marker = format!("{} {id}", legacy::UNIT_MARKER);
+            let ours = |p: &Path| {
+                std::fs::read_to_string(p)
+                    .ok()
+                    .map(|t| t.lines().next() == Some(marker.as_str()))
+            };
+            if [&osp, &otp].iter().any(|p| ours(p) == Some(false)) {
+                // Un archivo con ese nombre que no es de la aplicación: no se toca.
+                continue;
+            }
+            let old_timer = format!("{base}.timer");
+            let was_enabled = std::fs::symlink_metadata(
+                self.unit_dir.join("timers.target.wants").join(&old_timer),
+            )
+            .is_ok();
+            if let Some(job) = jobs.iter().find(|j| j.id == id) {
+                if let Err(e) = self.install(log, job, exe).await {
+                    problems.push(format!("tarea {id}: {e}"));
+                    continue;
+                }
+                if !was_enabled {
+                    if let Err(e) = self.set_enabled(log, &id, false).await {
+                        problems.push(format!("tarea {id}: {e}"));
+                    }
+                }
+            }
+            let _ = self
+                .systemctl(log, &["disable", "--now", &old_timer], true)
+                .await;
+            let h = log.begin(OperationSpec {
+                category: Category::Backup,
+                kind: "backup.timer.delete".into(),
+                target: Some(old_timer.clone()),
+                transport: Transport::App {
+                    action: format!(
+                        "Eliminar {} y {} (nombre anterior)",
+                        osp.display(),
+                        otp.display()
+                    ),
+                },
+                request_body: None,
+                equivalent_command: None,
+            });
+            let removed = [&osp, &otp]
+                .iter()
+                .filter(|p| p.exists())
+                .try_for_each(std::fs::remove_file);
+            match removed {
+                Ok(()) => h.succeed(Outcome {
+                    summary: Some("Unidades del nombre anterior eliminadas".into()),
+                    ..Default::default()
+                }),
+                Err(e) => {
+                    h.fail(Failure {
+                        error: e.to_string(),
+                        ..Default::default()
+                    });
+                    problems.push(format!("tarea {id}: {e}"));
+                }
+            }
+            let _ = self.systemctl(log, &["daemon-reload"], true).await;
+        }
+        problems
     }
 
     /// Desactiva y elimina las unidades propias de la tarea.
@@ -488,7 +592,7 @@ mod tests {
     #[tokio::test]
     async fn timers_are_created_listed_disabled_and_removed_only_when_ours() {
         let d = tempfile::Builder::new()
-            .prefix("dcc-test")
+            .prefix("cmc-test")
             .tempdir()
             .unwrap();
         let sd = Systemd {
@@ -497,7 +601,7 @@ mod tests {
         };
         let log = ActivityLog::new(100);
         let j = job();
-        let exe = Path::new("/usr/bin/docker control center");
+        let exe = Path::new("/usr/bin/container manage center");
         // Sin crear: nada instalado y ninguna orden ejecutada.
         let st = sd.status(&log, &j, exe).await;
         assert!(!st.installed && !st.foreign);
@@ -506,9 +610,9 @@ mod tests {
         assert!(pv
             .service_text
             .starts_with(&format!("{MARKER} job-0a1b2c3d\n")));
-        assert!(pv
-            .service_text
-            .contains("ExecStart=\"/usr/bin/docker control center\" --run-backup job-0a1b2c3d\n"));
+        assert!(pv.service_text.contains(
+            "ExecStart=\"/usr/bin/container manage center\" --run-backup job-0a1b2c3d\n"
+        ));
         assert!(pv
             .service_text
             .contains("Description=Container Manage Center: copia «Diaria %%h \"x\" línea»"));
@@ -544,9 +648,9 @@ mod tests {
         let calls = std::fs::read_to_string(d.path().join("calls")).unwrap();
         let expected = [
             "--user daemon-reload",
-            "--user enable --now dcc-backup-job-0a1b2c3d.timer",
-            "--user disable --now dcc-backup-job-0a1b2c3d.timer",
-            "--user disable --now dcc-backup-job-0a1b2c3d.timer",
+            "--user enable --now cmc-backup-job-0a1b2c3d.timer",
+            "--user disable --now cmc-backup-job-0a1b2c3d.timer",
+            "--user disable --now cmc-backup-job-0a1b2c3d.timer",
             "--user daemon-reload",
         ];
         let got: Vec<&str> = calls.lines().filter(|l| !l.contains(" show ")).collect();
@@ -568,6 +672,87 @@ mod tests {
             "[Timer]\nOnCalendar=daily\n"
         );
         assert!(!sp.exists());
+    }
+
+    #[tokio::test]
+    async fn units_from_before_1_8_0_are_moved_to_the_new_name_keeping_their_state() {
+        let d = tempfile::Builder::new()
+            .prefix("cmc-test")
+            .tempdir()
+            .unwrap();
+        let ud = d.path().join("user");
+        std::fs::create_dir_all(ud.join("timers.target.wants")).unwrap();
+        let sd = Systemd {
+            program: fake(d.path()),
+            unit_dir: ud.clone(),
+        };
+        let log = ActivityLog::new(100);
+        let mut off = BackupJob::new_for_tests("job-desactivada");
+        off.schedule = Schedule::Daily { hour: 1, minute: 0 };
+        let on = job();
+        let legacy_unit = |id: &str, ext: &str| {
+            let p = ud.join(format!("dcc-backup-{id}.{ext}"));
+            std::fs::write(
+                &p,
+                format!("# dcc-managed-backup-job: {id}\n[Service]\nExecStart=/usr/bin/docker-control-center --run-backup {id}\n"),
+            )
+            .unwrap();
+            p
+        };
+        let mut old = Vec::new();
+        for id in ["job-0a1b2c3d", "job-desactivada", "job-borrada"] {
+            old.push(legacy_unit(id, "service"));
+            old.push(legacy_unit(id, "timer"));
+        }
+        // Activadas: la primera y la de una tarea que ya no existe.
+        for id in ["job-0a1b2c3d", "job-borrada"] {
+            std::os::unix::fs::symlink(
+                ud.join(format!("dcc-backup-{id}.timer")),
+                ud.join(format!("timers.target.wants/dcc-backup-{id}.timer")),
+            )
+            .unwrap();
+        }
+        // Un archivo ajeno con el prefijo antiguo no se toca.
+        std::fs::write(ud.join("dcc-backup-ajena.timer"), "[Timer]\n").unwrap();
+        let exe = Path::new("/usr/bin/container-manage-center");
+        let problems = sd
+            .migrate_legacy(&log, &[on.clone(), off.clone()], exe)
+            .await;
+        assert!(problems.is_empty(), "{problems:?}");
+        for p in &old {
+            assert!(!p.exists(), "{} sigue", p.display());
+        }
+        assert!(ud.join("dcc-backup-ajena.timer").exists());
+        for j in [&on, &off] {
+            let (sp, tp) = sd.paths(&j.id);
+            let (s, t) = Systemd::render(j, exe);
+            assert_eq!(std::fs::read_to_string(sp).unwrap(), s);
+            assert_eq!(std::fs::read_to_string(tp).unwrap(), t);
+        }
+        assert!(Systemd::render(&on, exe).0.contains(
+            "ExecStart=\"/usr/bin/container-manage-center\" --run-backup job-0a1b2c3d\n"
+        ));
+        let calls = std::fs::read_to_string(d.path().join("calls")).unwrap();
+        let got: Vec<&str> = calls.lines().collect();
+        let pos = |s: &str| {
+            got.iter()
+                .position(|l| *l == s)
+                .unwrap_or_else(|| panic!("falta {s}: {got:?}"))
+        };
+        // El nuevo se activa antes de desactivar el antiguo.
+        assert!(
+            pos("--user enable --now cmc-backup-job-0a1b2c3d.timer")
+                < pos("--user disable --now dcc-backup-job-0a1b2c3d.timer")
+        );
+        // La desactivada sigue desactivada con el nombre nuevo.
+        assert!(got.contains(&"--user disable --now cmc-backup-job-desactivada.timer"));
+        // La de una tarea borrada solo se quita.
+        assert!(got.contains(&"--user disable --now dcc-backup-job-borrada.timer"));
+        assert!(!got.iter().any(|l| l.contains("cmc-backup-job-borrada")));
+        // Repetirla no hace nada.
+        std::fs::remove_file(d.path().join("calls")).unwrap();
+        assert!(sd.migrate_legacy(&log, &[on, off], exe).await.is_empty());
+        assert!(!d.path().join("calls").exists());
     }
 
     #[test]

@@ -27,4 +27,4 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 // A partir de aquí los errores los gestiona la propia interfaz (ver public/boot-guard.js).
-(window as unknown as { __dccBooted: boolean }).__dccBooted = true;
+(window as unknown as { __cmcBooted: boolean }).__cmcBooted = true;

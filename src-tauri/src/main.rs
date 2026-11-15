@@ -7,12 +7,16 @@ fn main() {
     // Si `ssh` ha lanzado la aplicación como SSH_ASKPASS (0.10.0, D-077), solo
     // responde con el secreto que le da la aplicación por su socket privado y
     // termina: no abre ninguna ventana.
-    if let Some(code) = dcc_engine::ssh::askpass::client_main() {
+    if let Some(code) = cmc_engine::ssh::askpass::client_main() {
+        std::process::exit(code);
+    }
+    // Paso de los datos del nombre anterior, sin ventana (install.sh, 1.8.0).
+    if let Some(code) = cmc_app::migrate_main() {
         std::process::exit(code);
     }
     // Copia programada (temporizador de systemd, 1.4.0): sin ventana.
-    if let Some(code) = dcc_app::headless_main() {
+    if let Some(code) = cmc_app::headless_main() {
         std::process::exit(code);
     }
-    dcc_app::run();
+    cmc_app::run();
 }

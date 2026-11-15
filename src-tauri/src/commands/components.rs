@@ -42,7 +42,7 @@ pub async fn components_remove(
     confirmed: bool,
 ) -> CmdResult<RemovalResult> {
     if !confirmed {
-        return Err(CommandError::from(dcc_engine::EngineError::NotConfirmed));
+        return Err(CommandError::from(cmc_engine::EngineError::NotConfirmed));
     }
     if REMOVING.swap(true, Ordering::SeqCst) {
         return Err(CommandError::new(

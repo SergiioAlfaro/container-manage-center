@@ -32,7 +32,8 @@ El historial de Git registra que el código se ha escrito **con la ayuda de un
 asistente de inteligencia artificial (Claude, de Anthropic), bajo la dirección
 de Sergio Alfaro Lorite**, que ha definido los requisitos, ha tomado las
 decisiones de diseño y de producto (DECISIONS.md) y ha validado el resultado.
-Los commits figuran con el autor «Claude» o «Docker Control Center» y la línea
+Los commits figuran con el autor «Claude» (o con el nombre anterior del
+proyecto) y la línea
 `Co-Authored-By: Claude …`. No hay en el historial contribuciones de otras
 personas.
 

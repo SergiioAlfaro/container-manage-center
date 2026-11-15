@@ -1,80 +1,86 @@
-# De Docker Control Center a Container Manage Center (1.7.0)
+# Actualizar desde una versión anterior a la 1.8.0
 
-Desde la versión 1.7.0, **Docker Control Center** se llama **Container Manage
-Center** (CMC). Es el mismo programa, con las mismas funciones; cambian el
-nombre, el paquete y la licencia pasa de provisional a definitiva
-(GPL-3.0-or-later).
+Hasta la 1.7.0, la aplicación guardaba sus datos con el nombre que tuvo hasta
+la 1.6.0 (*Docker Control Center*). Desde la 1.8.0 ese nombre ya no se usa en
+ningún sitio: al actualizar, tus datos pasan a las carpetas y nombres nuevos
+**sin perder nada**, y la aplicación ya no crea ni instala nada con el nombre
+anterior.
 
 ## Qué hay que hacer
 
-Nada especial: instala el paquete nuevo como cualquier actualización.
+Instala el paquete nuevo como cualquier actualización, **preferiblemente con
+`install.sh`**:
 
 ```bash
-sudo apt install ./container-manage-center_1.7.0_amd64.deb
-# o, en Debian 12 / Ubuntu 22.04:
-sudo apt install ./container-manage-center_1.7.0_amd64-compat-debian12-ubuntu2204.deb
-# o con el instalador:
 ./install.sh
+# o a mano:
+sudo apt install ./container-manage-center_1.8.0_amd64.deb
+# (en Debian 12 / Ubuntu 22.04, el paquete …_amd64-compat-debian12-ubuntu2204.deb)
 ```
 
-apt sustituye el paquete `docker-control-center` por `container-manage-center`
-en una sola operación (el nuevo declara `Conflicts`, `Replaces` y `Provides:
-docker-control-center`). No hace falta desinstalar antes el anterior, y no
-quedan dos programas ni dos lanzadores.
+- **Con `install.sh`**: después de instalar, pasa tus datos al nombre nuevo
+  con tu usuario (`container-manage-center --migrate`).
+- **Con `apt` a mano**: abre la aplicación una vez después de instalar; al
+  arrancar pasa los datos. Hasta entonces, las **copias programadas** creadas
+  antes de la 1.8.0 no se ejecutan, porque llaman al programa con el nombre
+  anterior, que ya no existe. También puedes ejecutar
+  `container-manage-center --migrate` en una terminal (con tu usuario, sin `sudo`).
 
-## Qué se conserva
+apt sustituye el paquete anterior (`docker-control-center` de la 1.6.0 o
+`container-manage-center` de la 1.7.0) en una sola operación.
 
-Todo. El cambio de nombre **no mueve ni modifica ningún dato**:
+## Qué se pasa al nombre nuevo
 
-| Dato | Dónde está (sin cambios) |
-|---|---|
-| Configuración, servidores, alertas, tareas de copia | `~/.config/docker-control-center/` |
-| Historial de actividad | `~/.local/state/docker-control-center/` |
-| Contraseñas y frases de paso guardadas | Almacén de contraseñas del escritorio (atributo `application=docker-control-center`) |
-| Copias de seguridad | `~/Copias/docker-control-center-copias/` (o la carpeta que elegiste) |
-| Tareas programadas (systemd de usuario) | `~/.config/systemd/user/dcc-backup-*` |
-| Datos locales de la interfaz (WebKit) | Carpetas con el identificador `org.dockercontrolcenter.app` |
-| Etiquetas en Docker | `dcc.*` |
+| Dato | Antes | Ahora | Cuándo |
+|---|---|---|---|
+| Configuración, servidores, huellas SSH, alertas, tareas de copia | `~/.config/docker-control-center/` | `~/.config/container-manage-center/` | Al arrancar o con `--migrate` |
+| Historial de actividad, auditorías, monitorización | `~/.local/state/docker-control-center/` | `~/.local/state/container-manage-center/` | Al arrancar o con `--migrate` |
+| Datos de la interfaz (WebKit) | `~/.local/share/org.dockercontrolcenter.app/`, `~/.cache/org.dockercontrolcenter.app/` | `…/org.containermanagecenter.app/` | Al arrancar o con `--migrate` |
+| Tareas programadas (systemd de usuario) | `dcc-backup-<tarea>.service/.timer` | `cmc-backup-<tarea>.service/.timer` | Al arrancar o con `--migrate` |
+| Copias de seguridad | `<destino>/docker-control-center-copias/` | `<destino>/container-manage-center-copias/` | Al arrancar o con `--migrate` (los destinos de tus tareas y el predeterminado); cualquier otro, al usarlo |
+| Contraseñas y frases de paso guardadas | Almacén del escritorio, atributo `application=docker-control-center` | `application=container-manage-center` | Al arrancar (las del llavero desbloqueado) o al usarlas |
+| Servidor elegido en la barra superior | Preferencia de la interfaz | Clave nueva | Al abrir la aplicación |
 
-Esos nombres internos se mantienen a propósito (decisión D-110): cambiarlos
-obligaría a mover datos del usuario, a reescribir unidades de systemd y a
-volver a guardar contraseñas, con riesgo de perder algo, sin ninguna ventaja
-para quien usa la aplicación. Como no se mueve nada, **no hay migración que
-pueda fallar a medias** ni que haya que deshacer.
+## Cómo se protege que no se pierda nada
 
-## Qué cambia
+- Las carpetas se **renombran** dentro de la misma carpeta padre: es una
+  operación atómica, así que en todo momento existe una de las dos completa.
+  Si no se puede renombrar (por ejemplo, porque la carpeta antigua es un enlace
+  a otro disco), se **copia**, se **comprueba** que la copia es idéntica y solo
+  entonces se borra la antigua.
+- Si ya existen las dos (la nueva y la antigua), solo se mueve lo que falta
+  en la nueva; **nada se sobrescribe**. Lo que no se puede mover se queda en la
+  carpeta antigua y la aplicación lo avisa al arrancar.
+- Las tareas programadas se crean y se activan con el nombre nuevo **antes**
+  de desactivar y quitar las antiguas, y conservan su estado (activada o no).
+  Las de tareas que ya no existen se quitan. Las unidades de systemd que no
+  son de la aplicación no se tocan.
+- Cada contraseña se guarda con los atributos nuevos **antes** de borrar la
+  antigua. Las del llavero bloqueado se pasan cuando se usan, para no pedir
+  que lo desbloquees al arrancar.
+- Repetir la migración no hace nada.
+- Cuando la migración la hace la aplicación al arrancar, los cambios en systemd
+  quedan en el panel de actividad.
 
-| | Antes (≤ 1.6.0) | Ahora (1.7.0) |
-|---|---|---|
-| Nombre | Docker Control Center | Container Manage Center (CMC) |
-| Paquete | `docker-control-center` | `container-manage-center` |
-| Programa | `/usr/bin/docker-control-center` | `/usr/bin/container-manage-center` |
-| Lanzador | `docker-control-center.desktop` | `container-manage-center.desktop` |
-| Documentación | `/usr/share/doc/docker-control-center/` | `/usr/share/doc/container-manage-center/` |
-| Licencia | GPL-3.0-or-later (provisional) | GPL-3.0-or-later, © 2026 Sergio Alfaro Lorite |
-| Avisos de terceros | `THIRD-PARTY.md` (solo una tabla) | `THIRD_PARTY_NOTICES.md` (textos completos) |
+## Contenedores creados con versiones anteriores
 
-`/usr/bin/docker-control-center` **sigue existiendo** como un pequeño script
-que abre `/usr/bin/container-manage-center` con los mismos argumentos. Así
-siguen funcionando las tareas de copia programadas antes de la 1.7.0 (sus
-unidades de systemd ejecutan `/usr/bin/docker-control-center --run-backup …`)
-y cualquier atajo o script tuyo que use el nombre antiguo. Las tareas que
-crees o edites a partir de ahora usan el nombre nuevo.
+En Docker no se cambia nada: los contenedores, imágenes, redes y volúmenes
+son tuyos. La aplicación sigue reconociendo lo que crearon versiones
+anteriores:
 
-## Después de actualizar
+- la **descripción** guardada en la etiqueta antigua de un contenedor se
+  muestra igual y, si la editas, se guarda con la etiqueta nueva;
+- los contenedores apartados al editar (`<nombre>-dcc-backup-<fecha>`) se
+  siguen reconociendo como copias de la edición.
 
-- En el menú de aplicaciones aparece **Container Manage Center** (con el
-  mismo icono morado). Si tenías el lanzador antiguo anclado en el panel del
-  escritorio, puede que tengas que anclar el nuevo.
-- En **Configuración › Legal** están la licencia y el copyright.
-- `apt list --installed 'container-manage-center'` muestra el paquete nuevo;
-  `docker-control-center` ya no aparece como instalado.
+## Volver a una versión anterior
 
-## Desinstalar o volver atrás
+Ya no es transparente: la 1.7.0 o la 1.6.0 buscarían los datos en las
+carpetas antiguas y no los encontrarían (no se han borrado: están en las
+nuevas). Si necesitas volver atrás, renombra a mano las carpetas de la tabla
+anterior a su nombre antiguo antes de abrir la versión anterior.
 
-- **Desinstalar**: `sudo apt remove container-manage-center` (o desde
-  Configuración › Desinstalación y componentes). Tus datos se conservan, igual
-  que antes.
-- **Volver a la 1.6.0**: `sudo apt install ./docker-control-center_1.6.0_amd64.deb`.
-  apt quita el paquete nuevo y pone el antiguo; como los datos no se han
-  movido, la 1.6.0 los encuentra donde estaban.
+## Desinstalar
+
+`sudo apt remove container-manage-center` (o desde Configuración ›
+Desinstalación y componentes). Tus datos se conservan en las carpetas nuevas.

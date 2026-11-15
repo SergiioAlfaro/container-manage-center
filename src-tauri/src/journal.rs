@@ -7,10 +7,10 @@ use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Utc};
-use dcc_activity::{ActivityEvent, ActivityLog, Category, HistoryEntry, OpStatus};
-use dcc_engine::events::DockerEvent;
-use dcc_engine::{ConnectionState, EngineManager};
-use dcc_store::journal::Journal;
+use cmc_activity::{ActivityEvent, ActivityLog, Category, HistoryEntry, OpStatus};
+use cmc_engine::events::DockerEvent;
+use cmc_engine::{ConnectionState, EngineManager};
+use cmc_store::journal::Journal;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
@@ -35,19 +35,19 @@ pub const RECENT_MAX: usize = 2_000;
 /// Evento Tauri con cada evento de Docker.
 pub const DOCKER_EVENT: &str = "docker://event";
 
-/// Carpeta de datos de la aplicación: `DCC_STATE_DIR`, o
-/// `$XDG_STATE_HOME/docker-control-center` con la configuración por defecto, o
-/// junto al archivo de configuración si se indicó otro (`DCC_CONFIG`, pruebas).
+/// Carpeta de datos de la aplicación: `CMC_STATE_DIR`, o
+/// `$XDG_STATE_HOME/container-manage-center` con la configuración por defecto, o
+/// junto al archivo de configuración si se indicó otro (`CMC_CONFIG`, pruebas).
 pub fn state_dir(config_path: &Path) -> Option<PathBuf> {
-    if let Some(d) = std::env::var_os("DCC_STATE_DIR") {
+    if let Some(d) = std::env::var_os("CMC_STATE_DIR") {
         return Some(PathBuf::from(d));
     }
     let default_config =
-        dirs::config_dir().map(|d| d.join("docker-control-center").join("config.toml"));
+        dirs::config_dir().map(|d| d.join(cmc_store::APP_DIR).join(cmc_store::CONFIG_FILE));
     if default_config.as_deref() == Some(config_path) {
         return dirs::state_dir()
             .or_else(|| dirs::home_dir().map(|h| h.join(".local/state")))
-            .map(|d| d.join("docker-control-center"));
+            .map(|d| d.join(cmc_store::APP_DIR));
     }
     config_path.parent().map(|p| p.join("estado"))
 }
@@ -56,7 +56,7 @@ pub fn state_dir(config_path: &Path) -> Option<PathBuf> {
 pub struct Journals {
     pub history: Option<Journal<HistoryEntry>>,
     pub events: Option<Journal<DockerEvent>>,
-    pub audits: Option<Journal<dcc_engine::audit::AuditReport>>,
+    pub audits: Option<Journal<cmc_engine::audit::AuditReport>>,
     pub recent: Mutex<VecDeque<DockerEvent>>,
     pub session_start: DateTime<Utc>,
     pub dir: Option<PathBuf>,
@@ -172,9 +172,9 @@ pub struct EventFilter {
 
 /// Identificador del servidor de un registro; los anteriores a 0.10.0 no lo
 /// tienen y son del equipo local.
-fn server_id(tag: Option<&dcc_activity::ServerTag>) -> &str {
+fn server_id(tag: Option<&cmc_activity::ServerTag>) -> &str {
     tag.map(|t| t.id.as_str())
-        .unwrap_or(dcc_activity::ServerTag::LOCAL_ID)
+        .unwrap_or(cmc_activity::ServerTag::LOCAL_ID)
 }
 
 impl EventFilter {

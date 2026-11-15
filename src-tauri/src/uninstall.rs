@@ -27,8 +27,8 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use dcc_activity::{ActivityLog, Category};
-use dcc_engine::cli::{self, CliOutput, CliRequest};
+use cmc_activity::{ActivityLog, Category};
+use cmc_engine::cli::{self, CliOutput, CliRequest};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -36,21 +36,19 @@ use crate::error::CommandError;
 
 /// Nombre del paquete de la aplicación (1.7.0, D-110).
 pub const OWN_PACKAGE: &str = "container-manage-center";
-/// Nombre del paquete hasta la 1.6.0 («Docker Control Center»). El paquete
-/// nuevo lo sustituye (`Conflicts`/`Replaces`/`Provides`); se reconoce para
-/// leer bien el historial de APT y por si sigue instalado el antiguo.
-pub const LEGACY_PACKAGE: &str = "docker-control-center";
 
-/// ¿Es un paquete de la aplicación (con el nombre actual o el anterior)?
+/// ¿Es un paquete de la aplicación? También el del nombre anterior
+/// ([`cmc_store::legacy::PACKAGE`]): el historial de APT de una instalación
+/// anterior lo nombra, y así se sabe qué dependencias instaló la aplicación.
 pub fn is_own(name: &str) -> bool {
-    name == OWN_PACKAGE || name == LEGACY_PACKAGE
+    name == OWN_PACKAGE || name == cmc_store::legacy::PACKAGE
 }
 
-/// El paquete de la aplicación instalado: el actual o, si no, el anterior.
+/// El paquete de la aplicación instalado.
 fn installed_own(pkgs: &HashMap<String, DpkgPackage>) -> Option<(&'static str, &DpkgPackage)> {
-    [OWN_PACKAGE, LEGACY_PACKAGE]
-        .into_iter()
-        .find_map(|n| pkgs.get(n).filter(|p| p.installed).map(|p| (n, p)))
+    pkgs.get(OWN_PACKAGE)
+        .filter(|p| p.installed)
+        .map(|p| (OWN_PACKAGE, p))
 }
 
 const QUERY_TIMEOUT: Duration = Duration::from_secs(60);
@@ -743,7 +741,7 @@ impl Host {
         let mut argv = vec!["apt-get".to_owned()];
         argv.extend(full.iter().map(|s| s.to_string()));
         Ok(Simulation {
-            command: dcc_activity::quote::render_argv("apt-get", &argv[1..]),
+            command: cmc_activity::quote::render_argv("apt-get", &argv[1..]),
             removes: parse_simulation(&out.stdout),
             output: out.stdout,
         })
@@ -774,9 +772,8 @@ pub fn user_paths(config_path: &Path) -> Vec<UserPath> {
     if let Some(d) = crate::journal::state_dir(config_path) {
         v.push((UserPathKind::State, d));
     }
-    // Datos y caché de WebKit (identificador de la aplicación, que se conserva
-    // tras el cambio de nombre a Container Manage Center, D-110).
-    const ID: &str = "org.dockercontrolcenter.app";
+    // Datos y caché de WebKit (identificador de la aplicación, D-113).
+    const ID: &str = crate::migration::IDENTIFIER;
     if let Some(d) = dirs::data_dir() {
         v.push((UserPathKind::WebData, d.join(ID)));
     }
@@ -831,7 +828,7 @@ fn external_tools(pkgs: &HashMap<String, DpkgPackage>) -> Vec<ExternalTool> {
                 .filter_map(|n| pkgs.get(*n).filter(|p| p.installed))
                 .map(|p| format!("{} {}", p.name, p.version))
                 .collect(),
-            binary: dcc_engine::sys::find_executable(bin)
+            binary: cmc_engine::sys::find_executable(bin)
                 .or_else(|| {
                     (*kind == ExternalKind::Compose)
                         .then(|| {
@@ -1056,7 +1053,7 @@ pub async fn plan(
         .cloned()
         .collect();
     let command = match removal_argv(host, &packages) {
-        Some((p, a)) => dcc_activity::quote::render_argv(&p, &a),
+        Some((p, a)) => cmc_activity::quote::render_argv(&p, &a),
         None => {
             let mut a = vec![
                 "apt-get".to_owned(),
@@ -1064,7 +1061,7 @@ pub async fn plan(
                 "--no-auto-remove".into(),
             ];
             a.extend(packages.iter().cloned());
-            dcc_activity::quote::render_argv("sudo", &a)
+            cmc_activity::quote::render_argv("sudo", &a)
         }
     };
     Ok(RemovalPlan {
@@ -1207,7 +1204,7 @@ pub fn by_class(entries: &[PackageEntry]) -> std::collections::BTreeMap<String, 
 mod tests {
     use super::*;
 
-    const DPKG: &str = "docker-control-center\t0.9.1\t25000\tii \t\toptional\tlibc6 (>= 2.34), libgtk-3-0 (>= 3.21.5), libwebkit2gtk-4.1-0 (>= 2.41.90) | libfake\t\n\
+    const DPKG: &str = "container-manage-center\t0.9.1\t25000\tii \t\toptional\tlibc6 (>= 2.34), libgtk-3-0 (>= 3.21.5), libwebkit2gtk-4.1-0 (>= 2.41.90) | libfake\t\n\
 libc6\t2.35\t13000\tii \tno\trequired\t\t\n\
 libgtk-3-0\t3.24\t9000\tii \t\toptional\tlibatk1.0-0\t\n\
 libwebkit2gtk-4.1-0\t2.44\t90000\tii \t\toptional\tlibjavascriptcoregtk-4.1-0\t\n\
@@ -1226,8 +1223,8 @@ Install: vim:amd64 (9.0), libatk1.0-0:amd64 (2.36, automatic)\n\
 End-Date: 2026-01-01  10:00:05\n\
 \n\
 Start-Date: 2026-02-01  10:00:00\n\
-Commandline: apt install ./docker-control-center_0.9.0_amd64.deb\n\
-Install: docker-control-center:amd64 (0.9.0), libwebkit2gtk-4.1-0:amd64 (2.44, automatic), libjavascriptcoregtk-4.1-0:amd64 (2.44, automatic), libgtk-3-0:amd64 (3.24, automatic)\n\
+Commandline: apt install ./container-manage-center_0.9.0_amd64.deb\n\
+Install: container-manage-center:amd64 (0.9.0), libwebkit2gtk-4.1-0:amd64 (2.44, automatic), libjavascriptcoregtk-4.1-0:amd64 (2.44, automatic), libgtk-3-0:amd64 (3.24, automatic)\n\
 End-Date: 2026-02-01  10:00:30\n\
 \n\
 Start-Date: 2026-03-01  10:00:00\n\
@@ -1238,7 +1235,7 @@ End-Date: 2026-03-01  10:00:05\n";
     #[test]
     fn parses_dpkg_depends_and_status() {
         let m = parse_dpkg(DPKG);
-        let own = &m["docker-control-center"];
+        let own = &m["container-manage-center"];
         assert_eq!(own.installed_kib, 25000);
         assert_eq!(
             own.depends,
@@ -1265,7 +1262,7 @@ End-Date: 2026-03-01  10:00:05\n";
         assert_eq!(t.len(), 3);
         assert_eq!(
             t[1].install[0],
-            ("docker-control-center".to_string(), false)
+            ("container-manage-center".to_string(), false)
         );
         let set = installed_with_app(&t).unwrap();
         assert_eq!(
@@ -1281,7 +1278,7 @@ End-Date: 2026-03-01  10:00:05\n";
         // Una desinstalación posterior invalida lo anterior.
         let mut t2 = t.clone();
         t2.push(Transaction {
-            commandline: "apt remove docker-control-center".into(),
+            commandline: "apt remove container-manage-center".into(),
             remove: vec![OWN_PACKAGE.into()],
             ..Default::default()
         });
@@ -1342,7 +1339,7 @@ End-Date: 2026-11-15  10:00:05\n",
             ..Default::default()
         };
         assert!(is_protected(&pk("docker-ce")));
-        assert!(!is_protected(&pk(LEGACY_PACKAGE)) && !is_protected(&pk(OWN_PACKAGE)));
+        assert!(!is_protected(&pk(cmc_store::legacy::PACKAGE)) && !is_protected(&pk(OWN_PACKAGE)));
     }
 
     #[test]
@@ -1356,26 +1353,26 @@ End-Date: 2026-11-15  10:00:05\n",
                 ("baz".into(), false)
             ]
         );
-        let up = parse_history("Upgrade: docker-control-center:amd64 (0.9.0, 0.9.1)\n");
-        assert_eq!(up[0].upgrade, vec!["docker-control-center"]);
+        let up = parse_history("Upgrade: container-manage-center:amd64 (0.9.0, 0.9.1)\n");
+        assert_eq!(up[0].upgrade, vec!["container-manage-center"]);
     }
 
     #[test]
     fn simulation_and_rdepends_parsing() {
-        let sim = "NOTE: This is only a simulation!\nRemv docker-control-center [0.9.1]\nRemv libwebkit2gtk-4.1-0 [2.44] [libfoo:amd64 ]\nRemv libjavascriptcoregtk-4.1-0:amd64 [2.44]\n";
+        let sim = "NOTE: This is only a simulation!\nRemv container-manage-center [0.9.1]\nRemv libwebkit2gtk-4.1-0 [2.44] [libfoo:amd64 ]\nRemv libjavascriptcoregtk-4.1-0:amd64 [2.44]\n";
         assert_eq!(
             parse_simulation(sim),
             vec![
-                "docker-control-center",
+                "container-manage-center",
                 "libjavascriptcoregtk-4.1-0",
                 "libwebkit2gtk-4.1-0"
             ]
         );
-        let rd = "libgtk-3-0\nReverse Depends:\n  zenity\n |docker-control-center\n  libwebkit2gtk-4.1-0:amd64\nlibatk1.0-0\nReverse Depends:\n  libgtk-3-0\n";
+        let rd = "libgtk-3-0\nReverse Depends:\n  zenity\n |container-manage-center\n  libwebkit2gtk-4.1-0:amd64\nlibatk1.0-0\nReverse Depends:\n  libgtk-3-0\n";
         let m = parse_rdepends(rd);
         assert_eq!(
             m["libgtk-3-0"],
-            vec!["zenity", "docker-control-center", "libwebkit2gtk-4.1-0"]
+            vec!["zenity", "container-manage-center", "libwebkit2gtk-4.1-0"]
         );
         assert_eq!(m["libatk1.0-0"], vec!["libgtk-3-0"]);
     }
@@ -1400,7 +1397,7 @@ End-Date: 2026-11-15  10:00:05\n",
             "libjavascriptcoregtk-4.1-0".to_string(),
             "libwebkit2gtk-4.1-0".into(),
         ];
-        let rd = parse_rdepends("libgtk-3-0\nReverse Depends:\n  zenity\n  docker-control-center\n  libwebkit2gtk-4.1-0\n");
+        let rd = parse_rdepends("libgtk-3-0\nReverse Depends:\n  zenity\n  container-manage-center\n  libwebkit2gtk-4.1-0\n");
         let c = classify(&pkgs, &auto, Some(&with), &autoremove, &rd);
         let g = by_class(&c);
         assert_eq!(
@@ -1499,7 +1496,7 @@ End-Date: 2026-11-15  10:00:05\n",
             elevation: Elevation::Pkexec("/usr/bin/pkexec".into()),
         };
         let (p, a) =
-            removal_argv(&host, &["docker-control-center".into(), "libfoo".into()]).unwrap();
+            removal_argv(&host, &["container-manage-center".into(), "libfoo".into()]).unwrap();
         assert_eq!(p, "/usr/bin/pkexec");
         assert_eq!(
             a,
@@ -1508,7 +1505,7 @@ End-Date: 2026-11-15  10:00:05\n",
                 "remove",
                 "-y",
                 "--no-auto-remove",
-                "docker-control-center",
+                "container-manage-center",
                 "libfoo"
             ]
         );
@@ -1571,7 +1568,7 @@ End-Date: 2026-11-15  10:00:05\n",
     // `scripts/prepare-uninstall-chroot.sh`), como root, con APT y dpkg de
     // verdad: instala la aplicación con APT (que trae sus dependencias),
     // instala después un programa que comparte una de ellas, comprueba la
-    // clasificación y desinstala de verdad. Sin `DCC_TEST_CHROOT` no se ejecuta
+    // clasificación y desinstala de verdad. Sin `CMC_TEST_CHROOT` no se ejecuta
     // (el script de verificación la exige y comprueba que se ejecutó).
 
     fn chroot_host(root: &str, elevation: Elevation) -> Host {
@@ -1619,12 +1616,12 @@ End-Date: 2026-11-15  10:00:05\n",
 
     #[tokio::test(flavor = "multi_thread")]
     async fn live_uninstall_in_a_real_ubuntu_system() {
-        let Ok(root) = std::env::var("DCC_TEST_CHROOT") else {
-            eprintln!("SIN EJECUTAR: falta DCC_TEST_CHROOT (sistema Ubuntu de prueba)");
+        let Ok(root) = std::env::var("CMC_TEST_CHROOT") else {
+            eprintln!("SIN EJECUTAR: falta CMC_TEST_CHROOT (sistema Ubuntu de prueba)");
             return;
         };
         let deb =
-            std::env::var("DCC_TEST_DEB").expect("DCC_TEST_DEB: ruta del .deb dentro del chroot");
+            std::env::var("CMC_TEST_DEB").expect("CMC_TEST_DEB: ruta del .deb dentro del chroot");
         let root = root.as_str();
 
         // Estado de partida: sin la aplicación ni zenity; Docker y Compose
@@ -1661,7 +1658,7 @@ End-Date: 2026-11-15  10:00:05\n",
 
         // Datos del usuario: nunca se tocan.
         let home = tempfile::tempdir().unwrap();
-        let cfg_dir = home.path().join("docker-control-center");
+        let cfg_dir = home.path().join("container-manage-center");
         std::fs::create_dir_all(&cfg_dir).unwrap();
         let cfg = cfg_dir.join("config.toml");
         std::fs::write(&cfg, "[ui]\ntheme = \"dark\"\n").unwrap();
@@ -1716,8 +1713,8 @@ End-Date: 2026-11-15  10:00:05\n",
         let sim = r.simulation.as_ref().unwrap();
         assert!(sim
             .command
-            .starts_with("apt-get -s remove --auto-remove docker-control-center"));
-        assert!(sim.output.contains("Remv docker-control-center"));
+            .starts_with("apt-get -s remove --auto-remove container-manage-center"));
+        assert!(sim.output.contains("Remv container-manage-center"));
         assert!(!sim
             .removes
             .iter()
@@ -1831,22 +1828,22 @@ End-Date: 2026-11-15  10:00:05\n",
 
         // Todo quedó en el panel de actividad.
         let recs = log.snapshot();
-        let kinds: Vec<(&str, dcc_activity::OpStatus)> =
+        let kinds: Vec<(&str, cmc_activity::OpStatus)> =
             recs.iter().map(|r| (r.kind.as_str(), r.status)).collect();
-        assert!(kinds.contains(&("packages.query", dcc_activity::OpStatus::Succeeded)));
-        assert!(kinds.contains(&("packages.simulate", dcc_activity::OpStatus::Succeeded)));
-        assert!(kinds.contains(&("packages.remove", dcc_activity::OpStatus::Succeeded)));
+        assert!(kinds.contains(&("packages.query", cmc_activity::OpStatus::Succeeded)));
+        assert!(kinds.contains(&("packages.simulate", cmc_activity::OpStatus::Succeeded)));
+        assert!(kinds.contains(&("packages.remove", cmc_activity::OpStatus::Succeeded)));
         assert!(
-            kinds.contains(&("packages.remove", dcc_activity::OpStatus::Failed)),
+            kinds.contains(&("packages.remove", cmc_activity::OpStatus::Failed)),
             "la cancelación también queda registrada"
         );
         let rm = recs
             .iter()
             .rev()
-            .find(|r| r.kind == "packages.remove" && r.status == dcc_activity::OpStatus::Succeeded)
+            .find(|r| r.kind == "packages.remove" && r.status == cmc_activity::OpStatus::Succeeded)
             .unwrap();
         match &rm.transport {
-            dcc_activity::Transport::Cli { args, .. } => {
+            cmc_activity::Transport::Cli { args, .. } => {
                 assert!(args.contains(&"--no-auto-remove".to_string()));
                 assert!(!args.iter().any(|a| a.contains("purge")));
             }

@@ -119,7 +119,7 @@ describe("apartado Copias", () => {
     expect(screen.getByText("Sin programar")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Programar" }));
     const dlg = await screen.findByRole("dialog", { name: "Programar «Diaria»" });
-    expect(await within(dlg).findByText("/home/u/.config/systemd/user/dcc-backup-job-0a1b2c3d.timer")).toBeInTheDocument();
+    expect(await within(dlg).findByText("/home/u/.config/systemd/user/cmc-backup-job-0a1b2c3d.timer")).toBeInTheDocument();
     expect(within(dlg).getByText(/OnCalendar=\*-\*-\* 03:00:00/)).toBeInTheDocument();
     const create = within(dlg).getByRole("button", { name: "Crear la programación" });
     expect(create).toBeDisabled();

@@ -151,7 +151,7 @@ export function CreateNetwork() {
           <Group title={t("netCreate.g.ipv6")}>
             <Checkbox checked={spec.enableIpv6} onChange={(v) => set("enableIpv6", v)} label={t("netCreate.f.ipv6")} hint={t("netCreate.h.ipv6")} />
             {(spec.enableIpv6 || of("ipv6.subnet").length > 0) && (
-              <PoolFields family="ipv6" pool={spec.ipv6} onChange={(p) => set("ipv6", p)} issues={issues} ph={{ subnet: "fd00:dcc::/64", gateway: "fd00:dcc::1", range: "fd00:dcc::/80" }} />
+              <PoolFields family="ipv6" pool={spec.ipv6} onChange={(p) => set("ipv6", p)} issues={issues} ph={{ subnet: "fd00:cafe::/64", gateway: "fd00:cafe::1", range: "fd00:cafe::/80" }} />
             )}
           </Group>
 

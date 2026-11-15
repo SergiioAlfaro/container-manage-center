@@ -5,9 +5,9 @@
 
 use std::path::PathBuf;
 
-use dcc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
-use dcc_engine::backup::store::{self, BackupTarget, LocalTarget};
-use dcc_engine::backup::{
+use cmc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
+use cmc_engine::backup::store::{self, BackupTarget, LocalTarget};
+use cmc_engine::backup::{
     BackupEntry, BackupProgress, BackupRequest, IntegrityReport, RestoreOutcome, RestorePreview,
     RestoreRequest,
 };
@@ -222,7 +222,7 @@ pub fn backup_delete(
     confirmed: bool,
 ) -> CmdResult<()> {
     if !confirmed {
-        return Err(dcc_engine::EngineError::NotConfirmed.into());
+        return Err(cmc_engine::EngineError::NotConfirmed.into());
     }
     state.server(&server)?;
     let dest = destination_or(&state, destination)?;
@@ -284,7 +284,7 @@ pub async fn backup_run_open<R: Runtime>(
     };
     let mgr = state.server(&server)?;
     backups::check_destination(&dest)?;
-    dcc_engine::backup::run::validate_request(&request, !mgr.is_remote()).map_err(backup_error)?;
+    cmc_engine::backup::run::validate_request(&request, !mgr.is_remote()).map_err(backup_error)?;
     let registry = state.streams.clone();
     let (sid, cancel) = registry.register(&server, None);
     tauri::async_runtime::spawn(async move {
@@ -350,7 +350,7 @@ pub async fn backup_restore_open(
     on_event: Channel<BackupEvent>,
 ) -> CmdResult<u64> {
     if !request.confirmed {
-        return Err(dcc_engine::EngineError::NotConfirmed.into());
+        return Err(cmc_engine::EngineError::NotConfirmed.into());
     }
     let dir = open_backup(&state, &server, destination, &id)?;
     let mgr = state.server(&server)?;
@@ -492,7 +492,7 @@ pub async fn backup_timer_remove(
     confirmed: bool,
 ) -> CmdResult<BackupJobView> {
     if !confirmed {
-        return Err(dcc_engine::EngineError::NotConfirmed.into());
+        return Err(cmc_engine::EngineError::NotConfirmed.into());
     }
     let job = backups::find_job(state.store.path(), &id)?;
     let sd = systemd()?;

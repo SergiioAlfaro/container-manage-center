@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-use dcc_store::AppConfig;
+use cmc_store::AppConfig;
 use tauri::{AppHandle, Manager, Runtime, State};
 
 use crate::error::{CmdResult, CommandError};

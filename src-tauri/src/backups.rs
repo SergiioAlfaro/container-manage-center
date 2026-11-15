@@ -12,11 +12,11 @@
 use std::path::{Path, PathBuf};
 
 use chrono::{SecondsFormat, Utc};
-use dcc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
-use dcc_engine::backup::store::{self, BackupTarget, LocalTarget};
-use dcc_engine::backup::{BackupContext, BackupEntry, BackupProgress, BackupRequest, Retention};
-use dcc_engine::EngineManager;
-use dcc_store::journal::Journal;
+use cmc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
+use cmc_engine::backup::store::{self, BackupTarget, LocalTarget};
+use cmc_engine::backup::{BackupContext, BackupEntry, BackupProgress, BackupRequest, Retention};
+use cmc_engine::EngineManager;
+use cmc_store::journal::Journal;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
@@ -170,7 +170,7 @@ fn save_file(config: &Path, f: &JobsFile) -> CmdResult<()> {
     let mut f = f.clone();
     f.version = 1;
     let text = serde_json::to_string_pretty(&f).map_err(|e| CommandError::new("backup.io", e))?;
-    dcc_store::write_atomic(&jobs_path(config), &text)
+    cmc_store::write_atomic(&jobs_path(config), &text)
         .map_err(|e| CommandError::new("backup.io", e))
 }
 
@@ -207,7 +207,7 @@ const FORBIDDEN: [&str; 12] = [
 
 /// Destino válido: ruta absoluta de una carpeta existente, fuera del sistema.
 pub fn check_destination(dest: &str) -> CmdResult<PathBuf> {
-    let norm = dcc_engine::risk::normalize(dest).ok_or_else(|| {
+    let norm = cmc_engine::risk::normalize(dest).ok_or_else(|| {
         CommandError::new(
             "backup.destinationInvalid",
             format!("ruta no válida: {dest:?}"),
@@ -251,7 +251,7 @@ pub fn validate_job(job: &BackupJob, known_server: bool) -> CmdResult<()> {
         .map_err(|m| CommandError::new("backup.jobInvalid", m))?;
     store::check_retention(&job.retention)
         .map_err(|m| CommandError::new("backup.jobInvalid", m))?;
-    dcc_engine::backup::run::validate_request(&job.request, job.server == "local")
+    cmc_engine::backup::run::validate_request(&job.request, job.server == "local")
         .map_err(backup_error)?;
     Ok(())
 }
@@ -269,7 +269,7 @@ pub fn save_job(config: &Path, mut job: BackupJob, known_server: bool) -> CmdRes
         if f.jobs.len() >= MAX_JOBS {
             return Err(CommandError::new("backup.jobInvalid", "demasiadas tareas"));
         }
-        job.id = format!("job-{}", dcc_engine::ssh::askpass::random_hex(4));
+        job.id = format!("job-{}", cmc_engine::ssh::askpass::random_hex(4));
         f.jobs.push(job.clone());
     } else if !valid_job_id(&job.id) {
         return Err(CommandError::new("backup.jobInvalid", "id no válido"));
@@ -307,8 +307,8 @@ pub fn find_job(config: &Path, id: &str) -> CmdResult<BackupJob> {
 
 /// Errores del motor con código propio (`backup.*`, `restore.*`) como código
 /// de la interfaz.
-pub fn backup_error(e: dcc_engine::EngineError) -> CommandError {
-    if let dcc_engine::EngineError::InvalidInput { message } = &e {
+pub fn backup_error(e: cmc_engine::EngineError) -> CommandError {
+    if let cmc_engine::EngineError::InvalidInput { message } = &e {
         let code = message.as_str();
         let is_code = (code.starts_with("backup.") || code.starts_with("restore."))
             && code.len() < 64
@@ -357,14 +357,14 @@ pub fn runs(state: &AppState) -> Vec<BackupRun> {
 /// tienen secretos: las contraseñas y frases están en el llavero (D-076).
 pub fn app_config_files(config: &Path) -> Vec<(String, Vec<u8>)> {
     let mut out = Vec::new();
-    for name in [dcc_store::CONFIG_FILE, "servers.toml", JOBS_FILE] {
+    for name in [cmc_store::CONFIG_FILE, "servers.toml", JOBS_FILE] {
         let p = config.with_file_name(name);
         if let Ok(d) = std::fs::read(&p) {
             let text = String::from_utf8_lossy(&d);
             // Por si acaso: se ocultan los secretos que pudiera haber.
             out.push((
                 name.to_owned(),
-                dcc_activity::redact::redact_text(&text)
+                cmc_activity::redact::redact_text(&text)
                     .into_owned()
                     .into_bytes(),
             ));
@@ -506,7 +506,7 @@ where
         }
         Err(e) => {
             run.error = Some(
-                dcc_activity::redact::redact_text(&format!("{}: {}", e.code, e.message))
+                cmc_activity::redact::redact_text(&format!("{}: {}", e.code, e.message))
                     .into_owned(),
             );
             Err(e)
@@ -523,7 +523,7 @@ mod tests {
     #[test]
     fn jobs_are_validated_saved_private_and_survive_a_restart() {
         let d = tempfile::Builder::new()
-            .prefix("dcc-test")
+            .prefix("cmc-test")
             .tempdir()
             .unwrap();
         let cfg = d.path().join("config.toml");
@@ -599,11 +599,11 @@ mod tests {
 
     #[test]
     fn engine_codes_become_interface_codes() {
-        let e = backup_error(dcc_engine::EngineError::InvalidInput {
+        let e = backup_error(cmc_engine::EngineError::InvalidInput {
             message: "backup.dbNotRunning".into(),
         });
         assert_eq!(e.code, "backup.dbNotRunning");
-        let e = backup_error(dcc_engine::EngineError::InvalidInput {
+        let e = backup_error(cmc_engine::EngineError::InvalidInput {
             message: "otra cosa".into(),
         });
         assert_eq!(e.code, "engine.invalidInput");

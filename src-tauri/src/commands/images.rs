@@ -5,13 +5,13 @@
 
 use std::path::PathBuf;
 
-use dcc_engine::build::{BuildEnd, BuildSpec, BuildUpdate, ContextSummary};
-use dcc_engine::images::{ImageDetails, ImageLayer, PruneResult, RemoveResult, SearchResult};
-use dcc_engine::pull::PullUpdate;
-use dcc_engine::reference::ImageRef;
-use dcc_engine::registry_auth::PullAuth;
-use dcc_engine::spec::{Severity, SpecIssue};
-use dcc_engine::EngineError;
+use cmc_engine::build::{BuildEnd, BuildSpec, BuildUpdate, ContextSummary};
+use cmc_engine::images::{ImageDetails, ImageLayer, PruneResult, RemoveResult, SearchResult};
+use cmc_engine::pull::PullUpdate;
+use cmc_engine::reference::ImageRef;
+use cmc_engine::registry_auth::PullAuth;
+use cmc_engine::spec::{Severity, SpecIssue};
+use cmc_engine::EngineError;
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::State;
@@ -138,7 +138,7 @@ pub async fn image_pull_open(
     server: String,
     reference: String,
     auth: PullAuth,
-    // E2 (DCC-SEC-07, D-090): en un servidor remoto, enviar las credenciales
+    // E2 (CMC-SEC-07, D-090): en un servidor remoto, enviar las credenciales
     // de este equipo solo con permiso explícito. Por omisión, no.
     share_local_credentials: Option<bool>,
     on_event: Channel<PullEvent>,
@@ -192,15 +192,15 @@ pub async fn build_preview(spec: BuildSpec) -> CmdResult<BuildPreview> {
     tauri::async_runtime::spawn_blocking(move || {
         let issues = spec.validate(true);
         let (shown, hidden) = spec.redacted();
-        let mut command = dcc_activity::quote::render_argv("docker", &shown.cli_args());
-        if spec.builder == dcc_engine::build::Builder::Classic {
+        let mut command = cmc_activity::quote::render_argv("docker", &shown.cli_args());
+        if spec.builder == cmc_engine::build::Builder::Classic {
             command = format!("DOCKER_BUILDKIT=0 {command}");
         }
         let ctx_ok = !issues.iter().any(|i| {
             i.severity == Severity::Error && (i.field == "context" || i.field == "dockerfile")
         });
         let (context, context_error) = if ctx_ok && !spec.context.is_empty() {
-            match dcc_engine::build::context::scan(&PathBuf::from(&spec.context), &spec.dockerfile)
+            match cmc_engine::build::context::scan(&PathBuf::from(&spec.context), &spec.dockerfile)
             {
                 Ok(s) => (Some(s), None),
                 Err(e) => (None, Some(e.to_string())),

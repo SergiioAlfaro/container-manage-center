@@ -921,7 +921,7 @@
       "invalid": "Izen baliogabea: erabili letrak, zenbakiak, «_», «.» edo «-», eta hasi letra edo zenbaki batekin.",
       "required": "Izena derrigorrezkoa da.",
       "reserved": "{{value}} Dockerren sare aurredefinitu bat da.",
-      "backupReserved": "Izen hori babeskopietarako gordeta dago («-dcc-backup-», «-dcc-replaced-»).",
+      "backupReserved": "Izen hori babeskopietarako gordeta dago («-cmc-backup-», «-cmc-replaced-»).",
       "inUse": "Badago izen hori duen beste edukiontzi bat."
     },
     "image": {
@@ -2253,7 +2253,7 @@
       "network": "Sarea"
     },
     "h": {
-      "description": "Barneko oharra; edukiontziaren dcc.description etiketan gordetzen da.",
+      "description": "Barneko oharra; edukiontziaren cmc.description etiketan gordetzen da.",
       "lifecycle": "Ekintza hauek berehala aplikatzen dira.",
       "backups": "Hau birsortzean gorde ziren jatorrizko edukiontziak. Geldituta daude eta bolumen berak partekatzen dituzte.",
       "networks": "Sareak konektatzea eta deskonektatzea berehala aplikatzen da, edukiontzia birsortu gabe.",

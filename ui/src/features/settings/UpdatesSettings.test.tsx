@@ -37,26 +37,26 @@ describe("Configuración: actualizaciones", () => {
 
   it("comprueba con la fuente escrita, muestra la versión nueva y guarda la fuente que funciona", async () => {
     renderWithQuery(<UpdatesSettings />);
-    await userEvent.type(screen.getByLabelText("Dónde se publican las versiones"), " mi-org/dcc ");
+    await userEvent.type(screen.getByLabelText("Dónde se publican las versiones"), " mi-org/cmc ");
     await userEvent.click(screen.getByRole("button", { name: "Comprobar ahora" }));
-    expect(api.updatesCheck).toHaveBeenCalledWith(" mi-org/dcc ");
+    expect(api.updatesCheck).toHaveBeenCalledWith(" mi-org/cmc ");
     const result = await screen.findByTestId("update-result");
     expect(result).toHaveTextContent("Hay una versión nueva: 0.9.3 (tienes la 0.9.0).");
-    expect(result).toHaveTextContent("Consultado https://api.github.com/repos/mi-org/dcc/releases/latest");
-    await waitFor(() => expect(api.configSet).toHaveBeenCalledWith(expect.objectContaining({ updates: { checkOnStart: false, source: "mi-org/dcc" } })));
+    expect(result).toHaveTextContent("Consultado https://api.github.com/repos/mi-org/cmc/releases/latest");
+    await waitFor(() => expect(api.configSet).toHaveBeenCalledWith(expect.objectContaining({ updates: { checkOnStart: false, source: "mi-org/cmc" } })));
     // Abrir la página usa el comando del backend (solo https).
     await userEvent.click(within(result).getByRole("button", { name: "Abrir la página de la versión" }));
-    expect(api.openReleasePage).toHaveBeenCalledWith("https://github.com/mi-org/dcc/releases/tag/v0.9.3");
+    expect(api.openReleasePage).toHaveBeenCalledWith("https://github.com/mi-org/cmc/releases/tag/v0.9.3");
     expect(result).toHaveTextContent("publicada el 01/12/2026 11:00:00");
     await userEvent.click(within(result).getByText("Novedades"));
     expect(within(result).getByText("Correcciones de errores")).toBeVisible();
   });
 
   it("al día; y un error se muestra sin guardar la fuente", async () => {
-    useApp.setState({ config: config({ source: "mi-org/dcc" }) });
+    useApp.setState({ config: config({ source: "mi-org/cmc" }) });
     api.updatesCheck.mockResolvedValueOnce(updateCheck({ latest: "0.9.0", newer: false, url: null, notes: null }));
     renderWithQuery(<UpdatesSettings />);
-    expect(screen.getByLabelText("Dónde se publican las versiones")).toHaveValue("mi-org/dcc");
+    expect(screen.getByLabelText("Dónde se publican las versiones")).toHaveValue("mi-org/cmc");
     await userEvent.click(screen.getByRole("button", { name: "Comprobar ahora" }));
     expect(await screen.findByText("Tienes la versión más reciente (0.9.0; la publicada es la 0.9.0).")).toBeInTheDocument();
 
@@ -74,12 +74,12 @@ describe("Configuración: actualizaciones", () => {
   });
 
   it("comprobar al iniciar se guarda; el resultado de la última comprobación se muestra al volver", async () => {
-    useApp.setState({ config: config({ source: "mi-org/dcc" }) });
+    useApp.setState({ config: config({ source: "mi-org/cmc" }) });
     api.updatesLast.mockResolvedValueOnce({ check: null, error: "No se pudo consultar https://api.github.com/…: no se pudo conectar", automatic: true, at: "2026-12-02T09:00:00Z" });
     renderWithQuery(<UpdatesSettings />);
     expect(await screen.findByText(/La última comprobación falló: No se pudo consultar/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("switch", { name: "Comprobar al iniciar la aplicación" }));
-    expect(api.configSet).toHaveBeenCalledWith(expect.objectContaining({ updates: { checkOnStart: true, source: "mi-org/dcc" } }));
+    expect(api.configSet).toHaveBeenCalledWith(expect.objectContaining({ updates: { checkOnStart: true, source: "mi-org/cmc" } }));
   });
 });
 
@@ -110,7 +110,7 @@ describe("Configuración: sistema y restablecer", () => {
   });
 
   it("restablecer pide confirmación y no toca la conexión con Docker", async () => {
-    const c = config({ source: "mi-org/dcc", checkOnStart: true });
+    const c = config({ source: "mi-org/cmc", checkOnStart: true });
     c.ui.theme = "dark";
     c.activity.maxRecords = 2000;
     c.docker = { mode: "custom", customSocket: "/run/user/1000/docker.sock" };

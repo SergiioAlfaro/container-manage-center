@@ -14,14 +14,14 @@
 
 use std::sync::{Arc, OnceLock};
 
-use dcc_activity::{ActivityLog, ServerTag};
-use dcc_engine::manager::Timing;
-use dcc_engine::ssh::profile::{display_address, server_tag, validate, ProfileIssue};
-use dcc_engine::ssh::{
+use cmc_activity::{ActivityLog, ServerTag};
+use cmc_engine::manager::Timing;
+use cmc_engine::ssh::profile::{display_address, server_tag, validate, ProfileIssue};
+use cmc_engine::ssh::{
     RemoteDocker, SecretKind, SshAuth, SshContext, SshOptions, SshPaths, SshProfile,
 };
-use dcc_engine::{ConnectionState, EngineManager};
-use dcc_store::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
+use cmc_engine::{ConnectionState, EngineManager};
+use cmc_store::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
 use parking_lot::{Mutex, RwLock};
 use serde::Serialize;
 use tokio_util::sync::CancellationToken;
@@ -295,17 +295,17 @@ impl Servers {
 
     fn record(&self, tag: ServerTag, kind: &str, action: &str, summary: Option<String>) {
         let log = self.activity.with_server(tag.clone());
-        let h = log.begin(dcc_activity::OperationSpec {
-            category: dcc_activity::Category::System,
+        let h = log.begin(cmc_activity::OperationSpec {
+            category: cmc_activity::Category::System,
             kind: kind.to_owned(),
             target: Some(tag.name.clone()),
-            transport: dcc_activity::Transport::App {
+            transport: cmc_activity::Transport::App {
                 action: action.to_owned(),
             },
             request_body: None,
             equivalent_command: None,
         });
-        h.succeed(dcc_activity::Outcome {
+        h.succeed(cmc_activity::Outcome {
             summary,
             ..Default::default()
         });
@@ -318,7 +318,7 @@ impl Servers {
         let mut c = tidy(incoming);
         let adding = c.id.is_empty();
         if adding {
-            c.id = format!("srv-{}", dcc_engine::ssh::askpass::random_hex(8));
+            c.id = format!("srv-{}", cmc_engine::ssh::askpass::random_hex(8));
         }
         let problems = issues(&c);
         if !problems.is_empty() {
@@ -341,10 +341,10 @@ impl Servers {
             if !adding && pos.is_none() {
                 return Err(unknown(&c.id));
             }
-            if adding && next.len() >= dcc_store::servers::MAX_SERVERS {
+            if adding && next.len() >= cmc_store::servers::MAX_SERVERS {
                 return Err(CommandError::new(
                     "server.tooMany",
-                    format!("como mucho {} servidores", dcc_store::servers::MAX_SERVERS),
+                    format!("como mucho {} servidores", cmc_store::servers::MAX_SERVERS),
                 ));
             }
             let replaced = match pos {
@@ -447,14 +447,14 @@ impl Servers {
         removed.cancel.cancel();
         let _ = self.secrets.delete(id).await;
         let p = profile_of(&removed.config);
-        let pattern = dcc_engine::ssh::hostkey::host_pattern(&p);
+        let pattern = cmc_engine::ssh::hostkey::host_pattern(&p);
         let shared = self
             .remotes
             .read()
             .iter()
-            .any(|r| dcc_engine::ssh::hostkey::host_pattern(&profile_of(&r.config)) == pattern);
+            .any(|r| cmc_engine::ssh::hostkey::host_pattern(&profile_of(&r.config)) == pattern);
         if !shared {
-            let _ = dcc_engine::ssh::hostkey::forget(&self.ctx.paths, &p).await;
+            let _ = cmc_engine::ssh::hostkey::forget(&self.ctx.paths, &p).await;
         }
         self.record(
             tag_of(&removed.config),
@@ -495,7 +495,7 @@ impl Servers {
     pub fn update_compose<T>(
         &self,
         id: &str,
-        f: impl FnOnce(&mut Vec<dcc_store::SavedProject>) -> CmdResult<T>,
+        f: impl FnOnce(&mut Vec<cmc_store::SavedProject>) -> CmdResult<T>,
     ) -> CmdResult<T> {
         let _w = self.write.lock();
         let mut list = self.remotes.write();
@@ -563,15 +563,15 @@ pub fn ssh_paths(config_dir: std::path::PathBuf) -> SshPaths {
     let mut askpass =
         std::env::current_exe().unwrap_or_else(|_| "/usr/bin/container-manage-center".into());
     // En las pruebas unitarias el ejecutable es el de las pruebas: se usa
-    // `dcc-askpass`, que ejecuta el mismo código.
+    // `cmc-askpass`, que ejecuta el mismo código.
     #[cfg(test)]
-    if let Some(p) = std::env::var_os("DCC_TEST_ASKPASS") {
+    if let Some(p) = std::env::var_os("CMC_TEST_ASKPASS") {
         askpass = p.into();
     }
     SshPaths::detect(config_dir.clone(), askpass.clone()).unwrap_or_else(|| SshPaths {
         ssh: "/usr/bin/ssh".into(),
         ssh_keygen: "/usr/bin/ssh-keygen".into(),
-        runtime_dir: dcc_engine::ssh::runtime_dir(),
+        runtime_dir: cmc_engine::ssh::runtime_dir(),
         app_known_hosts: config_dir.join("known_hosts"),
         user_known_hosts: dirs::home_dir()
             .unwrap_or_else(|| "/".into())
@@ -601,7 +601,7 @@ mod tests {
     fn servers(dir: &std::path::Path) -> Servers {
         let paths = ssh_paths(dir.to_path_buf());
         Servers::new(
-            EngineManager::new(ActivityLog::new(100), dcc_engine::ConnectionMode::Auto),
+            EngineManager::new(ActivityLog::new(100), cmc_engine::ConnectionMode::Auto),
             ServerStore::at(dir.join("servers.toml")),
             ActivityLog::new(100),
             paths,
@@ -635,7 +635,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let s = servers(dir.path());
         let a = s.save(cfg()).await.unwrap();
-        assert!(dcc_store::servers::valid_id(&a.id));
+        assert!(cmc_store::servers::valid_id(&a.id));
         let mut b = cfg();
         b.name = "Pruebas".into();
         b.host = "docker-b.example.com".into();
@@ -716,7 +716,7 @@ mod tests {
         other.host = "docker-b.example.com".into();
         let b = s.save(other).await.unwrap();
         s.update_compose(&a.id, |ps| {
-            ps.push(dcc_store::SavedProject {
+            ps.push(cmc_store::SavedProject {
                 name: "tienda".into(),
                 files: vec!["/srv/tienda/compose.yaml".into()],
             });

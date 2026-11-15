@@ -36,7 +36,7 @@ NOTICES = LEGAL / "THIRD_PARTY_NOTICES.md"
 AUDIT = LEGAL / "DEPENDENCY_LICENSE_AUDIT.md"
 TARGET = "x86_64-unknown-linux-gnu"
 # Crates del propio proyecto (nombres internos, D-110).
-OWN = {"docker-control-center", "dcc-engine", "dcc-store", "dcc-activity"}
+OWN = {"container-manage-center", "cmc-engine", "cmc-store", "cmc-activity"}
 LICENSE_FILE = re.compile(r"^(LICEN[CS]E|COPYING|NOTICE|COPYRIGHT|UNLICENSE)([-._].*)?$", re.I)
 
 # Licencias permisivas compatibles con GPL-3.0-or-later (obligan a conservar
@@ -117,7 +117,7 @@ def rust_sets(meta):
     pkgs = {p["id"]: p for p in meta["packages"]}
     nodes = {n["id"]: n for n in meta["resolve"]["nodes"]}
     ws = set(meta["workspace_members"])
-    root = next(p["id"] for p in meta["packages"] if p["name"] == "docker-control-center")
+    root = next(p["id"] for p in meta["packages"] if p["name"] == "container-manage-center")
 
     def reach(starts, follow):
         seen, stack = set(), list(starts)
@@ -363,7 +363,7 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
     npm_n = len(shipped) - rust_n
     std_n = [s for s in shipped if s[5] != "paquete"]
     L = [
-        "# Auditoría de licencias de dependencias · Container Manage Center 1.7.0",
+        f"# Auditoría de licencias de dependencias · Container Manage Center {json.loads((ROOT / 'package.json').read_text())['version']}",
         "",
         "Generada por `scripts/third-party-licenses.py` a partir de `Cargo.lock` y",
         "`package-lock.json` (sin conexión). La licencia del proyecto es **GPL-3.0-or-later**.",

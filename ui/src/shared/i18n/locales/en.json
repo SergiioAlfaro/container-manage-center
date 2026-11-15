@@ -921,7 +921,7 @@
       "invalid": "Invalid name: use letters, digits, “_”, “.” or “-”, starting with a letter or digit.",
       "required": "The name is required.",
       "reserved": "{{value}} is a predefined Docker network.",
-      "backupReserved": "That name is reserved for backups (“-dcc-backup-”, “-dcc-replaced-”).",
+      "backupReserved": "That name is reserved for backups (“-cmc-backup-”, “-cmc-replaced-”).",
       "inUse": "Another container already has that name."
     },
     "image": {
@@ -2253,7 +2253,7 @@
       "network": "Network"
     },
     "h": {
-      "description": "Internal note; stored in the container's dcc.description label.",
+      "description": "Internal note; stored in the container's cmc.description label.",
       "lifecycle": "These actions are applied immediately.",
       "backups": "Original containers kept when this one was recreated. They are stopped and share the same volumes.",
       "networks": "Connecting and disconnecting networks is applied immediately, without recreating the container.",

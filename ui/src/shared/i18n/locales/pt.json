@@ -921,7 +921,7 @@
       "invalid": "Nome inválido: use letras, números, «_», «.» ou «-», e comece por uma letra ou um número.",
       "required": "O nome é obrigatório.",
       "reserved": "{{value}} é uma rede predefinida do Docker.",
-      "backupReserved": "Esse nome está reservado para as cópias de segurança («-dcc-backup-», «-dcc-replaced-»).",
+      "backupReserved": "Esse nome está reservado para as cópias de segurança («-cmc-backup-», «-cmc-replaced-»).",
       "inUse": "Já existe outro contentor com esse nome."
     },
     "image": {
@@ -2253,7 +2253,7 @@
       "network": "Rede"
     },
     "h": {
-      "description": "Nota interna; é guardada na etiqueta dcc.description do contentor.",
+      "description": "Nota interna; é guardada na etiqueta cmc.description do contentor.",
       "lifecycle": "Estas ações são aplicadas de imediato.",
       "backups": "Contentores originais conservados quando este foi recriado. Estão parados e partilham os mesmos volumes.",
       "networks": "Ligar e desligar redes é aplicado de imediato, sem recriar o contentor.",

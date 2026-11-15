@@ -619,6 +619,66 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmc-activity"
+version = "1.8.0"
+dependencies = [
+ "chrono",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tokio",
+ "ts-rs",
+ "uuid",
+]
+
+[[package]]
+name = "cmc-engine"
+version = "1.8.0"
+dependencies = [
+ "base64 0.22.1",
+ "bollard",
+ "bytes",
+ "chrono",
+ "cmc-activity",
+ "dirs 6.0.0",
+ "flate2",
+ "futures-util",
+ "hyper",
+ "hyper-util",
+ "libc",
+ "parking_lot",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "sha2 0.10.9",
+ "tar",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+ "tower-service",
+ "tracing",
+ "ts-rs",
+ "zeroize",
+]
+
+[[package]]
+name = "cmc-store"
+version = "1.8.0"
+dependencies = [
+ "dirs 6.0.0",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+ "toml 0.8.2",
+ "tracing",
+ "ts-rs",
+]
+
+[[package]]
 name = "cmov"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -648,6 +708,44 @@ name = "const-oid"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be95d4a884358a21a199689323c29e9256b4a1b315e22f183d155422041d3a9a"
+
+[[package]]
+name = "container-manage-center"
+version = "1.8.0"
+dependencies = [
+ "base64 0.22.1",
+ "bollard",
+ "chrono",
+ "cmc-activity",
+ "cmc-engine",
+ "cmc-store",
+ "dirs 6.0.0",
+ "flate2",
+ "futures-util",
+ "libc",
+ "parking_lot",
+ "reqwest 0.12.28",
+ "secret-service",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+ "ts-rs",
+ "zbus",
+ "zeroize",
+]
 
 [[package]]
 name = "cookie"
@@ -856,66 +954,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dcc-activity"
-version = "1.7.0"
-dependencies = [
- "chrono",
- "parking_lot",
- "serde",
- "serde_json",
- "tokio",
- "ts-rs",
- "uuid",
-]
-
-[[package]]
-name = "dcc-engine"
-version = "1.7.0"
-dependencies = [
- "base64 0.22.1",
- "bollard",
- "bytes",
- "chrono",
- "dcc-activity",
- "dirs 6.0.0",
- "flate2",
- "futures-util",
- "hyper",
- "hyper-util",
- "libc",
- "parking_lot",
- "regex",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "sha2 0.10.9",
- "tar",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tokio-util",
- "tower-service",
- "tracing",
- "ts-rs",
- "zeroize",
-]
-
-[[package]]
-name = "dcc-store"
-version = "1.7.0"
-dependencies = [
- "dirs 6.0.0",
- "parking_lot",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "toml 0.8.2",
- "tracing",
- "ts-rs",
-]
-
-[[package]]
 name = "defmt"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1072,44 +1110,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "docker-control-center"
-version = "1.7.0"
-dependencies = [
- "base64 0.22.1",
- "bollard",
- "chrono",
- "dcc-activity",
- "dcc-engine",
- "dcc-store",
- "dirs 6.0.0",
- "flate2",
- "futures-util",
- "libc",
- "parking_lot",
- "reqwest 0.12.28",
- "secret-service",
- "semver",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
- "ts-rs",
- "zbus",
- "zeroize",
 ]
 
 [[package]]

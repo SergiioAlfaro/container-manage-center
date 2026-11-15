@@ -11,12 +11,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use dcc_activity::{OpStatus, ServerTag};
-use dcc_engine::ssh::connect::TestReport;
-use dcc_engine::ssh::hostkey::{self, TrustError, TrustedKey};
-use dcc_engine::ssh::{HostKeyInfo, RemoteProblem, Secret, SecretKind, SecretProvider, SshContext};
-use dcc_engine::{ConnectionState, Problem, SystemOverview};
-use dcc_store::ServerConfig;
+use cmc_activity::{OpStatus, ServerTag};
+use cmc_engine::ssh::connect::TestReport;
+use cmc_engine::ssh::hostkey::{self, TrustError, TrustedKey};
+use cmc_engine::ssh::{HostKeyInfo, RemoteProblem, Secret, SecretKind, SecretProvider, SshContext};
+use cmc_engine::{ConnectionState, Problem, SystemOverview};
+use cmc_store::ServerConfig;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime, State};
 use ts_rs::TS;
@@ -38,7 +38,7 @@ pub fn servers_list(state: State<'_, AppState>) -> Vec<ServerView> {
 
 /// Valida un perfil sin guardarlo (asistente). Códigos `server.*` por campo.
 #[tauri::command]
-pub fn server_validate(config: ServerConfig) -> Vec<dcc_engine::ssh::profile::ProfileIssue> {
+pub fn server_validate(config: ServerConfig) -> Vec<cmc_engine::ssh::profile::ProfileIssue> {
     let mut c = config;
     if c.id.is_empty() {
         c.id = "srv-00000000".into();
@@ -67,7 +67,7 @@ pub async fn server_delete(
     confirmed: bool,
 ) -> CmdResult<()> {
     if !confirmed {
-        return Err(dcc_engine::EngineError::NotConfirmed.into());
+        return Err(cmc_engine::EngineError::NotConfirmed.into());
     }
     if server == LOCAL {
         return Err(CommandError::new(
@@ -200,7 +200,7 @@ impl SecretProvider for WithSecret {
 /// Perfil con identificador (uno provisional si aún no se ha guardado).
 fn with_id(mut c: ServerConfig) -> ServerConfig {
     if c.id.is_empty() {
-        c.id = format!("srv-{}", dcc_engine::ssh::askpass::random_hex(8));
+        c.id = format!("srv-{}", cmc_engine::ssh::askpass::random_hex(8));
     }
     c
 }
@@ -236,7 +236,7 @@ pub async fn server_test(
         }
     }
     let log = state.activity.with_server(tag_for(&c));
-    Ok(dcc_engine::ssh::connect::test(&ctx, &profile_of(&c), &log).await)
+    Ok(cmc_engine::ssh::connect::test(&ctx, &profile_of(&c), &log).await)
 }
 
 /// Identidad que presenta ahora el servidor (para revisarla antes de confiar).
@@ -255,12 +255,12 @@ pub async fn server_host_key(
 
 /// Perfil del destino o, con `jump`, del servidor intermedio (E1, D-087): su
 /// identidad se confirma y se guarda igual que la del destino.
-fn target_profile(c: &ServerConfig, jump: bool) -> CmdResult<dcc_engine::ssh::profile::SshProfile> {
+fn target_profile(c: &ServerConfig, jump: bool) -> CmdResult<cmc_engine::ssh::profile::SshProfile> {
     let p = profile_of(c);
     if !jump {
         return Ok(p);
     }
-    dcc_engine::ssh::profile::jump_profile(&p).ok_or_else(|| {
+    cmc_engine::ssh::profile::jump_profile(&p).ok_or_else(|| {
         CommandError::new(
             "server.noJump",
             "el perfil no tiene un servidor intermedio válido",
@@ -296,8 +296,8 @@ pub async fn server_trust(
     match r {
         Ok(k) => {
             let log = state.activity.with_server(tag_for(&c));
-            let h = log.begin(dcc_activity::OperationSpec {
-                category: dcc_activity::Category::System,
+            let h = log.begin(cmc_activity::OperationSpec {
+                category: cmc_activity::Category::System,
                 kind: match (jump, replace) {
                     (false, true) => "server.hostKeyReplace".into(),
                     (false, false) => "server.hostKeyTrust".into(),
@@ -309,7 +309,7 @@ pub async fn server_trust(
                 } else {
                     c.name.clone()
                 }),
-                transport: dcc_activity::Transport::App {
+                transport: cmc_activity::Transport::App {
                     action: match (jump, replace) {
                         (false, true) => "Sustitución de la identidad del servidor (revisada por el usuario)".into(),
                         (false, false) => "Confianza en la identidad del servidor (huella confirmada)".into(),
@@ -320,7 +320,7 @@ pub async fn server_trust(
                 request_body: None,
                 equivalent_command: None,
             });
-            h.succeed(dcc_activity::Outcome {
+            h.succeed(cmc_activity::Outcome {
                 summary: Some(format!("{} {}", k.key_type, k.fingerprint)),
                 ..Default::default()
             });
@@ -461,7 +461,7 @@ pub async fn server_diagnose(
                 let _ = state.servers.secrets.prefetch(&server, k).await;
             }
             let log = state.activity.with_server(tag_for(c));
-            Some(dcc_engine::ssh::connect::test(&state.servers.ctx, &profile_of(c), &log).await)
+            Some(cmc_engine::ssh::connect::test(&state.servers.ctx, &profile_of(c), &log).await)
         }
         None => None,
     };
@@ -512,7 +512,7 @@ pub async fn servers_overview(state: State<'_, AppState>) -> CmdResult<Vec<Serve
                 (Ok(m), true) => match tokio::time::timeout(OVERVIEW_TIMEOUT, m.overview()).await {
                     Ok(Ok(o)) => (Some(o), None),
                     Ok(Err(e)) => (None, Some(e.into())),
-                    Err(_) => (None, Some(dcc_engine::EngineError::Timeout.into())),
+                    Err(_) => (None, Some(cmc_engine::EngineError::Timeout.into())),
                 },
                 (Err(e), _) => (None, Some(e)),
                 _ => (None, None),
@@ -559,7 +559,7 @@ pub fn spawn_auto_connect<R: Runtime>(app: AppHandle<R>) {
         tauri::async_runtime::spawn(async move {
             let state = app.state::<AppState>();
             if let Err(e) = connect_server(&state, &id, None, false).await {
-                tracing::warn!(server = %id, error = %dcc_activity::redact::redact_text(&e.to_string()), "no se pudo conectar al abrir");
+                tracing::warn!(server = %id, error = %cmc_activity::redact::redact_text(&e.to_string()), "no se pudo conectar al abrir");
             }
         });
     }
@@ -591,7 +591,7 @@ pub async fn server_shell_open(
     tauri::async_runtime::spawn(async move {
         let ch = on_event.clone();
         let b64 = base64::engine::general_purpose::STANDARD;
-        let r = dcc_engine::ssh::shell::run_server_shell(
+        let r = cmc_engine::ssh::shell::run_server_shell(
             &engine,
             (cols, rows),
             cancel,

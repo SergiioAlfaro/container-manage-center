@@ -1,0 +1,44 @@
+[package]
+name = "cmc-engine"
+description = "Conexión con Docker Engine: resolución del socket, diagnóstico y cliente API con registro de actividad"
+version.workspace = true
+edition.workspace = true
+publish = false
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+bollard = { version = "0.21", default-features = false, features = ["pipe"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net", "time", "process", "io-util", "sync", "fs"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+ts-rs.workspace = true
+dirs.workspace = true
+sha2 = "0.10"
+libc = "0.2"
+serde_urlencoded = "0.7"
+parking_lot.workspace = true
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+tokio-util = { version = "0.7", default-features = false }
+bytes = "1"
+base64 = "0.22"
+regex = "1"
+tar = "0.4"
+cmc-activity.workspace = true
+# Transporte SSH propio para bollard (0.10.0, D-075): conector de hyper sobre
+# canales `docker system dial-stdio`.
+hyper = { version = "1", default-features = false, features = ["client", "http1"] }
+hyper-util = { version = "0.1", default-features = false, features = ["client-legacy", "http1", "tokio"] }
+tower-service = "0.3"
+# Los secretos de SSH se borran de la memoria al liberarse (D-077).
+zeroize = "1"
+
+[dev-dependencies]
+tempfile.workspace = true
+flate2 = "1"
+bytes = "1"
+futures-util = { version = "0.3", default-features = false }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }

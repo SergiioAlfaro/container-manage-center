@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Estado compartido del backend.
 
-use dcc_activity::ActivityLog;
-use dcc_engine::{ConnectionMode, EngineManager};
-use dcc_store::{AppConfig, ConfigStore, DockerConfig, DockerMode};
+use cmc_activity::ActivityLog;
+use cmc_engine::{ConnectionMode, EngineManager};
+use cmc_store::{AppConfig, ConfigStore, DockerConfig, DockerMode};
 use parking_lot::Mutex;
 
 use crate::error::CmdResult;
@@ -43,17 +43,17 @@ pub fn connection_mode(c: &DockerConfig) -> ConnectionMode {
 /// Registra en el panel de actividad un cambio de preferencia ya guardado.
 /// No hay petición a Docker: el transporte es la propia aplicación.
 pub fn record_preference(log: &ActivityLog, kind: &str, action: &str, before: &str, after: &str) {
-    let h = log.begin(dcc_activity::OperationSpec {
-        category: dcc_activity::Category::System,
+    let h = log.begin(cmc_activity::OperationSpec {
+        category: cmc_activity::Category::System,
         kind: kind.to_owned(),
         target: Some(after.to_owned()),
-        transport: dcc_activity::Transport::App {
+        transport: cmc_activity::Transport::App {
             action: action.to_owned(),
         },
         request_body: None,
         equivalent_command: None,
     });
-    h.succeed(dcc_activity::Outcome {
+    h.succeed(cmc_activity::Outcome {
         summary: Some(format!("{before} → {after}")),
         ..Default::default()
     });
@@ -74,7 +74,7 @@ impl AppState {
         let local = EngineManager::new(activity.clone(), connection_mode(&config.docker));
         let servers = crate::servers::Servers::new(
             local,
-            dcc_store::ServerStore::beside(store.path()),
+            cmc_store::ServerStore::beside(store.path()),
             activity.clone(),
             crate::servers::ssh_paths(
                 store
@@ -83,14 +83,19 @@ impl AppState {
                     .map(|p| p.to_path_buf())
                     .unwrap_or_default(),
             ),
-            dcc_engine::manager::Timing::default(),
+            cmc_engine::manager::Timing::default(),
         );
         let (journals, journal_warning) =
             crate::journal::Journals::open(crate::journal::state_dir(store.path()));
-        let warnings: Vec<String> = [warning, journal_warning, servers.warning.clone()]
-            .into_iter()
-            .flatten()
-            .collect();
+        let warnings: Vec<String> = [
+            crate::migration::startup_warning(),
+            warning,
+            journal_warning,
+            servers.warning.clone(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
         let startup_warning = (!warnings.is_empty()).then(|| warnings.join(" "));
         let monitor = crate::monitor::Monitor::new(store.path(), journals.dir.clone());
         Self {
@@ -150,7 +155,7 @@ impl AppState {
     /// Cambia la lista de proyectos Compose registrados y la guarda.
     pub fn update_compose<T>(
         &self,
-        f: impl FnOnce(&mut Vec<dcc_store::SavedProject>) -> CmdResult<T>,
+        f: impl FnOnce(&mut Vec<cmc_store::SavedProject>) -> CmdResult<T>,
     ) -> CmdResult<(T, AppConfig)> {
         let mut cur = self.config.lock();
         let mut next = cur.clone();
@@ -173,7 +178,7 @@ mod tests {
         let state = AppState::new(store.clone());
         let mut c = state.config();
         c.activity.max_records = 75;
-        c.ui.language = dcc_store::Language::En;
+        c.ui.language = cmc_store::Language::En;
         let (saved, docker_changed) = state.replace_config(c).unwrap();
         assert!(!docker_changed);
         assert_eq!(state.activity.capacity(), 75);
@@ -185,7 +190,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let state = AppState::new(ConfigStore::at(dir.path().join("config.toml")));
         let mut c = state.config();
-        c.ui.language = dcc_store::Language::Eu;
+        c.ui.language = cmc_store::Language::Eu;
         state.replace_config(c.clone()).unwrap();
         // Guardar lo mismo otra vez no añade registros.
         state.replace_config(c).unwrap();
@@ -199,8 +204,8 @@ mod tests {
             [("ui.language".to_string(), Some("es → eu".to_string()))]
         );
         assert!(recs.iter().all(
-            |r| matches!(r.transport, dcc_activity::Transport::App { .. })
-                && r.status == dcc_activity::OpStatus::Succeeded
+            |r| matches!(r.transport, cmc_activity::Transport::App { .. })
+                && r.status == cmc_activity::OpStatus::Succeeded
                 && r.duration_ms.is_some()
         ));
     }
@@ -240,7 +245,7 @@ mod tests {
         let stale = state.config();
         state
             .update_compose(|ps| {
-                ps.push(dcc_store::SavedProject {
+                ps.push(cmc_store::SavedProject {
                     name: "tienda".into(),
                     files: vec!["/srv/tienda/compose.yaml".into()],
                 });
@@ -248,14 +253,14 @@ mod tests {
             })
             .unwrap();
         let mut c = stale;
-        c.ui.language = dcc_store::Language::En;
+        c.ui.language = cmc_store::Language::En;
         let (saved, _) = state.replace_config(c).unwrap();
         assert_eq!(
             saved.compose.projects.len(),
             1,
             "la copia antigua no borra el proyecto"
         );
-        assert_eq!(saved.ui.language, dcc_store::Language::En);
+        assert_eq!(saved.ui.language, cmc_store::Language::En);
         assert_eq!(store.load().unwrap().config, saved);
     }
 }

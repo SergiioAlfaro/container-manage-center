@@ -14,19 +14,19 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use dcc_engine::ssh::{Secret, SecretKind, SecretProvider};
+use cmc_engine::ssh::{Secret, SecretKind, SecretProvider};
 use parking_lot::Mutex;
 use serde::Serialize;
 use ts_rs::TS;
 
 /// Atributos con los que se guardan en el keyring.
 const ATTR_APP: &str = "application";
-/// Identificador interno: se conserva tras el cambio de nombre a Container
-/// Manage Center (1.7.0, D-110), porque con él se encuentran las credenciales
-/// ya guardadas. Solo cambia la etiqueta visible de las entradas nuevas.
-const APP: &str = "docker-control-center";
-const ATTR_SERVER: &str = "dcc-server";
-const ATTR_KIND: &str = "dcc-kind";
+/// Identificador de la aplicación en el keyring (1.8.0, D-113). Las entradas
+/// guardadas con el nombre anterior ([`cmc_store::legacy`]) se pasan a este al
+/// usarlas o al arrancar ([`Secrets::migrate_legacy`]).
+const APP: &str = "container-manage-center";
+const ATTR_SERVER: &str = "cmc-server";
+const ATTR_KIND: &str = "cmc-kind";
 /// Abrir el keyring puede mostrar un diálogo del sistema para desbloquearlo.
 const KEYRING_TIMEOUT: Duration = Duration::from_secs(60);
 const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
@@ -90,6 +90,79 @@ mod keyring {
         a
     }
 
+    fn legacy_attrs<'a>(server: &'a str, kind: Option<&'a str>) -> HashMap<&'a str, &'a str> {
+        use cmc_store::legacy;
+        let mut a = HashMap::from([
+            (ATTR_APP, legacy::KEYRING_APP),
+            (legacy::KEYRING_ATTR_SERVER, server),
+        ]);
+        if let Some(k) = kind {
+            a.insert(legacy::KEYRING_ATTR_KIND, k);
+        }
+        a
+    }
+
+    /// Etiqueta visible de una entrada pasada al nombre nuevo.
+    pub(super) fn renamed_label(old: &str) -> String {
+        match old.strip_prefix(cmc_store::legacy::KEYRING_LABEL_PREFIX) {
+            Some(rest) => format!("Container Manage Center{rest}"),
+            None => old.to_owned(),
+        }
+    }
+
+    /// Pasa una entrada del nombre anterior a los atributos nuevos: la crea
+    /// con el mismo secreto y la misma etiqueta (con el nombre nuevo) y solo
+    /// después borra la antigua.
+    async fn move_legacy_item(
+        ss: &SecretService<'_>,
+        item: &secret_service::Item<'_>,
+        server: &str,
+        kind: &str,
+    ) -> Result<zeroize::Zeroizing<Vec<u8>>, KeyringError> {
+        let secret = zeroize::Zeroizing::new(item.get_secret().await.map_err(other)?);
+        let label = renamed_label(&item.get_label().await.map_err(other)?);
+        let col = ss.get_default_collection().await.map_err(other)?;
+        if col.is_locked().await.map_err(other)? {
+            col.unlock().await.map_err(|_| KeyringError::Locked)?;
+        }
+        col.create_item(
+            &label,
+            attrs(server, Some(kind)),
+            &secret,
+            true,
+            "text/plain",
+        )
+        .await
+        .map_err(other)?;
+        item.delete().await.map_err(other)?;
+        Ok(secret)
+    }
+
+    /// Pasa al nombre nuevo todas las entradas antiguas desbloqueadas (las
+    /// bloqueadas se pasan cuando se usan, para no pedir desbloquear el
+    /// keyring al arrancar). Devuelve cuántas se pasaron.
+    pub async fn migrate_unlocked() -> Result<usize, KeyringError> {
+        use cmc_store::legacy;
+        let ss = service().await?;
+        let found = ss
+            .search_items(HashMap::from([(ATTR_APP, legacy::KEYRING_APP)]))
+            .await
+            .map_err(other)?;
+        let mut n = 0;
+        for item in found.unlocked {
+            let a = item.get_attributes().await.map_err(other)?;
+            let (Some(server), Some(kind)) = (
+                a.get(legacy::KEYRING_ATTR_SERVER),
+                a.get(legacy::KEYRING_ATTR_KIND),
+            ) else {
+                continue;
+            };
+            move_legacy_item(&ss, &item, server, kind).await?;
+            n += 1;
+        }
+        Ok(n)
+    }
+
     pub async fn probe() -> Result<(), KeyringError> {
         let ss = service().await?;
         ss.get_default_collection()
@@ -136,7 +209,29 @@ mod keyring {
                 i.unlock().await.map_err(|_| KeyringError::Locked)?;
                 i
             }
-            (None, None) => return Ok(None),
+            (None, None) => {
+                // Guardada con el nombre anterior (hasta la 1.7.0): se pasa al
+                // nuevo y se usa.
+                let old = ss
+                    .search_items(legacy_attrs(server, Some(kind_code(kind))))
+                    .await
+                    .map_err(other)?;
+                let item = match (
+                    old.unlocked.into_iter().next(),
+                    old.locked.into_iter().next(),
+                ) {
+                    (Some(i), _) => i,
+                    (None, Some(i)) => {
+                        i.unlock().await.map_err(|_| KeyringError::Locked)?;
+                        i
+                    }
+                    (None, None) => return Ok(None),
+                };
+                let bytes = move_legacy_item(&ss, &item, server, kind_code(kind)).await?;
+                return Ok(std::str::from_utf8(&bytes)
+                    .ok()
+                    .map(|s| Secret::new(s.to_owned())));
+            }
         };
         let bytes = zeroize::Zeroizing::new(item.get_secret().await.map_err(other)?);
         Ok(std::str::from_utf8(&bytes)
@@ -147,22 +242,29 @@ mod keyring {
     /// Borra todos los secretos guardados de un servidor. Devuelve cuántos.
     pub async fn delete(server: &str) -> Result<usize, KeyringError> {
         let ss = service().await?;
-        let found = ss.search_items(attrs(server, None)).await.map_err(other)?;
         let mut n = 0;
-        for item in found.unlocked.into_iter().chain(found.locked) {
-            item.delete().await.map_err(other)?;
-            n += 1;
+        for a in [attrs(server, None), legacy_attrs(server, None)] {
+            let found = ss.search_items(a).await.map_err(other)?;
+            for item in found.unlocked.into_iter().chain(found.locked) {
+                item.delete().await.map_err(other)?;
+                n += 1;
+            }
         }
         Ok(n)
     }
 
     pub async fn has(server: &str, kind: SecretKind) -> Result<bool, KeyringError> {
         let ss = service().await?;
-        let found = ss
-            .search_items(attrs(server, Some(kind_code(kind))))
-            .await
-            .map_err(other)?;
-        Ok(!found.unlocked.is_empty() || !found.locked.is_empty())
+        for a in [
+            attrs(server, Some(kind_code(kind))),
+            legacy_attrs(server, Some(kind_code(kind))),
+        ] {
+            let found = ss.search_items(a).await.map_err(other)?;
+            if !found.unlocked.is_empty() || !found.locked.is_empty() {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 }
 
@@ -207,6 +309,13 @@ impl Secrets {
         self.cache
             .lock()
             .contains_key(&(server_id.to_owned(), kind))
+    }
+
+    /// Pasa al nombre nuevo las contraseñas guardadas por una versión anterior
+    /// (1.8.0, D-113). Sin keyring o si falla, no pasa nada: se hará al usar
+    /// cada una.
+    pub async fn migrate_legacy(&self) -> Result<usize, KeyringError> {
+        timed(KEYRING_TIMEOUT, keyring::migrate_unlocked()).await
     }
 
     pub async fn keyring_status(&self) -> KeyringStatus {
@@ -290,13 +399,13 @@ mod tests {
         assert!(s.secret("srv-aaaaaaaa", SecretKind::Passphrase).is_none());
     }
 
-    /// Keyring real (Secret Service). Se ejecuta solo con `DCC_KEYRING_TEST=1`
+    /// Keyring real (Secret Service). Se ejecuta solo con `CMC_KEYRING_TEST=1`
     /// dentro de una sesión D-Bus con un keyring desbloqueado (ver
-    /// `scripts/verify-update-0.10.0.sh`).
+    /// `scripts/verify-evolution-1.8.0.sh`).
     #[tokio::test]
     async fn real_keyring_store_load_delete() {
-        if std::env::var_os("DCC_KEYRING_TEST").is_none() {
-            eprintln!("omitida: DCC_KEYRING_TEST no definida");
+        if std::env::var_os("CMC_KEYRING_TEST").is_none() {
+            eprintln!("omitida: CMC_KEYRING_TEST no definida");
             return;
         }
         let id = format!("srv-{:016x}", std::process::id() as u64 * 7919);
@@ -337,11 +446,11 @@ mod tests {
 
     #[tokio::test]
     async fn without_a_secret_service_it_is_reported_unavailable() {
-        if std::env::var_os("DCC_KEYRING_TEST").is_some() {
+        if std::env::var_os("CMC_KEYRING_TEST").is_some() {
             return;
         }
         // Sin bus de sesión ni keyring: nunca se recurre a un archivo.
-        std::env::set_var("DBUS_SESSION_BUS_ADDRESS", "unix:path=/nonexistent/dcc-bus");
+        std::env::set_var("DBUS_SESSION_BUS_ADDRESS", "unix:path=/nonexistent/cmc-bus");
         let s = Secrets::default();
         assert!(matches!(
             s.keyring_status().await,

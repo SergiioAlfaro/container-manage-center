@@ -282,7 +282,7 @@ describe("Editar configuración: pantalla", () => {
         containerId: "n3wn3wn3wn3w",
         recreated: true,
         backupId: "a1b2c3d4e5f6a7b8c9d0",
-        backupName: "web-dcc-backup-20261111-120000",
+        backupName: "web-cmc-backup-20261111-120000",
         steps: ["stop", "backup", "create", "start", "verify"].map((code) => ({ code, ok: true, detail: null })),
       }),
     );
@@ -294,7 +294,7 @@ describe("Editar configuración: pantalla", () => {
     await userEvent.click(screen.getByRole("button", { name: "Revisar cambios" }));
     expect(await screen.findByRole("heading", { name: "Recreación segura" })).toBeInTheDocument();
     expect(screen.getByText("Requiere recrear el contenedor")).toBeInTheDocument();
-    expect(screen.getByText(/Se le cambia el nombre a web-dcc-backup-20261111-120000/)).toBeInTheDocument();
+    expect(screen.getByText(/Se le cambia el nombre a web-cmc-backup-20261111-120000/)).toBeInTheDocument();
     expect(screen.getByText(/Se crea un contenedor nuevo llamado web, con la imagen nginx:1.27/)).toBeInTheDocument();
     expect(screen.getByText(/No se elimina ningún volumen, carpeta ni imagen/)).toBeInTheDocument();
     expect(screen.getByText(/El servicio se interrumpirá/)).toBeInTheDocument();
@@ -308,11 +308,11 @@ describe("Editar configuración: pantalla", () => {
     expect(api.containerEditApply).not.toHaveBeenCalled();
     await userEvent.click(recreate);
     expect(await screen.findByText("web se ha recreado con los cambios y funciona correctamente.")).toBeInTheDocument();
-    expect(screen.getByText(/se conserva detenido como web-dcc-backup-20261111-120000/)).toBeInTheDocument();
+    expect(screen.getByText(/se conserva detenido como web-cmc-backup-20261111-120000/)).toBeInTheDocument();
     expect(api.containerEditApply).toHaveBeenCalledWith(
       "a1b2c3d4e5f6a7b8c9d0",
       expect.objectContaining({ ports: [{ hostIp: "", hostPort: 9090, containerPort: 80, protocol: "tcp" }] }),
-      { confirmRecreate: true, acceptedRisks: ["writableLayer"], keepMac: false, backupName: "web-dcc-backup-20261111-120000" },
+      { confirmRecreate: true, acceptedRisks: ["writableLayer"], keepMac: false, backupName: "web-cmc-backup-20261111-120000" },
     );
     expect(screen.getAllByLabelText("Correcto")).toHaveLength(5);
     // La cabecera y «Volver al contenedor» pasan al contenedor nuevo (el ID anterior es ahora la copia).
@@ -323,7 +323,7 @@ describe("Editar configuración: pantalla", () => {
 
   it("si al recrear también cambia el nombre, la revisión y la cabecera usan el nombre nuevo", async () => {
     api.containerEditApply.mockImplementationOnce(async (_id, r) =>
-      editOutcome({ containerId: "n3wn3wn3wn3w", name: r.name, recreated: true, backupName: "web-dcc-backup-20261111-120000", steps: [] }),
+      editOutcome({ containerId: "n3wn3wn3wn3w", name: r.name, recreated: true, backupName: "web-cmc-backup-20261111-120000", steps: [] }),
     );
     await open();
     await userEvent.clear(screen.getByLabelText(/^Nombre/));
@@ -374,12 +374,12 @@ describe("Editar configuración: pantalla", () => {
 
   it("las copias de seguridad se restauran con confirmación", async () => {
     api.containerEditConfig.mockImplementation(async () =>
-      editableConfig({ backups: [{ id: "bacbacbacbac", name: "web-dcc-backup-20261110-090000", originalName: "web", state: "exited", created: 1_794_000_000 }] }),
+      editableConfig({ backups: [{ id: "bacbacbacbac", name: "web-cmc-backup-20261110-090000", originalName: "web", state: "exited", created: 1_794_000_000 }] }),
     );
     api.containerRestoreBackup.mockResolvedValueOnce(editOutcome({ containerId: "bacbacbacbac", name: "web" }));
     await open();
     await userEvent.click(screen.getByRole("button", { name: "Restaurar" }));
-    const dialog = screen.getByRole("dialog", { name: "¿Restaurar web-dcc-backup-20261110-090000?" });
+    const dialog = screen.getByRole("dialog", { name: "¿Restaurar web-cmc-backup-20261110-090000?" });
     expect(within(dialog).getByText(/No se elimina ningún contenedor, volumen ni imagen/)).toBeInTheDocument();
     expect(api.containerRestoreBackup).not.toHaveBeenCalled();
     await userEvent.click(within(dialog).getByRole("button", { name: "Restaurar" }));
@@ -389,12 +389,12 @@ describe("Editar configuración: pantalla", () => {
 
   it("eliminar una copia nunca borra sus volúmenes", async () => {
     api.containerEditConfig.mockImplementation(async () =>
-      editableConfig({ backups: [{ id: "bacbacbacbac", name: "web-dcc-backup-20261110-090000", originalName: "web", state: "exited", created: 1_794_000_000 }] }),
+      editableConfig({ backups: [{ id: "bacbacbacbac", name: "web-cmc-backup-20261110-090000", originalName: "web", state: "exited", created: 1_794_000_000 }] }),
     );
     await open();
     await userEvent.click(screen.getByRole("button", { name: "Eliminar copia" }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Eliminar copia" }));
-    await waitFor(() => expect(api.containerRemove).toHaveBeenCalledWith("bacbacbacbac", "web-dcc-backup-20261110-090000", false, false));
+    await waitFor(() => expect(api.containerRemove).toHaveBeenCalledWith("bacbacbacbac", "web-cmc-backup-20261110-090000", false, false));
   });
 });
 

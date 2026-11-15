@@ -2,8 +2,8 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "container-manage-center",
   "mainBinaryName": "container-manage-center",
-  "version": "1.7.0",
-  "identifier": "org.dockercontrolcenter.app",
+  "version": "1.8.0",
+  "identifier": "org.containermanagecenter.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -36,7 +36,7 @@
     ],
     "category": "DeveloperTool",
     "shortDescription": "Administración gráfica de Docker Engine, local y remoto por SSH",
-    "longDescription": "Container Manage Center (CMC) permite administrar contenedores, imágenes, redes, volúmenes, directorios vinculados y proyectos Docker Compose desde una interfaz gráfica, en este equipo y en servidores remotos por SSH, mostrando en todo momento las operaciones reales ejecutadas sobre Docker Engine. Es un proyecto independiente, no afiliado ni respaldado por Docker, Inc. Sustituye al paquete docker-control-center.",
+    "longDescription": "Container Manage Center (CMC) permite administrar contenedores, imágenes, redes, volúmenes, directorios vinculados y proyectos Docker Compose desde una interfaz gráfica, en este equipo y en servidores remotos por SSH, mostrando en todo momento las operaciones reales ejecutadas sobre Docker Engine. Es un proyecto independiente, no afiliado ni respaldado por Docker, Inc.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -50,9 +50,6 @@
         "recommends": [
           "openssh-client"
         ],
-        "provides": [
-          "docker-control-center"
-        ],
         "conflicts": [
           "docker-control-center"
         ],
@@ -60,7 +57,6 @@
           "docker-control-center"
         ],
         "files": {
-          "/usr/bin/docker-control-center": "../packaging/docker-control-center",
           "/usr/share/doc/container-manage-center/copyright": "../packaging/copyright",
           "/usr/share/doc/container-manage-center/LICENSE": "../LICENSE",
           "/usr/share/doc/container-manage-center/README.md": "../README.md",

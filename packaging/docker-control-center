@@ -1,9 +1,0 @@
-#!/bin/sh
-# SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-#
-# Nombre anterior de Container Manage Center (hasta la 1.6.0, «Docker Control
-# Center»). Se mantiene para que sigan funcionando las copias programadas ya
-# creadas (sus unidades de systemd llaman a esta ruta) y los accesos directos
-# antiguos. Ver /usr/share/doc/container-manage-center/MIGRATION.md.
-exec /usr/bin/container-manage-center "$@"

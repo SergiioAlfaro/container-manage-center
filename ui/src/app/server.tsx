@@ -30,11 +30,19 @@ export { LOCAL_SERVER };
 
 export type BoundApi = typeof appApi & DockerApi & { server: string };
 
-const STORAGE_KEY = "dcc.selectedServer";
+const STORAGE_KEY = "cmc.selectedServer";
+/** Clave del nombre anterior (hasta la 1.7.0, D-113): se pasa a la nueva. */
+const LEGACY_STORAGE_KEY = "dcc.selectedServer";
 
-function readSelected(): string {
+export function readSelected(): string {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) ?? LOCAL_SERVER;
+    const ls = window.localStorage;
+    const legacy = ls.getItem(LEGACY_STORAGE_KEY);
+    if (legacy !== null) {
+      if (ls.getItem(STORAGE_KEY) === null) ls.setItem(STORAGE_KEY, legacy);
+      ls.removeItem(LEGACY_STORAGE_KEY);
+    }
+    return ls.getItem(STORAGE_KEY) ?? LOCAL_SERVER;
   } catch {
     return LOCAL_SERVER;
   }

@@ -66,7 +66,7 @@ function BuildForm({ initial }: { initial: BuildSpec }) {
   const [spec, setSpec] = useState<BuildSpec>(initial);
   const [preview, setPreview] = useState<BuildPreview | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
-  // E2 (DCC-SEC-07, D-090): credenciales de este equipo para las imágenes base,
+  // E2 (CMC-SEC-07, D-090): credenciales de este equipo para las imágenes base,
   // solo con permiso expreso en un servidor remoto.
   const [share, setShare] = useState(false);
   const set = <K extends keyof BuildSpec>(k: K, v: BuildSpec[K]) => setSpec((s) => ({ ...s, [k]: v }));

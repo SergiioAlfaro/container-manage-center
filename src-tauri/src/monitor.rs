@@ -18,14 +18,14 @@ use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use dcc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
-use dcc_engine::events::DockerEvent;
-use dcc_engine::monitor::alerts::AlertEngine;
-use dcc_engine::monitor::history::{MinuteAggregator, Ring, ServerPoint};
-use dcc_engine::monitor::sampler::{now_ms, SamplerState};
-use dcc_engine::monitor::*;
-use dcc_engine::ConnectionState;
-use dcc_store::journal::Journal;
+use cmc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
+use cmc_engine::events::DockerEvent;
+use cmc_engine::monitor::alerts::AlertEngine;
+use cmc_engine::monitor::history::{MinuteAggregator, Ring, ServerPoint};
+use cmc_engine::monitor::sampler::{now_ms, SamplerState};
+use cmc_engine::monitor::*;
+use cmc_engine::ConnectionState;
+use cmc_store::journal::Journal;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
@@ -116,7 +116,7 @@ pub fn save_settings(config: &Path, s: &MonitorSettings) -> CmdResult<()> {
     s.validate()
         .map_err(|m| CommandError::new("monitor.invalid", m))?;
     let text = serde_json::to_string_pretty(s).map_err(|e| CommandError::new("monitor.io", e))?;
-    dcc_store::write_atomic(&settings_path(config), &text)
+    cmc_store::write_atomic(&settings_path(config), &text)
         .map_err(|e| CommandError::new("monitor.io", e))
 }
 
@@ -588,7 +588,7 @@ async fn run<R: Runtime>(app: AppHandle<R>, server: String, cancel: Cancellation
                 let mut g = state.monitor.inner.lock();
                 if let Some(m) = g.servers.get_mut(&server) {
                     if !err.is_empty() {
-                        m.last_error = Some(dcc_activity::redact::redact_text(&err).into_owned());
+                        m.last_error = Some(cmc_activity::redact::redact_text(&err).into_owned());
                     }
                 }
                 drop(g);
@@ -717,7 +717,7 @@ mod tests {
     #[test]
     fn minute_store_filters_compacts_by_age_and_size_and_is_private() {
         let d = tempfile::Builder::new()
-            .prefix("dcc-test")
+            .prefix("cmc-test")
             .tempdir()
             .unwrap();
         let s = MinuteStore::open(&d.path().join("monitor/local")).unwrap();
@@ -770,7 +770,7 @@ mod tests {
     #[test]
     fn settings_are_validated_and_survive_a_restart() {
         let d = tempfile::Builder::new()
-            .prefix("dcc-test")
+            .prefix("cmc-test")
             .tempdir()
             .unwrap();
         let cfg = d.path().join("config.toml");
@@ -809,7 +809,7 @@ mod tests {
     #[test]
     fn service_starts_stops_and_answers_without_a_sampler() {
         let d = tempfile::Builder::new()
-            .prefix("dcc-test")
+            .prefix("cmc-test")
             .tempdir()
             .unwrap();
         let m = Monitor::new(&d.path().join("config.toml"), Some(d.path().join("estado")));

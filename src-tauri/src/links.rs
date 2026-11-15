@@ -17,11 +17,11 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use dcc_engine::backup::{
+use cmc_engine::backup::{
     BackupEntry, BackupState, Consistency, ItemKind, Manifest, DETAIL_CONTAINER_ID,
     DETAIL_USED_BY_IDS,
 };
-use dcc_engine::monitor::AlertKind;
+use cmc_engine::monitor::AlertKind;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -77,7 +77,7 @@ pub struct BackupLink {
     /// Carpeta de destino donde está.
     pub destination: String,
     /// Lo que incluye del contenedor (configuración, base de datos, volumen…).
-    pub kinds: Vec<dcc_engine::backup::ItemKind>,
+    pub kinds: Vec<cmc_engine::backup::ItemKind>,
     /// La mejor coincidencia encontrada en esa copia.
     #[serde(rename = "match")]
     #[ts(rename = "match")]
@@ -135,7 +135,7 @@ fn monitor_link(status: &MonitorStatus, id: &str) -> MonitorLink {
 }
 
 /// Coincidencia de un elemento de la copia con el contenedor.
-fn item_match(item: &dcc_engine::backup::BackupItem, t: &LinkTarget) -> Option<LinkMatch> {
+fn item_match(item: &cmc_engine::backup::BackupItem, t: &LinkTarget) -> Option<LinkMatch> {
     match item.kind {
         ItemKind::Database | ItemKind::Container => {
             match item.details.get(DETAIL_CONTAINER_ID) {
@@ -263,10 +263,10 @@ pub fn compute(
 mod tests {
     use super::*;
     use crate::monitor::FiringAlert;
-    use dcc_engine::backup::{
+    use cmc_engine::backup::{
         BackupItem, BackupRequest, ComposeSelection, VolumeMode, VolumeSelection,
     };
-    use dcc_engine::monitor::{ContainerMeta, ContainerSample, Counts, ServerSample};
+    use cmc_engine::monitor::{ContainerMeta, ContainerSample, Counts, ServerSample};
     use std::collections::BTreeMap;
 
     const WEB: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";

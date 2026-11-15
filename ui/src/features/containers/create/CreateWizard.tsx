@@ -249,8 +249,8 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
                   >
                     {(id, inv) => (
                       <>
-                        <TextInput id={id} invalid={inv} list="dcc-images" value={spec.image} onChange={(e) => set("image", e.target.value)} placeholder="nginx:1.27" />
-                        <datalist id="dcc-images">
+                        <TextInput id={id} invalid={inv} list="cmc-images" value={spec.image} onChange={(e) => set("image", e.target.value)} placeholder="nginx:1.27" />
+                        <datalist id="cmc-images">
                           {tags.map((tg) => (
                             <option key={tg} value={tg} />
                           ))}
@@ -355,7 +355,7 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
               <Group title={t("create.g.mounts")} description={t("create.g.mountsHint", { context: remoteCtx })}>
                 {d && d.volumes.length > 0 && <Banner tone="info">{t("create.imageVolumes", { paths: d.volumes.join(", ") })}</Banner>}
                 {volumes.error && <Banner tone="warn">{t("create.listError", { message: (volumes.error as { message: string }).message })}</Banner>}
-                <datalist id="dcc-volumes">
+                <datalist id="cmc-volumes">
                   {(volumes.data ?? []).map((v) => (
                     <option key={v.name} value={v.name} />
                   ))}

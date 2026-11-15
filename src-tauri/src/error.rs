@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Error serializable que reciben los comandos IPC en el frontend.
 
-use dcc_engine::EngineError;
+use cmc_engine::EngineError;
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -21,7 +21,7 @@ pub struct CommandError {
     /// Código HTTP devuelto por Docker, si lo hubo.
     pub http_status: Option<u16>,
     /// Problemas de validación de una especificación (`engine.invalidSpec`).
-    pub issues: Option<Vec<dcc_engine::spec::SpecIssue>>,
+    pub issues: Option<Vec<cmc_engine::spec::SpecIssue>>,
 }
 
 impl Serialize for CommandError {
@@ -32,11 +32,11 @@ impl Serialize for CommandError {
             code: &'a str,
             message: std::borrow::Cow<'a, str>,
             http_status: Option<u16>,
-            issues: &'a Option<Vec<dcc_engine::spec::SpecIssue>>,
+            issues: &'a Option<Vec<cmc_engine::spec::SpecIssue>>,
         }
         Shown {
             code: &self.code,
-            message: dcc_activity::redact::redact_text(&self.message),
+            message: cmc_activity::redact::redact_text(&self.message),
             http_status: self.http_status,
             issues: &self.issues,
         }
@@ -55,8 +55,8 @@ impl CommandError {
     }
 }
 
-impl From<dcc_store::StoreError> for CommandError {
-    fn from(e: dcc_store::StoreError) -> Self {
+impl From<cmc_store::StoreError> for CommandError {
+    fn from(e: cmc_store::StoreError) -> Self {
         Self::new("config.io", e)
     }
 }
@@ -91,8 +91,8 @@ impl From<EngineError> for CommandError {
             EngineError::RisksNotAccepted { risks } => Some(
                 risks
                     .iter()
-                    .map(|r| dcc_engine::spec::SpecIssue {
-                        severity: dcc_engine::spec::Severity::Warning,
+                    .map(|r| cmc_engine::spec::SpecIssue {
+                        severity: cmc_engine::spec::Severity::Warning,
                         field: r.field.clone(),
                         code: r.code.clone(),
                         params: r.params.clone(),

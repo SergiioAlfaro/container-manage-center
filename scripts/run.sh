@@ -33,10 +33,8 @@ fi
 if [ -x /usr/bin/container-manage-center ]; then
   exec /usr/bin/container-manage-center
 fi
-# «tauri build» deja el ejecutable con su nombre de distribución; «cargo build»,
-# con el nombre interno del crate.
 find_bin() {
-  for b in "$ROOT/target/release/container-manage-center" "$ROOT/target/release/docker-control-center"; do
+  for b in "$ROOT/target/release/container-manage-center"; do
     [ -x "$b" ] && { echo "$b"; return 0; }
   done
   return 1

@@ -4,13 +4,13 @@
 //! flujos de logs, estadísticas y terminal.
 
 use base64::Engine as _;
-use dcc_engine::catalog::{ImageDefaults, NetworkBrief, VolumeBrief};
-use dcc_engine::details::ContainerDetails;
-use dcc_engine::edit::{EditOutcome, EditPlan, EditRequest, EditableConfig};
-use dcc_engine::edit_ops::{ApplyOptions, CommitPreview, CommitRequest, CommitResult};
-use dcc_engine::spec::{ContainerSpec, DuplicateSpec, SpecIssue};
-use dcc_engine::streams::{LogLine, ShellChoice, StatsSample, StreamEnd, TerminalInput};
-use dcc_engine::{ContainerAction, ContainerState, EngineError};
+use cmc_engine::catalog::{ImageDefaults, NetworkBrief, VolumeBrief};
+use cmc_engine::details::ContainerDetails;
+use cmc_engine::edit::{EditOutcome, EditPlan, EditRequest, EditableConfig};
+use cmc_engine::edit_ops::{ApplyOptions, CommitPreview, CommitRequest, CommitResult};
+use cmc_engine::spec::{ContainerSpec, DuplicateSpec, SpecIssue};
+use cmc_engine::streams::{LogLine, ShellChoice, StatsSample, StreamEnd, TerminalInput};
+use cmc_engine::{ContainerAction, ContainerState, EngineError};
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::State;
@@ -38,7 +38,7 @@ pub struct SpecPreview {
     pub secrets_hidden: u32,
     /// Riesgos para el equipo (D-086). Los altos y críticos se aceptan con su
     /// `key` en `ContainerSpec::accepted_risks`.
-    pub risks: Vec<dcc_engine::risk::Risk>,
+    pub risks: Vec<cmc_engine::risk::Risk>,
 }
 
 /// Valida y traduce la especificación sin cambiar nada (D-034). Las carpetas

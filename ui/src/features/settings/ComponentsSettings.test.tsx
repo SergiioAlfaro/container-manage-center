@@ -63,7 +63,7 @@ describe("Configuración: desinstalación y componentes", () => {
   it("los datos y la configuración se muestran como datos que no se borran", async () => {
     await analyze();
     const data = screen.getByRole("heading", { name: "Datos que no se borran" }).closest("section")!;
-    expect(within(data).getByText("/home/u/.config/docker-control-center")).toBeInTheDocument();
+    expect(within(data).getByText("/home/u/.config/container-manage-center")).toBeInTheDocument();
     expect(within(data).getByText("no existe")).toBeInTheDocument();
     expect(within(data).getByText(/imágenes, contenedores, redes, volúmenes y proyectos Compose/)).toBeInTheDocument();
   });
