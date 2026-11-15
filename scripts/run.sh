@@ -34,9 +34,8 @@ if [ -x /usr/bin/container-manage-center ]; then
   exec /usr/bin/container-manage-center
 fi
 find_bin() {
-  for b in "$ROOT/target/release/container-manage-center"; do
-    [ -x "$b" ] && { echo "$b"; return 0; }
-  done
+  local b="$ROOT/target/release/container-manage-center"
+  [ -x "$b" ] && { echo "$b"; return 0; }
   return 1
 }
 BIN=$(find_bin) || BIN=""

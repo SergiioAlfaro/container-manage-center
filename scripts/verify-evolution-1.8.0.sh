@@ -814,7 +814,7 @@ if [ $BUILD_DEB -eq 1 ]; then
     cp "$DEB" scripts/install.sh "$SUMDIR/"
     if bash scripts/release-sums.sh "$SUMDIR" >"$LOGDIR/sums.log" 2>&1 \
       && bash "$SUMDIR/install.sh" --check >"$LOGDIR/sums-ok.log" 2>&1 && grep -q "Suma SHA-256 correcta" "$LOGDIR/sums-ok.log"; then
-      sed -i 's/^./0/' "$SUMDIR/SHA256SUMS"
+      sed -i 's/^0/1/;t;s/^./0/' "$SUMDIR/SHA256SUMS"
       if ! bash "$SUMDIR/install.sh" --check >"$LOGDIR/sums-bad.log" 2>&1 && grep -q "no coincide" "$LOGDIR/sums-bad.log"; then
         printf 'otra-cosa\n' >"$SUMDIR/SHA256SUMS"
         if ! bash "$SUMDIR/install.sh" --check >"$LOGDIR/sums-missing.log" 2>&1 && grep -q "no aparece" "$LOGDIR/sums-missing.log"; then
