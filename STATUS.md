@@ -1378,7 +1378,8 @@ Fecha: 2026-11-15. Decisiones D-110 (identidad), D-111 (licencia y copyright), D
 - `scripts/verify-evolution-1.7.0.sh`: Docker 29.9.2 con `--deb --net --ssh-lab` (3 servidores SSH): **162 correctas, 0 fallos**, 4 omitidas justificadamente; Docker 26.1.3 y 24.0.7: **118 correctas, 0 fallos**, 5 omitidas cada uno. Compose 2.26.1: 6/6 en los tres.
 - Pruebas Rust: 738 correctas; Vitest: 434 correctas (47 archivos); clippy, rustfmt, tsc y ESLint (0 errores; 13 avisos anteriores) sin cambios.
 - `third-party-licenses.py --check`, `spdx-headers.py --check` y `cargo deny check licenses`: correctos.
-- Instalación limpia y **actualización desde la 1.6.0** con datos de usuario (`clean-install-test.sh` con `UPGRADE_FROM`) en Ubuntu 24.04 y 22.04: resultados en el informe de la entrega.
+- Instalación limpia y **actualización desde la 1.6.0** con datos de usuario (`clean-install-test.sh` con `UPGRADE_FROM`), con los paquetes publicados: Ubuntu 24.04 (paquete normal) y 22.04 (compatible), **50 comprobaciones correctas, 0 fallos**: un solo paquete y un solo lanzador, datos intactos (sha256), la ruta anterior funciona, no arranca como root, vuelta atrás a la 1.6.0 y de nuevo a la 1.7.0, desinstalación que conserva los datos.
+- `.tar.gz` de código fuente igual al commit y sin claves, credenciales ni configuraciones locales (las cabeceras de clave privada que aparecen son datos ficticios de las pruebas de ocultación de secretos).
 - Revisión visual (Xvfb): barra lateral, Configuración › Legal y ayuda. Corregido durante la revisión: la barra lateral aún mostraba «Docker / Control Center» (texto partido en dos líneas que las búsquedas no encontraban; ahora hay prueba) y la ayuda mostraba los asteriscos de una cursiva que su visor no interpreta.
 
 ### Limitaciones
