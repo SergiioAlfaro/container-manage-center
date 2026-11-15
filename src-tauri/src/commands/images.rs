@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 4: imágenes. Inspección, capas, etiquetado, eliminación, limpieza,
 //! búsqueda, descarga (flujo) y construcción (flujo).
 

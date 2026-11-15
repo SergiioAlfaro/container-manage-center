@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { describe, expect, it } from "vitest";
 import { dockerEvent } from "@/test/apiMock";
 import { eventResource, formatEventTime, fromLocalInput, invalidationsFor, matchesLocal, toLocalInput } from "./model";

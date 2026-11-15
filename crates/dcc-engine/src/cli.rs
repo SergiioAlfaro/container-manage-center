@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Ejecución de programas del CLI de Docker **sin shell**.
 //!
 //! Cada argumento se pasa por separado a `execve`; ningún texto del usuario se

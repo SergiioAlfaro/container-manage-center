@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useRef, useState } from "react";
 import { Box, Maximize2, Minimize2, Pencil, RotateCcw, SquareTerminal, X, Server as ServerIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";

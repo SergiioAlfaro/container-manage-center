@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import type { ComposeAction } from "@/shared/ipc/bindings/ComposeAction";
 import type { ComposeProject } from "@/shared/ipc/bindings/ComposeProject";
 import type { ProjectContainer } from "@/shared/ipc/bindings/ProjectContainer";

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Fase 9 (D-059): genera el paquete .deb compatible con Debian 12+ y Ubuntu 22.04+.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
+# Fase 9 (D-059): genera el paquete .deb compatible con Debian 12+ y Ubuntu 22.04+
+# de Container Manage Center.
 #
 # Un binario solo funciona con una glibc igual o más nueva que aquella con la
 # que se compiló. Por eso el paquete para distribuir se compila dentro de un
@@ -11,7 +15,7 @@
 #   3. En tu equipo: el empaquetado de Tauri con ese binario.
 #   4. En el contenedor: las dependencias reales del paquete con dpkg-shlibdeps
 #      contra las bibliotecas de Ubuntu 22.04 (scripts/deb-set-depends.sh).
-# Resultado: target/compat/docker-control-center_<versión>_amd64.deb
+# Resultado: target/compat/container-manage-center_<versión>_amd64.deb
 #
 # Requisitos: Docker (tu usuario en el grupo docker), Node.js/npm y Rust
 # (cargo) en tu equipo. La primera vez descarga la imagen ubuntu:22.04 y unos
@@ -69,27 +73,30 @@ if [ "$(printf '%s\n2.35\n' "$NEED" | sort -V | tail -1)" != "2.35" ]; then
 fi
 
 say "4/5 Paquete .deb (Tauri, con ese binario)"
-# Tauri empaqueta target/release/docker-control-center en target/release/bundle:
-# lo que hubiera ahí (una compilación normal y su paquete) se guarda y se
-# restaura al terminar, pase lo que pase.
+# Tauri empaqueta target/release/container-manage-center (el ejecutable con su
+# nombre de distribución, `mainBinaryName`; Cargo lo compila con el nombre
+# interno docker-control-center) en target/release/bundle: lo que hubiera ahí
+# (una compilación normal y su paquete) se guarda y se restaura al terminar,
+# pase lo que pase.
+APPBIN=container-manage-center
 SAVE="$OUT/saved-release"
 rm -rf "$SAVE"; mkdir -p "$SAVE" target/release
-[ -e target/release/docker-control-center ] && mv target/release/docker-control-center "$SAVE/"
+[ -e target/release/$APPBIN ] && mv target/release/$APPBIN "$SAVE/"
 [ -d target/release/bundle/deb ] && mv target/release/bundle/deb "$SAVE/deb"
 restore() {
-  rm -f target/release/docker-control-center
+  rm -f target/release/$APPBIN
   rm -rf target/release/bundle/deb
-  [ -e "$SAVE/docker-control-center" ] && mv "$SAVE/docker-control-center" target/release/
+  [ -e "$SAVE/$APPBIN" ] && mv "$SAVE/$APPBIN" target/release/
   [ -d "$SAVE/deb" ] && mkdir -p target/release/bundle && mv "$SAVE/deb" target/release/bundle/deb
   rm -rf "$SAVE"
 }
 trap restore EXIT
-cp "$BIN" target/release/docker-control-center
+cp "$BIN" target/release/$APPBIN
 npx tauri bundle --bundles deb
-DEB="target/release/bundle/deb/docker-control-center_${VERSION}_amd64.deb"
+DEB="target/release/bundle/deb/container-manage-center_${VERSION}_amd64.deb"
 [ -f "$DEB" ] || { echo "Tauri no ha generado $DEB" >&2; exit 1; }
 cp "$DEB" "$OUT/"
-DEB="$OUT/docker-control-center_${VERSION}_amd64.deb"
+DEB="$OUT/container-manage-center_${VERSION}_amd64.deb"
 
 say "5/5 Dependencias reales (dpkg-shlibdeps en Ubuntu 22.04)"
 docker run --rm --network none --user "$UIDGID" -v "$ROOT:/src" -w /src "$IMAGE" \
@@ -98,8 +105,8 @@ docker run --rm --network none --user "$UIDGID" -v "$ROOT:/src" -w /src "$IMAGE"
 # que no es idéntico byte a byte) no puede exigir una glibc más nueva que 2.35.
 CHECK=$(mktemp -d)
 dpkg-deb -x "$DEB" "$CHECK"
-[ -x "$CHECK/usr/bin/docker-control-center" ] || { echo "El paquete no contiene el ejecutable." >&2; rm -rf "$CHECK"; exit 1; }
-PNEED=$(objdump -T "$CHECK/usr/bin/docker-control-center" | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sed 's/GLIBC_//' | sort -Vu | tail -1)
+[ -x "$CHECK/usr/bin/container-manage-center" ] || { echo "El paquete no contiene el ejecutable." >&2; rm -rf "$CHECK"; exit 1; }
+PNEED=$(objdump -T "$CHECK/usr/bin/container-manage-center" | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sed 's/GLIBC_//' | sort -Vu | tail -1)
 rm -rf "$CHECK"
 if [ "$(printf '%s\n2.35\n' "$PNEED" | sort -V | tail -1)" != "2.35" ]; then
   echo "ERROR: el ejecutable empaquetado exige glibc $PNEED (más nueva que 2.35)." >&2

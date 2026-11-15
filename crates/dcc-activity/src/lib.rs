@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! # dcc-activity
 //!
-//! Registro de las operaciones que Docker Control Center ejecuta realmente.
+//! Registro de las operaciones que Container Manage Center ejecuta realmente.
 //! Todas las capas que hablan con Docker (API o CLI) deben pasar por
 //! [`ActivityLog::begin`], de modo que el panel de actividad solo pueda mostrar
 //! operaciones que han ocurrido.

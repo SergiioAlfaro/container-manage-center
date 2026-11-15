@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import type { Diagnosis } from "@/shared/ipc/bindings/Diagnosis";
 
 /** Un paso de la solución: texto traducible y, opcionalmente, una orden para copiar. */

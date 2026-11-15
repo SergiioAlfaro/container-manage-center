@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 4 contra Docker real (`DCC_DOCKER_TESTS=1`): descarga desde un registro
 //! local (con y sin autenticación, y cancelada), búsqueda, inspección, capas,
 //! etiquetado, eliminación, limpieza y construcción con BuildKit y con el

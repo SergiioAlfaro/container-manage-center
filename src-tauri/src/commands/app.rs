@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
@@ -17,7 +19,7 @@ pub struct AppInfo {
 #[tauri::command]
 pub fn app_info(state: State<'_, AppState>) -> AppInfo {
     AppInfo {
-        name: "Docker Control Center".into(),
+        name: "Container Manage Center".into(),
         version: env!("CARGO_PKG_VERSION").into(),
         config_path: state.store.path().display().to_string(),
         startup_warning: state.startup_warning.clone(),
@@ -247,7 +249,10 @@ pub fn system_info(state: State<'_, AppState>) -> SystemInfo {
         app_version: env!("CARGO_PKG_VERSION").into(),
         package_version: std::fs::read_to_string("/var/lib/dpkg/status")
             .ok()
-            .and_then(|s| dpkg_version(&s, "docker-control-center")),
+            .and_then(|s| {
+                dpkg_version(&s, crate::uninstall::OWN_PACKAGE)
+                    .or_else(|| dpkg_version(&s, crate::uninstall::LEGACY_PACKAGE))
+            }),
         executable: std::env::current_exe()
             .ok()
             .map(|p| p.display().to_string()),

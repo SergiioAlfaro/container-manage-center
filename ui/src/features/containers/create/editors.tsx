@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Editores de listas del asistente de creación (variables, puertos, montajes y
  * memoria). Se comparten con «Editar configuración» (0.9.2) para que las dos

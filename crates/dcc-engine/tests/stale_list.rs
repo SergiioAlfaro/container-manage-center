@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Prueba determinista de la carrera de Docker Engine descrita en D-031.
 //!
 //! En moby, `handleContainerExit` llama a `SetStopped` (que hace responder 204 a

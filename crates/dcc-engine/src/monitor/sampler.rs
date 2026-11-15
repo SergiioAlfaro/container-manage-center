@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Muestreo de un servidor (D-102).
 //!
 //! En cada muestra: la lista de contenedores y, de cada uno en marcha, una

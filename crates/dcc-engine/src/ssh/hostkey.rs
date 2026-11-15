@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Identidad del servidor (requisito 4.2, D-076).
 //!
 //! - La comprobación normal usa `StrictHostKeyChecking=yes` con el `known_hosts`

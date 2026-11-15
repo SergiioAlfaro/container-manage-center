@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Asistente «Añadir servidor» y edición de un servidor (§3.2). Cuatro pasos:
  * datos generales, autenticación, Docker y prueba de conexión. La clave

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -198,7 +200,7 @@ describe("apartado Monitorización", () => {
     await userEvent.click(save);
     expect(api.monitorSettingsSet).toHaveBeenCalledWith({ ...monitorSettings(), rules: { ...monitorSettings().rules, cpu: { ...monitorSettings().rules.cpu, above: 95 } } });
     await userEvent.click(screen.getByRole("button", { name: "Probar notificación" }));
-    expect(api.monitorNotify).toHaveBeenCalledWith("Prueba de Docker Control Center", "Si ves este aviso, las notificaciones funcionan.");
+    expect(api.monitorNotify).toHaveBeenCalledWith("Prueba de Container Manage Center", "Si ves este aviso, las notificaciones funcionan.");
     expect(await screen.findByText("Enviada.")).toBeInTheDocument();
     const hist = screen.getByRole("region", { name: "Historial de alertas" });
     expect(within(hist).getByText("CPU alta en web")).toBeInTheDocument();

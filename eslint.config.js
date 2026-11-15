@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 // Configuración mínima de ESLint (E2, D-092): errores reales y reglas de
 // seguridad, sin reglas de estilo (de eso se encarga el formato existente).
 import js from "@eslint/js";

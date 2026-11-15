@@ -1,6 +1,6 @@
-## 1. Què és Docker Control Center {#about}
+## 1. Què és Container Manage Center {#about}
 
-Docker Control Center és una aplicació d’escriptori per administrar **Docker Engine** a Linux sense dependre del terminal. Tot el que mostra són dades reals que demana a Docker en aquell moment, i cada acció és una operació real: no se simula res.
+Container Manage Center és una aplicació d’escriptori per administrar **Docker Engine** a Linux sense dependre del terminal. Tot el que mostra són dades reals que demana a Docker en aquell moment, i cada acció és una operació real: no se simula res.
 
 - Parla amb Docker Engine pel seu **sòcol Unix**, amb l’API oficial.
 - Executa **Docker Compose** amb el seu programa oficial, amb arguments separats i sense intèrpret d’ordres.
@@ -22,10 +22,10 @@ L’aplicació no necessita Internet. Només les operacions que fa Docker Engine
 Instal·la el paquet amb APT, que resol les dependències:
 
 ```
-sudo apt install ./docker-control-center_X.Y.Z_amd64.deb
+sudo apt install ./container-manage-center_X.Y.Z_amd64.deb
 ```
 
-L’aplicació apareix al menú com a **Docker Control Center**. S’executa amb el teu usuari normal: **no l’executis amb sudo** (es nega a arrencar com a root).
+L’aplicació apareix al menú com a **Container Manage Center**. S’executa amb el teu usuari normal: **no l’executis amb sudo** (es nega a arrencar com a root).
 
 En obrir-la, busca Docker Engine automàticament. Si el troba, el **Tauler** en mostra l’estat; si no, mostra el diagnòstic amb la causa i els passos per resoldre-ho.
 
@@ -284,17 +284,17 @@ Els missatges que genera el mateix Docker (per exemple, un error de Docker Engin
 
 **Configuració › Desinstal·lació i components** mostra què ha instal·lat l’aplicació i permet treure-ho sense fer servir el terminal. **Analitzar** consulta dpkg i APT sense canviar res:
 
-- **Paquet de l’aplicació** (`docker-control-center`), amb el seu espai.
+- **Paquet de l’aplicació** (`container-manage-center`), amb el seu espai.
 - **Dependències que es poden treure**: només les que APT va instal·lar automàticament **juntament amb l’aplicació** (segons el seu historial) i que cap altre paquet no necessita.
 - **Es conserven**, amb el motiu: dependències compartides (amb els paquets que les fan servir), instal·lades a mà, que ja existien abans, d’origen incert (si l’historial d’APT no mostra com es va instal·lar l’aplicació) i components del sistema.
 - **Eines externes**: Docker Engine, Docker CLI i Docker Compose. **Es conserven sempre.**
 - **Dades que no s’esborren**: la teva configuració, el teu historial i les dades de la finestra. Tampoc no es toca res de Docker: imatges, contenidors, xarxes, volums i projectes Compose.
 - La **simulació d’APT** completa de la desinstal·lació.
 
-Pots triar **Només Docker Control Center** o **amb les dependències que es poden treure**, o marcar els paquets un per un; el resum indica quant espai es recupera. **Revisar i desinstal·lar…** torna a comprovar la selecció i simula exactament l’ordre: si APT anés a treure alguna cosa que no has triat, no es pot continuar. El diàleg mostra l’ordre que s’executarà:
+Pots triar **Només Container Manage Center** o **amb les dependències que es poden treure**, o marcar els paquets un per un; el resum indica quant espai es recupera. **Revisar i desinstal·lar…** torna a comprovar la selecció i simula exactament l’ordre: si APT anés a treure alguna cosa que no has triat, no es pot continuar. El diàleg mostra l’ordre que s’executarà:
 
 ```
-pkexec /usr/bin/apt-get remove -y --no-auto-remove docker-control-center …
+pkexec /usr/bin/apt-get remove -y --no-auto-remove container-manage-center …
 ```
 
 En confirmar, el sistema demana la teva contrasenya d’administrador (pkexec) **només per a aquesta ordre**; l’aplicació continua sense privilegis. Si cancel·les l’autenticació no es treu res. No es fa servir `purge`. Tot queda al tauler d’activitat. Si es treu la mateixa aplicació, tanca-la en acabar.
@@ -348,3 +348,23 @@ Si `pkexec` no està instal·lat, l’aplicació no pot demanar permisos: el di�
 **On es desen la configuració i l’historial?** A `~/.config/docker-control-center/` i `~/.local/state/docker-control-center/`.
 
 **Com canvio l’idioma?** A Configuració › Aparença › Idioma.
+
+## 28. Legal {#legal}
+
+**Nom:** Container Manage Center (abreujat **CMC**). Fins a la versió 1.6.0 es deia «Docker Control Center»; el paquet `container-manage-center` substitueix l'antic `docker-control-center` i conserva la teva configuració, el teu historial, els teus servidors, les teves còpies i les teves tasques programades.
+
+**Llicència:** GNU General Public License, versió 3 o posterior (identificador SPDX `GPL-3.0-or-later`).
+
+**Copyright © 2026 Sergio Alfaro Lorite.**
+
+Aquest programa és programari lliure: el podeu redistribuir i/o modificar d'acord amb els termes de la Llicència Pública General de GNU publicada per la Free Software Foundation, ja sigui la versió 3 de la Llicència o (a la vostra elecció) qualsevol versió posterior. Es distribueix amb l'esperança que sigui útil, però SENSE CAP GARANTIA; ni tan sols la garantia implícita de COMERCIABILITAT o ADEQUACIÓ A UN PROPÒSIT PARTICULAR. Consulteu la Llicència Pública General de GNU per a més detalls.
+
+Text complet de la llicència: https://www.gnu.org/licenses/gpl-3.0.html (també a `/usr/share/doc/container-manage-center/LICENSE`).
+
+**Components de tercers.** L'aplicació inclou biblioteques i tipografies de tercers que conserven les seves pròpies llicències (MIT, Apache-2.0, MPL-2.0, OFL-1.1 i altres) i els avisos de drets d'autor dels seus autors; no passen a ser GPL ni de Sergio Alfaro Lorite. Els textos complets són a `/usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md`, i l'avís de drets d'autor del paquet a `/usr/share/doc/container-manage-center/copyright`.
+
+**Codi font.** El codi font corresponent es publica juntament amb cada versió del paquet (`container-manage-center-X.Y.Z-src.tar.gz`).
+
+**Marques.** Container Manage Center és un projecte independent: no està afiliat a Docker, Inc. ni avalat per aquesta empresa. «Docker» és una marca de Docker, Inc. i aquí només s'utilitza per anomenar la tecnologia amb què treballa l'aplicació (Docker Engine, la seva API, Docker Compose i la CLI de Docker).
+
+Les mateixes dades són a **Configuració › Legal**.

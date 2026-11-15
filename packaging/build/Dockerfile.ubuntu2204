@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Fase 9 (D-059): entorno para compilar el paquete .deb compatible con
 # Debian 12+ y Ubuntu 22.04+. Se compila sobre la glibc más antigua soportada
 # (Ubuntu 22.04: 2.35; Debian 12 tiene 2.36) y con los nombres de paquete de

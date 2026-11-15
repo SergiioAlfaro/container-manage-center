@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Verificación de la actualización 0.9.1 (terminales múltiples, desinstalación y
 # componentes, ayuda, francés e italiano, estados de interacción) en Debian/Ubuntu.
 # Repite además toda la regresión automática de las fases 1-9.

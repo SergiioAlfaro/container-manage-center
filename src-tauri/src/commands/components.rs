@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Configuración → Desinstalación y componentes (0.9.1, D-065).
 
 use std::sync::atomic::{AtomicBool, Ordering};

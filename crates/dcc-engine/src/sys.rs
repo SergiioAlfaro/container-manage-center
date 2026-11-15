@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Información del sistema necesaria para diagnosticar el acceso a Docker.
 //! Se leen /etc/passwd y /etc/group directamente: no se ejecuta ningún programa.
 

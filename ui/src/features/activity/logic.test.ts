@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { describe, expect, it } from "vitest";
 import { apiRecord, cliRecord } from "@/test/fixtures";
 import { EMPTY_FILTER, describeTransport, formatDuration, headlineCommand, matches, quoteArg, renderArgv, upsert, isFiltered, recordServer } from "./logic";

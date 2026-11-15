@@ -5,12 +5,18 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 
 ## Opción A: paquete .deb (recomendada)
 
+> **Desde Docker Control Center (1.6.0 o anterior).** El paquete
+> `container-manage-center` sustituye a `docker-control-center` en la misma
+> instalación: no hace falta desinstalar nada antes, y se conservan la
+> configuración, el historial, los servidores, las contraseñas, las copias y
+> las tareas programadas. Detalles en [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
+
 Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `docker-control-center_1.6.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `docker-control-center_1.6.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `container-manage-center_1.7.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `container-manage-center_1.7.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -56,7 +62,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./docker-control-center_1.6.0_amd64.deb
+sudo apt install ./container-manage-center_1.7.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -66,8 +72,8 @@ paquete, apt lo rechaza al instalar en vez de instalar algo que no arranca.
 
 ### Ejecutar
 
-La aplicación aparece en el menú como **Docker Control Center**; también se abre
-con `docker-control-center` o, desde el código fuente, con `bash scripts/run.sh`
+La aplicación aparece en el menú como **Container Manage Center**; también se abre
+con `container-manage-center` (o con el nombre anterior, `docker-control-center`) o, desde el código fuente, con `bash scripts/run.sh`
 (abre la versión instalada o la compilación de `target/release`; `--build` la
 compila). Se ejecuta con tu usuario normal: **no la ejecutes con sudo** (se
 niega a arrancar como root; en el programa publicado no hay forma de
@@ -78,7 +84,7 @@ forzarlo, D-091).
 Con `bash scripts/install.sh --uninstall`, desde **Configuración › Desinstalación
 y componentes** (muestra qué se puede quitar, la simulación de APT y la orden
 exacta; pide la contraseña de administrador solo para `apt-get remove`), o a
-mano con `sudo apt remove docker-control-center`. En todos los casos se
+mano con `sudo apt remove container-manage-center`. En todos los casos se
 conservan tu configuración y tus servidores (`~/.config/docker-control-center/`),
 el historial (`~/.local/state/docker-control-center/`) y las contraseñas
 recordadas (en el llavero del sistema); bórralos a mano si no los quieres.
@@ -96,9 +102,10 @@ técnico, copia ese mensaje al informar del problema.
 | Para trabajar | Docker Engine 20.10+ con acceso para tu usuario; Docker Compose v2 (`docker compose` o `docker-compose`) para el apartado Compose |
 | Opcional | Un almacén Secret Service (GNOME Keyring, KWallet) para recordar contraseñas de servidores; `pkexec` (polkit) para desinstalar desde la aplicación |
 
-Los componentes de terceros que van dentro del programa y sus licencias están en
-[packaging/THIRD-PARTY.md](packaging/THIRD-PARTY.md) (instalado en
-`/usr/share/doc/docker-control-center/`).
+Los componentes de terceros que van dentro del programa, con sus licencias y
+avisos completos, están en
+[docs/legal/THIRD_PARTY_NOTICES.md](docs/legal/THIRD_PARTY_NOTICES.md) (instalado en
+`/usr/share/doc/container-manage-center/`, junto con `LICENSE` y `copyright`).
 
 ## Opción B: compilar desde el código fuente
 
@@ -109,7 +116,7 @@ Los componentes de terceros que van dentro del programa y sus licencias están e
 4. Compilar y ejecutar:
    ```bash
    npm ci
-   npx tauri build --debug --no-bundle && ./target/debug/docker-control-center
+   npx tauri build --debug --no-bundle && ./target/debug/container-manage-center
    npx tauri build --no-bundle && bash scripts/run.sh   # compilación de producción
    npx tauri build --bundles deb   # paquete: target/release/bundle/deb/
    bash scripts/deb-set-depends.sh target/release/bundle/deb/*.deb   # dependencias reales
@@ -120,7 +127,7 @@ Los componentes de terceros que van dentro del programa y sus licencias están e
 ## Opción C: paquete para distribuir (Debian 12+ y Ubuntu 22.04+)
 
 ```bash
-bash scripts/build-deb-compat.sh   # resultado: target/compat/docker-control-center_<versión>_amd64.deb
+bash scripts/build-deb-compat.sh   # resultado: target/compat/container-manage-center_<versión>_amd64.deb
 ```
 
 Compila dentro de un contenedor de Docker con Ubuntu 22.04 (la glibc más

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Clasificación de los fallos de una conexión remota (requisito 10): a partir
 //! del código de salida y de los mensajes reales de OpenSSH y del CLI de Docker.
 //! Las pruebas usan mensajes copiados de OpenSSH 9.6 y de Docker 24, 26 y 29.

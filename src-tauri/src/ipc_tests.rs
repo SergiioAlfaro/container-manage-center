@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Pruebas de integración de la capa IPC con el runtime simulado de Tauri:
 //! comandos reales invocados como lo haría la interfaz, y eventos de actividad
 //! recibidos por la ventana.

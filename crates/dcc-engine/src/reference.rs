@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Referencias de imagen (`[registro/]repositorio[:etiqueta][@digest]`).
 //!
 //! Sigue la gramática de `distribution/reference`, que es la que usan el CLI y

@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Docker Control Center",
+    "name": "Container Manage Center",
     "startupWarning": "Avís en iniciar"
   },
   "nav": {
@@ -347,7 +347,7 @@
       "errorLabel": "Error"
     },
     "rootGroupWarning": "Pertànyer al grup {{group}} equival a tenir privilegis d’administrador en aquest equip. L’alternativa més segura és Docker en mode rootless.",
-    "noAutoFix": "Docker Control Center no canvia permisos ni grups del sistema: aquests passos els has d’executar tu en un terminal.",
+    "noAutoFix": "Container Manage Center no canvia permisos ni grups del sistema: aquests passos els has d’executar tu en un terminal.",
     "problems": {
       "noSocket": {
         "title": "No es troba Docker Engine",
@@ -2020,8 +2020,8 @@
     "notes": "Novetats",
     "checkedAt": "S’ha consultat {{url}} el {{time}}.",
     "lastFailed": "L’última comprovació ha fallat: {{message}}",
-    "howTo": "Per actualitzar, baixa el paquet nou i instal·la’l amb «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb». La teva configuració i el teu historial es conserven.",
-    "banner": "Hi ha una versió nova de Docker Control Center: {{latest}}.",
+    "howTo": "Per actualitzar, baixa el paquet nou i instal·la’l amb «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb». La teva configuració i el teu historial es conserven.",
+    "banner": "Hi ha una versió nova de Container Manage Center: {{latest}}.",
     "bannerOpen": "Veure-ho a Configuració"
   },
   "system": {
@@ -2062,24 +2062,24 @@
   "components": {
     "title": "Desinstal·lació i components",
     "rowHint": "Què ha instal·lat l’aplicació, què es pot treure i què es conserva. No canvia res sense la teva confirmació.",
-    "intro": "Analitza els paquets instal·lats amb dpkg i APT per mostrar què ha instal·lat Docker Control Center i què es pot treure amb seguretat. Analitzar només consulta i simula: no canvia res. Docker, les teves dades i la teva configuració es conserven sempre.",
+    "intro": "Analitza els paquets instal·lats amb dpkg i APT per mostrar què ha instal·lat Container Manage Center i què es pot treure amb seguretat. Analitzar només consulta i simula: no canvia res. Docker, les teves dades i la teva configuració es conserven sempre.",
     "analyze": "Analitzar els components",
     "reanalyze": "Tornar a analitzar",
     "analyzeHint": "Executa dpkg-query, apt-mark, apt-cache i una simulació d’apt-get, sense privilegis. Queda al tauler d’activitat.",
     "unsupported": "Aquest sistema no fa servir dpkg i APT: la desinstal·lació selectiva només està disponible a Debian, Ubuntu i derivades.",
-    "notPackaged": "Docker Control Center no està instal·lat com a paquet .deb (per exemple, s’executa compilat des del codi font): no hi ha res a desinstal·lar amb APT.",
+    "notPackaged": "Container Manage Center no està instal·lat com a paquet .deb (per exemple, s’executa compilat des del codi font): no hi ha res a desinstal·lar amb APT.",
     "history": {
       "notFound": "L’historial d’APT no mostra com es va instal·lar l’aplicació (per exemple, es va instal·lar amb dpkg -i o l’historial ja s’ha rotat). Per seguretat, no s’ofereix treure cap dependència: es conserven totes com a d’origen incert.",
       "unreadable": "No es pot llegir l’historial d’APT (/var/log/apt/history.log). Per seguretat, no s’ofereix treure cap dependència."
     },
     "ownTitle": "Paquet de l’aplicació",
-    "removeApp": "Desinstal·lar Docker Control Center",
+    "removeApp": "Desinstal·lar Container Manage Center",
     "removableTitle": "Dependències que es poden treure ({{count}})",
     "noneRemovable": "Cap: totes les dependències les fan servir altres programes, ja estaven instal·lades o no es pot saber amb seguretat qui les va instal·lar.",
     "removePackage": "Treure {{name}}",
     "direct": "directa",
-    "presetApp": "Només Docker Control Center",
-    "presetAll": "Docker Control Center i les dependències que es poden treure",
+    "presetApp": "Només Container Manage Center",
+    "presetAll": "Container Manage Center i les dependències que es poden treure",
     "summary_one": "{{count}} paquet · s’alliberen {{size}}",
     "summary_other": "{{count}} paquets · s’alliberen {{size}}",
     "nothingSelected": "No hi ha res seleccionat",
@@ -2142,7 +2142,7 @@
     "removing": "S’està desinstal·lant amb APT…",
     "done_one": "S’ha desinstal·lat {{count}} paquet.",
     "done_other": "S’han desinstal·lat {{count}} paquets.",
-    "doneSelf": "Docker Control Center ja no està instal·lat: tanca l’aplicació.",
+    "doneSelf": "Container Manage Center ja no està instal·lat: tanca l’aplicació.",
     "stillInstalled": "Continuen instal·lats: {{list}}."
   },
   "help": {
@@ -3296,7 +3296,7 @@
     "fromAuditGone": "«{{name}}» ja no existeix en aquest servidor: tria què vols copiar."
   },
   "monitor": {
-    "intro": "Docker Control Center pren mostres amb «docker stats» i «inspect» (sense instal·lar res al servidor). Els talls de connexió es veuen com a buits: no s’inventen dades.",
+    "intro": "Container Manage Center pren mostres amb «docker stats» i «inspect» (sense instal·lar res al servidor). Els talls de connexió es veuen com a buits: no s’inventen dades.",
     "controls": "Controls de la monitorització",
     "enable": "Monitoritza aquest servidor",
     "resume": "Reprèn",
@@ -3383,7 +3383,7 @@
     "notifications": "Notificacions d’escriptori",
     "notificationsHint": "S’envien al sistema de notificacions del teu escriptori; no surten del teu equip.",
     "testNotification": "Prova la notificació",
-    "testTitle": "Prova de Docker Control Center",
+    "testTitle": "Prova de Container Manage Center",
     "testBody": "Si veus aquest avís, les notificacions funcionen.",
     "testSent": "Enviada.",
     "testFailed": "No s’ha pogut enviar: {{error}}",
@@ -3429,5 +3429,17 @@
         "body": "{{server}}: mentre no hi hagi connexió, els gràfics mostraran un buit."
       }
     }
+  },
+  "legal": {
+    "title": "Legal",
+    "name": "Nom",
+    "version": "Versió",
+    "license": "Llicència",
+    "copyright": "Drets d'autor",
+    "statement": "Aquest programa és programari lliure: el podeu redistribuir i/o modificar d'acord amb els termes de la Llicència Pública General de GNU publicada per la Free Software Foundation, ja sigui la versió 3 de la Llicència o (a la vostra elecció) qualsevol versió posterior. Es distribueix amb l'esperança que sigui útil, però SENSE CAP GARANTIA; ni tan sols la garantia implícita de COMERCIABILITAT o ADEQUACIÓ A UN PROPÒSIT PARTICULAR. Consulteu la Llicència Pública General de GNU per a més detalls.",
+    "licenseText": "Text de la llicència:",
+    "thirdParty": "Els components de tercers que inclou l'aplicació conserven les seves pròpies llicències i avisos de drets d'autor. Els textos complets són a:",
+    "source": "El codi font corresponent es publica juntament amb cada versió del paquet.",
+    "independence": "Container Manage Center és un projecte independent: no està afiliat a Docker, Inc. ni avalat per aquesta empresa. «Docker» és una marca de Docker, Inc. i aquí només s'utilitza per anomenar la tecnologia amb què treballa l'aplicació."
   }
 }

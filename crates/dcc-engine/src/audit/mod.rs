@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Auditoría de seguridad (E3, 1.3.0, D-093 y D-094).
 //!
 //! **Solo lectura**: lee `docker info`, los contenedores (`inspect`), las

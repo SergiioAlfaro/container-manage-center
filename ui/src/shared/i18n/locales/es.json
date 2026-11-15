@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Docker Control Center",
+    "name": "Container Manage Center",
     "startupWarning": "Aviso al iniciar"
   },
   "nav": {
@@ -347,7 +347,7 @@
       "errorLabel": "Error"
     },
     "rootGroupWarning": "Pertenecer al grupo {{group}} equivale a tener privilegios de administrador en este equipo. La alternativa más segura es Docker en modo rootless.",
-    "noAutoFix": "Docker Control Center no cambia permisos ni grupos del sistema: estos pasos debes ejecutarlos tú en una terminal.",
+    "noAutoFix": "Container Manage Center no cambia permisos ni grupos del sistema: estos pasos debes ejecutarlos tú en una terminal.",
     "problems": {
       "noSocket": {
         "title": "No se encuentra Docker Engine",
@@ -2020,8 +2020,8 @@
     "notes": "Novedades",
     "checkedAt": "Consultado {{url}} el {{time}}.",
     "lastFailed": "La última comprobación falló: {{message}}",
-    "howTo": "Para actualizar, descarga el paquete nuevo e instálalo con «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb». Tu configuración y tu historial se conservan.",
-    "banner": "Hay una versión nueva de Docker Control Center: {{latest}}.",
+    "howTo": "Para actualizar, descarga el paquete nuevo e instálalo con «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb». Tu configuración y tu historial se conservan.",
+    "banner": "Hay una versión nueva de Container Manage Center: {{latest}}.",
     "bannerOpen": "Ver en Configuración"
   },
   "system": {
@@ -2062,24 +2062,24 @@
   "components": {
     "title": "Desinstalación y componentes",
     "rowHint": "Qué instaló la aplicación, qué se puede quitar y qué se conserva. Nada cambia sin tu confirmación.",
-    "intro": "Analiza los paquetes instalados con dpkg y APT para mostrar qué instaló Docker Control Center y qué se puede quitar con seguridad. Analizar solo consulta y simula: no cambia nada. Docker, tus datos y tu configuración se conservan siempre.",
+    "intro": "Analiza los paquetes instalados con dpkg y APT para mostrar qué instaló Container Manage Center y qué se puede quitar con seguridad. Analizar solo consulta y simula: no cambia nada. Docker, tus datos y tu configuración se conservan siempre.",
     "analyze": "Analizar componentes",
     "reanalyze": "Volver a analizar",
     "analyzeHint": "Ejecuta dpkg-query, apt-mark, apt-cache y una simulación de apt-get, sin privilegios. Queda en el panel de actividad.",
     "unsupported": "Este sistema no usa dpkg y APT: la desinstalación selectiva solo está disponible en Debian, Ubuntu y derivados.",
-    "notPackaged": "Docker Control Center no está instalado como paquete .deb (por ejemplo, se ejecuta compilado desde el código fuente): no hay nada que desinstalar con APT.",
+    "notPackaged": "Container Manage Center no está instalado como paquete .deb (por ejemplo, se ejecuta compilado desde el código fuente): no hay nada que desinstalar con APT.",
     "history": {
       "notFound": "El historial de APT no muestra cómo se instaló la aplicación (por ejemplo, se instaló con dpkg -i o el historial ya se ha rotado). Por seguridad, no se ofrece quitar ninguna dependencia: se conservan todas como de origen incierto.",
       "unreadable": "No se puede leer el historial de APT (/var/log/apt/history.log). Por seguridad, no se ofrece quitar ninguna dependencia."
     },
     "ownTitle": "Paquete de la aplicación",
-    "removeApp": "Desinstalar Docker Control Center",
+    "removeApp": "Desinstalar Container Manage Center",
     "removableTitle": "Dependencias que se pueden quitar ({{count}})",
     "noneRemovable": "Ninguna: todas las dependencias las usan otros programas, ya estaban instaladas o no se puede saber con seguridad quién las instaló.",
     "removePackage": "Quitar {{name}}",
     "direct": "directa",
-    "presetApp": "Solo Docker Control Center",
-    "presetAll": "Docker Control Center y las dependencias que se pueden quitar",
+    "presetApp": "Solo Container Manage Center",
+    "presetAll": "Container Manage Center y las dependencias que se pueden quitar",
     "summary_one": "{{count}} paquete · se liberan {{size}}",
     "summary_other": "{{count}} paquetes · se liberan {{size}}",
     "nothingSelected": "No hay nada seleccionado",
@@ -2142,7 +2142,7 @@
     "removing": "Desinstalando con APT…",
     "done_one": "Se ha desinstalado {{count}} paquete.",
     "done_other": "Se han desinstalado {{count}} paquetes.",
-    "doneSelf": "Docker Control Center ya no está instalado: cierra la aplicación.",
+    "doneSelf": "Container Manage Center ya no está instalado: cierra la aplicación.",
     "stillInstalled": "Siguen instalados: {{list}}."
   },
   "help": {
@@ -3296,7 +3296,7 @@
     "fromAuditGone": "«{{name}}» ya no existe en este servidor: elige qué copiar."
   },
   "monitor": {
-    "intro": "Docker Control Center toma muestras con «docker stats» e «inspect» (sin instalar nada en el servidor). Los cortes de conexión se ven como huecos: no se inventan datos.",
+    "intro": "Container Manage Center toma muestras con «docker stats» e «inspect» (sin instalar nada en el servidor). Los cortes de conexión se ven como huecos: no se inventan datos.",
     "controls": "Controles de la monitorización",
     "enable": "Monitorizar este servidor",
     "resume": "Reanudar",
@@ -3383,7 +3383,7 @@
     "notifications": "Notificaciones de escritorio",
     "notificationsHint": "Se envían al sistema de notificaciones de tu escritorio; no salen de tu equipo.",
     "testNotification": "Probar notificación",
-    "testTitle": "Prueba de Docker Control Center",
+    "testTitle": "Prueba de Container Manage Center",
     "testBody": "Si ves este aviso, las notificaciones funcionan.",
     "testSent": "Enviada.",
     "testFailed": "No se pudo enviar: {{error}}",
@@ -3429,5 +3429,17 @@
         "body": "{{server}}: mientras no haya conexión, los gráficos mostrarán un hueco."
       }
     }
+  },
+  "legal": {
+    "title": "Legal",
+    "name": "Nombre",
+    "version": "Versión",
+    "license": "Licencia",
+    "copyright": "Copyright",
+    "statement": "Este programa es software libre: puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General de GNU publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia o (a su elección) cualquier versión posterior. Se distribuye con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Consulte la Licencia Pública General de GNU para más detalles.",
+    "licenseText": "Texto de la licencia:",
+    "thirdParty": "Los componentes de terceros que incluye la aplicación conservan sus propias licencias y avisos de copyright. Sus textos completos están en:",
+    "source": "El código fuente correspondiente se publica junto con cada versión del paquete.",
+    "independence": "Container Manage Center es un proyecto independiente: no está afiliado a Docker, Inc. ni ha sido respaldado por ella. «Docker» es una marca de Docker, Inc. y aquí solo se usa para nombrar la tecnología con la que trabaja la aplicación."
   }
 }

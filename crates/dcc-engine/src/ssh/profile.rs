@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Perfil de un servidor remoto accesible por SSH (0.10.0, D-075).
 //!
 //! El perfil solo contiene datos no sensibles. Los secretos (frase de paso,

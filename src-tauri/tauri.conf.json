@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "docker-control-center",
-  "mainBinaryName": "docker-control-center",
-  "version": "1.6.0",
+  "productName": "container-manage-center",
+  "mainBinaryName": "container-manage-center",
+  "version": "1.7.0",
   "identifier": "org.dockercontrolcenter.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Docker Control Center",
+        "title": "Container Manage Center",
         "width": 1320,
         "height": 840,
         "minWidth": 960,
@@ -36,7 +36,7 @@
     ],
     "category": "DeveloperTool",
     "shortDescription": "Administración gráfica de Docker Engine, local y remoto por SSH",
-    "longDescription": "Docker Control Center permite administrar contenedores, imágenes, redes, volúmenes, directorios vinculados y proyectos Docker Compose desde una interfaz gráfica, en este equipo y en servidores remotos por SSH, mostrando en todo momento las operaciones reales ejecutadas sobre Docker Engine.",
+    "longDescription": "Container Manage Center (CMC) permite administrar contenedores, imágenes, redes, volúmenes, directorios vinculados y proyectos Docker Compose desde una interfaz gráfica, en este equipo y en servidores remotos por SSH, mostrando en todo momento las operaciones reales ejecutadas sobre Docker Engine. Es un proyecto independiente, no afiliado ni respaldado por Docker, Inc. Sustituye al paquete docker-control-center.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -46,22 +46,37 @@
     "linux": {
       "deb": {
         "section": "admin",
-        "desktopTemplate": "../packaging/docker-control-center.desktop",
+        "desktopTemplate": "../packaging/container-manage-center.desktop",
         "recommends": [
           "openssh-client"
         ],
+        "provides": [
+          "docker-control-center"
+        ],
+        "conflicts": [
+          "docker-control-center"
+        ],
+        "replaces": [
+          "docker-control-center"
+        ],
         "files": {
-          "/usr/share/doc/docker-control-center/copyright": "../packaging/copyright",
-          "/usr/share/doc/docker-control-center/README.md": "../README.md",
-          "/usr/share/doc/docker-control-center/INSTALL.md": "../INSTALL.md",
-          "/usr/share/doc/docker-control-center/USER_GUIDE.md": "../USER_GUIDE.md",
-          "/usr/share/doc/docker-control-center/THIRD-PARTY.md": "../packaging/THIRD-PARTY.md"
+          "/usr/bin/docker-control-center": "../packaging/docker-control-center",
+          "/usr/share/doc/container-manage-center/copyright": "../packaging/copyright",
+          "/usr/share/doc/container-manage-center/LICENSE": "../LICENSE",
+          "/usr/share/doc/container-manage-center/README.md": "../README.md",
+          "/usr/share/doc/container-manage-center/INSTALL.md": "../INSTALL.md",
+          "/usr/share/doc/container-manage-center/USER_GUIDE.md": "../USER_GUIDE.md",
+          "/usr/share/doc/container-manage-center/MIGRATION.md": "../docs/MIGRATION-CMC.md",
+          "/usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md": "../docs/legal/THIRD_PARTY_NOTICES.md",
+          "/usr/share/doc/container-manage-center/LICENSE_OVERVIEW.md": "../docs/legal/LICENSE_OVERVIEW.md",
+          "/usr/share/doc/container-manage-center/COPYRIGHT.md": "../docs/legal/COPYRIGHT.md",
+          "/usr/share/doc/container-manage-center/DISTRIBUTION_COMPLIANCE.md": "../docs/legal/DISTRIBUTION_COMPLIANCE.md"
         },
         "changelog": "../CHANGELOG.md"
       }
     },
-    "publisher": "Docker Control Center",
-    "copyright": "Copyright © 2026 Docker Control Center. Licencia GPL-3.0-or-later (provisional).",
+    "publisher": "Container Manage Center",
+    "copyright": "Copyright © 2026 Sergio Alfaro Lorite. Licencia GPL-3.0-or-later.",
     "license": "GPL-3.0-or-later",
     "licenseFile": "../LICENSE"
   }

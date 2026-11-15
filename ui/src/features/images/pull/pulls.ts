@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Descargas en curso y recientes. Viven fuera de los componentes para que una
  * descarga continúe aunque el usuario cambie de apartado; cada una es una

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Diario persistente de registros JSON, uno por línea (Fase 8, D-058).
 //!
 //! Lo usan el historial de operaciones y el diario de eventos de Docker. Los

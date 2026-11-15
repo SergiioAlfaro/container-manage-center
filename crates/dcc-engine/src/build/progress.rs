@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Progreso de la construcción.
 //!
 //! * BuildKit (`version=2`) envía mensajes `moby.buildkit.trace` cuyo `aux` es un

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Operaciones de Compose sobre un proyecto, ejecutando el CLI oficial sin
 //! shell (D-005, D-053). Cada ejecución es una operación del panel de
 //! actividad con el programa y los argumentos exactos.

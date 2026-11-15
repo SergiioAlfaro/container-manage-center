@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logo from "@/assets/logo.svg";
@@ -53,8 +55,10 @@ export function Sidebar({ active, collapsed, onNavigate, onToggle }: Props) {
         <img src={logo} alt="" className="h-8 w-8 shrink-0" />
         {!collapsed && (
           <div className="min-w-0 leading-tight">
-            <div className="truncate text-[14px] font-semibold text-white">Docker</div>
-            <div className="truncate text-[12px] text-hull-ink-dim">Control Center</div>
+            <div className="truncate text-[14px] font-semibold text-white">CMC</div>
+            <div className="truncate text-[12px] text-hull-ink-dim" data-testid="brand-name">
+              Container Manage Center
+            </div>
           </div>
         )}
       </div>

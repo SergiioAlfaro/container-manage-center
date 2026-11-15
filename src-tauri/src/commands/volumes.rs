@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 6: volúmenes y directorios vinculados.
 
 use dcc_engine::binds::BindSummary;

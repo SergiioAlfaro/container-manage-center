@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 set -e
 BIN=$(ls -d /usr/lib/postgresql/*/bin | head -1)
 U=${POSTGRES_USER:-postgres}

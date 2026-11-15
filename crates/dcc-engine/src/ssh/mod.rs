@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Docker remoto por SSH (0.10.0, D-075 a D-079).
 //!
 //! Transporte: el cliente OpenSSH del sistema ejecuta `docker system dial-stdio`

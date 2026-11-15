@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Notificaciones de escritorio (E5, D-105) por D-Bus
 //! (`org.freedesktop.Notifications`), con `zbus`, que ya estaba en el árbol
 //! de dependencias (lo usa el llavero). No hace falta el complemento de
@@ -9,8 +11,8 @@ use std::collections::HashMap;
 
 use zbus::zvariant::Value;
 
-pub const APP_NAME: &str = "Docker Control Center";
-const ICON: &str = "docker-control-center";
+pub const APP_NAME: &str = "Container Manage Center";
+const ICON: &str = "container-manage-center";
 const MAX_SUMMARY: usize = 120;
 const MAX_BODY: usize = 500;
 

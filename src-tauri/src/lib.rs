@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Punto de entrada de la aplicación de escritorio.
 
 mod backups;
@@ -246,7 +248,7 @@ pub fn run() {
         None => match ConfigStore::default_location() {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("Docker Control Center: {e}");
+                eprintln!("Container Manage Center: {e}");
                 std::process::exit(1);
             }
         },
@@ -254,18 +256,18 @@ pub fn run() {
 
     configure(tauri::Builder::default(), store)
         .run(tauri::generate_context!())
-        .expect("error al iniciar Docker Control Center");
+        .expect("error al iniciar Container Manage Center");
 }
 
 /// Modo sin ventana de los temporizadores de systemd (E4, D-100):
-/// `docker-control-center --run-backup <tarea>`. `None` si no se pidió.
+/// `container-manage-center --run-backup <tarea>`. `None` si no se pidió.
 pub fn headless_main() -> Option<i32> {
     let mut args = std::env::args().skip(1);
     if args.next().as_deref() != Some("--run-backup") {
         return None;
     }
     let Some(id) = args.next() else {
-        eprintln!("Uso: docker-control-center --run-backup <tarea>");
+        eprintln!("Uso: container-manage-center --run-backup <tarea>");
         return Some(2);
     };
     tracing_subscriber::fmt()
@@ -280,7 +282,7 @@ pub fn headless_main() -> Option<i32> {
         None => match ConfigStore::default_location() {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("Docker Control Center: {e}");
+                eprintln!("Container Manage Center: {e}");
                 return Some(1);
             }
         },
@@ -295,7 +297,7 @@ pub async fn run_backup_job(store: ConfigStore, id: &str) -> i32 {
     let job = match backups::find_job(state.store.path(), id) {
         Ok(j) => j,
         Err(e) => {
-            eprintln!("Docker Control Center: {}", e.message);
+            eprintln!("Container Manage Center: {}", e.message);
             return 1;
         }
     };
@@ -306,7 +308,7 @@ pub async fn run_backup_job(store: ConfigStore, id: &str) -> i32 {
     let mgr = match state.server(&job.server) {
         Ok(m) => m,
         Err(e) => {
-            eprintln!("Docker Control Center: {}", e.message);
+            eprintln!("Container Manage Center: {}", e.message);
             return 1;
         }
     };
@@ -341,7 +343,7 @@ pub async fn run_backup_job(store: ConfigStore, id: &str) -> i32 {
         }
         Err(e) => {
             eprintln!(
-                "Docker Control Center: la copia «{}» ha fallado: {} ({})",
+                "Container Manage Center: la copia «{}» ha fallado: {} ({})",
                 job.name, e.message, e.code
             );
             1
@@ -366,12 +368,12 @@ fn job_lock(state: &state::AppState, id: &str) -> Result<std::fs::File, i32> {
         .mode(0o600)
         .open(dir.join(format!("copia-{id}.lock")))
         .map_err(|e| {
-            eprintln!("Docker Control Center: {e}");
+            eprintln!("Container Manage Center: {e}");
             1
         })?;
     // SAFETY: descriptor válido mientras viva `f`.
     if unsafe { libc::flock(f.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-        eprintln!("Docker Control Center: ya hay una copia de «{id}» en curso");
+        eprintln!("Container Manage Center: ya hay una copia de «{id}» en curso");
         return Err(75);
     }
     Ok(f)
@@ -389,7 +391,7 @@ fn refuse_root() {
         let override_set = std::env::var_os("DCC_ALLOW_ROOT").is_some();
         if !may_run(euid, override_set, cfg!(debug_assertions)) {
             eprintln!(
-                "Docker Control Center no debe ejecutarse como root.\n\
+                "Container Manage Center no debe ejecutarse como root.\n\
                  Ejecútalo con tu usuario normal. Para acceder a Docker, consulta INSTALL.md."
             );
             std::process::exit(1);

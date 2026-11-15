@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! E4 (1.4.0): copias de seguridad, restauración y tareas programadas
 //! (D-096–D-101).
 
@@ -61,7 +63,7 @@ pub struct BackupSettings {
 }
 
 fn exe() -> PathBuf {
-    std::env::current_exe().unwrap_or_else(|_| PathBuf::from("/usr/bin/docker-control-center"))
+    std::env::current_exe().unwrap_or_else(|_| PathBuf::from("/usr/bin/container-manage-center"))
 }
 
 fn systemd() -> CmdResult<Systemd> {

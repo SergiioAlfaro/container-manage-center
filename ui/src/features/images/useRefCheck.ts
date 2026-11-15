@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useState } from "react";
 import { api } from "@/shared/ipc/client";
 import type { ImageRef } from "@/shared/ipc/bindings/ImageRef";

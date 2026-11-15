@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Temporizadores de usuario de systemd para las copias programadas (E4,
 //! D-100, decisión 2 del propietario).
 //!
@@ -144,9 +146,9 @@ impl Systemd {
 
     /// Contenido de las dos unidades.
     pub fn render(job: &BackupJob, exe: &Path) -> (String, String) {
-        let desc = one_line(&format!("Docker Control Center: copia «{}»", job.name));
+        let desc = one_line(&format!("Container Manage Center: copia «{}»", job.name));
         let head = format!(
-            "{MARKER} {}\n# Creado por Docker Control Center con tu autorización. Se gestiona desde la aplicación.\n",
+            "{MARKER} {}\n# Creado por Container Manage Center con tu autorización. Se gestiona desde la aplicación.\n",
             job.id
         );
         let service = format!(
@@ -343,7 +345,7 @@ impl Systemd {
         for p in [&sp, &tp] {
             if Self::ours(p, &job.id) == Some(false) {
                 return Err(format!(
-                    "{} existe y no es de Docker Control Center: no se toca",
+                    "{} existe y no es de Container Manage Center: no se toca",
                     p.display()
                 ));
             }
@@ -406,7 +408,7 @@ impl Systemd {
             .any(|p| Self::ours(p, job_id) == Some(false))
         {
             return Err(
-                "hay un archivo con ese nombre que no es de Docker Control Center: no se toca"
+                "hay un archivo con ese nombre que no es de Container Manage Center: no se toca"
                     .into(),
             );
         }
@@ -509,7 +511,7 @@ mod tests {
             .contains("ExecStart=\"/usr/bin/docker control center\" --run-backup job-0a1b2c3d\n"));
         assert!(pv
             .service_text
-            .contains("Description=Docker Control Center: copia «Diaria %%h \"x\" línea»"));
+            .contains("Description=Container Manage Center: copia «Diaria %%h \"x\" línea»"));
         assert!(pv
             .timer_text
             .contains("OnCalendar=*-*-* 03:15:00\nPersistent=true\n"));

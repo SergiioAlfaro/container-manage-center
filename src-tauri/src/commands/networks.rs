@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 5: redes. Listado, detalle, creación (con vista previa), eliminación,
 //! limpieza y conexión o desconexión de contenedores.
 

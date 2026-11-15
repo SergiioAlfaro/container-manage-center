@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Flujos de larga duración: logs, estadísticas y terminal (D-036).
 //!
 //! Cada flujo es **una** petición HTTP real que permanece abierta, y queda en el

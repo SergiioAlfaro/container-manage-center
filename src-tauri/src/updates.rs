@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 9: comprobación de versiones nuevas de la aplicación (D-060).
 //!
 //! La aplicación **solo consulta y avisa**: nunca descarga ni instala nada (la

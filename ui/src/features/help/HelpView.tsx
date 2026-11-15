@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Github, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -48,6 +50,7 @@ export const HELP_SECTION_IDS = [
   "security",
   "troubleshooting",
   "faq",
+  "legal",
 ] as const;
 
 const blockText = (b: Block): string =>

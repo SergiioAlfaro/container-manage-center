@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * «Servidores» (0.10.0, §3, §7, §10): lista con el estado de cada servidor,
  * alta y edición, prueba y diagnóstico, conexión y desconexión, eliminación

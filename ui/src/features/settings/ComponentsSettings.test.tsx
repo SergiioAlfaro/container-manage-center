@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -70,25 +72,25 @@ describe("Configuración: desinstalación y componentes", () => {
     await analyze();
     const summary = screen.getByTestId("components-summary");
     expect(summary).toHaveTextContent(`1 paquete · se liberan ${formatKib(25_000, "es")}`);
-    await userEvent.click(screen.getByRole("button", { name: "Docker Control Center y las dependencias que se pueden quitar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Container Manage Center y las dependencias que se pueden quitar" }));
     expect(summary).toHaveTextContent(`3 paquetes · se liberan ${formatKib(145_000, "es")}`);
     // Quitar la aplicación quita también las dependencias elegidas.
-    await userEvent.click(screen.getByRole("checkbox", { name: "Desinstalar Docker Control Center" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Desinstalar Container Manage Center" }));
     expect(summary).toHaveTextContent("No hay nada seleccionado");
     expect(screen.getByRole("button", { name: "Revisar y desinstalar…" })).toBeDisabled();
     // Elegir una dependencia vuelve a marcar la aplicación.
     await userEvent.click(screen.getByRole("checkbox", { name: "Quitar libwebkit2gtk-4.1-0" }));
-    expect(screen.getByRole("checkbox", { name: "Desinstalar Docker Control Center" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Desinstalar Container Manage Center" })).toBeChecked();
     expect(summary).toHaveTextContent(`2 paquetes · se liberan ${formatKib(115_000, "es")}`);
   });
 
   it("revisar muestra la simulación y la orden exacta; cancelar no ejecuta nada", async () => {
     await analyze();
     await userEvent.click(screen.getByRole("button", { name: "Revisar y desinstalar…" }));
-    expect(api.componentsPlan).toHaveBeenCalledWith(["docker-control-center"]);
+    expect(api.componentsPlan).toHaveBeenCalledWith(["container-manage-center"]);
     const dialog = await screen.findByRole("dialog", { name: "¿Desinstalar?" });
-    expect(dialog).toHaveTextContent("/usr/bin/pkexec /usr/bin/apt-get remove -y --no-auto-remove docker-control-center");
-    expect(dialog).toHaveTextContent("Remv docker-control-center");
+    expect(dialog).toHaveTextContent("/usr/bin/pkexec /usr/bin/apt-get remove -y --no-auto-remove container-manage-center");
+    expect(dialog).toHaveTextContent("Remv container-manage-center");
     expect(dialog).toHaveTextContent("Se conservan Docker Engine, Docker CLI, Docker Compose");
     expect(dialog).toHaveTextContent("Se desinstala la propia aplicación");
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
@@ -98,17 +100,17 @@ describe("Configuración: desinstalación y componentes", () => {
 
   it("confirmar desinstala lo elegido y lo informa", async () => {
     await analyze();
-    await userEvent.click(screen.getByRole("button", { name: "Docker Control Center y las dependencias que se pueden quitar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Container Manage Center y las dependencias que se pueden quitar" }));
     await userEvent.click(screen.getByRole("button", { name: "Revisar y desinstalar…" }));
     const dialog = await screen.findByRole("dialog");
     await act(() => userEvent.click(within(dialog).getByRole("button", { name: "Desinstalar" })));
-    expect(api.componentsRemove).toHaveBeenCalledWith(["docker-control-center", "libjavascriptcoregtk-4.1-0", "libwebkit2gtk-4.1-0"]);
+    expect(api.componentsRemove).toHaveBeenCalledWith(["container-manage-center", "libjavascriptcoregtk-4.1-0", "libwebkit2gtk-4.1-0"]);
     expect(await screen.findByText("Se han desinstalado 3 paquetes.")).toBeInTheDocument();
-    expect(screen.getByText(/Docker Control Center ya no está instalado/)).toBeInTheDocument();
+    expect(screen.getByText(/Container Manage Center ya no está instalado/)).toBeInTheDocument();
   });
 
   it("si APT fuera a quitar algo más, no se puede confirmar", async () => {
-    api.componentsPlan.mockResolvedValueOnce(removalPlan(["docker-control-center"], { extra: ["zenity"] }));
+    api.componentsPlan.mockResolvedValueOnce(removalPlan(["container-manage-center"], { extra: ["zenity"] }));
     await analyze();
     await userEvent.click(screen.getByRole("button", { name: "Revisar y desinstalar…" }));
     const dialog = await screen.findByRole("dialog");
@@ -127,12 +129,12 @@ describe("Configuración: desinstalación y componentes", () => {
 
   it("sin pkexec se muestra la orden para ejecutarla a mano y no se puede confirmar", async () => {
     api.componentsInspect.mockResolvedValueOnce(componentsReport({ elevation: null }));
-    api.componentsPlan.mockResolvedValueOnce(removalPlan(["docker-control-center"], { command: "sudo apt-get remove --no-auto-remove docker-control-center" }));
+    api.componentsPlan.mockResolvedValueOnce(removalPlan(["container-manage-center"], { command: "sudo apt-get remove --no-auto-remove container-manage-center" }));
     await analyze();
     await userEvent.click(screen.getByRole("button", { name: "Revisar y desinstalar…" }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent("pkexec no está instalado");
-    expect(dialog).toHaveTextContent("sudo apt-get remove --no-auto-remove docker-control-center");
+    expect(dialog).toHaveTextContent("sudo apt-get remove --no-auto-remove container-manage-center");
     expect(within(dialog).getByRole("button", { name: "Desinstalar" })).toBeDisabled();
   });
 
@@ -143,7 +145,7 @@ describe("Configuración: desinstalación y componentes", () => {
     await analyze();
     expect(screen.getByText(/El historial de APT no muestra cómo se instaló la aplicación/)).toBeInTheDocument();
     expect(screen.getByText("Origen incierto (4)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Docker Control Center y las dependencias que se pueden quitar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Container Manage Center y las dependencias que se pueden quitar" })).toBeDisabled();
   });
 
   it("sin paquete .deb no hay nada que desinstalar", async () => {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Conexión maestra SSH con un servidor y canales multiplexados sobre ella.
 //!
 //! - La maestra (`ssh -M -N`) autentica una vez y queda como proceso hijo de la

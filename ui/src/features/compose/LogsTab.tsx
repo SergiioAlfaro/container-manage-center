@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useRef, useState } from "react";
 import { useApi } from "@/app/server";
 import { Play, Square, Trash2 } from "lucide-react";

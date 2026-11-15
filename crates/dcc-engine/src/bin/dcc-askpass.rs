@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Programa `SSH_ASKPASS` para las pruebas del motor. En la aplicación
-//! instalada, el propio ejecutable de Docker Control Center hace este papel
+//! instalada, el propio ejecutable de Container Manage Center hace este papel
 //! (ver `dcc_engine::ssh::askpass::client_main`).
 
 fn main() {

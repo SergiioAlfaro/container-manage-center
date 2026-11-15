@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Conexión con un Docker Engine remoto en siete pasos (requisito 3.3):
 //! resolución, alcance SSH, identidad, autenticación, CLI de Docker, permisos y
 //! daemon, y compatibilidad de la API. Lo usan tanto «Probar conexión» como la

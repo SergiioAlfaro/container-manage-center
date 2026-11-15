@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Construcción en curso (una a la vez por servidor, 0.10.0). Vive fuera del
  * componente para que la construcción siga si el usuario cambia de apartado o

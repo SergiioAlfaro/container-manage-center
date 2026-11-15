@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Comprobaciones de la auditoría (E3, D-093). Funciones puras: reciben lo que
 //! devuelve Docker (`inspect`, imagen, `compose config`) y no ejecutan nada.
 //!

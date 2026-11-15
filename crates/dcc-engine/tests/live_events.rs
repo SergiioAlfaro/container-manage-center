@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 8 contra Docker real (`DCC_DOCKER_TESTS=1`): suscripción a los eventos
 //! de Docker en tiempo real y consulta de los eventos que conserva, con sus
 //! filtros. Las peticiones pasan por un proxy que registra lo que llega a

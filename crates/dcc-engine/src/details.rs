@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Vista tipada de `GET /containers/{id}/json` para la pantalla de detalle.
 
 use std::collections::BTreeMap;

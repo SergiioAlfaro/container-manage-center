@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import type { ReactElement, ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { createQueryClient } from "@/shared/query";

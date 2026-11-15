@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Históricos (D-103): anillo en memoria por servidor y reducción a un
 //! registro por minuto para el disco.
 

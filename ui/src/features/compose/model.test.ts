@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { describe, expect, it } from "vitest";
 import { composeProjects, project, tiendaModel } from "@/test/apiMock";
 import { downAction, matchesProject, nameFromDir, portLabel, refOf, relativeTo, removableVolumes, serviceRows, template, upAction, validProjectName } from "./model";

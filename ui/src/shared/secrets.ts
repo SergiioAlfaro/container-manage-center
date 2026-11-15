@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Reglas de secretos de la interfaz (E1, DCC-SEC-05, D-085). Son las mismas que
  * `crates/dcc-activity/src/redact.rs`: una prueba de Rust comprueba que estas

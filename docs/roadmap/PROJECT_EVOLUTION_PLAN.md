@@ -1,10 +1,13 @@
 # Plan de evolución de Docker Control Center
 
+> Desde la 1.7.0 el producto se llama **Container Manage Center** (D-110).
+> Este plan conserva el nombre que tenía cuando se aprobó.
+
 | | |
 |---|---|
 | Versión de partida | 1.0.0 (commit `d1068d4`) |
 | Fecha | 12 de noviembre de 2026 |
-| Estado de este documento | Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026) e **implementada** hasta la E6 (1.6.0, 14-11-2026). Pendiente: la validación manual guiada del propietario ([VALIDACION-GUIADA-1.6.0.md](../validation/VALIDACION-GUIADA-1.6.0.md)), que reúne F1–F8 y las comprobaciones de E1 a E6 (§13) |
+| Estado de este documento | Hoja de ruta E0–E6 **aprobada** por el propietario (12-11-2026) e **implementada** hasta la E6 (1.6.0, 14-11-2026). El propietario confirmó el 15-11-2026 que todas las fases están validadas. Después, fuera de esta hoja de ruta: 1.7.0, identidad, licencia y copyright (D-110–D-112) |
 | Documentos relacionados | [STATUS.md](../../STATUS.md) (fases 1–10) · [DECISIONS.md](../../DECISIONS.md) · [docs/security/](../security/) |
 
 Este plan continúa el proyecto existente. No es una reescritura ni sustituye a

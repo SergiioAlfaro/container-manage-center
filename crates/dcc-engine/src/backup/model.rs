@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Modelo de las copias de seguridad (E4, 1.4.0, D-096).
 
 use std::collections::BTreeMap;

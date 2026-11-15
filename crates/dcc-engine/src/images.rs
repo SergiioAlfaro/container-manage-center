@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Imágenes: listado con uso por contenedores (Fase 2; el resto llega en la Fase 4).
 
 use std::collections::{BTreeMap, HashMap};

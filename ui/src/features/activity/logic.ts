@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { formatTimestamp } from "@/shared/format";
 import type { Category } from "@/shared/ipc/bindings/Category";
 import type { OpStatus } from "@/shared/ipc/bindings/OpStatus";

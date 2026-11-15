@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useApp } from "@/app/store";
 import { emptySpec } from "@/features/containers/specModel";
 import { useContainersNav } from "@/features/containers/store";

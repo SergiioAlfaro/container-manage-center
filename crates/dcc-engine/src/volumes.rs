@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 6: volúmenes. Listado (cruzado con los montajes de los contenedores),
 //! tamaño bajo demanda, inspección, creación con validación, eliminación y
 //! limpieza. Todas son peticiones reales registradas en la actividad.

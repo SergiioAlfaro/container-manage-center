@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Petición HTTP/1.1 mínima sobre el socket Unix de Docker.
 //!
 //! - `POST /build`: bollard 0.21 no permite construir con BuildKit sin su
@@ -76,8 +78,9 @@ pub async fn post_json(
 pub async fn get_stream(dialer: &Dialer, path: &str) -> Result<Response, EngineError> {
     let stream = dialer.connect().await.map_err(io_err)?;
     let (rd, mut wr) = tokio::io::split(stream);
-    let head =
-        format!("GET {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\n\r\n");
+    let head = format!(
+        "GET {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: container-manage-center\r\n\r\n"
+    );
     let writer = tokio::spawn(async move {
         wr.write_all(head.as_bytes()).await?;
         wr.flush().await?;
@@ -109,7 +112,7 @@ async fn post_with(
 ) -> Result<Response, EngineError> {
     let stream = dialer.connect().await.map_err(io_err)?;
     let (rd, mut wr) = tokio::io::split(stream);
-    let mut head = format!("POST {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: docker-control-center\r\nContent-Type: {content_type}\r\nTransfer-Encoding: chunked\r\n");
+    let mut head = format!("POST {path} HTTP/1.1\r\nHost: docker\r\nUser-Agent: container-manage-center\r\nContent-Type: {content_type}\r\nTransfer-Encoding: chunked\r\n");
     for (k, v) in headers {
         head.push_str(&format!("{k}: {v}\r\n"));
     }

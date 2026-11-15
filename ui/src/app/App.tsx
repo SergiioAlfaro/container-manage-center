@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { Suspense, lazy, useEffect, useMemo, useState, type ComponentType } from "react";
 import { PanelRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";

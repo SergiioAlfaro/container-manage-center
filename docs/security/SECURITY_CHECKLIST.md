@@ -309,3 +309,29 @@ seguridad de Docker Engine y RustSec.
   leyendo, comprobando y restaurando [IPC `live_e6_…`, regresión de copias de
   la 1.4.0].
 - ✅ Servidor desconocido: la orden se rechaza como las demás [IPC `live_e6_…`].
+
+## Identidad, licencia y distribución (1.7.0)
+- ✅ El cambio de nombre no mueve ni reescribe datos del usuario: rutas de
+  configuración y estado, almacén de contraseñas (atributo
+  `application=docker-control-center`), carpeta de copias y unidades de
+  systemd se mantienen (D-110) [`clean-install-test.sh` con `UPGRADE_FROM`:
+  sha256 de los datos antes y después].
+- ✅ `/usr/bin/docker-control-center` es un script de una línea, propiedad de
+  root, 0755, que hace `exec` de la ruta absoluta del programa nuevo con los
+  mismos argumentos: sin `PATH`, sin `eval` y sin shell intermedio
+  [`verify-evolution-1.7.0.sh --deb`].
+- ✅ El programa sigue negándose a arrancar como root también cuando se abre
+  por la ruta antigua (el script no cambia de usuario) [prueba de instalación].
+- ✅ La desinstalación desde la aplicación reconoce los dos nombres de paquete
+  y solo propone quitar dependencias que instaló la aplicación (la
+  transacción de cambio de nombre no se toma como desinstalación)
+  [`uninstall.rs`].
+- ✅ Ninguna licencia de las dependencias distribuidas queda pendiente,
+  potencialmente incompatible o indeterminada; `--check` impide publicar si
+  aparece alguna (D-112) [`third-party-licenses.py --check`, `cargo deny`].
+- ✅ El .tar.gz de código fuente es `git archive` del commit y no contiene
+  claves, contraseñas, tokens, credenciales ni configuraciones locales
+  [`DISTRIBUTION_COMPLIANCE.md` §4].
+- ✅ El apartado Legal no abre programas ni enlaces: la URL de la licencia y
+  la ruta de los avisos solo se copian [`LegalSettings.test.tsx`].
+

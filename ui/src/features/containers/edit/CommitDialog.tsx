@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * «Crear imagen a partir de este contenedor» (0.9.2, D-069): `docker commit`
  * mediante la API. Antes de crear se explica qué entra en la imagen (la capa

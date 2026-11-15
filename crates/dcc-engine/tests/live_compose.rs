@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 7 contra Docker real (`DCC_DOCKER_TESTS=1`): proyectos Docker Compose
 //! con el CLI oficial (sin shell). Se usa el Compose detectado en el equipo o,
 //! con `DCC_TEST_COMPOSE=/ruta/docker-compose`, ese binario independiente (para

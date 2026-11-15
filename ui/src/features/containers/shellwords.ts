@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * División de una línea en argumentos con las reglas de comillas de POSIX sh
  * (sin expansión de variables ni comodines: no hay shell, los argumentos se

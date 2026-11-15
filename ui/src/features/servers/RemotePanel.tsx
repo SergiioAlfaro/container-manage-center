@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Servidor remoto sin conexión en el área principal: nombre, dirección,
  * estado, causa y solución, y la acción para conectar. Ninguna operación se

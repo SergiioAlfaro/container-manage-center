@@ -1,6 +1,6 @@
-## 1. Zer da Docker Control Center {#about}
+## 1. Zer da Container Manage Center {#about}
 
-Docker Control Center Linuxen **Docker Engine** administratzeko mahaigaineko aplikazio bat da, terminalaren mende egon gabe. Erakusten duen guztia Dockerri une horretan eskatzen dizkion datu errealak dira, eta ekintza bakoitza eragiketa erreal bat da: ez da ezer simulatzen.
+Container Manage Center Linuxen **Docker Engine** administratzeko mahaigaineko aplikazio bat da, terminalaren mende egon gabe. Erakusten duen guztia Dockerri une horretan eskatzen dizkion datu errealak dira, eta ekintza bakoitza eragiketa erreal bat da: ez da ezer simulatzen.
 
 - Docker Enginerekin bere **Unix socketaren** bidez komunikatzen da, API ofizialarekin.
 - **Docker Compose** bere programa ofizialarekin exekutatzen du, argumentuak bereizita eta shellik gabe.
@@ -22,10 +22,10 @@ Aplikazioak ez du Internet behar. Docker Enginek urruneko erregistroen aurka egi
 Instalatu paketea APTrekin; hark ebazten ditu mendekotasunak:
 
 ```
-sudo apt install ./docker-control-center_X.Y.Z_amd64.deb
+sudo apt install ./container-manage-center_X.Y.Z_amd64.deb
 ```
 
-Aplikazioa menuan agertzen da **Docker Control Center** izenarekin. Zure erabiltzaile arruntarekin exekutatzen da: **ez exekutatu sudo-rekin** (ez da abiarazten root gisa).
+Aplikazioa menuan agertzen da **Container Manage Center** izenarekin. Zure erabiltzaile arruntarekin exekutatzen da: **ez exekutatu sudo-rekin** (ez da abiarazten root gisa).
 
 Irekitzean, Docker Engine automatikoki bilatzen du. Aurkitzen badu, **Arbelak** haren egoera erakusten du; bestela, diagnostikoa erakusten du, zergatiarekin eta konpontzeko urratsekin.
 
@@ -284,17 +284,17 @@ Dockerrek berak sortutako mezuak (adibidez, Docker Engineren errore bat) eta pro
 
 **Konfigurazioa › Desinstalazioa eta osagaiak** atalak aplikazioak zer instalatu zuen erakusten du, eta terminala erabili gabe kentzeko aukera ematen du. **Aztertu** botoiak dpkg eta APT kontsultatzen ditu, ezer aldatu gabe:
 
-- **Aplikazioaren paketea** (`docker-control-center`), haren tokiarekin.
+- **Aplikazioaren paketea** (`container-manage-center`), haren tokiarekin.
 - **Ken daitezkeen mendekotasunak**: APTk automatikoki **aplikazioarekin batera** instalatu zituenak (haren historiaren arabera) eta beste paketerik behar ez dituenak soilik.
 - **Mantentzen direnak**, arrazoiarekin: mendekotasun partekatuak (erabiltzen dituzten paketeekin), eskuz instalatuak, lehendik zeudenak, jatorri ziurgabekoak (APTren historiak aplikazioa nola instalatu zen erakusten ez badu) eta sistemaren osagaiak.
 - **Kanpoko tresnak**: Docker Engine, Docker CLI eta Docker Compose. **Beti mantentzen dira.**
 - **Ezabatzen ez diren datuak**: zure konfigurazioa, zure historia eta leihoaren datuak. Dockerren ere ez da ezer ukitzen: irudiak, edukiontziak, sareak, bolumenak eta Compose proiektuak.
 - Desinstalazioaren **APT simulazio** osoa.
 
-**Docker Control Center soilik** edo **ken daitezkeen mendekotasunekin** aukera dezakezu, edo paketeak banan-banan markatu; laburpenak zenbat toki berreskuratzen den adierazten du. **Berrikusi eta desinstalatu…** botoiak hautapena berriro egiaztatzen du eta komandoa zehatz-mehatz simulatzen du: APTk aukeratu ez duzun zerbait kenduko balu, ezin da jarraitu. Elkarrizketa-koadroak exekutatuko den komandoa erakusten du:
+**Container Manage Center soilik** edo **ken daitezkeen mendekotasunekin** aukera dezakezu, edo paketeak banan-banan markatu; laburpenak zenbat toki berreskuratzen den adierazten du. **Berrikusi eta desinstalatu…** botoiak hautapena berriro egiaztatzen du eta komandoa zehatz-mehatz simulatzen du: APTk aukeratu ez duzun zerbait kenduko balu, ezin da jarraitu. Elkarrizketa-koadroak exekutatuko den komandoa erakusten du:
 
 ```
-pkexec /usr/bin/apt-get remove -y --no-auto-remove docker-control-center …
+pkexec /usr/bin/apt-get remove -y --no-auto-remove container-manage-center …
 ```
 
 Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **komando horretarako bakarrik**; aplikazioak pribilegiorik gabe jarraitzen du. Autentifikazioa bertan behera uzten baduzu, ez da ezer kentzen. Ez da `purge` erabiltzen. Dena jarduera-panelean geratzen da. Aplikazioa bera kentzen bada, itxi amaitzean.
@@ -348,3 +348,23 @@ Berrestean, sistemak zure administratzaile-pasahitza eskatzen du (pkexec) **koma
 **Non gordetzen dira konfigurazioa eta historia?** `~/.config/docker-control-center/` eta `~/.local/state/docker-control-center/` karpetetan.
 
 **Nola aldatzen dut hizkuntza?** Konfigurazioa › Itxura › Hizkuntza atalean.
+
+## 28. Lege-oharrak {#legal}
+
+**Izena:** Container Manage Center (laburtuta **CMC**). 1.6.0 bertsiora arte «Docker Control Center» zuen izena; `container-manage-center` paketeak `docker-control-center` zaharra ordezkatzen du, eta zure konfigurazioa, historia, zerbitzariak, kopiak eta programatutako lanak gordetzen ditu.
+
+**Lizentzia:** GNU General Public License, 3. bertsioa edo ondorengoa (SPDX identifikatzailea: `GPL-3.0-or-later`).
+
+**Copyright © 2026 Sergio Alfaro Lorite.**
+
+Programa hau software librea da: birbana eta/edo alda dezakezu Free Software Foundation-ek argitaratutako GNU Lizentzia Publiko Orokorraren baldintzen arabera, Lizentziaren 3. bertsioa edo (zure aukeran) ondorengo edozein bertsio. Erabilgarria izango delakoan banatzen da, baina INOLAKO BERMERIK GABE; MERKATURATZEKO edo HELBURU JAKIN BATERAKO EGOKITASUNAREN berme inplizitua ere gabe. Xehetasun gehiagorako, ikus GNU Lizentzia Publiko Orokorra.
+
+Lizentziaren testu osoa: https://www.gnu.org/licenses/gpl-3.0.html (baita `/usr/share/doc/container-manage-center/LICENSE` fitxategian ere).
+
+**Hirugarrenen osagaiak.** Aplikazioak hirugarrenen liburutegiak eta letra-tipoak dakartza, eta horiek beren lizentziak (MIT, Apache-2.0, MPL-2.0, OFL-1.1 eta beste batzuk) eta egileen egile-eskubideen oharrak gordetzen dituzte; ez dira GPL bihurtzen, ezta Sergio Alfaro Loriterenak ere. Testu osoak `/usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md` fitxategian daude, eta paketearen egile-eskubideen oharra `/usr/share/doc/container-manage-center/copyright` fitxategian.
+
+**Iturburu-kodea.** Dagokion iturburu-kodea paketearen bertsio bakoitzarekin batera argitaratzen da (`container-manage-center-X.Y.Z-src.tar.gz`).
+
+**Markak.** Container Manage Center proiektu independentea da: ez dago Docker, Inc. enpresari lotuta, eta enpresa horrek ez du babesten. «Docker» Docker, Inc.-en marka da, eta hemen aplikazioak erabiltzen duen teknologia izendatzeko soilik erabiltzen da (Docker Engine, haren APIa, Docker Compose eta Docker CLIa).
+
+Datu berak **Konfigurazioa › Lege-oharrak** atalean daude.

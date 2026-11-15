@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Pruebas deterministas de la edición: lectura, clasificación de cambios,
 //! validación y cuerpos de `update` y de recreación.
 

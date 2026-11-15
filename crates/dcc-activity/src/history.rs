@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 8: historial persistente de operaciones (D-058).
 //!
 //! De cada operación terminada se guarda **qué** se hizo, **cuándo** y **con qué

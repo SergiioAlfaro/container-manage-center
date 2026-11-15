@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * E6 (1.6.0, D-108): los contenedores auditados en las demás herramientas.
  * Se reconocen por su id; desde aquí se abre la monitorización de ese

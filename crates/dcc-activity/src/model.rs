@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Modelo de datos de una operación registrada.
 //!
 //! Regla de oro del proyecto: un `OperationRecord` describe algo que **ocurrió

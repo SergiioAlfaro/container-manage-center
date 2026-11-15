@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Especificación de un contenedor nuevo (asistente de creación y duplicado).
 //!
 //! Fuente única de verdad (D-034): de un `ContainerSpec` salen la validación,

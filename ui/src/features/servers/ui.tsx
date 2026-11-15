@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /** Piezas comunes de «Servidores» (0.10.0). */
 import { Check, Fingerprint, Laptop, Minus, Server, ShieldAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";

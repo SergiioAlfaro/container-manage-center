@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Argumentos de `ssh`, construidos como lista (sin shell local), y
 //! entrecomillado POSIX de la orden que se ejecuta en el servidor.
 //!

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Puentes entre el backend y la ventana: reenvían cambios como eventos Tauri.
 
 use dcc_activity::ActivityLog;

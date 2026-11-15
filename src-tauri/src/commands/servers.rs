@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Servidores remotos (0.10.0): perfiles, conexión, prueba en siete pasos,
 //! identidad del servidor, secretos, diagnóstico y vista general.
 //!

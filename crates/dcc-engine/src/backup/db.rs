@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Volcados de bases de datos (D-098).
 //!
 //! El volcado lo hace la herramienta del propio motor **dentro de su

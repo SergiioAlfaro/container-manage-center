@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Prepara un sistema Ubuntu 22.04 real (chroot creado con
 #   debootstrap --variant=minbase jammy DIR http://archive.ubuntu.com/ubuntu)
 # para la prueba real de «Desinstalación y componentes» (0.9.1):

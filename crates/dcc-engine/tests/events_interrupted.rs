@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Suscripción a los eventos de Docker: interrupción y rechazo (determinista).
 //! Con Docker real solo se podría provocar reiniciando el daemon.
 

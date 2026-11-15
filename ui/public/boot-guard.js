@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /*
  * Si la interfaz falla antes de arrancar (p. ej. un error al cargar un módulo),
  * muestra el error en lugar de una ventana vacía. Es un script clásico aparte

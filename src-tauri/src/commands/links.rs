@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! E6 (1.6.0): enlaces entre herramientas (D-108).
 
 use std::time::Duration;

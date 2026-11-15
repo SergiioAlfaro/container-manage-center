@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useState } from "react";
 import { Pause, Play, RotateCw, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";

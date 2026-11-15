@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-# Instalación de Docker Control Center en Debian, Ubuntu y derivadas (Fase 10).
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
+# Instalación de Container Manage Center (CMC) en Debian, Ubuntu y derivadas.
 #
 # Uso (con tu usuario normal; pide la contraseña de sudo solo para apt):
+#   (Si tienes instalado «docker-control-center», el nombre anterior hasta la
+#   1.6.0, apt lo sustituye por container-manage-center y tus datos se conservan.)
 #   bash install.sh                      # busca el paquete .deb y lo instala
 #   bash install.sh --deb RUTA.deb       # instala ese paquete
 #   bash install.sh --check              # solo comprueba el sistema y elige el paquete (no instala)
@@ -31,10 +36,13 @@
 set -u
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-PKG=docker-control-center
+PKG=container-manage-center
+# Nombre del paquete hasta la 1.6.0 («Docker Control Center»). El nuevo lo
+# sustituye (Conflicts/Replaces/Provides); los datos del usuario no se mueven.
+LEGACY=docker-control-center
 DEB_ARG=""; MODE=install; ASSUME_YES=0; VERIFY=1
 
-usage() { sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '5,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --deb) shift; DEB_ARG="${1:-}"; [ -n "$DEB_ARG" ] || { echo "--deb necesita la ruta de un paquete"; exit 2; } ;;
@@ -64,7 +72,7 @@ as_root() {
   fi
 }
 
-title "Docker Control Center · instalación"
+title "Container Manage Center (CMC) · instalación"
 
 # ---------------------------------------------------------------- 1. Sistema
 title "1. Sistema"
@@ -92,16 +100,21 @@ fi
 # ------------------------------------------------------------- Desinstalar
 if [ "$MODE" = uninstall ]; then
   title "Desinstalar"
-  if ! dpkg-query -W -f='${Status}' "$PKG" 2>/dev/null | grep -q "install ok installed"; then
-    ok "Docker Control Center no está instalado."; exit 0
+  REMOVE=()
+  for p in "$PKG" "$LEGACY"; do
+    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "install ok installed" && REMOVE+=("$p")
+  done
+  if [ ${#REMOVE[@]} -eq 0 ]; then
+    ok "Container Manage Center no está instalado."; exit 0
   fi
   YES=(); [ $ASSUME_YES -eq 1 ] && YES=(-y)
-  as_root apt-get remove "${YES[@]}" "$PKG" || die "apt no ha podido desinstalar el paquete."
-  ok "Desinstalado. No se ha tocado Docker ni ningún contenedor, imagen, red o volumen."
-  info "Tus datos se conservan; bórralos a mano si ya no los quieres:"
+  as_root apt-get remove "${YES[@]}" "${REMOVE[@]}" || die "apt no ha podido desinstalar el paquete."
+  ok "Desinstalado (${REMOVE[*]}). No se ha tocado Docker ni ningún contenedor, imagen, red o volumen."
+  info "Tus datos se conservan; bórralos a mano si ya no los quieres (conservan el nombre anterior):"
   info "  ~/.config/docker-control-center  (configuración, servidores e identidades de SSH)"
   info "  ~/.local/state/docker-control-center  (historial)"
-  info "  Las contraseñas recordadas están en el llavero del sistema («Docker Control Center»)."
+  info "  Las contraseñas recordadas están en el llavero del sistema («Container Manage Center» o «Docker Control Center»)."
+  info "  Las copias de seguridad, en la carpeta docker-control-center-copias de su destino."
   exit 0
 fi
 
@@ -124,7 +137,7 @@ mapfile -t CANDIDATES < <(printf '%s\n' "${CANDIDATES[@]}" | awk 'NF && !seen[$0
 [ ${#CANDIDATES[@]} -gt 0 ] || die "No se ha encontrado ningún paquete ${PKG}_*_amd64.deb. Indica uno con --deb RUTA."
 BEST=""; BEST_NEED=""; BEST_VER=""
 for f in "${CANDIDATES[@]}"; do
-  [ "$(dpkg-deb -f "$f" Package 2>/dev/null)" = "$PKG" ] || { warn "$(basename "$f"): no es un paquete de Docker Control Center; se ignora."; continue; }
+  [ "$(dpkg-deb -f "$f" Package 2>/dev/null)" = "$PKG" ] || { warn "$(basename "$f"): no es un paquete de Container Manage Center; se ignora."; continue; }
   [ "$(dpkg-deb -f "$f" Architecture)" = amd64 ] || { warn "$(basename "$f"): no es para amd64; se ignora."; continue; }
   need=$(needs_glibc "$f"); ver=$(dpkg-deb -f "$f" Version)
   if [ -z "$need" ]; then
@@ -175,6 +188,12 @@ fi
 
 INSTALLED=$(dpkg-query -W -f='${Status} ${Version}' "$PKG" 2>/dev/null | sed -n 's/^install ok installed //p')
 [ -n "$INSTALLED" ] && info "Versión instalada ahora: $INSTALLED"
+LEGACY_VER=$(dpkg-query -W -f='${Status} ${Version}' "$LEGACY" 2>/dev/null | sed -n 's/^install ok installed //p')
+if [ -n "$LEGACY_VER" ]; then
+  info "Tienes instalado Docker Control Center $LEGACY_VER (paquete $LEGACY): es la misma aplicación con su"
+  info "nombre anterior. apt lo sustituirá por Container Manage Center. Se conservan tu configuración, tus"
+  info "servidores, el historial, las contraseñas del llavero, las copias y sus tareas programadas."
+fi
 
 # Simulación de apt (sin privilegios): dependencias que se instalarían.
 SIM=$(apt-get install -s "$BEST" 2>&1); SIM_RC=$?
@@ -185,6 +204,12 @@ if [ $SIM_RC -ne 0 ]; then
   exit 1
 fi
 NEW=$(printf '%s\n' "$SIM" | sed -n 's/^Inst \([^ ]*\).*/\1/p' | grep -vx "$PKG" | tr '\n' ' ')
+GONE=$(printf '%s\n' "$SIM" | sed -n 's/^Remv \([^ ]*\).*/\1/p' | tr '\n' ' ')
+if [ -n "$GONE" ] && [ "$(echo $GONE)" != "$LEGACY" ]; then
+  fail "apt quitaría además estos paquetes: $GONE"
+  die "No se instala: revisa la simulación con «apt-get install -s $BEST»."
+fi
+[ -n "$GONE" ] && info "apt quitará el paquete anterior: $LEGACY (sustituido por $PKG)."
 [ -n "$NEW" ] && info "apt instalará también: $NEW" || info "No hace falta instalar otras dependencias."
 
 # ---------------------------------------------------------- 3. Instalar
@@ -195,11 +220,16 @@ if [ "$MODE" = install ]; then
   as_root apt-get install "${YES[@]}" "$BEST" || die "apt no ha terminado la instalación."
   STATUS=$(dpkg-query -W -f='${Status} ${Version}' "$PKG" 2>/dev/null)
   case "$STATUS" in
-    "install ok installed $BEST_VER") ok "Docker Control Center $BEST_VER instalado" ;;
+    "install ok installed $BEST_VER") ok "Container Manage Center $BEST_VER instalado" ;;
     *) die "El paquete no ha quedado instalado ($STATUS)." ;;
   esac
-  [ -x /usr/bin/docker-control-center ] && ok "Programa: /usr/bin/docker-control-center" || fail "Falta /usr/bin/docker-control-center"
-  [ -f /usr/share/applications/docker-control-center.desktop ] && ok "Lanzador en el menú de aplicaciones" || fail "Falta el lanzador del menú"
+  [ -x /usr/bin/container-manage-center ] && ok "Programa: /usr/bin/container-manage-center" || fail "Falta /usr/bin/container-manage-center"
+  [ -x /usr/bin/docker-control-center ] && ok "Nombre anterior (para las copias programadas ya creadas): /usr/bin/docker-control-center" || fail "Falta /usr/bin/docker-control-center"
+  [ -f /usr/share/applications/container-manage-center.desktop ] && ok "Lanzador en el menú de aplicaciones" || fail "Falta el lanzador del menú"
+  [ -f /usr/share/applications/docker-control-center.desktop ] && fail "Sigue el lanzador anterior: /usr/share/applications/docker-control-center.desktop"
+  if dpkg-query -W -f='${Status}' "$LEGACY" 2>/dev/null | grep -q "install ok installed"; then
+    fail "El paquete anterior $LEGACY sigue instalado."
+  fi
 else
   title "3. Instalación"
   info "Modo --check: no se instala nada. Para instalar: bash $0 --deb $BEST"
@@ -250,7 +280,7 @@ fi
 
 title "Listo"
 if [ "$MODE" = install ]; then
-  info "Abre «Docker Control Center» desde el menú de aplicaciones o ejecuta: docker-control-center"
+  info "Abre «Container Manage Center» desde el menú de aplicaciones o ejecuta: container-manage-center"
   info "Desinstalar: bash $0 --uninstall  (o sudo apt remove $PKG)"
 fi
 exit 0

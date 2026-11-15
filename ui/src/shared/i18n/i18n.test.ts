@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { describe, expect, it } from "vitest";
 import es from "./locales/es.json";
 import en from "./locales/en.json";
@@ -24,7 +26,7 @@ const ALL = { es, en, ca, gl, eu, fr, it: it_, pt } as const;
  * explícita.
  */
 const TECHNICAL = [
-  "Docker Control Center", "API", "CLI", "Socket", "Compose", "Español", "English", "Français", "Italiano", "Docker {{version}}",
+  "Container Manage Center", "CMC", "API", "CLI", "Socket", "Compose", "Español", "English", "Français", "Italiano", "Docker {{version}}",
   "rootless", "Rootless", "{{message}}", "Docker Engine", "cgroups", "Go", "Commit", "{{action}} {{name}}", "{{action}} {{name}}: {{message}}",
   "ID", "PID", "TTY", "CPU", "Shell", "nginx, postgres, python…", "Dockerfile", "cache", "IPv4", "IPv6", "MAC", "tmpfs", "NFS", "Docker",
   "Config", "WebKitGTK", "glibc", "Docker CLI", "Docker Compose", "Debian 13:", "Compose: {{project}}",
@@ -39,6 +41,8 @@ const TECHNICAL = [
   "MariaDB", "MySQL", "PostgreSQL", "Redis", "MongoDB",
   // 1.5.0: monitorización (unidades de tiempo y de recursos).
   "5 min", "15 min", "30 min", "1 h", "6 h", "24 h", "{{cpus}} CPU · {{mem}}", "{{h}} h {{m}} min", "{{m}} min", "{{s}} s", "PIDs", "{{d}} d {{h}} h",
+  // 1.7.0: nombre del apartado «Legal» (se escribe igual en es, ca, gl y pt).
+  "Legal",
 ];
 const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
   fr: [
@@ -47,6 +51,8 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Configuration", "Pause", "Secret", "Application", "Architecture", "Variables", "volume",
     // 1.3.0
     "Audit", "Date",
+    // 1.7.0
+    "Licence",
   ],
   it: [
     "Dashboard", "Area", "No", "Host", "Kernel", "{{count}} container", "Entrypoint", "Gateway", "Container {{name}}", "Container", "Volume",

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Credenciales de registro para descargar imágenes (y las imágenes base de una
 //! construcción).
 //!

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Entrega de la frase de paso o de la contraseña a `ssh` (D-077).
 //!
 //! `ssh` ejecuta el programa de `SSH_ASKPASS` (la propia aplicación) con la

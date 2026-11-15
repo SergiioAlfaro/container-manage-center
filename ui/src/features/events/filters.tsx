@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "@/shared/ui/controls";

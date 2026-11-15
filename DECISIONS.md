@@ -99,6 +99,9 @@ Declarada en `Cargo.toml` y `package.json` como provisional. **Pendiente de
 confirmación por el propietario** antes de la Fase 10. "Docker" es una marca
 registrada de Docker, Inc.; antes de distribuir públicamente conviene revisar
 el nombre del producto.
+> **Cerrada en 1.7.0** (D-110, D-111): el propietario confirma la licencia
+> GPL-3.0-or-later con copyright de Sergio Alfaro Lorite y el producto pasa a
+> llamarse Container Manage Center.
 
 ### D-017 · Nombre interno del paquete sin espacios
 `productName` en `tauri.conf.json` es `docker-control-center`, de modo que el
@@ -108,6 +111,8 @@ paquete se llama `docker-control-center_<versión>_amd64.deb` y el lanzador
 mediante la plantilla `packaging/docker-control-center.desktop`, que añade
 traducción al español y palabras clave de búsqueda. Las dependencias de
 ejecución (`libwebkit2gtk-4.1-0`, `libgtk-3-0`) las añade Tauri.
+> **1.7.0** (D-110): el paquete, el programa y el lanzador pasan a llamarse
+> `container-manage-center`; el nombre visible, «Container Manage Center».
 
 ---
 
@@ -1315,3 +1320,29 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 ### D-109 · Validación manual guiada y cierre de la hoja de ruta
 * La validación manual pendiente (F1–F8 y las de las Etapas 1 a 5) y la nueva de la Etapa 6 se reúnen en **un solo recorrido**: `docs/validation/VALIDACION-GUIADA-1.6.0.md`. Las comprobaciones repetidas entre listas se unen. Tiene preparación común (contenedores `prueba-*`), una hoja de resultados y la correspondencia con las listas anteriores. El informe de verificación remite a ella (apartado 8).
 * Con la 1.6.0 se cierra la hoja de ruta E0–E6. **H-10** («modo de producción») **no** se incorpora (decisión del propietario, plan §10) y queda como candidata, junto con H-09 y H-11 a H-14. La firma GPG de `SHA256SUMS` sigue pendiente de una decisión del propietario.
+
+---
+
+## 1.7.0 · Identidad, licencia y copyright
+
+### D-110 · Container Manage Center: nombre nuevo, identificadores internos sin cambios
+* **Nombre**: «Docker Control Center» pasa a **Container Manage Center** (abreviado **CMC**), por decisión del propietario, para no usar la marca «Docker» en el nombre del producto. «Docker» se sigue usando para nombrar la tecnología (Docker Engine, su API, Docker Compose, la CLI). No se hizo un reemplazo global: se cambió el nombre visible (ventana, menú, notificaciones, almacén de contraseñas, ayuda y traducciones, mensajes, documentación vigente) y el del paquete; la documentación histórica (informes y auditorías de versiones anteriores) conserva el nombre que tenía.
+* **Paquete**: `container-manage-center` con `Conflicts`, `Replaces` y `Provides: docker-control-center`, de modo que apt sustituye el antiguo en una sola operación y no quedan dos programas ni dos lanzadores. Programa `/usr/bin/container-manage-center`, lanzador `container-manage-center.desktop`, documentación en `/usr/share/doc/container-manage-center/`.
+* **`/usr/bin/docker-control-center`** se mantiene como script (`packaging/docker-control-center`) que hace `exec /usr/bin/container-manage-center "$@"`: las unidades de systemd de las copias programadas antes de la 1.7.0 ejecutan esa ruta y siguen funcionando sin reescribir archivos del usuario. Las tareas nuevas o editadas usan la ruta nueva.
+* **Identificadores que no cambian** (y por qué): `~/.config/docker-control-center`, `~/.local/state/docker-control-center`, `$XDG_RUNTIME_DIR/docker-control-center`, la carpeta de copias `docker-control-center-copias`, el atributo `application=docker-control-center` del almacén de contraseñas, el identificador de Tauri `org.dockercontrolcenter.app` (datos de WebKit), las unidades `dcc-backup-*` y su marca, las etiquetas `dcc.*` de Docker, las variables `DCC_*`, los crates `dcc-*` y el nombre del paquete de Cargo. Cambiarlos obligaría a mover datos, reescribir unidades de systemd y volver a guardar contraseñas, con riesgo de pérdida y sin ventaja visible. Al no mover nada, **no hay migración** que pueda quedar a medias ni que haya que revertir, y volver a la 1.6.0 encuentra los datos donde estaban. El identificador de Tauri no se cambia automáticamente, como pide el propietario.
+* **Desinstalación** (`uninstall.rs`): reconoce los dos nombres (`is_own`); en el historial de APT, la transacción que quita `docker-control-center` e instala `container-manage-center` no cuenta como desinstalación, para no perder qué dependencias instaló la aplicación.
+* **Versión del paquete**: Configuración muestra la de `container-manage-center` y, si no está, la de `docker-control-center`.
+* **Pruebas**: `scripts/dev/clean-install-test.sh` con `UPGRADE_FROM` instala la 1.6.0, crea datos de usuario (servidores, known_hosts, copias, alertas, actividad, unidad de systemd con la ruta antigua, manifiesto de copia), actualiza a la 1.7.0 y comprueba que los datos no cambian (sha256), que hay un solo lanzador y que la ruta antigua funciona.
+
+### D-111 · Licencia GPL-3.0-or-later y copyright de Sergio Alfaro Lorite
+* **Licencia** definitiva: GPL-3.0-or-later (cierra D-016). `LICENSE` es el texto oficial, idéntico a `/usr/share/common-licenses/GPL-3` de Debian. Declarada igual en `Cargo.toml` (workspace), `package.json`, `tauri.conf.json` y `packaging/copyright` (DEP-5); `scripts/verify-evolution-1.7.0.sh` comprueba que coinciden.
+* **Copyright**: «Copyright © 2026 Sergio Alfaro Lorite» para el código y los materiales propios. El año es el del historial (primer commit, 4 de noviembre de 2026); no se inventa un intervalo. `docs/legal/COPYRIGHT.md` dice, por decisión del propietario, que el historial registra el desarrollo con un asistente de IA bajo su dirección, y no afirma que sea el autor de las dependencias, de las tipografías ni del texto de la GPL. `authors` de Cargo es «Container Manage Center contributors», no una persona.
+* **Encabezados SPDX** (`SPDX-License-Identifier: GPL-3.0-or-later`, `SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite`) en los 355 archivos de código propio (Rust, TypeScript, JavaScript, shell, Python, CSS, HTML, Dockerfile), con `scripts/spdx-headers.py` y su modo `--check`. No se ponen en JSON, en los tipos generados por ts-rs ni en nada de terceros.
+* **Dónde se ve**: sección «Legal» de la ayuda (8 idiomas), apartado **Configuración › Legal** (nombre, versión, licencia, copyright, declaración GPL, URL de la licencia, ruta de los avisos de terceros, independencia de Docker, Inc.; las rutas y la URL se copian, no se abre ningún programa) y `USER_GUIDE.md`.
+* **Documentos**: `docs/legal/LICENSE_OVERVIEW.md`, `COPYRIGHT.md`, `DISTRIBUTION_COMPLIANCE.md`, `CONTRIBUTING.md`, `docs/MIGRATION-CMC.md`; todos van también en el paquete.
+
+### D-112 · Avisos de terceros completos y auditoría de licencias
+* **Problema encontrado**: hasta la 1.6.0 el paquete llevaba `THIRD-PARTY.md`, que solo era una tabla de componentes y licencias, sin los textos de licencia ni los avisos de copyright que exigen MIT, Apache-2.0, BSD y las demás. No cumplía del todo esas obligaciones.
+* **Decisión**: `scripts/third-party-licenses.py` (sin herramientas externas, por decisión del propietario) genera `docs/legal/THIRD_PARTY_NOTICES.md` con el texto completo de licencia y aviso de cada componente que se distribuye (deduplicado por contenido) y `docs/legal/DEPENDENCY_LICENSE_AUDIT.md` con la clasificación en 6 clases. Cuando un paquete no trae archivo de licencia, se reproduce el texto estándar de la licencia que declara con los autores que declara (clase 3). `--check` falla si los documentos no corresponden a los archivos de bloqueo o si algún componente queda pendiente, es potencialmente incompatible o no tiene licencia determinable; en ese caso no se publica.
+* **Resultado** (1.7.0): 448 componentes distribuidos (428 crates y 20 paquetes npm): 441 compatibles, 7 compatibles con condiciones (5 MPL-2.0 sin aviso «Incompatible With Secondary Licenses» y 2 tipografías OFL-1.1), 11 con texto estándar, 0 pendientes, 0 incompatibles, 0 indeterminados. `ring` sin código bajo la licencia OpenSSL antigua. `cargo deny check licenses` correcto. `packaging/THIRD-PARTY.md` se elimina.
+

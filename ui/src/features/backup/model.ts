@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * E4 (1.4.0): lógica pura del apartado Copias (sin React), para probarla aparte.
  */

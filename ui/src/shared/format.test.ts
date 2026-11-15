@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { describe, expect, it } from "vitest";
 import { formatAbsolute, formatBytes, formatPort, formatRelative, shortId, uniquePorts } from "./format";
 

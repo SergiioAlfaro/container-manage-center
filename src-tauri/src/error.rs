@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Error serializable que reciben los comandos IPC en el frontend.
 
 use dcc_engine::EngineError;

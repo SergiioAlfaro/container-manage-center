@@ -1,6 +1,6 @@
-## 1. Che cos’è Docker Control Center {#about}
+## 1. Che cos’è Container Manage Center {#about}
 
-Docker Control Center è un’applicazione desktop per amministrare **Docker Engine** su Linux senza dipendere dal terminale. Tutto ciò che mostra sono dati reali richiesti a Docker in quel momento, e ogni azione è un’operazione reale: nulla viene simulato.
+Container Manage Center è un’applicazione desktop per amministrare **Docker Engine** su Linux senza dipendere dal terminale. Tutto ciò che mostra sono dati reali richiesti a Docker in quel momento, e ogni azione è un’operazione reale: nulla viene simulato.
 
 - Comunica con Docker Engine tramite il suo **socket Unix**, con l’API ufficiale.
 - Esegue **Docker Compose** con il suo programma ufficiale, con argomenti separati e senza shell.
@@ -22,10 +22,10 @@ L’applicazione non ha bisogno di Internet. Solo le operazioni che Docker Engin
 Installa il pacchetto con APT, che risolve le dipendenze:
 
 ```
-sudo apt install ./docker-control-center_X.Y.Z_amd64.deb
+sudo apt install ./container-manage-center_X.Y.Z_amd64.deb
 ```
 
-L’applicazione compare nel menu come **Docker Control Center**. Si esegue con il tuo utente normale: **non avviarla con sudo** (si rifiuta di partire come root).
+L’applicazione compare nel menu come **Container Manage Center**. Si esegue con il tuo utente normale: **non avviarla con sudo** (si rifiuta di partire come root).
 
 All’apertura cerca Docker Engine automaticamente. Se lo trova, la **Dashboard** ne mostra lo stato; altrimenti mostra la diagnosi con la causa e i passaggi per risolverla.
 
@@ -284,17 +284,17 @@ I messaggi generati da Docker stesso (ad esempio un errore di Docker Engine) e l
 
 **Impostazioni › Disinstallazione e componenti** mostra che cosa ha installato l’applicazione e permette di rimuoverlo senza usare il terminale. **Analizza** interroga dpkg e APT senza modificare nulla:
 
-- **Pacchetto dell’applicazione** (`docker-control-center`), con il suo spazio.
+- **Pacchetto dell’applicazione** (`container-manage-center`), con il suo spazio.
 - **Dipendenze rimovibili**: solo quelle che APT ha installato automaticamente **insieme all’applicazione** (secondo la sua cronologia) e di cui nessun altro pacchetto ha bisogno.
 - **Conservate**, con il motivo: dipendenze condivise (con i pacchetti che le usano), installate esplicitamente, già presenti prima, di origine incerta (se la cronologia di APT non mostra come è stata installata l’applicazione) e componenti di sistema.
 - **Strumenti esterni**: Docker Engine, Docker CLI e Docker Compose. **Conservati sempre.**
 - **Dati che non vengono eliminati**: la tua configurazione, la tua cronologia e i dati della finestra. Non viene toccato nulla di Docker: immagini, container, reti, volumi e progetti Compose.
 - La **simulazione di APT** completa della disinstallazione.
 
-Puoi scegliere **Solo Docker Control Center** o **con le dipendenze rimovibili**, oppure selezionare i pacchetti uno per uno; il riepilogo indica quanto spazio si recupera. **Verifica e disinstalla…** controlla di nuovo la selezione e simula esattamente il comando: se APT dovesse rimuovere qualcosa che non hai scelto, non puoi continuare. La finestra di dialogo mostra il comando che verrà eseguito:
+Puoi scegliere **Solo Container Manage Center** o **con le dipendenze rimovibili**, oppure selezionare i pacchetti uno per uno; il riepilogo indica quanto spazio si recupera. **Verifica e disinstalla…** controlla di nuovo la selezione e simula esattamente il comando: se APT dovesse rimuovere qualcosa che non hai scelto, non puoi continuare. La finestra di dialogo mostra il comando che verrà eseguito:
 
 ```
-pkexec /usr/bin/apt-get remove -y --no-auto-remove docker-control-center …
+pkexec /usr/bin/apt-get remove -y --no-auto-remove container-manage-center …
 ```
 
 Alla conferma, il sistema chiede la password di amministratore (pkexec) **solo per quel comando**; l’applicazione continua a funzionare senza privilegi. Se annulli l’autenticazione non viene rimosso nulla. `purge` non viene usato. Tutto viene registrato nel pannello attività. Se viene rimossa l’applicazione stessa, chiudila al termine.
@@ -348,3 +348,23 @@ Se `pkexec` non è installato, l’applicazione non può chiedere i permessi: la
 **Dove vengono salvate la configurazione e la cronologia?** In `~/.config/docker-control-center/` e `~/.local/state/docker-control-center/`.
 
 **Come cambio la lingua?** In Impostazioni › Aspetto › Lingua.
+
+## 28. Note legali {#legal}
+
+**Nome:** Container Manage Center (abbreviato **CMC**). Fino alla versione 1.6.0 si chiamava «Docker Control Center»; il pacchetto `container-manage-center` sostituisce il vecchio `docker-control-center` e conserva configurazione, cronologia, server, copie e attività pianificate.
+
+**Licenza:** GNU General Public License, versione 3 o successiva (identificatore SPDX `GPL-3.0-or-later`).
+
+**Copyright © 2026 Sergio Alfaro Lorite.**
+
+Questo programma è software libero: è possibile ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, nella versione 3 della Licenza o (a scelta) in qualsiasi versione successiva. È distribuito nella speranza che sia utile, ma SENZA ALCUNA GARANZIA; senza neppure la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UNO SCOPO PARTICOLARE. Per maggiori dettagli consultare la GNU General Public License.
+
+Testo completo della licenza: https://www.gnu.org/licenses/gpl-3.0.html (anche in `/usr/share/doc/container-manage-center/LICENSE`).
+
+**Componenti di terze parti.** L'applicazione include librerie e caratteri di terze parti che mantengono le proprie licenze (MIT, Apache-2.0, MPL-2.0, OFL-1.1 e altre) e le note di copyright dei rispettivi autori; non diventano GPL né di Sergio Alfaro Lorite. I testi completi si trovano in `/usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md`, e la nota di copyright del pacchetto in `/usr/share/doc/container-manage-center/copyright`.
+
+**Codice sorgente.** Il codice sorgente corrispondente viene pubblicato con ogni versione del pacchetto (`container-manage-center-X.Y.Z-src.tar.gz`).
+
+**Marchi.** Container Manage Center è un progetto indipendente: non è affiliato a Docker, Inc. né approvato da essa. «Docker» è un marchio di Docker, Inc. ed è usato qui solo per indicare la tecnologia con cui lavora l'applicazione (Docker Engine, la sua API, Docker Compose e la CLI di Docker).
+
+Gli stessi dati si trovano in **Impostazioni › Note legali**.

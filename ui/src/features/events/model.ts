@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { formatTimestamp } from "@/shared/format";
 import type { QueryKey } from "@tanstack/react-query";
 import type { DockerEvent } from "@/shared/ipc/bindings/DockerEvent";

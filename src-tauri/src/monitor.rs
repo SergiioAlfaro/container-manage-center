@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Monitorización (E5, 1.5.0, D-102 a D-107): un muestreador por servidor
 //! activado, sin agentes, mientras la aplicación está abierta.
 //!

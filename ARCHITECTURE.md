@@ -1,4 +1,8 @@
-# Arquitectura de Docker Control Center
+# Arquitectura de Container Manage Center
+
+> Hasta la 1.6.0, *Docker Control Center*. Los identificadores internos
+> (`dcc-*`, `~/.config/docker-control-center`, `org.dockercontrolcenter.app`)
+> se mantienen a propósito: D-110.
 
 Versión 0.7.1 (Fase 7 con correcciones).
 
@@ -368,14 +372,16 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 
 | Pieza | Función |
 |---|---|
-| `src-tauri/tauri.conf.json` (`bundle`) | Metadatos del `.deb`: versión, descripción, `Recommends: openssh-client`, iconos y archivos de `/usr/share/doc/docker-control-center/` |
+| `src-tauri/tauri.conf.json` (`bundle`) | Metadatos del `.deb` `container-manage-center`: versión, descripción, `Recommends: openssh-client`, `Conflicts`/`Replaces`/`Provides: docker-control-center` (D-110), iconos y archivos de `/usr/share/doc/container-manage-center/` (licencia, copyright, avisos de terceros, migración) |
+| `packaging/docker-control-center` | `/usr/bin/docker-control-center`: script que abre `/usr/bin/container-manage-center` (unidades de systemd y atajos anteriores a la 1.7.0, D-110) |
 | `scripts/deb-set-depends.sh` | Dependencias reales del binario con `dpkg-shlibdeps` (D-059) |
 | `scripts/build-deb-compat.sh` | Paquete compatible compilado en un contenedor de Ubuntu 22.04 |
 | `packaging/copyright`, `LICENSE` | Licencia (DEP-5) |
-| `scripts/third-party-licenses.py` → `packaging/THIRD-PARTY.md` | Componentes de terceros incluidos y sus licencias |
+| `scripts/third-party-licenses.py` → `docs/legal/THIRD_PARTY_NOTICES.md` y `docs/legal/DEPENDENCY_LICENSE_AUDIT.md` | Avisos completos de los componentes de terceros incluidos y auditoría de sus licencias (`--check` en la verificación, D-112) |
+| `scripts/spdx-headers.py` | Encabezados SPDX del código propio (`--check` en la verificación, D-111) |
 | `scripts/install.sh` | Instalación, comprobación y desinstalación para el usuario final |
 | `scripts/run.sh` | Ejecutar la versión instalada o la compilación del código |
-| `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba) |
+| `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba); con `UPGRADE_FROM`, actualización desde una versión anterior comprobando que los datos del usuario no cambian (1.7.0) |
 | `scripts/verify-phase-10.sh` | Verificación final: regresión completa, color, paquetes e instalador |
 
 ## Pruebas

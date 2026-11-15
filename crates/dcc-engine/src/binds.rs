@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 6: directorios vinculados (bind mounts). Se obtienen de los montajes de
 //! la lista de contenedores (una petición real registrada) y se agrupan por la
 //! ruta del equipo. El estado de cada ruta (existe, tipo, permisos) se consulta

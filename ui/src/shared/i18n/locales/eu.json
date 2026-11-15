@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Docker Control Center",
+    "name": "Container Manage Center",
     "startupWarning": "Abioko abisua"
   },
   "nav": {
@@ -347,7 +347,7 @@
       "errorLabel": "Errorea"
     },
     "rootGroupWarning": "{{group}} taldeko kide izatea ordenagailu honetan administratzaile-pribilegioak edukitzearen baliokidea da. Aukera seguruagoa Docker rootless moduan erabiltzea da.",
-    "noAutoFix": "Docker Control Centerrek ez ditu sistemaren baimenak eta taldeak aldatzen: urrats hauek zuk exekutatu behar dituzu terminal batean.",
+    "noAutoFix": "Container Manage Centerrek ez ditu sistemaren baimenak eta taldeak aldatzen: urrats hauek zuk exekutatu behar dituzu terminal batean.",
     "problems": {
       "noSocket": {
         "title": "Ez da Docker Engine aurkitzen",
@@ -2020,8 +2020,8 @@
     "notes": "Berritasunak",
     "checkedAt": "{{url}} kontsultatu da ({{time}}).",
     "lastFailed": "Azken egiaztapenak huts egin du: {{message}}",
-    "howTo": "Eguneratzeko, deskargatu pakete berria eta instalatu «sudo apt install ./docker-control-center_X.Y.Z_amd64.deb» komandoarekin. Zure konfigurazioa eta historia mantendu egiten dira.",
-    "banner": "Docker Control Centerren bertsio berri bat dago: {{latest}}.",
+    "howTo": "Eguneratzeko, deskargatu pakete berria eta instalatu «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb» komandoarekin. Zure konfigurazioa eta historia mantendu egiten dira.",
+    "banner": "Container Manage Centerren bertsio berri bat dago: {{latest}}.",
     "bannerOpen": "Ikusi Konfigurazioan"
   },
   "system": {
@@ -2062,24 +2062,24 @@
   "components": {
     "title": "Desinstalazioa eta osagaiak",
     "rowHint": "Aplikazioak zer instalatu zuen, zer ken daitekeen eta zer mantentzen den. Ez da ezer aldatzen zuk berretsi gabe.",
-    "intro": "dpkg eta APT bidez instalatutako paketeak aztertzen ditu, Docker Control Centerrek zer instalatu zuen eta zer ken daitekeen segurtasunez erakusteko. Aztertzeak kontsultatu eta simulatu baino ez du egiten: ez du ezer aldatzen. Docker, zure datuak eta zure konfigurazioa beti mantentzen dira.",
+    "intro": "dpkg eta APT bidez instalatutako paketeak aztertzen ditu, Container Manage Centerrek zer instalatu zuen eta zer ken daitekeen segurtasunez erakusteko. Aztertzeak kontsultatu eta simulatu baino ez du egiten: ez du ezer aldatzen. Docker, zure datuak eta zure konfigurazioa beti mantentzen dira.",
     "analyze": "Aztertu osagaiak",
     "reanalyze": "Aztertu berriro",
     "analyzeHint": "dpkg-query, apt-mark, apt-cache eta apt-get simulazio bat exekutatzen ditu, pribilegiorik gabe. Jarduera-panelean geratzen da.",
     "unsupported": "Sistema honek ez ditu dpkg eta APT erabiltzen: desinstalazio hautakorra Debian, Ubuntu eta haien eratorrietan bakarrik dago erabilgarri.",
-    "notPackaged": "Docker Control Center ez dago .deb pakete gisa instalatuta (adibidez, iturburu-kodetik konpilatuta exekutatzen da): ez dago ezer APTrekin desinstalatzeko.",
+    "notPackaged": "Container Manage Center ez dago .deb pakete gisa instalatuta (adibidez, iturburu-kodetik konpilatuta exekutatzen da): ez dago ezer APTrekin desinstalatzeko.",
     "history": {
       "notFound": "APTren historiak ez du erakusten aplikazioa nola instalatu zen (adibidez, dpkg -i erabiliz instalatu zen edo historia dagoeneko biratu da). Segurtasunagatik, ez da mendekotasunik kentzea eskaintzen: guztiak jatorri ziurgabekotzat hartu eta mantentzen dira.",
       "unreadable": "Ezin da APTren historia irakurri (/var/log/apt/history.log). Segurtasunagatik, ez da mendekotasunik kentzea eskaintzen."
     },
     "ownTitle": "Aplikazioaren paketea",
-    "removeApp": "Desinstalatu Docker Control Center",
+    "removeApp": "Desinstalatu Container Manage Center",
     "removableTitle": "Ken daitezkeen mendekotasunak ({{count}})",
     "noneRemovable": "Bat ere ez: mendekotasun guztiak beste programa batzuek erabiltzen dituzte, lehendik instalatuta zeuden edo ezin da ziur jakin nork instalatu zituen.",
     "removePackage": "Kendu {{name}}",
     "direct": "zuzena",
-    "presetApp": "Docker Control Center soilik",
-    "presetAll": "Docker Control Center eta ken daitezkeen mendekotasunak",
+    "presetApp": "Container Manage Center soilik",
+    "presetAll": "Container Manage Center eta ken daitezkeen mendekotasunak",
     "summary_one": "Pakete {{count}} · {{size}} askatzen dira",
     "summary_other": "{{count}} pakete · {{size}} askatzen dira",
     "nothingSelected": "Ez dago ezer hautatuta",
@@ -2142,7 +2142,7 @@
     "removing": "APTrekin desinstalatzen…",
     "done_one": "Pakete {{count}} desinstalatu da.",
     "done_other": "{{count}} pakete desinstalatu dira.",
-    "doneSelf": "Docker Control Center jada ez dago instalatuta: itxi aplikazioa.",
+    "doneSelf": "Container Manage Center jada ez dago instalatuta: itxi aplikazioa.",
     "stillInstalled": "Instalatuta jarraitzen dute: {{list}}."
   },
   "help": {
@@ -3296,7 +3296,7 @@
     "fromAuditGone": "«{{name}}» ez dago jada zerbitzari honetan: aukeratu zer kopiatu."
   },
   "monitor": {
-    "intro": "Docker Control Center-ek «docker stats» eta «inspect» erabiliz hartzen ditu laginak (zerbitzarian ezer instalatu gabe). Konexio-etenak hutsune gisa ikusten dira: ez da daturik asmatzen.",
+    "intro": "Container Manage Center-ek «docker stats» eta «inspect» erabiliz hartzen ditu laginak (zerbitzarian ezer instalatu gabe). Konexio-etenak hutsune gisa ikusten dira: ez da daturik asmatzen.",
     "controls": "Monitorizazioaren kontrolak",
     "enable": "Monitorizatu zerbitzari hau",
     "resume": "Berrekin",
@@ -3383,7 +3383,7 @@
     "notifications": "Mahaigaineko jakinarazpenak",
     "notificationsHint": "Zure mahaigaineko jakinarazpen-sistemara bidaltzen dira; ez dira zure ordenagailutik ateratzen.",
     "testNotification": "Probatu jakinarazpena",
-    "testTitle": "Docker Control Center-en proba",
+    "testTitle": "Container Manage Center-en proba",
     "testBody": "Abisu hau ikusten baduzu, jakinarazpenek funtzionatzen dute.",
     "testSent": "Bidalita.",
     "testFailed": "Ezin izan da bidali: {{error}}",
@@ -3429,5 +3429,17 @@
         "body": "{{server}}: konexiorik ez dagoen bitartean, grafikoek hutsune bat erakutsiko dute."
       }
     }
+  },
+  "legal": {
+    "title": "Lege-oharrak",
+    "name": "Izena",
+    "version": "Bertsioa",
+    "license": "Lizentzia",
+    "copyright": "Egile-eskubideak",
+    "statement": "Programa hau software librea da: birbana eta/edo alda dezakezu Free Software Foundation-ek argitaratutako GNU Lizentzia Publiko Orokorraren baldintzen arabera, Lizentziaren 3. bertsioa edo (zure aukeran) ondorengo edozein bertsio. Erabilgarria izango delakoan banatzen da, baina INOLAKO BERMERIK GABE; MERKATURATZEKO edo HELBURU JAKIN BATERAKO EGOKITASUNAREN berme inplizitua ere gabe. Xehetasun gehiagorako, ikus GNU Lizentzia Publiko Orokorra.",
+    "licenseText": "Lizentziaren testua:",
+    "thirdParty": "Aplikazioak dakartzan hirugarrenen osagaiek beren lizentziak eta egile-eskubideen oharrak gordetzen dituzte. Testu osoak hemen daude:",
+    "source": "Dagokion iturburu-kodea paketearen bertsio bakoitzarekin batera argitaratzen da.",
+    "independence": "Container Manage Center proiektu independentea da: ez dago Docker, Inc. enpresari lotuta, eta enpresa horrek ez du babesten. «Docker» Docker, Inc.-en marka da, eta hemen aplikazioak erabiltzen duen teknologia izendatzeko soilik erabiltzen da."
   }
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Edición de contenedores contra Docker (0.9.2): cambios directos
 //! (`rename`, `update`), recreación segura con copia de seguridad y vuelta
 //! atrás (D-070), restauración de la copia y creación de una imagen a partir

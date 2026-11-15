@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Esquema de la configuración de la aplicación.
 //!
 //! Todos los campos tienen valor por defecto (`#[serde(default)]`) para que un

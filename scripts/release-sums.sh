@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Genera SHA256SUMS en la carpeta de una publicación (E2, DCC-SEC-09, D-092).
 # Uso: bash scripts/release-sums.sh CARPETA
 # Incluye los .deb (el compatible va en la misma carpeta, con el nombre

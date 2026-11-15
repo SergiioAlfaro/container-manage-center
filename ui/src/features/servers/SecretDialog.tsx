@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Frase de paso o contraseña para conectar (0.10.0, D-077). El valor solo
  * viaja en la llamada de conexión; no se guarda en el estado de la interfaz

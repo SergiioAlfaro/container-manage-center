@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! E3 (1.3.0): auditoría de seguridad (D-093–D-095).
 //!
 //! Solo lectura. El informe se guarda en el historial (`auditorias.jsonl`,

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Doble del cliente IPC para pruebas de interfaz. Los datos son fixtures de
  * prueba: nunca se importan desde código de la aplicación.
@@ -133,7 +135,7 @@ export function updateCheck(over: Partial<UpdateCheck> = {}): UpdateCheck {
 export const SYSTEM_INFO: SystemInfo = {
   appVersion: "0.9.0",
   packageVersion: "0.9.0",
-  executable: "/usr/bin/docker-control-center",
+  executable: "/usr/bin/container-manage-center",
   os: "Debian GNU/Linux 13 (trixie)",
   kernel: "6.12.48+deb13-amd64",
   arch: "x86_64",
@@ -725,7 +727,7 @@ export function componentsReport(over: Partial<ComponentsReport> = {}): Componen
   const pkg = (name: string, cls: PackageEntry["class"], kib: number, direct = false, usedBy: string[] = []): PackageEntry => ({ name, version: "1.0", installedKib: kib, class: cls, direct, usedBy });
   return {
     supported: true,
-    own: pkg("docker-control-center", "own", 25_000, true),
+    own: pkg("container-manage-center", "own", 25_000, true),
     packages: [
       pkg("libwebkit2gtk-4.1-0", "removable", 90_000, true),
       pkg("libjavascriptcoregtk-4.1-0", "removable", 30_000),
@@ -746,14 +748,14 @@ export function componentsReport(over: Partial<ComponentsReport> = {}): Componen
       { kind: "webCache", path: "/home/u/.cache/org.dockercontrolcenter.app", exists: true, bytes: 4096 },
     ],
     history: "found",
-    simulation: { command: "apt-get -s remove --auto-remove docker-control-center", removes: ["docker-control-center", "libjavascriptcoregtk-4.1-0", "libwebkit2gtk-4.1-0"], output: "NOTE: This is only a simulation!\nRemv docker-control-center [0.9.1]\n" },
+    simulation: { command: "apt-get -s remove --auto-remove container-manage-center", removes: ["container-manage-center", "libjavascriptcoregtk-4.1-0", "libwebkit2gtk-4.1-0"], output: "NOTE: This is only a simulation!\nRemv container-manage-center [0.9.1]\n" },
     elevation: "/usr/bin/pkexec",
     ...over,
   };
 }
 
 export function removalPlan(packages: string[], over: Partial<RemovalPlan> = {}): RemovalPlan {
-  const sizes: Record<string, number> = { "docker-control-center": 25_000, "libwebkit2gtk-4.1-0": 90_000, "libjavascriptcoregtk-4.1-0": 30_000 };
+  const sizes: Record<string, number> = { "container-manage-center": 25_000, "libwebkit2gtk-4.1-0": 90_000, "libjavascriptcoregtk-4.1-0": 30_000 };
   const sorted = [...packages].sort();
   return {
     packages: sorted,
@@ -761,7 +763,7 @@ export function removalPlan(packages: string[], over: Partial<RemovalPlan> = {})
     simulation: { command: `apt-get -s remove --no-auto-remove ${sorted.join(" ")}`, removes: sorted, output: sorted.map((p) => `Remv ${p} [1.0]`).join("\n") },
     extra: [],
     freedKib: sorted.reduce((n, p) => n + (sizes[p] ?? 0), 0),
-    removesSelf: sorted.includes("docker-control-center"),
+    removesSelf: sorted.includes("container-manage-center"),
     ...over,
   };
 }
@@ -952,7 +954,7 @@ export const api = {
   serverForgetSecret: vi.fn(async (_id: string) => 1),
   serverDiagnose: vi.fn(async (id: string): Promise<ServerDiagnosis> => ({ server: localServer({ id }), report: testReportOk(), recentErrors: [] })),
   serversOverview: vi.fn(async (): Promise<ServerOverview[]> => [{ server: localServer(), overview, error: null, updatedAt: "2026-11-11T10:00:00Z" }]),
-  appInfo: vi.fn(async () => ({ name: "Docker Control Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
+  appInfo: vi.fn(async () => ({ name: "Container Manage Center", version: "0.2.0", configPath: "/home/u/.config/docker-control-center/config.toml", startupWarning: null })),
   configGet: vi.fn(async () => structuredClone(DEFAULT_CONFIG)),
   configSet: vi.fn(async (c: typeof DEFAULT_CONFIG) => c),
   activityList: vi.fn(async () => []),
@@ -1109,7 +1111,7 @@ export const api = {
   backupTimerPreview: vi.fn(
     async (id: string): Promise<BackupTimerPreview> => ({
       servicePath: `/home/u/.config/systemd/user/dcc-backup-${id}.service`,
-      serviceText: `# dcc-managed-backup-job: ${id}\n[Service]\nExecStart="/usr/bin/docker-control-center" --run-backup ${id}\n`,
+      serviceText: `# dcc-managed-backup-job: ${id}\n[Service]\nExecStart="/usr/bin/container-manage-center" --run-backup ${id}\n`,
       timerPath: `/home/u/.config/systemd/user/dcc-backup-${id}.timer`,
       timerText: `# dcc-managed-backup-job: ${id}\n[Timer]\nOnCalendar=*-*-* 03:00:00\nPersistent=true\n`,
       commands: ["systemctl --user daemon-reload", `systemctl --user enable --now dcc-backup-${id}.timer`],
@@ -1158,7 +1160,7 @@ export const api = {
   systemInfo: vi.fn(async (): Promise<SystemInfo> => SYSTEM_INFO),
   componentsInspect: vi.fn(async (): Promise<ComponentsReport> => componentsReport()),
   componentsPlan: vi.fn(async (packages: string[]): Promise<RemovalPlan> => removalPlan(packages)),
-  componentsRemove: vi.fn(async (packages: string[]): Promise<RemovalResult> => ({ removed: packages, stillInstalled: [], output: "Removing…", removedSelf: packages.includes("docker-control-center") })),
+  componentsRemove: vi.fn(async (packages: string[]): Promise<RemovalResult> => ({ removed: packages, stillInstalled: [], output: "Removing…", removedSelf: packages.includes("container-manage-center") })),
   openGithubProfile: vi.fn(async () => undefined),
   onUpdateResult: vi.fn(async (_h: (o: UpdateOutcome) => void) => () => {}),
   onDockerEvent: vi.fn(async (_h: (e: DockerEvent) => void) => () => {}),

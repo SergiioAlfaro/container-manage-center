@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Comandos IPC expuestos al frontend. Cada módulo agrupa un área.
 
 pub mod activity;

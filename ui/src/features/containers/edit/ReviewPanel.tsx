@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Revisión antes de aplicar (2.4.3) y asistente de recreación segura (2.4.2).
  * La comparación la hace el backend con el estado real del contenedor; aquí

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { create } from "zustand";
 import { api } from "@/shared/ipc/client";
 import type { DockerEvent } from "@/shared/ipc/bindings/DockerEvent";

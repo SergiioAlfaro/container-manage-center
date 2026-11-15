@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Verificación de la actualización 0.9.2 (idiomas catalán, gallego, euskera y
 # portugués; color principal morado; crear una imagen a partir de un contenedor;
 # editar la configuración de un contenedor con recreación segura) en

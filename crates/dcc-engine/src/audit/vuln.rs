@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Vulnerabilidades de las imágenes con Trivy o Grype (E3, D-094).
 //!
 //! Las herramientas **se detectan, nunca se instalan** ni se actualizan: la

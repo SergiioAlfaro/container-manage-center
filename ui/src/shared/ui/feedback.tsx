@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { createContext, useContext, useEffect, useId, useRef, type ReactNode } from "react";
 import { AlertTriangle, Info, LoaderCircle, X } from "lucide-react";
 import { cx } from "./controls";

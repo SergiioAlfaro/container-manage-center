@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Alertas (D-104): umbrales con histéresis, eventos de Docker y conexión,
 //! con un periodo de silencio para no repetir el aviso.
 //!

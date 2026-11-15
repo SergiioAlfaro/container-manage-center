@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Pruebas de integración contra un Docker Engine **real**.
 //!
 //! Se activan con `DCC_DOCKER_TESTS=1`. El socket se toma de `DCC_DOCKER_SOCKET`

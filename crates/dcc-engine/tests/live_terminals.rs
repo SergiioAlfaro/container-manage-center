@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! 0.9.1 · Terminales múltiples contra Docker real (`DCC_DOCKER_TESTS=1`).
 //!
 //! Varias sesiones `exec` a la vez sobre uno o varios contenedores: cada una con

@@ -1,5 +1,8 @@
-# Guía de usuario
+# Guía de usuario · Container Manage Center
 
+> Versión 1.7.0. Hasta la 1.6.0 la aplicación se llamaba *Docker Control
+> Center* ([cambio de nombre](docs/MIGRATION-CMC.md)).
+>
 > Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)
 >
 > Versión 0.2.1 (Fase 2). Funcionan la conexión con Docker, el Dashboard, los
@@ -810,7 +813,7 @@ mientras haya conexión).
   página. **Comprobar al iniciar** lo hace cada vez que abres la aplicación y, si
   hay una versión nueva, la avisa arriba. La aplicación **nunca descarga ni
   instala nada**: para actualizar, instala el paquete nuevo con
-  `sudo apt install ./docker-control-center_X.Y.Z_amd64.deb` (se conservan tu
+  `sudo apt install ./container-manage-center_X.Y.Z_amd64.deb` (se conservan tu
   configuración y tu historial). Sin fuente no se conecta a Internet.
 - **Sistema**: versiones de la aplicación, del paquete, de WebKitGTK y de glibc,
   el sistema operativo y el escritorio, y los datos de Docker y Compose.
@@ -822,7 +825,7 @@ mientras haya conexión).
   con la aplicación y nadie más usa) y las que se conservan, con el motivo
   (compartidas, instaladas de forma explícita, ya existentes, de origen incierto o
   del sistema). Docker Engine, Docker CLI y Docker Compose se conservan siempre;
-  tus datos y todo lo de Docker, también. Elige **Solo Docker Control Center** o
+  tus datos y todo lo de Docker, también. Elige **Solo Container Manage Center** o
   también las dependencias, revisa la simulación de APT y la orden exacta y
   confirma: el sistema pide la contraseña de administrador (pkexec) solo para
   `apt-get remove`. Sin pkexec, se muestra la orden para ejecutarla a mano.
@@ -837,6 +840,47 @@ Las fechas y horas de los registros (panel de actividad, eventos, historial y
 logs) usan siempre el mismo formato de 24 horas.
 
 Todo se guarda al momento en `~/.config/docker-control-center/config.toml`.
+
+## Legal
+
+| | |
+|---|---|
+| Nombre | **Container Manage Center** (abreviado **CMC**); hasta la 1.6.0, *Docker Control Center* |
+| Licencia | GNU General Public License, versión 3 o posterior · SPDX `GPL-3.0-or-later` |
+| Copyright | **Copyright © 2026 Sergio Alfaro Lorite** |
+| Texto de la licencia | https://www.gnu.org/licenses/gpl-3.0.html · `/usr/share/doc/container-manage-center/LICENSE` |
+| Componentes de terceros | `/usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md` |
+
+Este programa es software libre: puede redistribuirlo y/o modificarlo bajo los
+términos de la Licencia Pública General de GNU publicada por la Free Software
+Foundation, ya sea la versión 3 de la Licencia o (a su elección) cualquier
+versión posterior. Se distribuye con la esperanza de que sea útil, pero **SIN
+NINGUNA GARANTÍA**; ni siquiera la garantía implícita de COMERCIABILIDAD o
+IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Consulte la Licencia Pública General de
+GNU para más detalles. (La versión inglesa de esta declaración, en
+[docs/legal/LICENSE_OVERVIEW.md](docs/legal/LICENSE_OVERVIEW.md), es la que vale.)
+
+**Componentes de terceros.** La aplicación incluye bibliotecas de Rust y de
+JavaScript y dos tipografías (IBM Plex Sans y JetBrains Mono) de otros autores.
+Conservan sus propias licencias (MIT, Apache-2.0, ISC, BSD, MPL-2.0, OFL-1.1 y
+otras compatibles) y sus avisos de copyright; no pasan a ser GPL ni de Sergio
+Alfaro Lorite. Sus textos completos están en
+[docs/legal/THIRD_PARTY_NOTICES.md](docs/legal/THIRD_PARTY_NOTICES.md) y la
+auditoría en [docs/legal/DEPENDENCY_LICENSE_AUDIT.md](docs/legal/DEPENDENCY_LICENSE_AUDIT.md).
+
+**Código fuente.** El código fuente correspondiente se publica con cada versión
+(`container-manage-center-X.Y.Z-src.tar.gz`).
+
+**Marcas.** Container Manage Center es un proyecto independiente: no está
+afiliado a Docker, Inc. ni ha sido respaldado por ella. «Docker» es una marca
+de Docker, Inc. y aquí solo se usa para nombrar la tecnología con la que
+trabaja la aplicación (Docker Engine, su API, Docker Compose y la CLI de
+Docker).
+
+En la aplicación, los mismos datos están en **Configuración › Legal** y en la
+sección «Legal» de la **Ayuda**. Más detalles: [titularidad](docs/legal/COPYRIGHT.md),
+[licencia](docs/legal/LICENSE_OVERVIEW.md) y
+[cumplimiento al distribuir](docs/legal/DISTRIBUTION_COMPLIANCE.md).
 
 ## Atajos de teclado
 

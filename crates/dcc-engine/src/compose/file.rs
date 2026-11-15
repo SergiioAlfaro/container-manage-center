@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Archivos Compose en el equipo: lectura, guardado y creación (D-053).
 //!
 //! No son operaciones de Docker (no pasan por el socket ni por el CLI), así que

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Copias de seguridad (E4, 1.4.0): tareas, historial y ejecución común a la
 //! interfaz y al modo sin ventana de los temporizadores (`--run-backup`).
 //!

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
 # Fase 9 (D-059): escribe en un paquete .deb sus dependencias reales.
 #
 # Tauri genera el paquete con "Depends: libwebkit2gtk-4.1-0, libgtk-3-0", sin
@@ -21,12 +24,12 @@ W=$(mktemp -d)
 trap 'rm -rf "$W"' EXIT
 
 dpkg-deb -R "$DEB" "$W/pkg"
-BIN="$W/pkg/usr/bin/docker-control-center"
-[ -x "$BIN" ] || { echo "El paquete no contiene usr/bin/docker-control-center" >&2; exit 1; }
+BIN="$W/pkg/usr/bin/container-manage-center"
+[ -x "$BIN" ] || { echo "El paquete no contiene usr/bin/container-manage-center" >&2; exit 1; }
 
 mkdir -p "$W/debian"
-printf 'Source: docker-control-center\n\nPackage: docker-control-center\nArchitecture: any\n' > "$W/debian/control"
-DEPS=$(cd "$W" && dpkg-shlibdeps -O "pkg/usr/bin/docker-control-center" 2>"$W/shlibdeps.err" | sed -n 's/^shlibs:Depends=//p')
+printf 'Source: container-manage-center\n\nPackage: container-manage-center\nArchitecture: any\n' > "$W/debian/control"
+DEPS=$(cd "$W" && dpkg-shlibdeps -O "pkg/usr/bin/container-manage-center" 2>"$W/shlibdeps.err" | sed -n 's/^shlibs:Depends=//p')
 if [ -z "$DEPS" ]; then
   echo "dpkg-shlibdeps no ha devuelto dependencias:" >&2
   cat "$W/shlibdeps.err" >&2

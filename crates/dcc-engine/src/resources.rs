@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Utilidades comunes a los módulos de recursos: validación de identificadores,
 //! construcción de rutas idénticas a las de bollard y bloqueo por recurso.
 

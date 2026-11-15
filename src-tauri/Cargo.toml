@@ -1,6 +1,6 @@
 [package]
 name = "docker-control-center"
-description = "Administración gráfica de Docker Engine para Linux"
+description = "Container Manage Center (CMC): administración gráfica de Docker Engine para Linux"
 version.workspace = true
 edition.workspace = true
 publish = false

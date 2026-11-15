@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Desinstalación y componentes (0.9.1, D-065).
 //!
 //! Muestra qué instaló la aplicación y permite quitarlo de forma selectiva con
@@ -32,8 +34,24 @@ use ts_rs::TS;
 
 use crate::error::CommandError;
 
-/// Nombre del paquete de la aplicación.
-pub const OWN_PACKAGE: &str = "docker-control-center";
+/// Nombre del paquete de la aplicación (1.7.0, D-110).
+pub const OWN_PACKAGE: &str = "container-manage-center";
+/// Nombre del paquete hasta la 1.6.0 («Docker Control Center»). El paquete
+/// nuevo lo sustituye (`Conflicts`/`Replaces`/`Provides`); se reconoce para
+/// leer bien el historial de APT y por si sigue instalado el antiguo.
+pub const LEGACY_PACKAGE: &str = "docker-control-center";
+
+/// ¿Es un paquete de la aplicación (con el nombre actual o el anterior)?
+pub fn is_own(name: &str) -> bool {
+    name == OWN_PACKAGE || name == LEGACY_PACKAGE
+}
+
+/// El paquete de la aplicación instalado: el actual o, si no, el anterior.
+fn installed_own(pkgs: &HashMap<String, DpkgPackage>) -> Option<(&'static str, &DpkgPackage)> {
+    [OWN_PACKAGE, LEGACY_PACKAGE]
+        .into_iter()
+        .find_map(|n| pkgs.get(n).filter(|p| p.installed).map(|p| (n, p)))
+}
 
 const QUERY_TIMEOUT: Duration = Duration::from_secs(60);
 /// Desinstalar puede tardar (disparadores de dpkg, cachés de iconos…).
@@ -348,28 +366,32 @@ pub fn parse_history(text: &str) -> Vec<Transaction> {
 /// instalaron o actualizaron la aplicación (desde su última desinstalación).
 /// `None` si el historial no muestra cómo se instaló la aplicación.
 pub fn installed_with_app(transactions: &[Transaction]) -> Option<BTreeSet<String>> {
-    // La última vez que se quitó la aplicación: lo anterior ya no cuenta.
+    // La última vez que se quitó la aplicación: lo anterior ya no cuenta. El
+    // cambio de nombre (1.7.0) quita el paquete antiguo en la misma operación
+    // que instala el nuevo: eso no es una desinstalación.
     let start = transactions
         .iter()
-        .rposition(|t| t.remove.iter().any(|n| n == OWN_PACKAGE))
+        .rposition(|t| {
+            t.remove.iter().any(|n| is_own(n)) && !t.install.iter().any(|(n, _)| is_own(n))
+        })
         .map(|i| i + 1)
         .unwrap_or(0);
     let relevant = &transactions[start..];
     let installed_here = relevant
         .iter()
-        .any(|t| t.install.iter().any(|(n, _)| n == OWN_PACKAGE));
+        .any(|t| t.install.iter().any(|(n, _)| is_own(n)));
     if !installed_here {
         return None;
     }
     let mut set = BTreeSet::new();
     for t in relevant {
-        let has_app = t.install.iter().any(|(n, _)| n == OWN_PACKAGE)
-            || t.upgrade.iter().any(|n| n == OWN_PACKAGE);
+        let has_app =
+            t.install.iter().any(|(n, _)| is_own(n)) || t.upgrade.iter().any(|n| is_own(n));
         if has_app {
             set.extend(
                 t.install
                     .iter()
-                    .filter(|(n, auto)| *auto && n != OWN_PACKAGE)
+                    .filter(|(n, auto)| *auto && !is_own(n))
                     .map(|(n, _)| n.clone()),
             );
         }
@@ -436,7 +458,7 @@ pub fn is_protected(p: &DpkgPackage) -> bool {
         "libc6",
     ];
     let n = p.name.as_str();
-    (n.starts_with("docker") && n != OWN_PACKAGE)
+    (n.starts_with("docker") && !is_own(n))
         || n.starts_with("moby-")
         || n.starts_with("podman")
         || NAMES.contains(&n)
@@ -454,7 +476,7 @@ pub fn classify(
     autoremove: &[String],
     rdepends: &HashMap<String, Vec<String>>,
 ) -> Vec<PackageEntry> {
-    let Some(own) = pkgs.get(OWN_PACKAGE).filter(|p| p.installed) else {
+    let Some((_, own)) = installed_own(pkgs) else {
         return Vec::new();
     };
     // Dependencias directas: la primera alternativa instalada de cada grupo.
@@ -476,7 +498,7 @@ pub fn classify(
                 .cloned(),
         );
     }
-    names.remove(OWN_PACKAGE);
+    names.retain(|n| !is_own(n));
 
     let mut out: Vec<PackageEntry> = names
         .into_iter()
@@ -487,7 +509,7 @@ pub fn classify(
                 .map(|v| {
                     let mut v: Vec<String> = v
                         .iter()
-                        .filter(|d| *d != OWN_PACKAGE && !removable.contains(d.as_str()))
+                        .filter(|d| !is_own(d) && !removable.contains(d.as_str()))
                         .filter(|d| pkgs.get(*d).is_some_and(|p| p.installed))
                         .cloned()
                         .collect();
@@ -752,7 +774,8 @@ pub fn user_paths(config_path: &Path) -> Vec<UserPath> {
     if let Some(d) = crate::journal::state_dir(config_path) {
         v.push((UserPathKind::State, d));
     }
-    // Datos y caché de WebKit (identificador de la aplicación).
+    // Datos y caché de WebKit (identificador de la aplicación, que se conserva
+    // tras el cambio de nombre a Container Manage Center, D-110).
     const ID: &str = "org.dockercontrolcenter.app";
     if let Some(d) = dirs::data_dir() {
         v.push((UserPathKind::WebData, d.join(ID)));
@@ -853,8 +876,7 @@ pub async fn inspect(
     }
     let pkgs = host.dpkg(log).await?;
     let external = external_tools(&pkgs);
-    let own_pkg = pkgs.get(OWN_PACKAGE).filter(|p| p.installed);
-    let Some(own_pkg) = own_pkg else {
+    let Some((own_name, own_pkg)) = installed_own(&pkgs) else {
         return Ok(ComponentsReport {
             supported: true,
             own: None,
@@ -893,12 +915,12 @@ pub async fn inspect(
     };
 
     let simulation = host
-        .simulate(log, &["remove", "--auto-remove", OWN_PACKAGE])
+        .simulate(log, &["remove", "--auto-remove", own_name])
         .await?;
     let autoremove: Vec<String> = simulation
         .removes
         .iter()
-        .filter(|n| *n != OWN_PACKAGE)
+        .filter(|n| !is_own(n))
         .cloned()
         .collect();
 
@@ -938,7 +960,7 @@ pub async fn inspect(
     Ok(ComponentsReport {
         supported: true,
         own: Some(PackageEntry {
-            name: OWN_PACKAGE.into(),
+            name: own_name.into(),
             version: own_pkg.version.clone(),
             installed_kib: own_pkg.installed_kib,
             class: PackageClass::Own,
@@ -1017,7 +1039,7 @@ pub async fn plan(
             format!("{p} no se puede quitar desde aquí: no se instaló con la aplicación o lo usan otros programas."),
         ));
     }
-    if !packages.iter().any(|p| p == OWN_PACKAGE) {
+    if !packages.iter().any(|p| is_own(p)) {
         return Err(CommandError::new(
             "packages.notAllowed",
             "Las dependencias solo se pueden quitar junto con la aplicación (la aplicación las necesita).",
@@ -1050,7 +1072,7 @@ pub async fn plan(
             .iter()
             .filter_map(|p| allowed.get(p.as_str()))
             .sum(),
-        removes_self: chosen.contains(OWN_PACKAGE),
+        removes_self: chosen.iter().any(|p| is_own(p)),
         packages,
         command,
         simulation,
@@ -1162,7 +1184,7 @@ pub async fn remove(
         .cloned()
         .collect();
     Ok(RemovalResult {
-        removed_self: removed.iter().any(|p| p == OWN_PACKAGE),
+        removed_self: removed.iter().any(|p| is_own(p)),
         removed,
         still_installed: still,
         output: out.stdout,
@@ -1276,6 +1298,51 @@ End-Date: 2026-03-01  10:00:05\n";
                 .collect::<Vec<_>>(),
             vec!["libsoup-3.0-0"]
         );
+    }
+
+    /// 1.7.0 (D-110): instalar `container-manage-center` quita en la misma
+    /// operación `docker-control-center`. Eso no es una desinstalación: las
+    /// dependencias que vinieron con la versión anterior siguen contando.
+    #[test]
+    fn the_rename_to_container_manage_center_keeps_the_history() {
+        let mut t = parse_history(
+            "Start-Date: 2026-11-10  10:00:00\n\
+Commandline: apt install ./docker-control-center_1.6.0_amd64.deb\n\
+Install: docker-control-center:amd64 (1.6.0), libwebkit2gtk-4.1-0:amd64 (2.44, automatic)\n\
+End-Date: 2026-11-10  10:00:05\n\
+\n\
+Start-Date: 2026-11-15  10:00:00\n\
+Commandline: apt-get install ./container-manage-center_1.7.0_amd64.deb\n\
+Install: container-manage-center:amd64 (1.7.0), libayatana-appindicator3-1:amd64 (0.5, automatic)\n\
+Remove: docker-control-center:amd64 (1.6.0)\n\
+End-Date: 2026-11-15  10:00:05\n",
+        );
+        assert_eq!(t.len(), 2);
+        assert_eq!(
+            installed_with_app(&t)
+                .unwrap()
+                .into_iter()
+                .collect::<Vec<_>>(),
+            vec!["libayatana-appindicator3-1", "libwebkit2gtk-4.1-0"]
+        );
+        // Quitar de verdad el paquete nuevo sí invalida lo anterior.
+        t.push(Transaction {
+            commandline: "apt remove container-manage-center".into(),
+            remove: vec![OWN_PACKAGE.into()],
+            ..Default::default()
+        });
+        assert_eq!(installed_with_app(&t), None);
+        assert!(is_own("container-manage-center") && is_own("docker-control-center"));
+        assert!(!is_own("docker-ce") && !is_own("docker.io"));
+        // Docker sigue protegido; los nombres de la aplicación, no.
+        let pk = |n: &str| DpkgPackage {
+            name: n.into(),
+            installed: true,
+            priority: "optional".into(),
+            ..Default::default()
+        };
+        assert!(is_protected(&pk("docker-ce")));
+        assert!(!is_protected(&pk(LEGACY_PACKAGE)) && !is_protected(&pk(OWN_PACKAGE)));
     }
 
     #[test]

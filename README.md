@@ -1,11 +1,13 @@
-# Docker Control Center
+# Container Manage Center (CMC)
 
 Aplicación de escritorio para administrar Docker Engine en Debian y Ubuntu, en
 este equipo y en servidores remotos por SSH: contenedores, imágenes, redes,
 volúmenes, directorios vinculados y proyectos Docker Compose, mostrando en todo
 momento las operaciones reales que se ejecutan.
 
-**Versión 1.6.0** (evolución, Etapa 6: integración y validación final).
+**Versión 1.7.0** (identidad Container Manage Center, licencia definitiva
+GPL-3.0-or-later y avisos de terceros completos). Antes se llamaba *Docker
+Control Center*: [cómo se actualiza](docs/MIGRATION-CMC.md), sin perder datos.
 Tauri 2 · Rust · React · TypeScript · bollard.
 
 ## Qué hace
@@ -62,8 +64,9 @@ bash scripts/install.sh --check  # solo comprueba el sistema
 bash scripts/install.sh --uninstall
 ```
 
-O directamente: `sudo apt install ./docker-control-center_1.6.0_amd64.deb`.
-Después se abre desde el menú de aplicaciones o con `docker-control-center`
+O directamente: `sudo apt install ./container-manage-center_1.7.0_amd64.deb`
+(sustituye a `docker-control-center` si estaba instalado).
+Después se abre desde el menú de aplicaciones o con `container-manage-center`
 (desde el código fuente: `bash scripts/run.sh`). Requisitos, acceso a Docker,
 compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 
@@ -80,19 +83,34 @@ compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 | [docs/roadmap/PROJECT_EVOLUTION_PLAN.md](docs/roadmap/PROJECT_EVOLUTION_PLAN.md) | Plan de evolución (etapas E0–E6) |
 | [docs/security/](docs/security/) | Auditoría de seguridad, plan de corrección y lista de comprobación |
 | [docs/validation/VALIDACION-GUIADA-1.6.0.md](docs/validation/VALIDACION-GUIADA-1.6.0.md) | Validación manual guiada (todo lo pendiente, en un solo recorrido) |
-| [packaging/THIRD-PARTY.md](packaging/THIRD-PARTY.md) | Componentes de terceros y sus licencias |
+| [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md) | Paso de Docker Control Center a Container Manage Center |
+| [docs/legal/](docs/legal/) | Licencia, copyright, auditoría de dependencias, avisos de terceros y cumplimiento al distribuir |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Cómo contribuir (licencia, encabezados SPDX, dependencias) |
 
 ## Comprobación
 
 ```bash
-bash scripts/verify-evolution-1.6.0.sh --deb   # regresión completa, paquete y comprobaciones de las Etapas 1 a 6
+bash scripts/verify-evolution-1.7.0.sh --deb   # regresión completa, paquete, identidad y licencias
 cargo run -q -p dcc-engine --bin dcc-diagnose   # diagnóstico de la conexión con Docker
 npm run lint                                    # ESLint (configuración mínima, reglas de seguridad)
 cargo deny check                                # dependencias de Rust (deny.toml)
+python3 scripts/third-party-licenses.py --check  # avisos de terceros y auditoría al día
+python3 scripts/spdx-headers.py --check         # encabezados SPDX del código propio
 ```
 
-## Licencia
+## Legal
 
-GPL-3.0-or-later ([LICENSE](LICENSE)), provisional hasta la confirmación del
-propietario, igual que el nombre del producto. «Docker» es una marca registrada
-de Docker, Inc.; este proyecto no está afiliado a Docker, Inc.
+Container Manage Center · Copyright © 2026 Sergio Alfaro Lorite.
+Licencia **GPL-3.0-or-later** ([LICENSE](LICENSE)): puedes redistribuirlo y
+modificarlo según los términos de la GNU General Public License, versión 3 o
+(a tu elección) cualquier versión posterior, publicada por la Free Software
+Foundation. Se distribuye **sin ninguna garantía**. Detalles en
+[docs/legal/LICENSE_OVERVIEW.md](docs/legal/LICENSE_OVERVIEW.md) y
+[docs/legal/COPYRIGHT.md](docs/legal/COPYRIGHT.md).
+
+Los componentes de terceros conservan sus licencias y avisos:
+[docs/legal/THIRD_PARTY_NOTICES.md](docs/legal/THIRD_PARTY_NOTICES.md).
+
+Container Manage Center es un proyecto independiente: no está afiliado a
+Docker, Inc. ni respaldado por ella. «Docker» es una marca de Docker, Inc. y
+aquí solo se usa para nombrar la tecnología con la que trabaja la aplicación.

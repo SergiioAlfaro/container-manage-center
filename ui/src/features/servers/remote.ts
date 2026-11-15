@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Servidores remotos (0.10.0): explicación de cada problema de conexión y
  * pasos para resolverlo. Igual que el diagnóstico local, nunca propone que la

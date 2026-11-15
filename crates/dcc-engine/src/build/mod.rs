@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Construcción de imágenes a partir de un Dockerfile (`docker build`).
 //!
 //! Una construcción es **una** petición `POST /build` con el contexto en tar y

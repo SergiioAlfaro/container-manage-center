@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /** Formateadores de datos de Docker para la interfaz. */
 
 /** Idioma de la aplicación ("es", "en") o configuración regional ("es-ES") → configuración regional. */

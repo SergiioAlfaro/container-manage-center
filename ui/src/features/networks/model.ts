@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /** Lógica de la sección Redes sin dependencias de la interfaz (probada aparte). */
 import type { ConnectOptions } from "@/shared/ipc/bindings/ConnectOptions";
 import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";

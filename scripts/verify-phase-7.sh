@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Verificación de la Fase 7 (Docker Compose) en Debian/Ubuntu.
 #
 # Uso (desde la raíz del proyecto, con tu usuario normal, NO como root):

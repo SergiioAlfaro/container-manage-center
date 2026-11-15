@@ -1,6 +1,6 @@
-## 1. O que é o Docker Control Center {#about}
+## 1. O que é o Container Manage Center {#about}
 
-O Docker Control Center é uma aplicação de ambiente de trabalho para administrar o **Docker Engine** no Linux sem depender do terminal. Tudo o que mostra são dados reais que pede ao Docker nesse momento, e cada ação é uma operação real: nada é simulado.
+O Container Manage Center é uma aplicação de ambiente de trabalho para administrar o **Docker Engine** no Linux sem depender do terminal. Tudo o que mostra são dados reais que pede ao Docker nesse momento, e cada ação é uma operação real: nada é simulado.
 
 - Comunica com o Docker Engine através do seu **socket Unix**, com a API oficial.
 - Executa o **Docker Compose** com o seu programa oficial, com os argumentos separados e sem shell.
@@ -22,10 +22,10 @@ A aplicação não precisa de Internet. Só as operações que o Docker Engine f
 Instale o pacote com o APT, que resolve as dependências:
 
 ```
-sudo apt install ./docker-control-center_X.Y.Z_amd64.deb
+sudo apt install ./container-manage-center_X.Y.Z_amd64.deb
 ```
 
-A aplicação aparece no menu como **Docker Control Center**. É executada com o seu utilizador normal: **não a execute com sudo** (não arranca como root).
+A aplicação aparece no menu como **Container Manage Center**. É executada com o seu utilizador normal: **não a execute com sudo** (não arranca como root).
 
 Ao abrir, procura o Docker Engine automaticamente. Se o encontrar, o **Painel** mostra o seu estado; caso contrário, mostra um diagnóstico com a causa e os passos para a resolver.
 
@@ -284,17 +284,17 @@ As mensagens geradas pelo próprio Docker (por exemplo, um erro do Docker Engine
 
 **Definições › Desinstalação e componentes** mostra o que a aplicação instalou e permite retirá-lo sem usar o terminal. **Analisar** consulta o dpkg e o APT sem alterar nada:
 
-- O **pacote da aplicação** (`docker-control-center`), com o seu espaço.
+- O **pacote da aplicação** (`container-manage-center`), com o seu espaço.
 - As **dependências que se podem retirar**: apenas as que o APT instalou automaticamente **com a aplicação** (segundo o seu histórico) e que nenhum outro pacote necessita.
 - As que **são mantidas**, com o motivo: dependências partilhadas (com os pacotes que as usam), instaladas manualmente, que já existiam antes, de origem incerta (se o histórico do APT não mostrar como a aplicação foi instalada) e componentes do sistema.
 - As **ferramentas externas**: Docker Engine, Docker CLI e Docker Compose. **São sempre mantidas.**
 - Os **dados que não são eliminados**: a sua configuração, o seu histórico e os dados da janela. No Docker também não se toca em nada: imagens, contentores, redes, volumes e projetos Compose.
 - A **simulação do APT** completa da desinstalação.
 
-Pode escolher **Apenas Docker Control Center** ou **com as dependências que se podem retirar**, ou marcar pacotes um a um; o resumo indica quanto espaço é recuperado. **Rever e desinstalar…** volta a verificar a seleção e simula o comando exato: se o APT fosse retirar algo que não escolheu, não é possível continuar. A caixa de diálogo mostra o comando que vai ser executado:
+Pode escolher **Apenas Container Manage Center** ou **com as dependências que se podem retirar**, ou marcar pacotes um a um; o resumo indica quanto espaço é recuperado. **Rever e desinstalar…** volta a verificar a seleção e simula o comando exato: se o APT fosse retirar algo que não escolheu, não é possível continuar. A caixa de diálogo mostra o comando que vai ser executado:
 
 ```
-pkexec /usr/bin/apt-get remove -y --no-auto-remove docker-control-center …
+pkexec /usr/bin/apt-get remove -y --no-auto-remove container-manage-center …
 ```
 
 Ao confirmar, o sistema pede a sua palavra-passe de administrador (pkexec) **apenas para esse comando**; a aplicação continua sem privilégios. Se cancelar a autenticação, nada é retirado. Não é usado `purge`. Tudo fica no painel de atividade. Se a própria aplicação for retirada, feche-a no fim.
@@ -348,3 +348,23 @@ Se o `pkexec` não estiver instalado, a aplicação não pode pedir autorizaçã
 **Onde ficam guardados a configuração e o histórico?** Em `~/.config/docker-control-center/` e `~/.local/state/docker-control-center/`.
 
 **Como mudo o idioma?** Em Definições › Aspeto › Idioma.
+
+## 28. Legal {#legal}
+
+**Nome:** Container Manage Center (abreviado **CMC**). Até à versão 1.6.0 chamava-se «Docker Control Center»; o pacote `container-manage-center` substitui o antigo `docker-control-center` e mantém a sua configuração, o seu histórico, os seus servidores, as suas cópias e as suas tarefas agendadas.
+
+**Licença:** GNU General Public License, versão 3 ou posterior (identificador SPDX `GPL-3.0-or-later`).
+
+**Copyright © 2026 Sergio Alfaro Lorite.**
+
+Este programa é software livre: pode redistribuí-lo e/ou modificá-lo nos termos da Licença Pública Geral GNU publicada pela Free Software Foundation, seja a versão 3 da Licença ou (à sua escolha) qualquer versão posterior. É distribuído na esperança de que seja útil, mas SEM QUALQUER GARANTIA; nem mesmo a garantia implícita de COMERCIALIZAÇÃO ou ADEQUAÇÃO A UM FIM ESPECÍFICO. Consulte a Licença Pública Geral GNU para mais detalhes.
+
+Texto completo da licença: https://www.gnu.org/licenses/gpl-3.0.html (também em `/usr/share/doc/container-manage-center/LICENSE`).
+
+**Componentes de terceiros.** A aplicação inclui bibliotecas e tipos de letra de terceiros que mantêm as suas próprias licenças (MIT, Apache-2.0, MPL-2.0, OFL-1.1 e outras) e os avisos de direitos de autor dos seus autores; não passam a ser GPL nem de Sergio Alfaro Lorite. Os textos completos estão em `/usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md`, e o aviso de direitos de autor do pacote em `/usr/share/doc/container-manage-center/copyright`.
+
+**Código-fonte.** O código-fonte correspondente é publicado com cada versão do pacote (`container-manage-center-X.Y.Z-src.tar.gz`).
+
+**Marcas.** Container Manage Center é um projeto independente: não é afiliado à Docker, Inc. nem apoiado por ela. «Docker» é uma marca da Docker, Inc. e é usada aqui apenas para designar a tecnologia com que a aplicação trabalha (Docker Engine, a sua API, Docker Compose e a CLI do Docker).
+
+Os mesmos dados estão em **Definições › Legal**.

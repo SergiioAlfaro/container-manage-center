@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/shared/ipc/client";
 import type { StreamClosed } from "@/shared/ipc/bindings/StreamClosed";

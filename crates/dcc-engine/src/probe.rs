@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Comprobación de bajo nivel de un socket, antes de hablar HTTP con él.
 //! Permite distinguir "no existe", "sin permiso" y "daemon detenido", que la
 //! librería HTTP mezclaría en un único error de E/S.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Distribución de los paneles según cuántas sesiones se ven (D-064):
  * 1 ocupa todo; 2 en dos columnas; 3 con una columna a la izquierda y dos

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 8: eventos de Docker Engine (D-057).
 //!
 //! - `events_watch`: **una** suscripción a `GET /events` por conexión. Docker

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Detección de Docker Compose (D-032).
 //!
 //! Se admite Compose **v2 o posterior**, como plugin del CLI (`docker compose`)

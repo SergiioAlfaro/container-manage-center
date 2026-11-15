@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 8: eventos de Docker e historial de operaciones.
 
 use dcc_engine::events::{EventQuery, EventQueryResult};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { create } from "zustand";
 
 /** E6 (1.6.0): contenedor que hay que mostrar al llegar desde otra

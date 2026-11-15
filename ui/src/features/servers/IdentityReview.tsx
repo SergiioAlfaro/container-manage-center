@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Revisión de la identidad del servidor (§4: huella en el primer uso,
  * confirmación explícita, cambio detectado con aviso de posible ataque).

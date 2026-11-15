@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Operaciones de Docker de las copias: contenedor auxiliar, archivos por la
 //! API de archivos (`/containers/{id}/archive`) y `exec` con la salida
 //! volcada a un archivo. Todas quedan en el panel de actividad.

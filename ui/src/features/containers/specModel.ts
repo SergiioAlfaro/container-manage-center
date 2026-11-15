@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /** Utilidades del asistente: especificación vacía, problemas por pestaña y secretos. */
 import { isSecretEntry, isSecretName } from "@/shared/secrets";
 import type { ContainerSpec } from "@/shared/ipc/bindings/ContainerSpec";

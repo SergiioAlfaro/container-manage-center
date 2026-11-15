@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { describe, expect, it } from "vitest";
 import { container, network, networks } from "@/test/apiMock";
 import { connectBlock, connectCommand, disconnectCommand, matchesNetwork, pruneCandidates, splitAliases } from "./model";

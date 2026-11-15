@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Verificación final de Docker Control Center 1.0.0 (Fase 10: pruebas finales y
 # distribución) en Debian/Ubuntu. Repite toda la regresión automática de las
 # fases 1-9 y de las actualizaciones 0.9.1, 0.9.2 y 0.10.0, y comprueba lo nuevo

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Instala los paquetes de sistema necesarios para COMPILAR Docker Control Center
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+# Instala los paquetes de sistema necesarios para COMPILAR Container Manage Center
 # en Debian 12+ / Ubuntu 22.04+. Pide sudo solo para apt.
 # Rust y Node.js se instalan aparte (ver INSTALL.md), sin sudo.
 set -euo pipefail

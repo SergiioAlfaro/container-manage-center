@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Descarga de imágenes (`docker pull`) con progreso por capa.
 //!
 //! Una descarga es **una** petición `POST /images/create` y un registro en el

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, BookOpen, ChevronRight, PackageX, RotateCcw } from "lucide-react";
@@ -12,6 +14,7 @@ import { numberFormat } from "@/shared/format";
 import { HelpView } from "@/features/help/HelpView";
 import { ComponentsSettings } from "./ComponentsSettings";
 import { DockerSettings } from "./DockerSettings";
+import { LegalSettings } from "./LegalSettings";
 import { SystemSettings } from "./SystemSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
 import { Group, Row } from "./layout";
@@ -169,10 +172,11 @@ function SettingsContent() {
 
       <DockerSettings />
 
-
       <UpdatesSettings />
 
       <SystemSettings />
+
+      <LegalSettings />
 
       <Group title={t("settings.maintenance")}>
         <OpenRow

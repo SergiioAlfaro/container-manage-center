@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 6 contra Docker real (`DCC_DOCKER_TESTS=1`): volúmenes (creación,
 //! listado con contenedores, tamaño, inspección, eliminación, limpieza) y
 //! directorios vinculados. Todo lo creado lleva la etiqueta `dcc.test=true` y

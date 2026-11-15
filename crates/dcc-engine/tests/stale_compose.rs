@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Prueba determinista de la carrera de D-031 aplicada a Docker Compose (D-056).
 //!
 //! Observado en Debian 13 (Docker 26.1.5, Compose 2.26.1) y reproducido con

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Cliente de Docker Engine (socket Unix local o canal SSH remoto, 0.10.0)
 //! con registro de actividad.
 //!

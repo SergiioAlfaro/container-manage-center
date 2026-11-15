@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Selector del servidor del área principal (§7): nombre y estado de cada
  * servidor. Con un servidor remoto seleccionado, el selector se distingue a

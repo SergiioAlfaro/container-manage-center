@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Terminal SSH del propio servidor (0.10.0): una shell interactiva en el
 //! servidor, distinta de la terminal de un contenedor.
 //!

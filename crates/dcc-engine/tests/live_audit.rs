@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! E3 (1.3.0) contra Docker real (`DCC_DOCKER_TESTS=1`): la auditoría detecta
 //! las comprobaciones en un contenedor peligroso, no encuentra nada en uno
 //! legítimo y endurecido, y **solo lee**: todas las peticiones que llegan a

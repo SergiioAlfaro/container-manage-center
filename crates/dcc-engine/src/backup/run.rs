@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Hacer una copia (D-096 a D-099).
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};

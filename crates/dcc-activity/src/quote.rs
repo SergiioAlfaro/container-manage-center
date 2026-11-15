@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Representación de una lista de argumentos como línea de comando POSIX.
 //!
 //! Solo se usa para **mostrar** y **copiar** comandos equivalentes. La aplicación

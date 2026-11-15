@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Secretos de los servidores remotos (0.10.0, D-077).
 //!
 //! - En memoria, solo durante la sesión, en un `Zeroizing` que se borra al
@@ -19,6 +21,9 @@ use ts_rs::TS;
 
 /// Atributos con los que se guardan en el keyring.
 const ATTR_APP: &str = "application";
+/// Identificador interno: se conserva tras el cambio de nombre a Container
+/// Manage Center (1.7.0, D-110), porque con él se encuentran las credenciales
+/// ya guardadas. Solo cambia la etiqueta visible de las entradas nuevas.
 const APP: &str = "docker-control-center";
 const ATTR_SERVER: &str = "dcc-server";
 const ATTR_KIND: &str = "dcc-kind";
@@ -222,7 +227,7 @@ impl Secrets {
         secret: &Secret,
     ) -> Result<(), KeyringError> {
         let label = format!(
-            "Docker Control Center — {server_name} ({})",
+            "Container Manage Center — {server_name} ({})",
             match kind {
                 SecretKind::Passphrase => "frase de paso de la clave SSH",
                 SecretKind::Password => "contraseña SSH",

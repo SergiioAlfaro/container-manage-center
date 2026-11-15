@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Modelo de la auditoría de seguridad (E3, D-093).
 
 use std::collections::BTreeMap;

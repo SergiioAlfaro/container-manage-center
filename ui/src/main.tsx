@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource/ibm-plex-sans/400.css";

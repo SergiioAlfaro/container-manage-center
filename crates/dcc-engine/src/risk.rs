@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Reglas de riesgo de la configuración de contenedores (E1, DCC-SEC-01 y
 //! DCC-SEC-03, D-086).
 //!

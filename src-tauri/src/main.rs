@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 // Evita una consola extra en Windows; no tiene efecto en Linux.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 

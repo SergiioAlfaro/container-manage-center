@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 set -e
 mkdir -p /run/mysqld && chown mysql:mysql /run/mysqld /var/lib/mysql
 if [ ! -d /var/lib/mysql/mysql ]; then

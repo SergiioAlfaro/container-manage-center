@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { afterEach, describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
 import { LOCALIZED_ERRORS, localizeError, toCommandError } from "./client";

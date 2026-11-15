@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Proyectos Docker Compose (Fase 7, D-053): identidad de un proyecto,
 //! descubrimiento a partir de las etiquetas de los contenedores, modelo de
 //! servicios a partir de `docker compose config --format json` y construcción

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Detección y ocultación de secretos (E1, DCC-SEC-05, D-085).
 //!
 //! Un único lugar decide qué es un secreto. Lo usan el registro de actividad

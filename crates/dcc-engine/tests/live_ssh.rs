@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Administración remota contra servidores SSH y Docker Engines reales (0.10.0).
 //!
 //! Necesita `DCC_DOCKER_TESTS=1` y `DCC_SSH_LAB=<lab.json>`: tres servidores SSH

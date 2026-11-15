@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 3: crear, inspeccionar y duplicar contenedores; datos para el asistente;
 //! flujos de logs, estadísticas y terminal.
 

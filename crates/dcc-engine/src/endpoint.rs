@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Resolución de los sockets candidatos, en el mismo orden de prioridad que el
 //! CLI de Docker: `DOCKER_HOST`, contexto activo, rootless y socket del sistema.
 //!

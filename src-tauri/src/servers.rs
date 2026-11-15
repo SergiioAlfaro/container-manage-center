@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Registro de servidores (0.10.0, D-078): el equipo local y los servidores
 //! remotos por SSH, cada uno con su propio gestor de conexión.
 //!
@@ -559,7 +561,7 @@ pub fn ssh_paths(config_dir: std::path::PathBuf) -> SshPaths {
     // La propia aplicación hace de SSH_ASKPASS (ver `main.rs`).
     #[allow(unused_mut)]
     let mut askpass =
-        std::env::current_exe().unwrap_or_else(|_| "/usr/bin/docker-control-center".into());
+        std::env::current_exe().unwrap_or_else(|_| "/usr/bin/container-manage-center".into());
     // En las pruebas unitarias el ejecutable es el de las pruebas: se usa
     // `dcc-askpass`, que ejecuta el mismo código.
     #[cfg(test)]

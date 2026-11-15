@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # SOLO PARA DESARROLLO, en una máquina o contenedor de pruebas desechable y como
 # root: crea usuarios, grupos, puentes de red, daemons de Docker y servidores
 # SSH. No lo ejecutes en tu equipo de trabajo.

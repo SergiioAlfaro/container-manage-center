@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Verificación de Docker Control Center 1.6.0 (evolución, Etapa 6: integración
 # y validación final) en Debian/Ubuntu. Repite toda la regresión automática de
 # las fases 1-10 y de las etapas 1-5, y comprueba lo nuevo de la Etapa 6

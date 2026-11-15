@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! E4 (1.4.0) contra Docker real (`DCC_DOCKER_TESTS=1`): copias y
 //! restauraciones de volúmenes, bases de datos, configuración de contenedores y
 //! proyectos Compose.

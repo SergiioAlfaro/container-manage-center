@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! # dcc-store
 //!
 //! Lectura y escritura de la configuración en
@@ -22,6 +24,9 @@ pub use config::{
 };
 pub use servers::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
 
+/// Carpeta de la configuración y del estado. Identificador interno: se
+/// conserva tras el cambio de nombre a Container Manage Center (1.7.0, D-110)
+/// para no mover ni perder datos del usuario.
 pub const APP_DIR: &str = "docker-control-center";
 pub const CONFIG_FILE: &str = "config.toml";
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Registro de los flujos abiertos (logs, estadísticas, terminales).
 //!
 //! Cada flujo tiene un identificador que la interfaz usa para cerrarlo o, en el

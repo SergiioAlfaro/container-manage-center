@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Sustituye el puente de Tauri para ver exactamente qué recibe el backend.

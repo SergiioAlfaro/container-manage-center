@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! `dcc-diagnose`: diagnóstico de la conexión con Docker desde la terminal.
 //!
 //! Usa exactamente el mismo código de detección y conexión que la aplicación.

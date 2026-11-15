@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Registros construidos a mano SOLO para pruebas automatizadas.
  * Nunca se importan desde código de la aplicación.

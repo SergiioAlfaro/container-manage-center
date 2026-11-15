@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useId, useState } from "react";
 import { useApi, useServerView } from "@/app/server";
 import { useQuery } from "@tanstack/react-query";

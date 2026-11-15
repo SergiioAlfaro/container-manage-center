@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 7: Docker Compose (CLI oficial sin shell, D-053).
 
 use dcc_engine::cli::{OutputLine, RunEnd};

@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-14
+Última actualización: 2026-11-15
 
 ## Resumen
 
 | | |
 |---|---|
-| **Etapa actual** | Evolución E6. Integración y validación final ([plan](docs/roadmap/PROJECT_EVOLUTION_PLAN.md)); hoja de ruta E0–E6 completa |
-| **Versión** | 1.6.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación manual guiada del propietario ([guía](docs/validation/VALIDACION-GUIADA-1.6.0.md)) |
-| **Fases completadas (validadas)** | 1–9 y las actualizaciones 0.9.1, 0.9.2 y 0.10.0 |
-| **Pendiente de validar** | Fase 10 (F1–F8) y Etapas E1 a E6, todo reunido en la validación guiada |
+| **Etapa actual** | 1.7.0: identidad **Container Manage Center**, licencia GPL-3.0-or-later y copyright (D-110–D-112) |
+| **Versión** | 1.7.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación manual de la 1.7.0 en Debian 13 (identidad, paquete, instalación, actualización, persistencia, Legal, distribución) |
+| **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
+| **Pendiente de validar** | Solo lo nuevo de la 1.7.0 (validación manual en Debian 13) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -27,9 +27,11 @@
 | Actualización 0.9.1 (terminales, desinstalación, ayuda, francés e italiano, interacción) | **Validada** (confirmada por el propietario en la solicitud de la 0.9.2, 2026-11-11) |
 | Actualización 0.9.2 (cuatro idiomas, color morado, imagen desde contenedor, editar configuración) | **Validada** (confirmada por el propietario, 2026-11-12) |
 | Actualización 0.10.0 (administración remota de servidores Docker por SSH) | **Validada** (confirmada por el propietario, 2026-11-12) |
-| 10. Pruebas finales y distribución | Implementada (versión 1.0.0); pendiente de validación |
+| 10. Pruebas finales y distribución | **Validada** (confirmada por el propietario en la solicitud de la 1.7.0, 2026-11-15) |
 | Evolución E0. Revisión y línea base | Completada (2026-11-12): plan aprobado por el propietario |
-| Evolución E1. Correcciones de seguridad prioritarias | Implementada (versión 1.1.0); pendiente de validación |
+| Evolución E1. Correcciones de seguridad prioritarias | **Validada** (versión 1.1.0; confirmada por el propietario, 2026-11-15) |
+| Evolución E2–E6 (1.2.0–1.6.0) | **Validadas** (confirmadas por el propietario en la solicitud de la 1.7.0, 2026-11-15) |
+| 1.7.0. Identidad Container Manage Center, licencia y copyright | Implementada y verificada automáticamente; pendiente de la validación manual |
 
 ---
 
@@ -1361,14 +1363,38 @@ Entorno de desarrollo (Ubuntu 24.04 en contenedor), 2026-11-14, con el código f
 ### Validación manual
 La validación manual guiada ([docs/validation/VALIDACION-GUIADA-1.6.0.md](docs/validation/VALIDACION-GUIADA-1.6.0.md)) reúne todo lo pendiente. Lo nuevo de la E6 está en su apartado 9 (E6-M1–M8).
 
+## 1.7.0 · Identidad Container Manage Center, licencia y copyright
+
+Fecha: 2026-11-15. Decisiones D-110 (identidad), D-111 (licencia y copyright), D-112 (avisos de terceros).
+
+### Hecho
+- **Nombre** Container Manage Center (CMC) en la ventana, la barra lateral, el menú, las notificaciones, el almacén de contraseñas, la ayuda y las traducciones (8 idiomas), los mensajes y la documentación vigente. «Docker» queda solo para la tecnología. Mismas funciones, diseño y color.
+- **Paquete** `container-manage-center` que sustituye a `docker-control-center` (`Conflicts`/`Replaces`/`Provides`), con `/usr/bin/docker-control-center` como script que abre el programa nuevo. Identificadores internos y datos sin cambios (no hay migración de datos).
+- **Licencia** GPL-3.0-or-later definitiva y **Copyright © 2026 Sergio Alfaro Lorite**; encabezados SPDX en los 355 archivos de código propio; Configuración › Legal y sección «Legal» en la ayuda y en `USER_GUIDE.md`.
+- **Avisos de terceros completos** (antes solo una tabla) y auditoría de 448 componentes distribuidos: 0 pendientes, 0 incompatibles, 0 indeterminados.
+- Documentos: `docs/legal/` (5), `docs/MIGRATION-CMC.md`, `CONTRIBUTING.md`, `docs/validation/VALIDACION-1.7.0.md`.
+
+### Verificación automática (entorno de desarrollo)
+- `scripts/verify-evolution-1.7.0.sh`: Docker 29.9.2 con `--deb --net --ssh-lab` (3 servidores SSH): **162 correctas, 0 fallos**, 4 omitidas justificadamente; Docker 26.1.3 y 24.0.7: **118 correctas, 0 fallos**, 5 omitidas cada uno. Compose 2.26.1: 6/6 en los tres.
+- Pruebas Rust: 738 correctas; Vitest: 434 correctas (47 archivos); clippy, rustfmt, tsc y ESLint (0 errores; 13 avisos anteriores) sin cambios.
+- `third-party-licenses.py --check`, `spdx-headers.py --check` y `cargo deny check licenses`: correctos.
+- Instalación limpia y **actualización desde la 1.6.0** con datos de usuario (`clean-install-test.sh` con `UPGRADE_FROM`) en Ubuntu 24.04 y 22.04: resultados en el informe de la entrega.
+- Revisión visual (Xvfb): barra lateral, Configuración › Legal y ayuda. Corregido durante la revisión: la barra lateral aún mostraba «Docker / Control Center» (texto partido en dos líneas que las búsquedas no encontraban; ahora hay prueba) y la ayuda mostraba los asteriscos de una cursiva que su visor no interpreta.
+
+### Limitaciones
+- Debian 12 y 13 sin probar aquí (no hay acceso a sus repositorios): la validación manual es en Debian 13.
+- El campo `Maintainer` del paquete sigue sin dirección de contacto (no se ha facilitado ninguna).
+- El análisis de licencias es técnico, no asesoramiento jurídico.
+
+### Validación manual
+[docs/validation/VALIDACION-1.7.0.md](docs/validation/VALIDACION-1.7.0.md): identidad, paquete, instalación, actualización desde la 1.6.0, migración, persistencia, Legal y distribución, en Debian 13.
+
 ## Próximos pasos
 
-1. El propietario ejecuta `bash scripts/verify-evolution-1.6.0.sh --deb --net` en Debian 13 (incluye toda la regresión anterior) y envía `verify-evolution-1.6.0-report.txt`.
-2. Si el veredicto es «parte automática superada», sigue la validación manual guiada ([docs/validation/VALIDACION-GUIADA-1.6.0.md](docs/validation/VALIDACION-GUIADA-1.6.0.md)) y envía su hoja de resultados. Con ella quedan validadas la Fase 10 y las Etapas 1 a 6.
-3. La hoja de ruta E0–E6 queda cerrada. Cualquier ampliación (H-10 u otras candidatas) necesita una nueva autorización del propietario.
+1. El propietario ejecuta `bash scripts/verify-evolution-1.7.0.sh --deb --net` en Debian 13 y envía `verify-evolution-1.7.0-report.txt`.
+2. Si la parte automática está superada, sigue [docs/validation/VALIDACION-1.7.0.md](docs/validation/VALIDACION-1.7.0.md) (con la 1.6.0 instalada antes) y envía su hoja de resultados.
+3. Cualquier ampliación nueva necesita una autorización del propietario.
 
 ## Decisiones pendientes del propietario
-- Licencia definitiva (provisional: GPL-3.0-or-later, D-016).
 - Firma de `SHA256SUMS`: clave GPG del propietario y dónde publicar la clave pública (D-092).
-- Nombre definitivo del producto antes de distribuirlo públicamente ("Docker" es marca registrada).
 - Dónde se publicarán las versiones (repositorio de GitHub o dirección HTTPS): es la fuente que vendría configurada para la comprobación de actualizaciones (D-060). Hasta entonces la fuente está vacía y la aplicación no se conecta a Internet.

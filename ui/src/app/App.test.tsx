@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -64,6 +66,13 @@ describe("App", () => {
       expect(screen.getByRole("main").textContent?.length).toBeGreaterThan(40);
       expect(screen.queryByText(/Disponible a partir de la fase/)).not.toBeInTheDocument();
     }
+  });
+
+  it("la barra lateral muestra el nombre Container Manage Center (1.7.0), sin el anterior", async () => {
+    await boot();
+    expect(screen.getByTestId("brand-name")).toHaveTextContent("Container Manage Center");
+    expect(screen.getByText("CMC")).toBeInTheDocument();
+    expect(screen.queryByText("Control Center")).not.toBeInTheDocument();
   });
 
   it("contrae la barra lateral y lo guarda", async () => {
@@ -146,7 +155,7 @@ describe("App", () => {
     act(() => handler!({ check: updateCheck({ newer: false, latest: "0.9.0" }), error: null, automatic: true, at: "2026-12-02T09:00:00Z" }));
     expect(screen.queryByTestId("update-banner")).not.toBeInTheDocument();
     act(() => handler!({ check: updateCheck(), error: null, automatic: true, at: "2026-12-02T09:00:00Z" }));
-    expect(screen.getByTestId("update-banner")).toHaveTextContent("Hay una versión nueva de Docker Control Center: 0.9.3.");
+    expect(screen.getByTestId("update-banner")).toHaveTextContent("Hay una versión nueva de Container Manage Center: 0.9.3.");
     await userEvent.click(screen.getByRole("button", { name: "Ver en Configuración" }));
     expect(useApp.getState().section).toBe("settings");
     await userEvent.click(within(screen.getByTestId("update-banner")).getByRole("button", { name: "Cerrar aviso" }));

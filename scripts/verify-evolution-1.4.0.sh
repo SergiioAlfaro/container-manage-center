@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 # Verificación de Docker Control Center 1.4.0 (evolución, Etapa 4: copias de
 # seguridad y restauración) en Debian/Ubuntu. Repite toda la regresión
 # automática de las fases 1-10 y de las etapas 1-3, y comprueba lo nuevo de la

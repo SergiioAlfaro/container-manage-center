@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 8: historial de operaciones y diario de eventos persistentes (D-058),
 //! y observador de eventos de Docker en tiempo real (D-057).
 

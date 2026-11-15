@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -12,7 +14,7 @@ import { parseHelp } from "./markdown";
 import { LANGUAGES } from "@/shared/i18n";
 
 describe("Ayuda: documento", () => {
-  it.each(Object.keys(HELP_DOCS))("%s: tiene las 27 secciones (26 exigidas y «Servidores remotos», 0.10.0), en orden y con contenido", (lang) => {
+  it.each(Object.keys(HELP_DOCS))("%s: tiene las 28 secciones (26 exigidas, «Servidores remotos» de 0.10.0 y «Legal» de 1.7.0), en orden y con contenido", (lang) => {
     const s = parseHelp(HELP_DOCS[lang]!);
     expect(s.map((x) => x.id)).toEqual([...HELP_SECTION_IDS]);
     s.forEach((x, i) => {
@@ -38,6 +40,15 @@ describe("Ayuda: documento", () => {
     expect(es.find((x) => x.id === "container-commit")?.title).toBe("12. Crear una imagen a partir de un contenedor");
   });
 
+  it.each(Object.keys(HELP_DOCS))("%s: la sección legal da la licencia, el copyright, el enlace GPL y los avisos de terceros (1.7.0)", (lang) => {
+    const legal = parseHelp(HELP_DOCS[lang]!).find((x) => x.id === "legal")!;
+    const text = legal.blocks.map((b) => (b.kind === "p" ? b.text : "")).join("\n");
+    expect(legal.title).toMatch(/^28\. /);
+    for (const must of ["Container Manage Center", "CMC", "GPL-3.0-or-later", "Copyright © 2026 Sergio Alfaro Lorite", "https://www.gnu.org/licenses/gpl-3.0.html", "THIRD_PARTY_NOTICES.md", "Docker, Inc."]) {
+      expect(text, `${lang}: ${must}`).toContain(must);
+    }
+  });
+
   it("el Markdown se convierte en elementos, sin HTML", () => {
     const [s] = parseHelp("## 1. A {#a}\n\nTexto con <script>x</script> y `código`.\n\n- uno\n  sigue\n- dos\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n```\nsudo x\n```\n");
     expect(s!.blocks).toEqual([
@@ -60,8 +71,8 @@ describe("Ayuda: navegación", () => {
   it("muestra el índice y la primera sección; el índice y Siguiente/Anterior navegan", async () => {
     renderWithQuery(<HelpView />);
     const toc = screen.getByRole("navigation", { name: "Índice de la ayuda" });
-    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(27);
-    expect(screen.getByRole("heading", { level: 2, name: "1. Qué es Docker Control Center" })).toBeInTheDocument();
+    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(28);
+    expect(screen.getByRole("heading", { level: 2, name: "1. Qué es Container Manage Center" })).toBeInTheDocument();
     await userEvent.click(within(toc).getByRole("button", { name: "21. Terminales simultáneas" }));
     expect(screen.getByRole("heading", { level: 2, name: "21. Terminales simultáneas" })).toBeInTheDocument();
     expect(within(toc).getByRole("button", { name: "21. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
@@ -93,13 +104,13 @@ describe("Ayuda: navegación", () => {
   });
 
   it.each([
-    ["en", "1. What is Docker Control Center", "Visit my GitHub profile"],
-    ["fr", "1. Qu’est-ce que Docker Control Center", "Visiter mon profil GitHub"],
-    ["it", "1. Che cos’è Docker Control Center", "Visita il mio profilo GitHub"],
-    ["ca", "1. Què és Docker Control Center", "Visitar el meu perfil de GitHub"],
-    ["gl", "1. Que é Docker Control Center", "Visitar o meu perfil de GitHub"],
-    ["eu", "1. Zer da Docker Control Center", "Bisitatu nire GitHub profila"],
-    ["pt", "1. O que é o Docker Control Center", "Visitar o meu perfil do GitHub"],
+    ["en", "1. What is Container Manage Center", "Visit my GitHub profile"],
+    ["fr", "1. Qu’est-ce que Container Manage Center", "Visiter mon profil GitHub"],
+    ["it", "1. Che cos’è Container Manage Center", "Visita il mio profilo GitHub"],
+    ["ca", "1. Què és Container Manage Center", "Visitar el meu perfil de GitHub"],
+    ["gl", "1. Que é Container Manage Center", "Visitar o meu perfil de GitHub"],
+    ["eu", "1. Zer da Container Manage Center", "Bisitatu nire GitHub profila"],
+    ["pt", "1. O que é o Container Manage Center", "Visitar o meu perfil do GitHub"],
   ])("en %s muestra el documento de su idioma", async (lang, title, github) => {
     await act(() => i18n.changeLanguage(lang));
     renderWithQuery(<HelpView />);

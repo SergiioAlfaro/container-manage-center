@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! `.dockerignore` con la semántica de `moby/patternmatcher`, que es la que usa
 //! el CLI de Docker al preparar el contexto:
 //!

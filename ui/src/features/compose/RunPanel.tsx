@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useEffect, useRef } from "react";
 import { CheckCircle2, CircleStop, OctagonX, Square, X } from "lucide-react";
 import { useTranslation } from "react-i18next";

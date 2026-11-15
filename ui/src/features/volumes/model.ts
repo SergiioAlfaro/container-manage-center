@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /** Lógica de volúmenes y directorios vinculados sin dependencias de la interfaz. */
 import { useApp } from "@/app/store";
 import { emptySpec } from "@/features/containers/specModel";

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Contexto de construcción: recorrido de la carpeta aplicando `.dockerignore`
 //! y empaquetado en tar **en flujo** (no se carga entero en memoria).
 //!

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Registro de imágenes mínimo (API de distribución v2) para las pruebas de
 //! descarga: así el daemon real descarga una imagen sin Internet.
 //!

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Archivos Compose **en un servidor remoto** (0.10.0, D-080).
 //!
 //! Mismas reglas que [`super::file`] para los archivos del equipo: tamaño

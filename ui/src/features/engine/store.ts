@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useServerId, useServers } from "@/app/server";
 import type { ConnectionState } from "@/shared/ipc/bindings/ConnectionState";
 

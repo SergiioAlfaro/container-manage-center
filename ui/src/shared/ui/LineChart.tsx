@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Gráfico de líneas en SVG propio (E5, D-106): sin biblioteca. Las líneas van
  * en SVG y los textos en HTML (no se deforman). Los huecos (`null`) cortan la

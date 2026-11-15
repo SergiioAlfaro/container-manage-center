@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useTranslation } from "react-i18next";
 import type { ComposeProject } from "@/shared/ipc/bindings/ComposeProject";
 import { cx } from "@/shared/ui/controls";

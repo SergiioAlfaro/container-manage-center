@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Datos de apoyo para el asistente de creación: valores por defecto de una
 //! imagen y listados breves de redes y volúmenes. Todo son peticiones reales
 //! registradas.

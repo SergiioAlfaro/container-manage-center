@@ -1,22 +1,34 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Docker Control Center
+Upstream-Name: Container Manage Center
+Upstream-Contact: Sergio Alfaro Lorite
 Comment:
- Nombre del producto y licencia provisionales, pendientes de confirmación por
- el propietario (DECISIONS.md, D-016). «Docker» es una marca registrada de
- Docker, Inc.; este programa no está afiliado a Docker, Inc.
+ Container Manage Center (CMC), antes «Docker Control Center». Proyecto
+ independiente: no está afiliado a Docker, Inc. ni respaldado por ella.
+ «Docker» es una marca registrada de Docker, Inc.; aquí solo se usa para
+ describir con qué software se integra el programa.
  .
- Los componentes de terceros incluidos en el programa y sus licencias se
- enumeran en /usr/share/doc/docker-control-center/THIRD-PARTY.md.
+ La titularidad y el origen del código propio se explican en
+ /usr/share/doc/container-manage-center/COPYRIGHT.md. Los componentes de
+ terceros incluidos en el programa conservan sus propias licencias y avisos,
+ reproducidos íntegros en
+ /usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md.
+ .
+ El código fuente correspondiente a cada versión del paquete se distribuye
+ junto a él como container-manage-center-<versión>-src.tar.gz (ver
+ /usr/share/doc/container-manage-center/DISTRIBUTION_COMPLIANCE.md).
 
 Files: *
-Copyright: 2026 Docker Control Center
+Copyright: 2026 Sergio Alfaro Lorite
 License: GPL-3.0-or-later
 
-Files: usr/share/doc/docker-control-center/THIRD-PARTY.md
+Files: usr/share/doc/container-manage-center/THIRD_PARTY_NOTICES.md
 Copyright: Ver cada componente en el propio archivo
 License: various
- Licencias permisivas (MIT, Apache-2.0, BSD, ISC, Zlib, MPL-2.0, Unicode-3.0)
- y, para las fuentes IBM Plex Sans y JetBrains Mono, SIL Open Font License 1.1.
+ Licencias permisivas (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib,
+ 0BSD, Unlicense, CC0-1.0, BSL-1.0, Unicode-3.0), MPL-2.0 y, para las
+ tipografías IBM Plex Sans y JetBrains Mono, SIL Open Font License 1.1. Los
+ textos completos y los avisos de copyright de cada componente están en el
+ propio archivo.
 
 License: GPL-3.0-or-later
  This program is free software: you can redistribute it and/or modify
@@ -29,5 +41,9 @@ License: GPL-3.0-or-later
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
  .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ .
  On Debian systems, the complete text of the GNU General Public License
- version 3 can be found in "/usr/share/common-licenses/GPL-3".
+ version 3 can be found in "/usr/share/common-licenses/GPL-3", and it is
+ also included as /usr/share/doc/container-manage-center/LICENSE.

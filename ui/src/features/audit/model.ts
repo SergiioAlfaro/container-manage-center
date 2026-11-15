@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import type { AuditFinding } from "@/shared/ipc/bindings/AuditFinding";
 import type { AuditReport } from "@/shared/ipc/bindings/AuditReport";
 import type { AuditTargetKind } from "@/shared/ipc/bindings/AuditTargetKind";

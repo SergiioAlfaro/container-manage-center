@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useCallback, useState, type ReactNode } from "react";
 import { Plus, SquareTerminal, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";

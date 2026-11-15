@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Único punto de contacto entre la interfaz y el backend Rust.
  * Los componentes nunca llaman a `invoke` directamente; así las pruebas pueden

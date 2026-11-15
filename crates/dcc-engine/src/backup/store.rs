@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Destino de las copias y formato en disco (E4, D-096).
 //!
 //! ```text
@@ -31,7 +33,9 @@ use super::model::{
     BackupEntry, BackupState, IntegrityReport, Manifest, ManifestFile, Retention, FORMAT, MANIFEST,
 };
 
-/// Carpeta que se crea dentro del destino elegido.
+/// Carpeta que se crea dentro del destino elegido. Se conserva tras el cambio
+/// de nombre a Container Manage Center (1.7.0, D-110): ahí están las copias
+/// ya hechas.
 pub const ROOT_DIR: &str = "docker-control-center-copias";
 pub const PARTIAL_SUFFIX: &str = ".partial";
 

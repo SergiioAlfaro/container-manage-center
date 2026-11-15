@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Fase 5 contra Docker real (`DCC_DOCKER_TESTS=1`): creación, listado,
 //! inspección, conexión y desconexión de contenedores, eliminación y limpieza
 //! de redes. Todo lo creado lleva la etiqueta `dcc.test=true` y se elimina al

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Edición de la configuración de un contenedor existente (0.9.2, D-070).
 //!
 //! Este módulo es la parte **pura**: lee la configuración editable de un

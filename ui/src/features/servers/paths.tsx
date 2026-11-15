@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Rutas de un servidor remoto (0.10.0, §5): en un servidor remoto los
  * archivos y carpetas son los del servidor. No se usa el selector de archivos

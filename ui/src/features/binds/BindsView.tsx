@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useMemo, useState } from "react";
 import { ServerPathInput, useIsRemote, useRemoteContext } from "@/features/servers/paths";
 import { useApi } from "@/app/server";

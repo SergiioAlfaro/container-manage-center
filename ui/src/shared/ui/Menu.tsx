@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 /**
  * Menú de acciones accesible (0.9.2): botón con `aria-haspopup="menu"`, lista
  * con `role="menu"`, flechas para moverse, Escape para cerrar y clic fuera.

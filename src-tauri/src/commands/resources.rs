@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Contenedores e imágenes.
 
 use dcc_engine::{ContainerAction, ContainerState, ContainerSummary, EngineError, ImageSummary};

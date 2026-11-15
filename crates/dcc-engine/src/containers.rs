@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Contenedores: listado y acciones de ciclo de vida (Fase 2, ampliada en la Fase 3).
 
 use std::collections::BTreeMap;

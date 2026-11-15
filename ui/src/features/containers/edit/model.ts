@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import type { AuditFix } from "@/shared/ipc/bindings/AuditFix";
 /**
  * Estado de la pantalla «Editar configuración» (0.9.2): borrador, textos de

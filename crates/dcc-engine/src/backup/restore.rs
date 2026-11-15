@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Restaurar una copia (D-099): completa o selectiva, siempre con vista
 //! previa, aviso de pérdida de datos y confirmación.
 //!

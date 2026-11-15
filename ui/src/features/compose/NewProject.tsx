@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import { useState } from "react";
 import { ConfirmServerWrite, ServerPathInput, useIsRemote } from "@/features/servers/paths";
 import { useApi } from "@/app/server";
