@@ -6,11 +6,11 @@
 
 | | |
 |---|---|
-| **Etapa actual** | 1.7.0: identidad **Container Manage Center**, licencia GPL-3.0-or-later y copyright (D-110–D-112) |
-| **Versión** | 1.7.0 |
-| **Estado** | **Validada** (validación manual de la 1.7.0 en Debian 13 confirmada por el propietario, 2026-11-15) |
+| **Etapa actual** | 1.8.0: el nombre anterior desaparece, con migración de los datos (D-113) |
+| **Versión** | 1.8.0 |
+| **Estado** | Implementada y verificada automáticamente; pendiente de la validación manual de la 1.8.0 en Debian 13 |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | Nada |
+| **Pendiente de validar** | Solo lo nuevo de la 1.8.0 ([guía](docs/validation/VALIDACION-1.8.0.md)) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -32,6 +32,7 @@
 | Evolución E1. Correcciones de seguridad prioritarias | **Validada** (versión 1.1.0; confirmada por el propietario, 2026-11-15) |
 | Evolución E2–E6 (1.2.0–1.6.0) | **Validadas** (confirmadas por el propietario en la solicitud de la 1.7.0, 2026-11-15) |
 | 1.7.0. Identidad Container Manage Center, licencia y copyright | **Validada** (confirmada por el propietario, 2026-11-15) |
+| 1.8.0. Fin del nombre anterior, con migración de los datos | Implementada y verificada automáticamente; pendiente de la validación manual |
 
 ---
 
@@ -1390,11 +1391,30 @@ Fecha: 2026-11-15. Decisiones D-110 (identidad), D-111 (licencia y copyright), D
 ### Validación manual
 [docs/validation/VALIDACION-1.7.0.md](docs/validation/VALIDACION-1.7.0.md): identidad, paquete, instalación, actualización desde la 1.6.0, migración, persistencia, Legal y distribución, en Debian 13. **Hecha y correcta** (confirmada por el propietario, 2026-11-15).
 
+## 1.8.0 · Fin del nombre anterior
+
+Fecha: 2026-11-15. Decisión D-113 (del propietario: eliminar por completo el nombre anterior, con migración).
+
+### Hecho
+- Todos los identificadores pasan al nombre nuevo: carpetas de configuración, estado y sockets, carpeta de copias, identificador de Tauri, atributos del keyring, unidades de systemd, etiquetas de Docker, variables `CMC_*`, crates `cmc-*`, paquete de Cargo y binarios auxiliares.
+- Migración sin pérdidas de lo que dejó una versión anterior: carpetas (renombrado atómico o copia comprobada, sin sobrescribir), tareas programadas (activadas antes de quitar las antiguas, conservando su estado), carpeta de copias, contraseñas del keyring y preferencia de la interfaz. `container-manage-center --migrate`, que `install.sh` ejecuta tras instalar.
+- El nombre anterior solo queda en una lista cerrada de archivos (módulos `legacy`, migración y sus pruebas, `Conflicts`/`Replaces` del paquete), que comprueba la verificación.
+- El paquete ya no instala `/usr/bin/docker-control-center`; `verify-evolution-1.8.0.sh` sustituye a los scripts de verificación de versiones anteriores.
+
+### Verificación automática (entorno de desarrollo)
+- `verify-evolution-1.8.0.sh`: Docker 29.9.2 con `--deb --net --ssh-lab`: **165 correctas, 0 fallos**; Docker 26.1.3 y 24.0.7: **123 correctas, 0 fallos** cada uno. Compose 2.26.1: 6/6.
+- Actualización real con datos de usuario (`clean-install-test.sh` con `UPGRADE_FROM`) desde la **1.6.0** y desde la **1.7.0**, en Ubuntu 24.04 (paquete normal) y 22.04 (compatible): **84 comprobaciones correctas, 0 fallos**: un solo paquete, nada instalado con el nombre anterior, datos en las rutas nuevas con el mismo contenido (sha256), ninguna carpeta ni unidad de systemd con el nombre anterior, `--migrate` repetible, arranque, no arranca como root, desinstalación que conserva los datos.
+- Durante la verificación se corrigieron: `run.sh` (un bucle de un solo elemento, aviso de shellcheck) y la prueba de `SHA256SUMS` alterado, que no alteraba nada cuando la suma empezaba por 0 (pasó con el paquete de esta versión). Una ejecución intermedia falló por falta de espacio en disco del entorno (no del programa) y se repitió completa.
+
+### Limitaciones
+- Volver a una versión anterior ya no encuentra los datos sin renombrar las carpetas a mano (documentado).
+- Las copias programadas creadas antes de la 1.8.0 no se ejecutan entre una instalación con `apt` a mano y la primera vez que se abre la aplicación (o `--migrate`); con `install.sh` no hay ese intervalo.
+- Debian 12 y 13 sin probar aquí.
+
 ## Próximos pasos
 
-1. El propietario ejecuta `bash scripts/verify-evolution-1.7.0.sh --deb --net` en Debian 13 y envía `verify-evolution-1.7.0-report.txt`.
-2. Si la parte automática está superada, sigue [docs/validation/VALIDACION-1.7.0.md](docs/validation/VALIDACION-1.7.0.md) (con la 1.6.0 instalada antes) y envía su hoja de resultados.
-3. Cualquier ampliación nueva necesita una autorización del propietario.
+1. El propietario ejecuta `bash scripts/verify-evolution-1.8.0.sh --deb --net` en Debian 13 y sigue [docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md) con la 1.7.0 instalada antes.
+2. Versión para Windows (pedida por el propietario el 2026-11-15): adaptación y instalador `.exe`.
 
 ## Decisiones pendientes del propietario
 - Firma de `SHA256SUMS`: clave GPG del propietario y dónde publicar la clave pública (D-092).
