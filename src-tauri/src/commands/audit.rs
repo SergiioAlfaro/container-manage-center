@@ -8,8 +8,8 @@
 //! Rust: la interfaz no puede indicar una ruta), también con los secretos
 //! ocultos y con permisos 0600.
 
+use cmc_engine::fsx::OpenOptionsExt;
 use std::io::Write;
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use cmc_activity::redact::redact_text;
@@ -244,7 +244,7 @@ pub fn write_export(path: &Path, ext: &str, content: &str) -> std::io::Result<Pa
             .open(&tmp)?;
         f.write_all(text.as_bytes())?;
         f.sync_all()?;
-        std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o600))?;
+        cmc_engine::fsx::set_mode(&tmp, 0o600)?;
         std::fs::rename(&tmp, &path)
     };
     if let Err(e) = write() {
@@ -291,10 +291,14 @@ pub async fn audit_export_save<R: Runtime>(
     Ok(Some(saved.display().to_string()))
 }
 
-#[cfg(test)]
+// Pruebas con permisos, enlaces o sockets de Unix: solo en Linux (D-114).
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
 
+    #[cfg(unix)]
     #[test]
     fn exports_are_redacted_private_and_have_the_right_extension() {
         let d = tempfile::Builder::new()

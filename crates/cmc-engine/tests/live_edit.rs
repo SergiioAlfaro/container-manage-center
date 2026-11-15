@@ -5,6 +5,8 @@
 //! restauración de la copia e imagen a partir de un contenedor.
 //!
 //! Todo lo creado lleva `cmc-test-` en el nombre y se elimina al terminar.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

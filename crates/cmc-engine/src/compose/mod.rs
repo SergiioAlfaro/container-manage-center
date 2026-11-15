@@ -433,6 +433,7 @@ mod tests {
         assert!(log.is_empty());
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn fake_cli_without_plugin_and_v2_standalone() {
         use std::os::unix::fs::PermissionsExt;

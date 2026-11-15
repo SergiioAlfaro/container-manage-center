@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 //! Suscripción a los eventos de Docker: interrupción y rechazo (determinista).
 //! Con Docker real solo se podría provocar reiniciando el daemon.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;

@@ -246,6 +246,7 @@ fn sync_parent(p: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
 
     fn write(p: &Path, s: &str) {
@@ -261,6 +262,7 @@ mod tests {
         assert!(!d.path().join("nuevo").exists());
     }
 
+    #[cfg(unix)]
     #[test]
     fn the_old_folder_is_renamed_with_all_its_files_and_permissions() {
         let d = tempfile::tempdir().unwrap();
@@ -341,6 +343,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn copy_verify_swap_keeps_the_original_until_the_copy_is_checked() {
         let d = tempfile::tempdir().unwrap();

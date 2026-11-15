@@ -4,6 +4,8 @@
 //! local (con y sin autenticación, y cancelada), búsqueda, inspección, capas,
 //! etiquetado, eliminación, limpieza y construcción con BuildKit y con el
 //! constructor clásico. Todo lo creado lleva la etiqueta `cmc.test=true`.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

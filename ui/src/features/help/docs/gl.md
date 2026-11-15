@@ -368,3 +368,15 @@ Texto completo da licenza: https://www.gnu.org/licenses/gpl-3.0.html (tamén en 
 **Marcas.** Container Manage Center é un proxecto independente: non está afiliado a Docker, Inc. nin avalado por ela. «Docker» é unha marca de Docker, Inc. e aquí só se usa para nomear a tecnoloxía coa que traballa a aplicación (Docker Engine, a súa API, Docker Compose e a CLI de Docker).
 
 Os mesmos datos están en **Configuración › Legal**.
+
+## 29. Windows {#windows}
+
+En Windows, Container Manage Center funciona igual que en Linux, con estas diferenzas:
+
+- **Docker local**: conéctase con **Docker Desktop** pola súa canalización con nome (`\\.\pipe\docker_engine`). Docker Desktop ten que estar en marcha, e o teu usuario, no grupo local `docker-users` (engádeo o instalador de Docker Desktop).
+- **Servidores remotos por SSH**: usan o cliente OpenSSH de Windows (`ssh.exe`, incluído en Windows 10 e 11). Como non admite conexións multiplexadas, cada operación abre a súa propia conexión: a primeira vez compróbase a identidade do servidor igual que en Linux, e o contrasinal ou a frase de paso gardada úsase soa. Os **servidores intermedios** (ProxyJump) aínda non están dispoñibles, e na **terminal do servidor** o cambio de tamaño da xanela non chega ao servidor.
+- **Contrasinais lembrados**: no **Administrador de credenciais** de Windows (credenciais de Windows), co nome `container-manage-center/…`.
+- **Copias programadas**: co **Programador de tarefas**, no cartafol «Container Manage Center», co teu usuario e sen privilexios de administrador. Execútanse coa sesión iniciada; se o equipo estaba apagado a esa hora, a copia faise en canto se poida.
+- **Notificacións**: as do sistema (centro de notificacións).
+- **Datos**: configuración en `%APPDATA%\container-manage-center` e historial en `%LOCALAPPDATA%\container-manage-center`.
+- **Desinstalar**: desde Configuración de Windows › Aplicacións › Aplicacións instaladas. Os teus datos e Docker Desktop non se tocan. O apartado «Desinstalación e compoñentes» só existe en Debian e Ubuntu.

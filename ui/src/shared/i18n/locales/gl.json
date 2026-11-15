@@ -392,6 +392,18 @@
       "other": {
         "title": "Erro ao conectar con Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop non está en marcha",
+        "body": "A canalización de Docker (\\\\.\\pipe\\docker_engine) non responde. Docker Desktop está instalado, pero non se iniciou ou aínda está arrancando."
+      },
+      "desktopNotInstalled": {
+        "title": "Docker Desktop non parece estar instalado",
+        "body": "Non se atopou a canalización de Docker nin o programa docker.exe."
+      },
+      "desktopPermission": {
+        "title": "Sen permiso para usar Docker Desktop",
+        "body": "O teu usuario ({{user}}) non pode abrir a canalización de Docker. Docker Desktop só deixa usala aos membros do grupo local «docker-users»."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Comproba que a ruta corresponde ao socket de Docker e non a outro servizo.",
       "upgrade": "Actualiza Docker Engine á versión 20.10 ou posterior.",
       "restart": "Reinicia o servizo de Docker:",
-      "retry": "Cando o teñas resolto, preme «Volver conectar». A aplicación tamén o tenta de novo soa."
+      "retry": "Cando o teñas resolto, preme «Volver conectar». A aplicación tamén o tenta de novo soa.",
+      "startDesktop": "Abre Docker Desktop desde o menú Inicio e agarda a que indique que o motor está en marcha.",
+      "installDesktop": "Instala Docker Desktop para Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Engade o teu usuario ao grupo «docker-users» desde un Símbolo do sistema aberto como administrador:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "Desinstalouse {{count}} paquete.",
     "done_other": "Desinstaláronse {{count}} paquetes.",
     "doneSelf": "Container Manage Center xa non está instalado: pecha a aplicación.",
-    "stillInstalled": "Seguen instalados: {{list}}."
+    "stillInstalled": "Seguen instalados: {{list}}.",
+    "unsupportedWin": "En Windows, Container Manage Center desinstálase desde Configuración de Windows › Aplicacións › Aplicacións instaladas. Os teus datos consérvanse; Docker Desktop non se toca."
   },
   "help": {
     "title": "Axuda e documentación",
@@ -3170,7 +3186,12 @@
       "authBody": "Para programar a tarefa crearanse estes dous ficheiros no teu cartafol de systemd de usuario e executaranse estas ordes. Non fai falla ser administrador e non se toca nada do sistema.",
       "authAction": "Crear a programación",
       "commands": "Ordes",
-      "authCheck": "Autorizo crear estes ficheiros e executar estas ordes"
+      "authCheck": "Autorizo crear estes ficheiros e executar estas ordes",
+      "foreignWin": "Hai unha tarefa programada con ese nome que non é da aplicación: non se toca.",
+      "problemWin": "Non se puido consultar o Programador de tarefas: {{problem}}",
+      "removeBodyWin": "Eliminarase a tarefa programada de «{{name}}» do Programador de tarefas. A tarefa e as súas copias quedan.",
+      "authBodyWin": "Para programar a tarefa crearase esta tarefa no Programador de tarefas de Windows (cartafol «Container Manage Center»), co teu usuario e sen privilexios de administrador, e executarase esta orde.",
+      "authCheckWin": "Autorizo crear esta tarefa programada"
     },
     "schedule": {
       "dailyAt": "Cada día ás {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "Non hai conexión con Docker Engine."
     },
     "fromAudit": "Selección preparada desde a auditoría para «{{name}}»: a súa configuración, a súa base de datos se o é e os volumes que monta. Revísaa antes de copiar.",
-    "fromAuditGone": "«{{name}}» xa non existe neste servidor: escolle que copiar."
+    "fromAuditGone": "«{{name}}» xa non existe neste servidor: escolle que copiar.",
+    "noSystemdWin": "Non se atopa o Programador de tarefas de Windows (schtasks.exe): as tarefas pódense executar a man, pero non programar.",
+    "jobsHintWin": "As tarefas prográmanse co Programador de tarefas de Windows, que as executa aínda que a aplicación estea pechada (coa sesión iniciada). Se o equipo estaba apagado a esa hora, a copia faise en canto se poida. Non se crea nada sen a túa autorización expresa."
   },
   "monitor": {
     "intro": "Container Manage Center toma mostras con «docker stats» e «inspect» (sen instalar nada no servidor). Os cortes de conexión vense como ocos: non se inventan datos.",

@@ -368,3 +368,15 @@ Full licence text: https://www.gnu.org/licenses/gpl-3.0.html (also in `/usr/shar
 **Trademarks.** Container Manage Center is an independent project: it is not affiliated with or endorsed by Docker, Inc. “Docker” is a trademark of Docker, Inc. and is used here only to name the technology the application works with (Docker Engine, its API, Docker Compose and the Docker CLI).
 
 The same information is in **Settings › Legal**.
+
+## 29. Windows {#windows}
+
+On Windows, Container Manage Center works as on Linux, with these differences:
+
+- **Local Docker**: it connects to **Docker Desktop** through its named pipe (`\\.\pipe\docker_engine`). Docker Desktop must be running, and your user must be in the local `docker-users` group (the Docker Desktop installer adds it).
+- **Remote servers over SSH**: they use the Windows OpenSSH client (`ssh.exe`, included in Windows 10 and 11). As it does not support multiplexed connections, each operation opens its own connection: the first time the server identity is checked as on Linux, and a saved password or passphrase is used automatically. **Jump hosts** (ProxyJump) are not available yet, and in the **server terminal** resizing the window does not reach the server.
+- **Remembered passwords**: in the Windows **Credential Manager** (Windows credentials), named `container-manage-center/…`.
+- **Scheduled backups**: with **Task Scheduler**, in the “Container Manage Center” folder, with your user and without administrator privileges. They run while you are signed in; if the computer was off at that time, the backup runs as soon as possible.
+- **Notifications**: the system ones (notification centre).
+- **Data**: settings in `%APPDATA%\container-manage-center` and history in `%LOCALAPPDATA%\container-manage-center`.
+- **Uninstalling**: from Windows Settings › Apps › Installed apps. Your data and Docker Desktop are not touched. The “Uninstall and components” page only exists on Debian and Ubuntu.

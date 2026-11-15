@@ -368,28 +368,39 @@ pub async fn run_backup_job(store: ConfigStore, id: &str) -> i32 {
 
 /// Evita dos ejecuciones simultáneas de la misma tarea (`flock`).
 fn job_lock(state: &state::AppState, id: &str) -> Result<std::fs::File, i32> {
-    use std::os::unix::fs::OpenOptionsExt;
-    use std::os::unix::io::AsRawFd;
+    use cmc_engine::fsx::OpenOptionsExt;
     let dir = state
         .journals
         .dir
         .clone()
         .unwrap_or_else(std::env::temp_dir);
     let _ = std::fs::create_dir_all(&dir);
-    let f = std::fs::OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .write(true)
-        .mode(0o600)
-        .open(dir.join(format!("copia-{id}.lock")))
-        .map_err(|e| {
+    let mut opts = std::fs::OpenOptions::new();
+    opts.create(true).truncate(false).write(true).mode(0o600);
+    // Windows (1.9.0, D-114): sin compartir; otra ejecución no puede abrirlo
+    // mientras esta lo tenga abierto (ERROR_SHARING_VIOLATION).
+    #[cfg(windows)]
+    std::os::windows::fs::OpenOptionsExt::share_mode(&mut opts, 0);
+    let f = match opts.open(dir.join(format!("copia-{id}.lock"))) {
+        Ok(f) => f,
+        #[cfg(windows)]
+        Err(e) if e.raw_os_error() == Some(32) => {
+            eprintln!("Container Manage Center: ya hay una copia de «{id}» en curso");
+            return Err(75);
+        }
+        Err(e) => {
             eprintln!("Container Manage Center: {e}");
-            1
-        })?;
-    // SAFETY: descriptor válido mientras viva `f`.
-    if unsafe { libc::flock(f.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-        eprintln!("Container Manage Center: ya hay una copia de «{id}» en curso");
-        return Err(75);
+            return Err(1);
+        }
+    };
+    #[cfg(unix)]
+    {
+        use std::os::unix::io::AsRawFd;
+        // SAFETY: descriptor válido mientras viva `f`.
+        if unsafe { libc::flock(f.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+            eprintln!("Container Manage Center: ya hay una copia de «{id}» en curso");
+            return Err(75);
+        }
     }
     Ok(f)
 }
@@ -416,6 +427,7 @@ fn refuse_root() {
 
 /// ¿Puede arrancar? Como root, solo en una compilación de desarrollo y con
 /// `CMC_ALLOW_ROOT` definida.
+#[cfg_attr(windows, allow(dead_code))]
 fn may_run(euid: u32, override_set: bool, dev_build: bool) -> bool {
     euid != 0 || (override_set && dev_build)
 }

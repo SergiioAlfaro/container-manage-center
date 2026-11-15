@@ -16,6 +16,8 @@
 //! `scripts/dev/build-db-test-images.sh` (o `CMC_TEST_MARIADB_IMAGE`,
 //! `CMC_TEST_POSTGRES_IMAGE`, `CMC_TEST_REDIS_IMAGE`). Todo lo creado lleva
 //! `cmc-test-bk-` en el nombre y se elimina al terminar.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

@@ -334,6 +334,21 @@ pub fn channel_args(
     v
 }
 
+/// Conexión directa (sin maestra) que ejecuta `remote`: Windows, donde
+/// OpenSSH no tiene `ControlMaster` (1.9.0, D-114). Mismas opciones de
+/// seguridad e identidad que la maestra.
+#[cfg_attr(unix, allow(dead_code))]
+pub fn direct_args(p: &SshProfile, paths: &SshPaths, remote: &[String], tty: bool) -> Vec<String> {
+    let mut v = base_args(p, paths, &HostKeyPolicy::Strict);
+    v.push(if tty { "-tt" } else { "-T" }.into());
+    v.push("--".into());
+    v.push(p.host.clone());
+    if !remote.is_empty() {
+        v.push(remote_command(remote));
+    }
+    v
+}
+
 /// `ssh -O <orden>` sobre la conexión maestra (`check`, `exit`).
 pub fn control_args(p: &SshProfile, control: &Path, command: &str) -> Vec<String> {
     vec![
@@ -663,6 +678,7 @@ mod tests {
     /// El `ProxyCommand` pasa por la sustitución de `%` de OpenSSH y por
     /// `sh -c`: el salto recibe exactamente los argumentos previstos y no
     /// hereda el askpass (CMC-SEC-02).
+    #[cfg(unix)]
     #[test]
     fn proxy_command_roundtrips_through_ssh_tokens_and_a_real_shell() {
         let d = tempfile::tempdir().unwrap();

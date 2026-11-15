@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 import type { Diagnosis } from "@/shared/ipc/bindings/Diagnosis";
+import { isWindows } from "@/shared/platform";
 
 /** Un paso de la solución: texto traducible y, opcionalmente, una orden para copiar. */
 export interface Step {
@@ -37,9 +38,25 @@ const startSteps = (path: string | null): Step[] => {
  * Traduce el diagnóstico del backend en una explicación con pasos concretos.
  * Nunca propone que la aplicación ejecute nada: son órdenes para el usuario.
  */
-export function explain(d: Diagnosis): Explanation {
+export function explain(d: Diagnosis, windows: boolean = isWindows()): Explanation {
   const p = d.problem;
   const retry: Step = { key: "retry" };
+  // Windows (1.9.0, D-114): Docker Desktop, por su tubería con nombre.
+  if (windows) {
+    if (p.kind === "noSocket" || p.kind === "daemonNotRunning") {
+      const installed = !!d.installation.cliPath;
+      return installed
+        ? { problem: "desktopNotRunning", params: {}, steps: [{ key: "startDesktop" }, retry] }
+        : { problem: "desktopNotInstalled", params: {}, steps: [{ key: "installDesktop" }, { key: "startDesktop" }, retry] };
+    }
+    if (p.kind === "permissionDenied") {
+      return {
+        problem: "desktopPermission",
+        params: { user: d.user.name },
+        steps: [{ key: "addDockerUsers", command: `net localgroup docker-users "${d.user.name}" /add` }, { key: "relogin" }, retry],
+      };
+    }
+  }
   switch (p.kind) {
     case "noSocket": {
       const inst = d.installation;

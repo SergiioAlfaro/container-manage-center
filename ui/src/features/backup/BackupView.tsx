@@ -21,6 +21,7 @@ import { Banner, Checkbox, Spinner } from "@/shared/ui/feedback";
 import { ConfirmDialog, JobDialog, RestoreDialog, StopConfirmDialog, TimerDialog } from "./dialogs";
 import { backupDate, codeText, databaseContainers, EMPTY_REQUEST, errorText, isEmptyRequest, itemWarnings, newJob, prefillRequest, retentionText, scheduleText, timerText } from "./model";
 import { useBackupNav, useBackups } from "./store";
+import { isWindows } from "@/shared/platform";
 
 type Tab = "list" | "new" | "jobs" | "history";
 
@@ -416,8 +417,8 @@ function Jobs({ views, systemd, loading }: { views: BackupJobView[]; systemd: bo
   const mine = views.filter((v) => v.job.server === server);
   return (
     <div className="space-y-3">
-      {!systemd && <Banner tone="warn">{t("backup.noSystemd")}</Banner>}
-      <p className="text-[12px] text-ink-3">{t("backup.jobsHint")}</p>
+      {!systemd && <Banner tone="warn">{t(isWindows() ? "backup.noSystemdWin" : "backup.noSystemd")}</Banner>}
+      <p className="text-[12px] text-ink-3">{t(isWindows() ? "backup.jobsHintWin" : "backup.jobsHint")}</p>
       {err && (
         <Banner tone="error" onDismiss={() => setErr(null)} dismissLabel={t("common.close")}>
           {errorText(t, exists, err)}
@@ -492,7 +493,7 @@ function Jobs({ views, systemd, loading }: { views: BackupJobView[]; systemd: bo
       {confirm && (
         <ConfirmDialog
           title={confirm.kind === "delete" ? t("backup.jobDeleteTitle") : t("backup.timer.removeTitle")}
-          body={confirm.kind === "delete" ? t("backup.jobDeleteBody", { name: confirm.view.job.name }) : t("backup.timer.removeBody", { name: confirm.view.job.name })}
+          body={confirm.kind === "delete" ? t("backup.jobDeleteBody", { name: confirm.view.job.name }) : t(isWindows() ? "backup.timer.removeBodyWin" : "backup.timer.removeBody", { name: confirm.view.job.name })}
           action={confirm.kind === "delete" ? t("backup.deleteAction") : t("backup.timer.remove")}
           onClose={() => setConfirm(null)}
           run={() => (confirm.kind === "delete" ? api.backupJobDelete(confirm.view.job.id) : api.backupTimerRemove(confirm.view.job.id))}

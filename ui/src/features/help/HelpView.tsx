@@ -51,6 +51,7 @@ export const HELP_SECTION_IDS = [
   "troubleshooting",
   "faq",
   "legal",
+  "windows",
 ] as const;
 
 const blockText = (b: Block): string =>

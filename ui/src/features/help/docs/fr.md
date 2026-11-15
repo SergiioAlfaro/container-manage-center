@@ -368,3 +368,15 @@ Texte complet de la licence : https://www.gnu.org/licenses/gpl-3.0.html (égalem
 **Marques.** Container Manage Center est un projet indépendant : il n'est ni affilié à Docker, Inc. ni approuvé par elle. « Docker » est une marque de Docker, Inc. et n'est utilisée ici que pour nommer la technologie avec laquelle l'application fonctionne (Docker Engine, son API, Docker Compose et la CLI Docker).
 
 Les mêmes informations figurent dans **Paramètres › Mentions légales**.
+
+## 29. Windows {#windows}
+
+Sous Windows, Container Manage Center fonctionne comme sous Linux, avec ces différences :
+
+- **Docker local** : il se connecte à **Docker Desktop** par son canal nommé (`\\.\pipe\docker_engine`). Docker Desktop doit être démarré et votre utilisateur doit faire partie du groupe local `docker-users` (l'installateur de Docker Desktop l'y ajoute).
+- **Serveurs distants par SSH** : ils utilisent le client OpenSSH de Windows (`ssh.exe`, inclus dans Windows 10 et 11). Comme il ne prend pas en charge les connexions multiplexées, chaque opération ouvre sa propre connexion : la première fois, l'identité du serveur est vérifiée comme sous Linux, et le mot de passe ou la phrase secrète enregistrés sont utilisés automatiquement. Les **serveurs de rebond** (ProxyJump) ne sont pas encore disponibles et, dans le **terminal du serveur**, le redimensionnement de la fenêtre n'est pas transmis au serveur.
+- **Mots de passe mémorisés** : dans le **Gestionnaire d'identification** de Windows (informations d'identification Windows), sous le nom `container-manage-center/…`.
+- **Copies planifiées** : avec le **Planificateur de tâches**, dans le dossier « Container Manage Center », avec votre utilisateur et sans privilèges d'administrateur. Elles s'exécutent quand votre session est ouverte ; si l'ordinateur était éteint à cette heure-là, la copie est faite dès que possible.
+- **Notifications** : celles du système (centre de notifications).
+- **Données** : configuration dans `%APPDATA%\container-manage-center` et historique dans `%LOCALAPPDATA%\container-manage-center`.
+- **Désinstaller** : depuis Paramètres Windows › Applications › Applications installées. Vos données et Docker Desktop ne sont pas modifiés. La page « Désinstallation et composants » n'existe que sous Debian et Ubuntu.

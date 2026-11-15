@@ -314,7 +314,8 @@ impl Drop for Response {
     }
 }
 
-#[cfg(test)]
+// Servidor de prueba por socket Unix: solo en Linux (D-114).
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
     use tokio::net::UnixListener;

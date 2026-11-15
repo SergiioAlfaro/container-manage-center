@@ -36,6 +36,10 @@ tower-service = "0.3"
 # Los secretos de SSH se borran de la memoria al liberarse (D-077).
 zeroize = "1"
 
+# Windows (1.9.0, D-114): números aleatorios del sistema (no hay /dev/urandom).
+[target.'cfg(windows)'.dependencies]
+getrandom = "0.3"
+
 [dev-dependencies]
 tempfile.workspace = true
 flate2 = "1"

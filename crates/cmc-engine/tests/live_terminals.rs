@@ -6,6 +6,8 @@
 //! su proceso, su entrada y salida, su tamaño y su ciclo de vida, sin
 //! interferencias; al cerrarlas no queda ningún proceso de la sesión dentro del
 //! contenedor (D-063). Todo lo creado lleva la etiqueta `cmc.test=true`.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

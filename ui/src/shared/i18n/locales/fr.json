@@ -392,6 +392,18 @@
       "other": {
         "title": "Erreur de connexion à Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop n'est pas démarré",
+        "body": "Le canal nommé de Docker (\\\\.\\pipe\\docker_engine) ne répond pas. Docker Desktop est installé, mais il n'a pas été lancé ou est encore en cours de démarrage."
+      },
+      "desktopNotInstalled": {
+        "title": "Docker Desktop ne semble pas installé",
+        "body": "Ni le canal nommé de Docker ni le programme docker.exe n'ont été trouvés."
+      },
+      "desktopPermission": {
+        "title": "Pas d'autorisation pour utiliser Docker Desktop",
+        "body": "Votre utilisateur ({{user}}) ne peut pas ouvrir le canal nommé de Docker. Docker Desktop ne l'autorise qu'aux membres du groupe local « docker-users »."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Vérifiez que le chemin est bien le socket de Docker et non celui d’un autre service.",
       "upgrade": "Mettez à jour Docker Engine vers la version 20.10 ou ultérieure.",
       "restart": "Redémarrez le service Docker :",
-      "retry": "Une fois le problème résolu, cliquez sur « Se reconnecter ». L’application réessaie aussi d’elle-même."
+      "retry": "Une fois le problème résolu, cliquez sur « Se reconnecter ». L’application réessaie aussi d’elle-même.",
+      "startDesktop": "Ouvrez Docker Desktop depuis le menu Démarrer et attendez qu'il indique que le moteur est démarré.",
+      "installDesktop": "Installez Docker Desktop pour Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Ajoutez votre utilisateur au groupe « docker-users » depuis une Invite de commandes ouverte en tant qu'administrateur :"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "{{count}} paquet a été désinstallé.",
     "done_other": "{{count}} paquets ont été désinstallés.",
     "doneSelf": "Container Manage Center n’est plus installé : fermez l’application.",
-    "stillInstalled": "Toujours installés : {{list}}."
+    "stillInstalled": "Toujours installés : {{list}}.",
+    "unsupportedWin": "Sous Windows, Container Manage Center se désinstalle depuis Paramètres Windows › Applications › Applications installées. Vos données sont conservées ; Docker Desktop n'est pas modifié."
   },
   "help": {
     "title": "Aide et documentation",
@@ -3170,7 +3186,12 @@
       "authBody": "Pour planifier la tâche, ces deux fichiers seront créés dans votre dossier systemd utilisateur et ces commandes seront exécutées. Aucun droit d'administrateur n'est nécessaire et rien n'est modifié dans le système.",
       "authAction": "Créer la planification",
       "commands": "Commandes",
-      "authCheck": "J'autorise la création de ces fichiers et l'exécution de ces commandes"
+      "authCheck": "J'autorise la création de ces fichiers et l'exécution de ces commandes",
+      "foreignWin": "Une tâche planifiée portant ce nom n'appartient pas à l'application : elle n'est pas modifiée.",
+      "problemWin": "Impossible d'interroger le Planificateur de tâches : {{problem}}",
+      "removeBodyWin": "La tâche planifiée de « {{name}} » sera supprimée du Planificateur de tâches. La tâche et ses copies sont conservées.",
+      "authBodyWin": "Pour planifier la tâche, cette tâche sera créée dans le Planificateur de tâches de Windows (dossier « Container Manage Center »), avec votre utilisateur et sans privilèges d'administrateur, et cette commande sera exécutée.",
+      "authCheckWin": "J'autorise la création de cette tâche planifiée"
     },
     "schedule": {
       "dailyAt": "Tous les jours à {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "Aucune connexion avec Docker Engine."
     },
     "fromAudit": "Sélection préparée depuis l’audit pour « {{name}} » : sa configuration, sa base de données s’il en est une et les volumes qu’il monte. Vérifiez-la avant de sauvegarder.",
-    "fromAuditGone": "« {{name}} » n’existe plus sur ce serveur : choisissez quoi sauvegarder."
+    "fromAuditGone": "« {{name}} » n’existe plus sur ce serveur : choisissez quoi sauvegarder.",
+    "noSystemdWin": "Le Planificateur de tâches de Windows (schtasks.exe) est introuvable : les tâches peuvent être lancées à la main, mais pas planifiées.",
+    "jobsHintWin": "Les tâches sont planifiées avec le Planificateur de tâches de Windows, qui les exécute même lorsque l'application est fermée (session ouverte). Si l'ordinateur était éteint à cette heure-là, la copie est faite dès que possible. Rien n'est créé sans votre autorisation expresse."
   },
   "monitor": {
     "intro": "Container Manage Center échantillonne avec « docker stats » et « inspect » (rien n’est installé sur le serveur). Les coupures de connexion apparaissent comme des trous : aucune donnée n’est inventée.",

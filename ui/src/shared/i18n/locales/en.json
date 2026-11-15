@@ -392,6 +392,18 @@
       "other": {
         "title": "Error connecting to Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop is not running",
+        "body": "The Docker pipe (\\\\.\\pipe\\docker_engine) does not respond. Docker Desktop is installed, but it has not been started or is still starting."
+      },
+      "desktopNotInstalled": {
+        "title": "Docker Desktop does not seem to be installed",
+        "body": "Neither the Docker pipe nor docker.exe was found."
+      },
+      "desktopPermission": {
+        "title": "No permission to use Docker Desktop",
+        "body": "Your user ({{user}}) cannot open the Docker pipe. Docker Desktop only lets members of the local “docker-users” group use it."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Check that the path is Docker's socket and not another service.",
       "upgrade": "Upgrade Docker Engine to 20.10 or later.",
       "restart": "Restart the Docker service:",
-      "retry": "Once fixed, press “Reconnect”. The app also retries on its own."
+      "retry": "Once fixed, press “Reconnect”. The app also retries on its own.",
+      "startDesktop": "Open Docker Desktop from the Start menu and wait until it shows that the engine is running.",
+      "installDesktop": "Install Docker Desktop for Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Add your user to the “docker-users” group from a Command Prompt opened as administrator:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "{{count}} package has been uninstalled.",
     "done_other": "{{count}} packages have been uninstalled.",
     "doneSelf": "Container Manage Center is no longer installed: close the application.",
-    "stillInstalled": "Still installed: {{list}}."
+    "stillInstalled": "Still installed: {{list}}.",
+    "unsupportedWin": "On Windows, Container Manage Center is uninstalled from Windows Settings › Apps › Installed apps. Your data is kept; Docker Desktop is not touched."
   },
   "help": {
     "title": "Help and documentation",
@@ -3170,7 +3186,12 @@
       "authBody": "To schedule the job, these two files will be created in your systemd user folder and these commands will be run. No administrator rights are needed and nothing in the system is touched.",
       "authAction": "Create the schedule",
       "commands": "Commands",
-      "authCheck": "I authorize creating these files and running these commands"
+      "authCheck": "I authorize creating these files and running these commands",
+      "foreignWin": "There is a scheduled task with that name that does not belong to the application: it is left untouched.",
+      "problemWin": "Task Scheduler could not be queried: {{problem}}",
+      "removeBodyWin": "The scheduled task for “{{name}}” will be removed from Task Scheduler. The job and its backups stay.",
+      "authBodyWin": "To schedule the job, this task will be created in Windows Task Scheduler (folder “Container Manage Center”), with your user and without administrator privileges, and this command will be run.",
+      "authCheckWin": "I authorise creating this scheduled task"
     },
     "schedule": {
       "dailyAt": "Every day at {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "There is no connection to Docker Engine."
     },
     "fromAudit": "Selection prepared from the audit for “{{name}}”: its configuration, its database if it is one, and the volumes it mounts. Review it before backing up.",
-    "fromAuditGone": "“{{name}}” no longer exists on this server: choose what to back up."
+    "fromAuditGone": "“{{name}}” no longer exists on this server: choose what to back up.",
+    "noSystemdWin": "Windows Task Scheduler (schtasks.exe) was not found: jobs can be run by hand, but not scheduled.",
+    "jobsHintWin": "Jobs are scheduled with Windows Task Scheduler, which runs them even when the application is closed (while you are signed in). If the computer was off at that time, the backup runs as soon as possible. Nothing is created without your explicit authorisation."
   },
   "monitor": {
     "intro": "Container Manage Center samples with “docker stats” and “inspect” (nothing is installed on the server). Connection drops show as gaps: no data is invented.",

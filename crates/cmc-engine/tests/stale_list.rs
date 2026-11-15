@@ -11,6 +11,8 @@
 //!
 //! Este servidor responde como lo haría Docker justo en esa ventana, de forma
 //! reproducible, para comprobar que la aplicación informa del estado real.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 use std::sync::{Arc, Mutex};
 

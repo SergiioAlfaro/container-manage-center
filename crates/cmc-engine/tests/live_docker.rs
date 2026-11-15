@@ -7,6 +7,8 @@
 //!
 //! Un proxy intercepta el tráfico del socket para comprobar que lo registrado
 //! en el panel de actividad es exactamente lo que viajó a Docker.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 use std::os::unix::fs::PermissionsExt;
 
@@ -182,6 +184,7 @@ async fn monitor_detects_loss_and_reconnects() {
     assert!(m.engine().await.is_ok());
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn socket_without_permission_is_diagnosed() {
     if !enabled() {
@@ -308,6 +311,7 @@ async fn state_of(engine: &cmc_engine::Engine, id: &str) -> String {
         .unwrap_or_else(|| "absent".into())
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn container_lifecycle_against_real_docker_matches_wire() {
     use cmc_engine::ContainerAction::*;
@@ -430,6 +434,7 @@ async fn container_lifecycle_against_real_docker_matches_wire() {
     proxy.stop();
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn concurrent_actions_on_same_container_are_rejected() {
     if !enabled() {
@@ -486,6 +491,7 @@ async fn invalid_container_reference_never_reaches_docker() {
     proxy.stop();
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn images_list_reports_real_usage() {
     if !enabled() {

@@ -36,7 +36,8 @@ pub const RECENT_MAX: usize = 2_000;
 pub const DOCKER_EVENT: &str = "docker://event";
 
 /// Carpeta de datos de la aplicación: `CMC_STATE_DIR`, o
-/// `$XDG_STATE_HOME/container-manage-center` con la configuración por defecto, o
+/// `$XDG_STATE_HOME/container-manage-center` (en Windows,
+/// `%LOCALAPPDATA%\container-manage-center`) con la configuración por defecto, o
 /// junto al archivo de configuración si se indicó otro (`CMC_CONFIG`, pruebas).
 pub fn state_dir(config_path: &Path) -> Option<PathBuf> {
     if let Some(d) = std::env::var_os("CMC_STATE_DIR") {
@@ -45,6 +46,10 @@ pub fn state_dir(config_path: &Path) -> Option<PathBuf> {
     let default_config =
         dirs::config_dir().map(|d| d.join(cmc_store::APP_DIR).join(cmc_store::CONFIG_FILE));
     if default_config.as_deref() == Some(config_path) {
+        // Windows (1.9.0): %LOCALAPPDATA%\container-manage-center.
+        #[cfg(windows)]
+        return dirs::data_local_dir().map(|d| d.join(cmc_store::APP_DIR));
+        #[cfg(unix)]
         return dirs::state_dir()
             .or_else(|| dirs::home_dir().map(|h| h.join(".local/state")))
             .map(|d| d.join(cmc_store::APP_DIR));

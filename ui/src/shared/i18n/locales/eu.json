@@ -392,6 +392,18 @@
       "other": {
         "title": "Errorea Dockerrekin konektatzean",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop ez dago martxan",
+        "body": "Docker-en kanalizazioak (\\\\.\\pipe\\docker_engine) ez du erantzuten. Docker Desktop instalatuta dago, baina ez da abiarazi edo oraindik abiarazten ari da."
+      },
+      "desktopNotInstalled": {
+        "title": "Badirudi Docker Desktop ez dagoela instalatuta",
+        "body": "Ez da aurkitu Docker-en kanalizazioa ezta docker.exe programa ere."
+      },
+      "desktopPermission": {
+        "title": "Ez dago baimenik Docker Desktop erabiltzeko",
+        "body": "Zure erabiltzaileak ({{user}}) ezin du Docker-en kanalizazioa ireki. Docker Desktop-ek «docker-users» talde lokaleko kideei bakarrik uzten die erabiltzen."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Egiaztatu bidea Dockerren socketari dagokiola eta ez beste zerbitzu bati.",
       "upgrade": "Eguneratu Docker Engine 20.10 bertsiora edo berriago batera.",
       "restart": "Berrabiarazi Docker zerbitzua:",
-      "retry": "Konpondu duzunean, sakatu «Konektatu berriro». Aplikazioa ere bere kabuz saiatzen da berriro."
+      "retry": "Konpondu duzunean, sakatu «Konektatu berriro». Aplikazioa ere bere kabuz saiatzen da berriro.",
+      "startDesktop": "Ireki Docker Desktop Hasiera menutik eta itxaron motorra martxan dagoela adierazi arte.",
+      "installDesktop": "Instalatu Docker Desktop Windows-erako (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Gehitu zure erabiltzailea «docker-users» taldera administratzaile gisa irekitako Komando-gonbitetik:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "Pakete {{count}} desinstalatu da.",
     "done_other": "{{count}} pakete desinstalatu dira.",
     "doneSelf": "Container Manage Center jada ez dago instalatuta: itxi aplikazioa.",
-    "stillInstalled": "Instalatuta jarraitzen dute: {{list}}."
+    "stillInstalled": "Instalatuta jarraitzen dute: {{list}}.",
+    "unsupportedWin": "Windows-en, Container Manage Center Windows-en Ezarpenak › Aplikazioak › Instalatutako aplikazioak ataletik desinstalatzen da. Zure datuak gordetzen dira; Docker Desktop ez da ukitzen."
   },
   "help": {
     "title": "Laguntza eta dokumentazioa",
@@ -3170,7 +3186,12 @@
       "authBody": "Ataza programatzeko bi fitxategi hauek sortuko dira zure erabiltzailearen systemd karpetan eta agindu hauek exekutatuko dira. Ez da administratzaile izan behar eta sistemako ezer ez da ukitzen.",
       "authAction": "Sortu programazioa",
       "commands": "Aginduak",
-      "authCheck": "Baimena ematen dut fitxategi hauek sortzeko eta agindu hauek exekutatzeko"
+      "authCheck": "Baimena ematen dut fitxategi hauek sortzeko eta agindu hauek exekutatzeko",
+      "foreignWin": "Izen hori duen ataza programatu bat dago, eta ez da aplikazioarena: ez da ukitzen.",
+      "problemWin": "Ezin izan da Ataza-programatzailea kontsultatu: {{problem}}",
+      "removeBodyWin": "«{{name}}» atazaren programazioa Ataza-programatzailetik kenduko da. Ataza eta haren kopiak geratzen dira.",
+      "authBodyWin": "Ataza programatzeko, ataza hau sortuko da Windows-en Ataza-programatzailean («Container Manage Center» karpetan), zure erabiltzailearekin eta administratzaile-pribilegiorik gabe, eta agindu hau exekutatuko da.",
+      "authCheckWin": "Ataza programatu hau sortzeko baimena ematen dut"
     },
     "schedule": {
       "dailyAt": "Egunero {{time}}etan",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "Ez dago konexiorik Docker Enginerekin."
     },
     "fromAudit": "Auditoriatik prestatutako hautapena «{{name}}»-rentzat: bere konfigurazioa, datu-basea bada bere datu-basea eta muntatzen dituen bolumenak. Berrikusi kopiatu aurretik.",
-    "fromAuditGone": "«{{name}}» ez dago jada zerbitzari honetan: aukeratu zer kopiatu."
+    "fromAuditGone": "«{{name}}» ez dago jada zerbitzari honetan: aukeratu zer kopiatu.",
+    "noSystemdWin": "Ez da aurkitu Windows-en Ataza-programatzailea (schtasks.exe): atazak eskuz exekuta daitezke, baina ezin dira programatu.",
+    "jobsHintWin": "Atazak Windows-en Ataza-programatzailearekin programatzen dira, eta aplikazioa itxita egon arren exekutatzen ditu (saioa hasita dagoenean). Ordu horretan ordenagailua itzalita bazegoen, kopia ahal bezain laster egiten da. Ez da ezer sortzen zure baimen espresurik gabe."
   },
   "monitor": {
     "intro": "Container Manage Center-ek «docker stats» eta «inspect» erabiliz hartzen ditu laginak (zerbitzarian ezer instalatu gabe). Konexio-etenak hutsune gisa ikusten dira: ez da daturik asmatzen.",

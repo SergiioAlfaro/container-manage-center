@@ -13,19 +13,31 @@
 //!   contesta con un error: nunca se responde «yes» por el usuario.
 //! - Se responde un número limitado de veces y el socket se borra al cerrar la
 //!   sesión SSH.
+//!
+//! En Windows (1.9.0, D-114) no hay sockets Unix con credenciales del que
+//! pregunta: se escucha en `127.0.0.1` en un puerto efímero y quien pregunta
+//! debe presentar primero un **testigo aleatorio** de 256 bits que solo
+//! conocen la aplicación y los `ssh` que lanza (en su entorno). El testigo no
+//! es el secreto: solo permite pedirlo las veces previstas mientras dura la
+//! sesión.
 
 use std::io::{Read, Write};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+#[cfg(unix)]
 use tokio::net::UnixListener;
 
 use super::profile::SecretKind;
 use super::Secret;
 
-/// Variable con la ruta del socket (no es un secreto).
+/// Variable con la ruta del socket (no es un secreto). En Windows,
+/// `127.0.0.1:<puerto>`.
 pub const SOCKET_ENV: &str = "CMC_ASKPASS_SOCKET";
+/// Windows: testigo que hay que presentar antes de la pregunta.
+pub const TOKEN_ENV: &str = "CMC_ASKPASS_TOKEN";
 const MAX_PROMPT: usize = 4096;
 
 /// A quién corresponde el secreto (E1, CMC-SEC-02, D-087): el usuario y los
@@ -96,6 +108,12 @@ pub fn prompt_matches(kind: SecretKind, prompt: &str, target: &PromptTarget) -> 
 }
 
 /// Crea (si falta) un directorio privado del usuario: 0700 y suyo.
+#[cfg(windows)]
+pub fn private_dir(dir: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dir)
+}
+
+#[cfg(unix)]
 pub fn private_dir(dir: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))?;
@@ -113,9 +131,92 @@ pub fn private_dir(dir: &Path) -> std::io::Result<()> {
 /// Servidor efímero que responde al programa askpass.
 pub struct AskpassServer {
     path: PathBuf,
+    /// Windows: testigo que presenta el programa askpass.
+    #[cfg(windows)]
+    token: String,
     task: tokio::task::JoinHandle<()>,
 }
 
+/// Lee la pregunta (hasta que el otro extremo cierra o se pasa del tamaño).
+async fn read_prompt<S: tokio::io::AsyncRead + Unpin>(stream: &mut S) -> Vec<u8> {
+    let mut buf = Vec::new();
+    let mut chunk = [0u8; 512];
+    loop {
+        match tokio::time::timeout(std::time::Duration::from_secs(5), stream.read(&mut chunk)).await
+        {
+            Ok(Ok(0)) | Err(_) | Ok(Err(_)) => break,
+            Ok(Ok(n)) => {
+                buf.extend_from_slice(&chunk[..n]);
+                if buf.len() > MAX_PROMPT {
+                    break;
+                }
+            }
+        }
+    }
+    buf
+}
+
+/// Compara sin cortar en la primera diferencia.
+#[cfg_attr(unix, allow(dead_code))]
+fn same_bytes(a: &[u8], b: &[u8]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+}
+
+#[cfg(windows)]
+impl AskpassServer {
+    pub async fn start(
+        _dir: &Path,
+        kind: SecretKind,
+        secret: Secret,
+        max_answers: usize,
+        target: PromptTarget,
+    ) -> std::io::Result<Self> {
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await?;
+        let addr = listener.local_addr()?;
+        let token = random_hex(32);
+        let expected = token.clone();
+        let task = tokio::spawn(async move {
+            let mut answered = 0;
+            while answered < max_answers {
+                let Ok((mut stream, peer)) = listener.accept().await else {
+                    break;
+                };
+                if !peer.ip().is_loopback() {
+                    continue;
+                }
+                let buf = read_prompt(&mut stream).await;
+                // «testigo\npregunta»
+                let Some(nl) = buf.iter().position(|b| *b == b'\n') else {
+                    continue;
+                };
+                if !same_bytes(&buf[..nl], expected.as_bytes()) {
+                    continue;
+                }
+                let prompt = String::from_utf8_lossy(&buf[nl + 1..]);
+                if prompt_matches(kind, &prompt, &target) {
+                    let _ = stream.write_all(secret.as_bytes()).await;
+                    answered += 1;
+                }
+                let _ = stream.shutdown().await;
+            }
+        });
+        Ok(Self {
+            path: PathBuf::from(addr.to_string()),
+            token,
+            task,
+        })
+    }
+
+    pub fn socket(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn token(&self) -> &str {
+        &self.token
+    }
+}
+
+#[cfg(unix)]
 impl AskpassServer {
     /// `max_answers`: respuestas como máximo (una autenticación necesita una).
     pub async fn start(
@@ -141,24 +242,7 @@ impl AskpassServer {
                 if stream.peer_cred().map(|c| c.uid()).ok() != Some(uid) {
                     continue;
                 }
-                let mut buf = Vec::new();
-                let mut chunk = [0u8; 512];
-                loop {
-                    match tokio::time::timeout(
-                        std::time::Duration::from_secs(5),
-                        stream.read(&mut chunk),
-                    )
-                    .await
-                    {
-                        Ok(Ok(0)) | Err(_) | Ok(Err(_)) => break,
-                        Ok(Ok(n)) => {
-                            buf.extend_from_slice(&chunk[..n]);
-                            if buf.len() > MAX_PROMPT {
-                                break;
-                            }
-                        }
-                    }
-                }
+                let buf = read_prompt(&mut stream).await;
                 let prompt = String::from_utf8_lossy(&buf);
                 if prompt_matches(kind, &prompt, &target) {
                     let _ = stream.write_all(secret.as_bytes()).await;
@@ -178,16 +262,20 @@ impl AskpassServer {
 impl Drop for AskpassServer {
     fn drop(&mut self) {
         self.task.abort();
+        #[cfg(unix)]
         let _ = std::fs::remove_file(&self.path);
     }
 }
 
-/// Hexadecimal aleatorio (de `/dev/urandom`).
+/// Hexadecimal aleatorio (de `/dev/urandom`; en Windows, del sistema).
 pub fn random_hex(bytes: usize) -> String {
     let mut buf = vec![0u8; bytes];
+    #[cfg(unix)]
     if let Ok(mut f) = std::fs::File::open("/dev/urandom") {
         let _ = f.read_exact(&mut buf);
     }
+    #[cfg(windows)]
+    let _ = getrandom::fill(&mut buf);
     buf.iter().map(|b| format!("{b:02x}")).collect()
 }
 
@@ -213,6 +301,26 @@ pub fn client_main() -> Option<i32> {
     Some(code)
 }
 
+#[cfg(windows)]
+fn ask(socket: &Path, prompt: &str) -> Option<Secret> {
+    let token = std::env::var(TOKEN_ENV).ok()?;
+    let addr: std::net::SocketAddr = socket.to_str()?.parse().ok()?;
+    if !addr.ip().is_loopback() {
+        return None;
+    }
+    let mut s = std::net::TcpStream::connect(addr).ok()?;
+    s.set_read_timeout(Some(std::time::Duration::from_secs(10)))
+        .ok()?;
+    s.write_all(token.as_bytes()).ok()?;
+    s.write_all(b"\n").ok()?;
+    s.write_all(prompt.as_bytes()).ok()?;
+    s.shutdown(std::net::Shutdown::Write).ok()?;
+    let mut answer = Secret::new(String::new());
+    s.read_to_string(&mut answer).ok()?;
+    Some(answer)
+}
+
+#[cfg(unix)]
 fn ask(socket: &Path, prompt: &str) -> Option<Secret> {
     let mut s = std::os::unix::net::UnixStream::connect(socket).ok()?;
     s.set_read_timeout(Some(std::time::Duration::from_secs(10)))
@@ -299,6 +407,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn serves_the_secret_only_for_its_prompt_and_at_most_twice() {
         let dir = tempfile::tempdir().unwrap();

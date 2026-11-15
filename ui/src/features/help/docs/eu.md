@@ -368,3 +368,15 @@ Lizentziaren testu osoa: https://www.gnu.org/licenses/gpl-3.0.html (baita `/usr/
 **Markak.** Container Manage Center proiektu independentea da: ez dago Docker, Inc. enpresari lotuta, eta enpresa horrek ez du babesten. «Docker» Docker, Inc.-en marka da, eta hemen aplikazioak erabiltzen duen teknologia izendatzeko soilik erabiltzen da (Docker Engine, haren APIa, Docker Compose eta Docker CLIa).
 
 Datu berak **Konfigurazioa › Lege-oharrak** atalean daude.
+
+## 29. Windows {#windows}
+
+Windows-en, Container Manage Center Linux-en bezala dabil, desberdintasun hauekin:
+
+- **Docker lokala**: **Docker Desktop**-ekin konektatzen da haren izendun kanalizazioaren bidez (`\\.\pipe\docker_engine`). Docker Desktop martxan egon behar da, eta zure erabiltzailea `docker-users` talde lokalean (Docker Desktop-en instalatzaileak gehitzen du).
+- **Urruneko zerbitzariak SSH bidez**: Windows-en OpenSSH bezeroa erabiltzen dute (`ssh.exe`, Windows 10 eta 11-n dator). Konexio multiplexatuak onartzen ez dituenez, eragiketa bakoitzak bere konexioa irekitzen du: lehen aldian zerbitzariaren identitatea egiaztatzen da Linux-en bezala, eta gordetako pasahitza edo pasaesaldia berez erabiltzen da. **Tarteko zerbitzariak** (ProxyJump) oraindik ez daude erabilgarri, eta **zerbitzariaren terminalean** leihoaren tamaina-aldaketa ez da zerbitzarira iristen.
+- **Gogoratutako pasahitzak**: Windows-en **Kredentzial-kudeatzailean** (Windows-en kredentzialak), `container-manage-center/…` izenarekin.
+- **Programatutako kopiak**: **Ataza-programatzailearekin**, «Container Manage Center» karpetan, zure erabiltzailearekin eta administratzaile-pribilegiorik gabe. Saioa hasita dagoenean exekutatzen dira; ordu horretan ordenagailua itzalita bazegoen, kopia ahal bezain laster egiten da.
+- **Jakinarazpenak**: sistemarenak (jakinarazpen-zentroa).
+- **Datuak**: konfigurazioa `%APPDATA%\container-manage-center` karpetan eta historia `%LOCALAPPDATA%\container-manage-center` karpetan.
+- **Desinstalatu**: Windows-en Ezarpenak › Aplikazioak › Instalatutako aplikazioak ataletik. Zure datuak eta Docker Desktop ez dira ukitzen. «Desinstalazioa eta osagaiak» atala Debian eta Ubuntu-n bakarrik dago.

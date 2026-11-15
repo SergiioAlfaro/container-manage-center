@@ -11,6 +11,8 @@
 //!
 //! Este servidor responde como Docker en esa ventana: el listado da el estado
 //! antiguo de cada contenedor hasta que se consulta con inspect.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};

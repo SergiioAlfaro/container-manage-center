@@ -9,6 +9,29 @@ const perms = (over: Partial<{ group: string; userInGroup: boolean; groupActiveI
   permissions: { socketPath: "/var/run/docker.sock", owner: "root", group: "docker", mode: "660", userInGroup: false, groupActiveInSession: false, ...over },
 });
 
+describe("explain en Windows (1.9.0)", () => {
+  it("sin Docker Desktop en marcha o sin instalar: abrirlo o instalarlo, sin órdenes de Linux", () => {
+    const off = explain(diagnosis({ kind: "noSocket" }, { installation: { cliPath: "C:\\Program Files\\Docker\\docker.exe", daemonPath: null, rootlessTools: false } }), true);
+    expect(off.problem).toBe("desktopNotRunning");
+    expect(off.steps.map((s) => s.key)).toEqual(["startDesktop", "retry"]);
+    const none = explain(diagnosis({ kind: "noSocket" }, { installation: { cliPath: null, daemonPath: null, rootlessTools: false } }), true);
+    expect(none.problem).toBe("desktopNotInstalled");
+    expect(none.steps.map((s) => s.key)).toEqual(["installDesktop", "startDesktop", "retry"]);
+    for (const e of [off, none]) expect(e.steps.some((s) => s.command?.includes("sudo") || s.command?.includes("systemctl"))).toBe(false);
+  });
+
+  it("sin permiso: grupo docker-users de Windows", () => {
+    const e = explain(diagnosis(perms()), true);
+    expect(e.problem).toBe("desktopPermission");
+    expect(e.steps[0]!.command).toBe('net localgroup docker-users "sergio" /add');
+    expect(e.groupWarning).toBeUndefined();
+  });
+
+  it("en Linux no cambia nada", () => {
+    expect(explain(diagnosis(perms()), false).problem).toBe("permissionDenied");
+  });
+});
+
 describe("explain", () => {
   it("permiso denegado fuera del grupo: propone usermod, reinicio de sesión y aviso de seguridad", () => {
     const e = explain(diagnosis(perms()));

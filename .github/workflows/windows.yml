@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
+# Instalador de Windows con MSVC (1.9.0, D-114).
+#
+# Solo se ejecuta a mano (workflow_dispatch): hasta que el propietario decida
+# cómo cumplir la GPL v3 con WebView2Loader (binario de Microsoft sin código
+# fuente publicado, ver docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md), el
+# instalador que se genera es SOLO PARA PRUEBAS y se guarda como artefacto
+# privado de la ejecución; no se publica en ninguna versión (release).
+name: windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  PYTHONUTF8: "1"
+  WEBVIEW2_SDK: "1.0.3650.58"
+
+jobs:
+  tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      - name: Interfaz (tipos, lint y pruebas)
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+      - name: Rust (clippy y pruebas en Windows)
+        run: |
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+          cargo test --workspace --locked
+
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      - run: cargo fetch --locked
+
+      - name: Licencia original de WebView2Loader (paquete NuGet)
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/${WEBVIEW2_SDK}/microsoft.web.webview2.${WEBVIEW2_SDK}.nupkg"
+          curl -fsSL -o webview2.nupkg "$url"
+          mkdir -p webview2-nupkg
+          unzip -q webview2.nupkg -d webview2-nupkg
+          lic=$(find webview2-nupkg -maxdepth 1 -iname 'LICENSE*' | head -1)
+          test -n "$lic"
+          # Mismo texto salvo espacios y saltos de línea.
+          norm() { tr -s '[:space:]' ' ' < "$1" | sed 's/^ //;s/ $//'; }
+          if [ "$(norm "$lic")" != "$(norm packaging/windows/licenses/WebView2Loader.LICENSE.txt)" ]; then
+            echo "::error::La licencia del paquete NuGet no coincide con packaging/windows/licenses/WebView2Loader.LICENSE.txt"
+            diff -u -w packaging/windows/licenses/WebView2Loader.LICENSE.txt "$lic" || true
+            exit 1
+          fi
+          echo "La licencia de WebView2Loader coincide con la del paquete NuGet ${WEBVIEW2_SDK}"
+
+      - name: Avisos de terceros para MSVC
+        shell: bash
+        env:
+          CMC_LICENSE_TARGET: x86_64-pc-windows-msvc
+        run: python scripts/third-party-licenses.py --windows
+
+      - name: Compilar el instalador NSIS
+        run: npx tauri build --bundles nsis --ci
+
+      - name: Nombre de prueba y sumas
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          for f in target/release/bundle/nsis/*.exe; do
+            cp "$f" "out/$(basename "$f" .exe)-msvc-SOLO-PRUEBAS.exe"
+          done
+          cp docs/legal/THIRD_PARTY_NOTICES-windows.md docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md out/
+          (cd out && sha256sum -- * > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: container-manage-center-windows-SOLO-PRUEBAS
+          path: out/
+          retention-days: 14

@@ -392,6 +392,18 @@
       "other": {
         "title": "Error al conectar con Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop no está en marcha",
+        "body": "No responde la tubería de Docker (\\\\.\\pipe\\docker_engine). Docker Desktop está instalado, pero no se ha iniciado o todavía está arrancando."
+      },
+      "desktopNotInstalled": {
+        "title": "Docker Desktop no parece estar instalado",
+        "body": "No se ha encontrado la tubería de Docker ni el programa docker.exe."
+      },
+      "desktopPermission": {
+        "title": "Sin permiso para usar Docker Desktop",
+        "body": "Tu usuario ({{user}}) no puede abrir la tubería de Docker. Docker Desktop solo deja usarla a los miembros del grupo local «docker-users»."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Comprueba que la ruta corresponde al socket de Docker y no a otro servicio.",
       "upgrade": "Actualiza Docker Engine a la versión 20.10 o posterior.",
       "restart": "Reinicia el servicio de Docker:",
-      "retry": "Cuando lo hayas resuelto, pulsa «Volver a conectar». La aplicación también lo reintenta sola."
+      "retry": "Cuando lo hayas resuelto, pulsa «Volver a conectar». La aplicación también lo reintenta sola.",
+      "startDesktop": "Abre Docker Desktop desde el menú Inicio y espera a que indique que el motor está en marcha.",
+      "installDesktop": "Instala Docker Desktop para Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Añade tu usuario al grupo «docker-users» desde un Símbolo del sistema abierto como administrador:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "Se ha desinstalado {{count}} paquete.",
     "done_other": "Se han desinstalado {{count}} paquetes.",
     "doneSelf": "Container Manage Center ya no está instalado: cierra la aplicación.",
-    "stillInstalled": "Siguen instalados: {{list}}."
+    "stillInstalled": "Siguen instalados: {{list}}.",
+    "unsupportedWin": "En Windows, Container Manage Center se desinstala desde Configuración de Windows › Aplicaciones › Aplicaciones instaladas. Tus datos se conservan; Docker Desktop no se toca."
   },
   "help": {
     "title": "Ayuda y documentación",
@@ -3170,7 +3186,12 @@
       "authBody": "Para programar la tarea se crearán estos dos archivos en tu carpeta de systemd de usuario y se ejecutarán estas órdenes. No hace falta ser administrador y no se toca nada del sistema.",
       "authAction": "Crear la programación",
       "commands": "Órdenes",
-      "authCheck": "Autorizo crear estos archivos y ejecutar estas órdenes"
+      "authCheck": "Autorizo crear estos archivos y ejecutar estas órdenes",
+      "foreignWin": "Hay una tarea programada con ese nombre que no es de la aplicación: no se toca.",
+      "problemWin": "No se pudo consultar el Programador de tareas: {{problem}}",
+      "removeBodyWin": "Se eliminará la tarea programada de «{{name}}» del Programador de tareas. La tarea y sus copias se quedan.",
+      "authBodyWin": "Para programar la tarea se creará esta tarea en el Programador de tareas de Windows (carpeta «Container Manage Center»), con tu usuario y sin privilegios de administrador, y se ejecutará esta orden.",
+      "authCheckWin": "Autorizo crear esta tarea programada"
     },
     "schedule": {
       "dailyAt": "Cada día a las {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "No hay conexión con Docker Engine."
     },
     "fromAudit": "Selección preparada desde la auditoría para «{{name}}»: su configuración, su base de datos si lo es y los volúmenes que monta. Revísala antes de copiar.",
-    "fromAuditGone": "«{{name}}» ya no existe en este servidor: elige qué copiar."
+    "fromAuditGone": "«{{name}}» ya no existe en este servidor: elige qué copiar.",
+    "noSystemdWin": "No se encuentra el Programador de tareas de Windows (schtasks.exe): las tareas se pueden ejecutar a mano, pero no programar.",
+    "jobsHintWin": "Las tareas se programan con el Programador de tareas de Windows, que las ejecuta aunque la aplicación esté cerrada (con tu sesión iniciada). Si el equipo estaba apagado a esa hora, la copia se hace en cuanto se pueda. Nada se crea sin tu autorización expresa."
   },
   "monitor": {
     "intro": "Container Manage Center toma muestras con «docker stats» e «inspect» (sin instalar nada en el servidor). Los cortes de conexión se ven como huecos: no se inventan datos.",

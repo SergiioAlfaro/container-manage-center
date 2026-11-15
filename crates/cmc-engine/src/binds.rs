@@ -9,7 +9,8 @@
 //! Docker no permite añadir montajes a un contenedor que ya existe: vincular
 //! una carpeta es crear un contenedor (el asistente de contenedores).
 
-use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
+#[cfg(unix)]
+use std::os::unix::fs::{FileTypeExt, MetadataExt};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -110,7 +111,7 @@ pub fn host_path_info(path: &str) -> HostPathInfo {
                 PathKind::Directory
             } else if ft.is_file() {
                 PathKind::File
-            } else if ft.is_socket() {
+            } else if is_socket(&ft) {
                 PathKind::Socket
             } else {
                 PathKind::Other
@@ -123,10 +124,14 @@ pub fn host_path_info(path: &str) -> HostPathInfo {
                 // Sockets y dispositivos: se informa solo de permisos.
                 false
             };
+            #[cfg(unix)]
+            let uid = Some(m.uid());
+            #[cfg(windows)]
+            let uid = None;
             HostPathInfo {
                 kind,
-                uid: Some(m.uid()),
-                mode: Some(m.permissions().mode() & 0o7777),
+                uid,
+                mode: Some(crate::fsx::mode_of(&m, 0o755)),
                 readable,
             }
         }
@@ -366,10 +371,22 @@ impl Engine {
     }
 }
 
+fn is_socket(ft: &std::fs::FileType) -> bool {
+    #[cfg(unix)]
+    return ft.is_socket();
+    #[cfg(windows)]
+    {
+        let _ = ft;
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::containers::MountPoint;
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
 
     #[test]
     fn risks() {
@@ -396,6 +413,7 @@ mod tests {
         assert_eq!(risk_of("/home/ana/proyecto"), None);
     }
 
+    #[cfg(unix)]
     #[test]
     fn host_paths_are_inspected_for_real() {
         let d = tempfile::tempdir().unwrap();

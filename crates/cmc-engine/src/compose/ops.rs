@@ -46,7 +46,7 @@ pub struct ComposeConfig {
 /// Directorio vacío en el que se ejecuta Compose, para que nunca cargue por
 /// accidente un `compose.yaml` del directorio actual de la aplicación.
 fn neutral_dir() -> Result<PathBuf, EngineError> {
-    use std::os::unix::fs::{DirBuilderExt, MetadataExt};
+    use crate::fsx::DirBuilderExt;
     let base = std::env::var_os("XDG_RUNTIME_DIR")
         .map(PathBuf::from)
         .filter(|p| p.is_dir())
@@ -67,7 +67,15 @@ fn neutral_dir() -> Result<PathBuf, EngineError> {
     let empty = std::fs::read_dir(&dir)
         .map(|mut r| r.next().is_none())
         .unwrap_or(false);
-    if !meta.is_dir() || meta.uid() != crate::sys::uid() || !empty {
+    #[cfg(unix)]
+    let own = {
+        use std::os::unix::fs::MetadataExt;
+        meta.uid() == crate::sys::uid()
+    };
+    // Windows: la carpeta temporal está en el perfil del usuario.
+    #[cfg(windows)]
+    let own = true;
+    if !meta.is_dir() || !own || !empty {
         return Err(EngineError::Other {
             message: format!(
                 "{} no es una carpeta vacía propia; no se ejecuta Compose desde ella",
@@ -537,10 +545,12 @@ pub fn action_command(cli: &ComposeCli, project: &ProjectRef, action: &ComposeAc
     cmc_activity::quote::render_argv(&cli.program, &action_args(cli, project, action))
 }
 
-#[cfg(test)]
+// Pruebas con permisos, enlaces o sockets de Unix: solo en Linux (D-114).
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     #[test]
     fn compose_runs_from_an_empty_private_folder() {
         let d = neutral_dir().unwrap();

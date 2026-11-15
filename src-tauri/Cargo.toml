@@ -10,7 +10,9 @@ default-run = "container-manage-center"
 
 [lib]
 name = "cmc_app"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Solo escritorio: sin `cdylib` ni `staticlib` (para móviles), que además
+# superan el límite de 65535 exportaciones de MinGW en Windows (D-114).
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -39,16 +41,25 @@ cmc-engine.workspace = true
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
 semver = "1"
 libc = "0.2"
-# Notificaciones de escritorio por D-Bus (1.5.0); ya estaba en el árbol por el llavero.
-zbus = { version = "5", default-features = false, features = ["tokio"] }
 # Historial de APT rotado (history.log.N.gz) para «Desinstalación y componentes» (0.9.1).
 flate2 = "1"
 # Abrir el perfil de GitHub del autor desde «Ayuda» (0.9.1): solo esa URL, limitada en capabilities/default.json.
 tauri-plugin-opener = "2"
+zeroize = "1"
+
+[target.'cfg(unix)'.dependencies]
+# Notificaciones de escritorio por D-Bus (1.5.0); ya estaba en el árbol por el llavero.
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 # Secretos de servidores remotos en el keyring del sistema (0.10.0, D-077): Secret
 # Service por D-Bus en Rust puro (zbus), sin bibliotecas nativas nuevas.
 secret-service = { version = "5", default-features = false, features = ["rt-tokio-crypto-rust"] }
-zeroize = "1"
+
+# Windows (1.9.0, D-114): secretos en el Administrador de credenciales y
+# notificaciones del sistema. Crates de Microsoft que ya estaban en el árbol
+# (Tauri los usa); solo se activan sus módulos.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security_Credentials"] }
+windows = { version = "0.62", features = ["UI_Notifications", "Data_Xml_Dom"] }
 
 [dev-dependencies]
 tempfile.workspace = true

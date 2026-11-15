@@ -666,6 +666,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn stale_socket_reports_daemon_not_running() {
         let dir = tempfile::tempdir().unwrap();
@@ -685,6 +686,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn socket_that_is_not_docker_is_reported_and_recorded() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};

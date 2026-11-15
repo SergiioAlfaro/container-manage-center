@@ -4,14 +4,61 @@
 //! Permite distinguir "no existe", "sin permiso" y "daemon detenido", que la
 //! librería HTTP mezclaría en un único error de E/S.
 
+#[cfg(unix)]
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::time::Duration;
 
 use crate::model::{ProbeResult, SocketPermissions};
+#[cfg(unix)]
 use crate::sys;
 
 pub const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
+/// Windows (1.9.0, D-114): una tubería con nombre no es un archivo; se
+/// intenta abrir. Si no existe, Docker Desktop no está en marcha.
+#[cfg(windows)]
+pub async fn probe(path: &str) -> ProbeResult {
+    use tokio::net::windows::named_pipe::ClientOptions;
+    // ERROR_FILE_NOT_FOUND, ERROR_ACCESS_DENIED, ERROR_PIPE_BUSY.
+    const NOT_FOUND: i32 = 2;
+    const ACCESS_DENIED: i32 = 5;
+    const PIPE_BUSY: i32 = 231;
+    let deadline = tokio::time::Instant::now() + PROBE_TIMEOUT;
+    loop {
+        match ClientOptions::new().open(path) {
+            Ok(_) => return ProbeResult::Reachable,
+            Err(e) => match e.raw_os_error() {
+                Some(NOT_FOUND) => return ProbeResult::Missing,
+                Some(ACCESS_DENIED) => return ProbeResult::PermissionDenied,
+                Some(PIPE_BUSY) if tokio::time::Instant::now() < deadline => {
+                    tokio::time::sleep(Duration::from_millis(50)).await;
+                }
+                Some(PIPE_BUSY) => return ProbeResult::Reachable,
+                _ => {
+                    return ProbeResult::Error {
+                        message: e.to_string(),
+                    }
+                }
+            },
+        }
+    }
+}
+
+/// Windows: los permisos de la tubería son los de Docker Desktop (grupo
+/// «docker-users»); no hay propietario ni modo de Unix que mostrar.
+#[cfg(windows)]
+pub fn permissions(path: &str) -> SocketPermissions {
+    SocketPermissions {
+        socket_path: path.to_owned(),
+        owner: String::new(),
+        group: "docker-users".into(),
+        mode: String::new(),
+        user_in_group: false,
+        group_active_in_session: false,
+    }
+}
+
+#[cfg(unix)]
 pub async fn probe(path: &str) -> ProbeResult {
     let meta = match tokio::fs::metadata(path).await {
         Ok(m) => m,
@@ -44,6 +91,7 @@ pub async fn probe(path: &str) -> ProbeResult {
 }
 
 /// Propietario, grupo y permisos del socket, y si el usuario puede usar ese grupo.
+#[cfg(unix)]
 pub fn permissions(path: &str) -> SocketPermissions {
     let meta = std::fs::metadata(path).ok();
     let (uid, gid, mode) = meta
@@ -84,6 +132,7 @@ mod tests {
         assert_eq!(probe(p.to_str().unwrap()).await, ProbeResult::NotASocket);
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn listening_socket_is_reachable_and_stale_socket_is_refused() {
         let dir = tempfile::tempdir().unwrap();
@@ -95,6 +144,7 @@ mod tests {
         assert_eq!(probe(&path).await, ProbeResult::Refused);
     }
 
+    #[cfg(unix)]
     #[test]
     fn permissions_reports_mode() {
         let dir = tempfile::tempdir().unwrap();

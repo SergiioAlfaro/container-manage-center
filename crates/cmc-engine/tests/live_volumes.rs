@@ -4,6 +4,8 @@
 //! listado con contenedores, tamaño, inspección, eliminación, limpieza) y
 //! directorios vinculados. Todo lo creado lleva la etiqueta `cmc.test=true` y
 //! se elimina al terminar, aunque la prueba falle.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

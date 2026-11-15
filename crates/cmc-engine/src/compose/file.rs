@@ -7,8 +7,8 @@
 //! temporal en la misma carpeta y `rename`), conserva los permisos y se niega
 //! a sobrescribir un archivo que ha cambiado desde que se leyó.
 
+use crate::fsx::OpenOptionsExt;
 use std::io::Write;
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -175,11 +175,7 @@ pub fn save(path: &str, content: &str, expected_version: &str) -> Result<Compose
     if !current.writable {
         return Err(invalid(format!("no tienes permiso para escribir {path}")));
     }
-    let mode = std::fs::metadata(&p)
-        .map_err(|e| io(&p, e))?
-        .permissions()
-        .mode()
-        & 0o7777;
+    let mode = crate::fsx::mode_of(&std::fs::metadata(&p).map_err(|e| io(&p, e))?, 0o644);
     let dir = p.parent().ok_or_else(|| invalid("ruta sin carpeta"))?;
     let name = p
         .file_name()
@@ -195,7 +191,7 @@ pub fn save(path: &str, content: &str, expected_version: &str) -> Result<Compose
         f.write_all(content.as_bytes())?;
         f.sync_all()?;
         // `mode` del open se ve afectado por umask: se fija explícitamente.
-        std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(mode))?;
+        crate::fsx::set_mode(&tmp, mode)?;
         std::fs::rename(&tmp, &p)
     };
     if let Err(e) = write() {
@@ -257,6 +253,8 @@ pub fn create(dir: &str, content: &str) -> Result<ComposeFile, EngineError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
 
     /// `tempfile` crea `.tmpXXXX` (carpeta oculta, rechazada por la política).
     fn tmp() -> tempfile::TempDir {
@@ -266,6 +264,7 @@ mod tests {
             .unwrap()
     }
 
+    #[cfg(unix)]
     #[test]
     fn read_and_save_with_conflict_detection() {
         let d = tmp();
@@ -383,6 +382,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[test]
     fn symlinks_are_checked_by_their_real_target_and_kept_on_save() {
         let d = tmp();
@@ -427,6 +427,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn create_checks_the_folder() {
         let d = tmp();

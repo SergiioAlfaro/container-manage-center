@@ -16,7 +16,7 @@
 //! - **Compose y configuración**: los archivos se escriben en una carpeta
 //!   nueva; nada se sobrescribe.
 
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
+use crate::fsx::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 
 use bollard::models::ContainerCreateBody;

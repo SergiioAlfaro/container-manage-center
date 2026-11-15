@@ -368,3 +368,15 @@ Texto completo de la licencia: https://www.gnu.org/licenses/gpl-3.0.html (tambi�
 **Marcas.** Container Manage Center es un proyecto independiente: no está afiliado a Docker, Inc. ni ha sido respaldado por ella. «Docker» es una marca de Docker, Inc. y aquí solo se usa para nombrar la tecnología con la que trabaja la aplicación (Docker Engine, su API, Docker Compose y la CLI de Docker).
 
 Los mismos datos están en **Configuración › Legal**.
+
+## 29. Windows {#windows}
+
+En Windows, Container Manage Center funciona igual que en Linux, con estas diferencias:
+
+- **Docker local**: se conecta con **Docker Desktop** por su tubería con nombre (`\\.\pipe\docker_engine`). Docker Desktop tiene que estar en marcha, y tu usuario, en el grupo local `docker-users` (lo añade el instalador de Docker Desktop).
+- **Servidores remotos por SSH**: usan el cliente OpenSSH de Windows (`ssh.exe`, incluido en Windows 10 y 11). Como no admite conexiones multiplexadas, cada operación abre su propia conexión: la primera vez se comprueba la identidad del servidor igual que en Linux, y la contraseña o la frase de paso guardada se usa sola. Los **servidores intermedios** (ProxyJump) todavía no están disponibles, y en la **terminal del servidor** el cambio de tamaño de la ventana no llega al servidor.
+- **Contraseñas recordadas**: en el **Administrador de credenciales** de Windows (credenciales de Windows), con el nombre `container-manage-center/…`.
+- **Copias programadas**: con el **Programador de tareas**, en la carpeta «Container Manage Center», con tu usuario y sin privilegios de administrador. Se ejecutan con tu sesión iniciada; si el equipo estaba apagado a esa hora, la copia se hace en cuanto se pueda.
+- **Notificaciones**: las del sistema (centro de notificaciones).
+- **Datos**: configuración en `%APPDATA%\container-manage-center` e historial en `%LOCALAPPDATA%\container-manage-center`.
+- **Desinstalar**: desde Configuración de Windows › Aplicaciones › Aplicaciones instaladas. Tus datos y Docker Desktop no se tocan. El apartado «Desinstalación y componentes» solo existe en Debian y Ubuntu.

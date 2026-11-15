@@ -1,6 +1,7 @@
 # Instalación
 
 Plataformas soportadas: **Debian 12 o superior** y **Ubuntu 22.04 o superior** (x86_64).
+En pruebas: **Windows 10 y 11** (x86_64), ver la [opción D](#opción-d-windows-10-y-11-x86_64--en-pruebas).
 Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o rootless.
 
 ## Opción A: paquete .deb (recomendada)
@@ -15,8 +16,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `container-manage-center_1.7.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `container-manage-center_1.7.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `container-manage-center_1.9.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `container-manage-center_1.9.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -62,7 +63,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./container-manage-center_1.7.0_amd64.deb
+sudo apt install ./container-manage-center_1.9.0_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -136,6 +137,52 @@ El paquete resultante se instala y funciona en Debian 12, Debian 13, Ubuntu 22.0
 y Ubuntu 24.04. Necesita Docker, Node.js y Rust en el equipo. La primera vez
 descarga la imagen `ubuntu:22.04` y unos 700 MB de paquetes de compilación.
 
+## Opción D: Windows 10 y 11 (x86_64) — en pruebas
+
+> **Solo para pruebas.** El instalador de Windows incluye un componente de
+> Microsoft (WebView2Loader, BSD-3-Clause) cuyo código fuente no está
+> publicado. Hasta que el propietario decida cómo cumplir la GPL v3 con él
+> (`docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md`), el instalador no se
+> publica ni se redistribuye. La versión de Windows **no se ha probado todavía
+> en un Windows real**: la guía es `docs/validation/VALIDACION-WINDOWS.md`.
+
+Instalación para el usuario actual (sin permisos de administrador) en
+`%LOCALAPPDATA%\Container Manage Center`, con acceso en el menú Inicio. Si
+falta el WebView2 Runtime de Microsoft Edge (Windows 11 y Windows 10 al día ya
+lo tienen), el instalador lo descarga.
+
+Requisitos:
+- **Docker Desktop** (con el motor de Linux) para el equipo local: la
+  aplicación usa `\\.\pipe\docker_engine` o `\\.\pipe\dockerDesktopLinuxEngine`.
+  Tu usuario debe estar en el grupo `docker-users`.
+- **OpenSSH de Windows** (`ssh.exe`, característica opcional «Cliente OpenSSH»,
+  incluida por defecto en Windows 10 1809+ y Windows 11) para los servidores
+  remotos. ProxyJump no está disponible en Windows.
+
+Diferencias con Linux: contraseñas en el **Administrador de credenciales** de
+Windows; copias programadas en el **Programador de tareas** (carpeta
+`\Container Manage Center\`); configuración en `%APPDATA%\container-manage-center`
+y estado en `%LOCALAPPDATA%\container-manage-center`.
+
+Compilar:
+
+```bash
+# En Linux, con MinGW-w64 (instalador de prueba):
+sudo apt install gcc-mingw-w64-x86-64 nsis
+bash scripts/build-windows.sh       # resultado: target/windows-installer/
+```
+
+```powershell
+# En Windows, con Rust (MSVC), Node.js 22 y las herramientas de compilación de Visual Studio:
+npm ci
+npx tauri build --bundles nsis      # resultado: target\release\bundle\nsis\
+```
+
+También hay un flujo de GitHub Actions (`.github/workflows/windows.yml`, se
+lanza a mano) que pasa las pruebas en Windows, comprueba la licencia de
+WebView2Loader con la del paquete NuGet de Microsoft y guarda el instalador
+como artefacto privado de la ejecución.
+
 ## Acceso a Docker
 
 La aplicación habla con Docker Engine por su **socket Unix** y necesita que tu
@@ -175,7 +222,7 @@ Socket personalizado**. "Probar conexión" comprueba una ruta sin guardarla.
 
 La aplicación funciona sin Docker Compose, pero el apartado **Docker Compose**
 lo necesita (si falta, el apartado explica cómo instalarlo) y
-la verificación (`scripts/verify-evolution-1.8.0.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
+la verificación (`scripts/verify-evolution-1.9.0.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
 (`docker compose`) o como binario independiente (`docker-compose` v2). Compose
 v1 (`docker-compose 1.x`) no se admite.
 

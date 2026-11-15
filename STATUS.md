@@ -6,11 +6,11 @@
 
 | | |
 |---|---|
-| **Etapa actual** | 1.8.0: el nombre anterior desaparece, con migración de los datos (D-113) |
-| **Versión** | 1.8.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación manual de la 1.8.0 en Debian 13 |
+| **Etapa actual** | 1.9.0: versión de Windows, en pruebas (D-114) |
+| **Versión** | 1.9.0 |
+| **Estado** | Linux: verificada automáticamente, sin cambios de funcionamiento. Windows: compila y genera el instalador, **sin probar en un Windows real**; instalador solo de pruebas hasta la decisión sobre WebView2Loader |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | Solo lo nuevo de la 1.8.0 ([guía](docs/validation/VALIDACION-1.8.0.md)) |
+| **Pendiente de validar** | Lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md)) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -33,6 +33,7 @@
 | Evolución E2–E6 (1.2.0–1.6.0) | **Validadas** (confirmadas por el propietario en la solicitud de la 1.7.0, 2026-11-15) |
 | 1.7.0. Identidad Container Manage Center, licencia y copyright | **Validada** (confirmada por el propietario, 2026-11-15) |
 | 1.8.0. Fin del nombre anterior, con migración de los datos | Implementada y verificada automáticamente; pendiente de la validación manual |
+| 1.9.0. Versión de Windows (en pruebas) | Compilada y verificada automáticamente en Linux; sin probar en Windows; instalador solo de pruebas |
 
 ---
 
@@ -1411,11 +1412,35 @@ Fecha: 2026-11-15. Decisión D-113 (del propietario: eliminar por completo el no
 - Las copias programadas creadas antes de la 1.8.0 no se ejecutan entre una instalación con `apt` a mano y la primera vez que se abre la aplicación (o `--migrate`); con `install.sh` no hay ese intervalo.
 - Debian 12 y 13 sin probar aquí.
 
+## 1.9.0 · Versión de Windows (en pruebas)
+
+Fecha: 2026-11-15. Decisión D-114 (del propietario: versión de Windows completa, compilada aquí con MinGW y con MSVC en GitHub Actions).
+
+### Hecho
+- El mismo código para Windows 10/11 x86_64 (detrás de `cfg(windows)`): Docker Desktop por tuberías con nombre, SSH con el OpenSSH de Windows sin ControlMaster (askpass por `127.0.0.1` con testigo aleatorio), Administrador de credenciales, Programador de tareas, notificaciones de Windows, sin ventanas de consola. Textos de Windows en el diagnóstico, los componentes y las copias programadas; sección «Windows» en la ayuda (8 idiomas).
+- Instalador NSIS para el usuario actual (`tauri.windows.conf.json`), con la licencia, los avisos de terceros de Windows y los textos de WebView2Loader y MinGW-w64/libgcc. `scripts/build-windows.sh` (MinGW desde Linux) y `.github/workflows/windows.yml` (MSVC, manual, sin publicar versiones).
+- `scripts/third-party-licenses.py --windows`: `THIRD_PARTY_NOTICES-windows.md` y `DEPENDENCY_LICENSE_AUDIT-windows.md` (WebView2Loader en la clase 4, pendiente).
+- Cambios que afectan a Linux, sin efecto en su funcionamiento: la biblioteca de la aplicación se compila solo como `rlib` (sin `cdylib`/`staticlib` de móviles, que con MinGW superaba el límite de exportaciones) y las pruebas que usan permisos, enlaces o sockets de Unix se marcan `cfg(unix)`.
+- `verify-evolution-1.9.0.sh` sustituye al de la 1.8.0 y añade las comprobaciones de Windows.
+
+### Verificación automática (entorno de desarrollo)
+- `verify-evolution-1.9.0.sh` con Docker 29.9.2 (`--deb --net --ssh-lab`): **171 correctas, 0 fallos**, 4 omitidas (las mismas que en la 1.8.0); Docker 26 y 24: ver `INFORME-1.9.0.md` de la entrega.
+- `cargo clippy -D warnings` de todo el código (también las pruebas) para `x86_64-pc-windows-gnu`: sin avisos.
+- Instalador generado con MinGW-w64 (5,1 MiB): solo depende de bibliotecas de Windows y de `WebView2Loader.dll`, que va en el instalador junto con los textos legales.
+
+### Limitaciones
+- **No se ha ejecutado en Windows**: nada de lo de Windows está probado en funcionamiento.
+- Sin ProxyJump en Windows; terminal del servidor sin cambio de tamaño.
+- Instalador sin firmar (SmartScreen avisará).
+- El flujo de GitHub Actions no se ha ejecutado (no hay repositorio remoto configurado aquí).
+
 ## Próximos pasos
 
-1. El propietario ejecuta `bash scripts/verify-evolution-1.8.0.sh --deb --net` en Debian 13 y sigue [docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md) con la 1.7.0 instalada antes.
-2. Versión para Windows (pedida por el propietario el 2026-11-15): adaptación y instalador `.exe`.
+1. El propietario decide sobre WebView2Loader (permiso adicional de la GPL v3, sección 7, asesoramiento jurídico o no distribuir la versión de Windows).
+2. Primera prueba en Windows con [docs/validation/VALIDACION-WINDOWS.md](docs/validation/VALIDACION-WINDOWS.md) y, si se quiere, el flujo de GitHub Actions.
+3. Validación manual de la 1.8.0 en Debian 13 ([docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md)), si no se ha hecho.
 
 ## Decisiones pendientes del propietario
+- WebView2Loader en el instalador de Windows (D-114): hasta decidirlo, los instaladores de Windows son solo para pruebas.
 - Firma de `SHA256SUMS`: clave GPG del propietario y dónde publicar la clave pública (D-092).
 - Dónde se publicarán las versiones (repositorio de GitHub o dirección HTTPS): es la fuente que vendría configurada para la comprobación de actualizaciones (D-060). Hasta entonces la fuente está vacía y la aplicación no se conecta a Internet.

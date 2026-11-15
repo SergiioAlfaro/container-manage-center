@@ -24,6 +24,7 @@ pub use config::{
 };
 pub use servers::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
 
+mod fsx;
 pub mod legacy;
 pub mod migrate;
 

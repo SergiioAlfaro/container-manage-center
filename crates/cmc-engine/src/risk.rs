@@ -527,6 +527,7 @@ mod tests {
         assert_eq!(m("/etc/nginx", true), None);
     }
 
+    #[cfg(unix)]
     #[test]
     fn symlinks_are_resolved_locally() {
         let d = tempfile::tempdir().unwrap();

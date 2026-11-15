@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-# Verificación de Container Manage Center 1.8.0 en Debian/Ubuntu. Repite toda
-# la regresión automática de las fases 1-10, las etapas 1-6 y la 1.7.0, y
-# comprueba lo nuevo de la 1.8.0 (D-113, el nombre anterior desaparece):
+# Verificación de Container Manage Center 1.9.0 en Debian/Ubuntu. Repite toda
+# la regresión automática de las fases 1-10, las etapas 1-6, la 1.7.0 y la
+# 1.8.0, y comprueba lo nuevo de la 1.9.0 (D-114, versión de Windows):
+#   - Linux no cambia: toda la regresión anterior;
+#   - avisos de terceros y auditoría de Windows al día, con WebView2Loader
+#     pendiente de la decisión del propietario y los instaladores marcados
+#     como solo de pruebas;
+#   - configuración del instalador NSIS y script de compilación;
+#   - textos de Windows de la interfaz y de la ayuda (8 idiomas);
+#   - si hay MinGW-w64 y RUST_SRC, el código compila para Windows.
+# De la 1.8.0 (D-113, el nombre anterior desaparece):
 #   - ningún identificador del nombre anterior en el código, la interfaz ni el
 #     paquete, salvo los imprescindibles para encontrar y pasar los datos de
 #     una versión anterior (lista cerrada y justificada);
@@ -41,9 +49,9 @@
 #   - correcciones propuestas en «Editar configuración» sin aplicar nada.
 #
 # Uso (desde la raíz del proyecto, con tu usuario normal, NO como root):
-#   bash scripts/verify-evolution-1.8.0.sh --deb            # recomendado: incluye la compilación
+#   bash scripts/verify-evolution-1.9.0.sh --deb            # recomendado: incluye la compilación
 #                                                    # de producción y el paquete .deb
-#   bash scripts/verify-evolution-1.8.0.sh --deb --compat   # y el paquete compatible con
+#   bash scripts/verify-evolution-1.9.0.sh --deb --compat   # y el paquete compatible con
 #        Debian 12+/Ubuntu 22.04+ (compilado en un contenedor de Docker con
 #        Ubuntu 22.04: descarga la imagen ubuntu:22.04 y ~700 MB de paquetes)
 #   --net    además consulta un servidor HTTPS real (TLS con los certificados
@@ -72,15 +80,15 @@
 # (scripts/dev/clean-install-test.sh) necesitan root y sistemas de prueba: no se
 # ejecutan en tu equipo (se listan como omitidas o se hacen a mano en M1).
 #
-# Resultado: verify-evolution-1.8.0-report.txt y los registros completos de cada paso
-# en target/verify-evolution-1.8.0/. Código de salida 0 solo si no hay ningún fallo
+# Resultado: verify-evolution-1.9.0-report.txt y los registros completos de cada paso
+# en target/verify-evolution-1.9.0/. Código de salida 0 solo si no hay ningún fallo
 # obligatorio. Las omisiones justificadas se listan aparte.
 
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
-REPORT="$ROOT/verify-evolution-1.8.0-report.txt"
-LOGDIR="$ROOT/target/verify-evolution-1.8.0"
+REPORT="$ROOT/verify-evolution-1.9.0-report.txt"
+LOGDIR="$ROOT/target/verify-evolution-1.9.0"
 rm -rf "$LOGDIR"
 mkdir -p "$LOGDIR"
 : > "$REPORT"
@@ -204,7 +212,7 @@ finish() {
 trap finish EXIT
 trap 'exit 130' INT TERM
 
-say "Container Manage Center - verificación de la 1.8.0 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
+say "Container Manage Center - verificación de la 1.9.0 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
 say "Fecha: $(date -Is)"
 say "Proyecto: $ROOT"
 say ""
@@ -544,7 +552,7 @@ old_name_gone() {
   # 1.8.0 (D-113): el nombre anterior solo aparece donde hace falta para
   # encontrar y pasar los datos de una versión anterior. Lista cerrada: un
   # archivo nuevo con el nombre anterior hace fallar este paso.
-  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.8\.0\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
+  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.9\.0\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
   local hits bad_
   hits=$(git grep -nIiE 'docker-control-center|dockercontrolcenter|docker control center|\bdcc[-_.]|\bDCC[-_]' -- crates src-tauri ui/src ui/index.html ui/public packaging scripts Cargo.toml package.json || true)
   bad_=$(printf '%s\n' "$hits" | grep -v '^$' | grep -vE "$allowed" || true)
@@ -557,6 +565,51 @@ run_tests "1.8.0 · Carpeta de copias del nombre anterior: se renombra al usar e
 run_tests "1.8.0 · Tareas programadas: las unidades dcc-backup-* pasan a cmc-backup-* con el programa nuevo, activadas o no como estaban, el nuevo temporizador antes de quitar el antiguo; las de tareas borradas se quitan; las ajenas no se tocan; repetible" cargo test --locked -p container-manage-center --lib systemd::tests::units_from_before_1_8_0_are_moved_to_the_new_name_keeping_their_state
 run_tests "1.8.0 · Identificador de Tauri igual en el código y en tauri.conf.json (datos de WebKit)" cargo test --locked -p container-manage-center --lib migration::
 run_tests "1.8.0 · Interfaz: la preferencia del servidor elegido pasa a la clave nueva" npx vitest run ui/src/app/server.test.ts
+say ""
+say "5.1j 1.9.0: versión de Windows (en pruebas)"
+run_step "1.9.0 · Avisos de terceros y auditoría de licencias de Windows al día (crates de Windows, WebView2Loader.dll, runtime de MinGW-w64 y libgcc)" python3 scripts/third-party-licenses.py --windows --check
+windows_legal() {
+  local a=docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md
+  grep -q '| 4. Pendientes de revisión | 1 | WebView2Loader.dll' "$a" &&
+    grep -q '| 5. Potencialmente incompatibles | 0 |' "$a" &&
+    grep -q '| 6. Licencia no determinable | 0 |' "$a" &&
+    grep -q 'solo para pruebas' "$a" &&
+    grep -q 'SOLO-PRUEBAS' scripts/build-windows.sh .github/workflows/windows.yml &&
+    ! grep -qE '^\s*(release|push|tags):' .github/workflows/windows.yml &&
+    grep -q 'workflow_dispatch' .github/workflows/windows.yml &&
+    for f in WebView2Loader.LICENSE.txt mingw-w64-runtime.copyright gcc-mingw-w64.copyright; do test -s "packaging/windows/licenses/$f" || return 1; done
+}
+run_step "1.9.0 · Windows: WebView2Loader pendiente de la decisión del propietario (sin código fuente publicado), nada incompatible ni indeterminado, instaladores marcados como solo de pruebas, flujo de GitHub Actions manual y sin publicar versiones" windows_legal
+windows_installer_conf() {
+  python3 - <<'PY'
+import json, pathlib, sys
+root = pathlib.Path("src-tauri")
+c = json.loads((root / "tauri.windows.conf.json").read_text())
+b = c["bundle"]
+assert b["targets"] == ["nsis"], b["targets"]
+n = b["windows"]["nsis"]
+assert n["installMode"] == "currentUser", n
+assert "Spanish" in n["languages"] and "English" in n["languages"]
+for src in b["resources"]:
+    assert (root / src).is_file(), src
+assert any("THIRD_PARTY_NOTICES-windows" in s for s in b["resources"])
+assert c["productName"] != json.loads((root / "tauri.conf.json").read_text())["productName"]
+PY
+}
+run_step "1.9.0 · Instalador NSIS: para el usuario actual sin administrador, en español e inglés, con la licencia y los avisos de Windows (todos los recursos existen) y carpeta de instalación distinta de la de datos" windows_installer_conf
+if command -v shellcheck >/dev/null; then
+  run_step "1.9.0 · Script de compilación de Windows (shellcheck)" shellcheck -S warning scripts/build-windows.sh
+else
+  run_step "1.9.0 · Script de compilación de Windows (sintaxis)" bash -n scripts/build-windows.sh
+fi
+run_tests "1.9.0 · Interfaz: plataforma, diagnóstico de Docker Desktop y del grupo docker-users en Windows, ayuda «Windows» en los 8 idiomas" npx vitest run ui/src/shared/platform.test.ts ui/src/features/engine/diagnosis.test.ts ui/src/features/help/HelpView.test.tsx ui/src/shared/i18n/i18n.test.ts
+if command -v x86_64-w64-mingw32-gcc >/dev/null && [ -n "${RUST_SRC:-}" ] && [ -f "${RUST_SRC}/std/Cargo.toml" ]; then
+  run_step "1.9.0 · El código compila para Windows (x86_64-pc-windows-gnu, cargo check)" env RUSTC_BOOTSTRAP=1 __CARGO_TESTS_ONLY_SRC_ROOT="$RUST_SRC" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc CARGO_TARGET_DIR="$ROOT/target/windows-check" cargo check --locked -Zbuild-std=std,panic_abort --target x86_64-pc-windows-gnu --workspace
+elif rustup target list --installed 2>/dev/null | grep -qx x86_64-pc-windows-gnu && command -v x86_64-w64-mingw32-gcc >/dev/null; then
+  run_step "1.9.0 · El código compila para Windows (x86_64-pc-windows-gnu, cargo check)" env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc CARGO_TARGET_DIR="$ROOT/target/windows-check" cargo check --locked --target x86_64-pc-windows-gnu --workspace
+else
+  skip "1.9.0 · Compilación para Windows: falta MinGW-w64 o el destino x86_64-pc-windows-gnu (o RUST_SRC)"
+fi
 run_tests "1.7.0 · Desinstalación: reconoce los dos nombres de paquete y el cambio de nombre en el historial de APT no cuenta como desinstalación" cargo test --locked -p container-manage-center --lib uninstall::tests::the_rename_to_container_manage_center_keeps_the_history
 run_tests "1.7.0 · Interfaz: barra lateral con el nombre nuevo, Configuración › Legal (nombre, versión, licencia SPDX, copyright, declaración GPL, URL, avisos de terceros, independencia de Docker, Inc.) y sección «Legal» de la ayuda en los 8 idiomas" npx vitest run ui/src/features/settings/LegalSettings.test.tsx ui/src/features/help/HelpView.test.tsx ui/src/shared/i18n/i18n.test.ts ui/src/app/App.test.tsx
 if [ $NET_TESTS -eq 1 ]; then
@@ -883,17 +936,19 @@ if [ "$SKIP" -gt 0 ]; then
   say "Omitidas (no cuentan como superadas):"; for s in "${SKIPS[@]}"; do say "  - $s"; done
 fi
 if [ "$FAIL" -gt 0 ]; then
-  say "VEREDICTO: 1.8.0 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
+  say "VEREDICTO: 1.9.0 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
 else
-  say "VEREDICTO: parte automática superada. Falta la validación manual de la 1.8.0 (docs/validation/VALIDACION-1.8.0.md)."
+  say "VEREDICTO: parte automática superada. Falta la validación manual de la 1.8.0 en Debian 13 (docs/validation/VALIDACION-1.8.0.md) y la primera prueba en Windows (docs/validation/VALIDACION-WINDOWS.md)."
 fi
 say ""
 cat <<'EOF' | tee -a "$REPORT"
-8. Validación manual de la 1.8.0 (solo si la parte automática está superada)
-   Solo lo nuevo, en Debian 13, con la 1.7.0 instalada y en uso antes de empezar:
+8. Validación manual (solo si la parte automática está superada)
+   a) Windows: la 1.9.0 no se ha ejecutado nunca en un Windows real:
+       docs/validation/VALIDACION-WINDOWS.md (instalador solo de pruebas)
+   b) Linux: la 1.9.0 no cambia nada en Linux. Si aún no has validado la
+      1.8.0, hazlo en Debian 13 con la 1.7.0 instalada y en uso antes:
        docs/validation/VALIDACION-1.8.0.md
-   Apartados: actualización y migración de tus datos reales (configuración,
-   servidores, contraseñas, copias y tareas programadas), que no quede nada
-   con el nombre anterior y que todo siga funcionando.
+      (actualización y migración de tus datos reales, que no quede nada con
+      el nombre anterior y que todo siga funcionando).
 EOF
 [ "$FAIL" -eq 0 ]

@@ -368,3 +368,15 @@ Texto completo da licença: https://www.gnu.org/licenses/gpl-3.0.html (também e
 **Marcas.** Container Manage Center é um projeto independente: não é afiliado à Docker, Inc. nem apoiado por ela. «Docker» é uma marca da Docker, Inc. e é usada aqui apenas para designar a tecnologia com que a aplicação trabalha (Docker Engine, a sua API, Docker Compose e a CLI do Docker).
 
 Os mesmos dados estão em **Definições › Legal**.
+
+## 29. Windows {#windows}
+
+No Windows, o Container Manage Center funciona como no Linux, com estas diferenças:
+
+- **Docker local**: liga-se ao **Docker Desktop** através do seu pipe com nome (`\\.\pipe\docker_engine`). O Docker Desktop tem de estar em execução e o seu utilizador no grupo local `docker-users` (o instalador do Docker Desktop adiciona-o).
+- **Servidores remotos por SSH**: usam o cliente OpenSSH do Windows (`ssh.exe`, incluído no Windows 10 e 11). Como não suporta ligações multiplexadas, cada operação abre a sua própria ligação: na primeira vez a identidade do servidor é verificada como no Linux, e a palavra-passe ou frase-passe guardada é usada automaticamente. Os **servidores intermédios** (ProxyJump) ainda não estão disponíveis e, no **terminal do servidor**, a alteração do tamanho da janela não chega ao servidor.
+- **Palavras-passe guardadas**: no **Gestor de credenciais** do Windows (credenciais do Windows), com o nome `container-manage-center/…`.
+- **Cópias agendadas**: com o **Agendador de Tarefas**, na pasta «Container Manage Center», com o seu utilizador e sem privilégios de administrador. São executadas com a sessão iniciada; se o computador estava desligado a essa hora, a cópia é feita assim que possível.
+- **Notificações**: as do sistema (centro de notificações).
+- **Dados**: configuração em `%APPDATA%\container-manage-center` e histórico em `%LOCALAPPDATA%\container-manage-center`.
+- **Desinstalar**: em Definições do Windows › Aplicações › Aplicações instaladas. Os seus dados e o Docker Desktop não são alterados. A secção «Desinstalação e componentes» só existe no Debian e no Ubuntu.

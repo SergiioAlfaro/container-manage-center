@@ -108,6 +108,12 @@ pub fn remove_legacy_runtime_dir() {
     }
 }
 
+#[cfg(windows)]
+fn runtime_dir_named(name: &str) -> PathBuf {
+    std::env::temp_dir().join(name).join("ssh")
+}
+
+#[cfg(unix)]
 fn runtime_dir_named(name: &str) -> PathBuf {
     let uid = unsafe { libc::getuid() };
     match std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from) {

@@ -17,6 +17,7 @@ import { Button } from "@/shared/ui/controls";
 import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
 import { allAccepted, HostRisks } from "@/shared/ui/HostRisks";
 import { codeText, confirmWord, defaultTarget, errorText, itemKey, restoreItems } from "./model";
+import { isWindows } from "@/shared/platform";
 
 const field = "mt-1 h-8 w-full rounded-md border border-line bg-surface px-2 text-[13px] text-ink";
 
@@ -195,7 +196,7 @@ export function TimerDialog({ view, onClose, onDone }: { view: BackupJobView; on
         </>
       }
     >
-      <p className="mb-3 text-[13px]">{t("backup.timer.authBody")}</p>
+      <p className="mb-3 text-[13px]">{t(isWindows() ? "backup.timer.authBodyWin" : "backup.timer.authBody")}</p>
       {pv.isPending && <Spinner />}
       {pv.data && (
         <div className="space-y-3">
@@ -212,7 +213,7 @@ export function TimerDialog({ view, onClose, onDone }: { view: BackupJobView; on
             <div className="mb-1 text-[12px] font-medium text-ink-2">{t("backup.timer.commands")}</div>
             <pre className="selectable rounded-md border border-line bg-surface-sunk p-2 text-[11.5px]">{pv.data.commands.join("\n")}</pre>
           </div>
-          <Checkbox checked={ok} onChange={setOk} label={t("backup.timer.authCheck")} />
+          <Checkbox checked={ok} onChange={setOk} label={t(isWindows() ? "backup.timer.authCheckWin" : "backup.timer.authCheck")} />
         </div>
       )}
       {(pv.error || install.error) && <Banner tone="error">{errorText(t, (k) => i18n.exists(k), (pv.error ?? install.error) as unknown as CommandError)}</Banner>}

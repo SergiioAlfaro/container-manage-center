@@ -1,5 +1,11 @@
 # Cambios
 
+## 1.9.0 — 2026-11-15 (versión de Windows, en pruebas)
+- **Versión para Windows 10 y 11** (x86_64) con el mismo código (D-114): Docker Desktop en el equipo, servidores remotos por SSH con el OpenSSH de Windows, contraseñas en el Administrador de credenciales, copias programadas en el Programador de tareas y notificaciones de Windows. Textos de diagnóstico y ayuda propios de Windows (sección «Windows» en la ayuda, 8 idiomas). Limitaciones: sin ProxyJump y terminal del servidor sin cambio de tamaño.
+- **Instalador NSIS** para el usuario actual, sin permisos de administrador, con la licencia y los avisos de terceros de Windows. `scripts/build-windows.sh` (desde Linux con MinGW-w64) y `.github/workflows/windows.yml` (MSVC, manual).
+- **Solo para pruebas**: el instalador incluye WebView2Loader de Microsoft, sin código fuente publicado; hasta que el propietario decida cómo cumplir la GPL v3 con él, no se publica ni se redistribuye. Todavía no se ha probado en un Windows real (`docs/validation/VALIDACION-WINDOWS.md`).
+- **Linux no cambia**: mismas funciones, mismos datos y misma regresión completa.
+
 ## 1.8.0 — 2026-11-15 (fin del nombre anterior)
 - **El nombre anterior desaparece** (D-113): ni la aplicación, ni el paquete, ni la ayuda, ni los datos usan ya *Docker Control Center*. Carpetas `~/.config/container-manage-center` y `~/.local/state/container-manage-center`, copias en `container-manage-center-copias`, tareas programadas `cmc-backup-*`, identificador `org.containermanagecenter.app`; internamente, crates `cmc-*`, variables `CMC_*` y etiquetas `cmc.*`.
 - **Tus datos pasan solos al nombre nuevo, sin perder nada**: configuración, servidores, historial, monitorización, copias, tareas programadas (activadas o no, como estaban) y contraseñas del llavero. Renombrado atómico o copia comprobada; nada se sobrescribe; repetible. `install.sh` lo hace al instalar (`container-manage-center --migrate`); si no, al abrir la aplicación. Guía: `docs/MIGRATION-CMC.md`.

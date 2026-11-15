@@ -229,6 +229,12 @@ pub fn dpkg_version(status: &str, package: &str) -> Option<String> {
     })
 }
 
+#[cfg(windows)]
+fn glibc_version() -> Option<String> {
+    None
+}
+
+#[cfg(unix)]
 fn glibc_version() -> Option<String> {
     // SAFETY: gnu_get_libc_version devuelve una cadena estática de glibc.
     let p = unsafe { libc::gnu_get_libc_version() };

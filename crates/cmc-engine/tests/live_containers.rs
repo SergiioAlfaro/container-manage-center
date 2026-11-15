@@ -3,6 +3,8 @@
 //! Fase 3 contra Docker real (`CMC_DOCKER_TESTS=1`): creación, inspección,
 //! duplicado, logs, estadísticas y terminal. Todo lo creado lleva la etiqueta
 //! `cmc.test=true` y se elimina al terminar.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

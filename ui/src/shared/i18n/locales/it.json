@@ -392,6 +392,18 @@
       "other": {
         "title": "Errore di connessione a Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop non è in esecuzione",
+        "body": "La named pipe di Docker (\\\\.\\pipe\\docker_engine) non risponde. Docker Desktop è installato, ma non è stato avviato o si sta ancora avviando."
+      },
+      "desktopNotInstalled": {
+        "title": "Docker Desktop non sembra installato",
+        "body": "Non sono stati trovati né la named pipe di Docker né il programma docker.exe."
+      },
+      "desktopPermission": {
+        "title": "Nessun permesso per usare Docker Desktop",
+        "body": "Il tuo utente ({{user}}) non può aprire la named pipe di Docker. Docker Desktop ne consente l'uso solo ai membri del gruppo locale «docker-users»."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Verifica che il percorso sia il socket di Docker e non quello di un altro servizio.",
       "upgrade": "Aggiorna Docker Engine alla versione 20.10 o successiva.",
       "restart": "Riavvia il servizio Docker:",
-      "retry": "Una volta risolto, premi «Riconnetti». L’applicazione riprova anche da sola."
+      "retry": "Una volta risolto, premi «Riconnetti». L’applicazione riprova anche da sola.",
+      "startDesktop": "Apri Docker Desktop dal menu Start e attendi che indichi che il motore è in esecuzione.",
+      "installDesktop": "Installa Docker Desktop per Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Aggiungi il tuo utente al gruppo «docker-users» da un Prompt dei comandi aperto come amministratore:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "È stato disinstallato {{count}} pacchetto.",
     "done_other": "Sono stati disinstallati {{count}} pacchetti.",
     "doneSelf": "Container Manage Center non è più installato: chiudi l’applicazione.",
-    "stillInstalled": "Ancora installati: {{list}}."
+    "stillInstalled": "Ancora installati: {{list}}.",
+    "unsupportedWin": "Su Windows, Container Manage Center si disinstalla da Impostazioni di Windows › App › App installate. I tuoi dati vengono conservati; Docker Desktop non viene toccato."
   },
   "help": {
     "title": "Guida e documentazione",
@@ -3170,7 +3186,12 @@
       "authBody": "Per pianificare l'attività verranno creati questi due file nella tua cartella utente di systemd e verranno eseguiti questi comandi. Non servono permessi di amministratore e nulla del sistema viene toccato.",
       "authAction": "Crea la pianificazione",
       "commands": "Comandi",
-      "authCheck": "Autorizzo la creazione di questi file e l'esecuzione di questi comandi"
+      "authCheck": "Autorizzo la creazione di questi file e l'esecuzione di questi comandi",
+      "foreignWin": "Esiste un'attività pianificata con quel nome che non appartiene all'applicazione: non viene toccata.",
+      "problemWin": "Impossibile interrogare l'Utilità di pianificazione: {{problem}}",
+      "removeBodyWin": "L'attività pianificata di «{{name}}» verrà rimossa dall'Utilità di pianificazione. L'attività e le sue copie restano.",
+      "authBodyWin": "Per pianificare l'attività verrà creata questa attività nell'Utilità di pianificazione di Windows (cartella «Container Manage Center»), con il tuo utente e senza privilegi di amministratore, e verrà eseguito questo comando.",
+      "authCheckWin": "Autorizzo la creazione di questa attività pianificata"
     },
     "schedule": {
       "dailyAt": "Ogni giorno alle {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "Nessuna connessione a Docker Engine."
     },
     "fromAudit": "Selezione preparata dall’audit per «{{name}}»: la sua configurazione, il suo database se lo è e i volumi che monta. Controllala prima di eseguire il backup.",
-    "fromAuditGone": "«{{name}}» non esiste più su questo server: scegli cosa copiare."
+    "fromAuditGone": "«{{name}}» non esiste più su questo server: scegli cosa copiare.",
+    "noSystemdWin": "Utilità di pianificazione di Windows (schtasks.exe) non trovata: le attività si possono eseguire a mano, ma non pianificare.",
+    "jobsHintWin": "Le attività vengono pianificate con l'Utilità di pianificazione di Windows, che le esegue anche quando l'applicazione è chiusa (con la sessione aperta). Se il computer era spento a quell'ora, la copia viene fatta appena possibile. Nulla viene creato senza la tua autorizzazione esplicita."
   },
   "monitor": {
     "intro": "Container Manage Center campiona con «docker stats» e «inspect» (senza installare nulla sul server). Le interruzioni di connessione appaiono come vuoti: nessun dato viene inventato.",

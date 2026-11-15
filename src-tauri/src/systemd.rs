@@ -11,17 +11,24 @@
 //! - `systemctl --user` sin shell, con los argumentos exactos registrados en el
 //!   panel de actividad. Nunca `sudo` ni unidades del sistema.
 
-use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::path::Path;
+use std::path::PathBuf;
+#[cfg(unix)]
 use std::time::Duration;
 
+#[cfg(unix)]
 use cmc_activity::{ActivityLog, Category, Failure, OperationSpec, Outcome, Transport};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::backups::{BackupJob, Schedule};
+#[cfg(unix)]
+use crate::backups::BackupJob;
+use crate::backups::Schedule;
 
 /// Marca que identifica los archivos creados por la aplicación.
 pub const MARKER: &str = "# cmc-managed-backup-job:";
+#[cfg(unix)]
 const TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Estado del temporizador de una tarea.
@@ -64,17 +71,20 @@ pub struct Systemd {
     pub unit_dir: PathBuf,
 }
 
+#[cfg_attr(windows, allow(dead_code))]
 fn find_in_path(name: &str) -> Option<PathBuf> {
     std::env::split_paths(&std::env::var_os("PATH")?)
         .map(|d| d.join(name))
         .find(|p| p.is_file())
 }
 
+#[cfg_attr(windows, allow(dead_code))]
 /// `[%$\"]` escapados para una línea de unidad de systemd.
 fn unit_escape(s: &str) -> String {
     s.replace('%', "%%")
 }
 
+#[cfg_attr(windows, allow(dead_code))]
 fn exec_quote(s: &str) -> String {
     let e = s
         .replace('\\', "\\\\")
@@ -84,6 +94,7 @@ fn exec_quote(s: &str) -> String {
     format!("\"{e}\"")
 }
 
+#[cfg_attr(windows, allow(dead_code))]
 /// Texto de una línea de descripción: sin saltos ni caracteres de control.
 fn one_line(s: &str) -> String {
     let t: String = s
@@ -94,6 +105,7 @@ fn one_line(s: &str) -> String {
     unit_escape(t.trim())
 }
 
+#[cfg_attr(windows, allow(dead_code))]
 pub fn on_calendar(s: &Schedule) -> String {
     match *s {
         Schedule::Daily { hour, minute } => format!("*-*-* {hour:02}:{minute:02}:00"),
@@ -110,6 +122,7 @@ pub fn on_calendar(s: &Schedule) -> String {
     }
 }
 
+#[cfg(unix)]
 impl Systemd {
     /// systemd del usuario: `systemctl` del `PATH` y `$XDG_CONFIG_HOME/systemd/user`.
     /// En las compilaciones de desarrollo `CMC_SYSTEMCTL` sustituye el
@@ -319,8 +332,8 @@ impl Systemd {
     }
 
     fn write_unit(path: &Path, text: &str) -> std::io::Result<()> {
+        use cmc_engine::fsx::OpenOptionsExt;
         use std::io::Write;
-        use std::os::unix::fs::OpenOptionsExt;
         let tmp = path.with_extension("cmc-tmp");
         let _ = std::fs::remove_file(&tmp);
         let mut f = std::fs::OpenOptions::new()
@@ -558,7 +571,11 @@ impl Systemd {
     }
 }
 
-#[cfg(test)]
+#[cfg(windows)]
+#[path = "schtasks.rs"]
+mod schtasks;
+
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
     use crate::backups::BackupJob;

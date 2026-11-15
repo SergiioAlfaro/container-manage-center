@@ -520,6 +520,7 @@ where
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     #[test]
     fn jobs_are_validated_saved_private_and_survive_a_restart() {
         let d = tempfile::Builder::new()

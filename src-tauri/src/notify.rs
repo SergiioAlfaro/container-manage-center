@@ -7,11 +7,15 @@
 //!
 //! El texto lo pone la interfaz (traducido); aquí solo se limita y se envía.
 
+#[cfg(unix)]
 use std::collections::HashMap;
 
+#[cfg(unix)]
 use zbus::zvariant::Value;
 
+#[cfg_attr(windows, allow(dead_code))]
 pub const APP_NAME: &str = "Container Manage Center";
+#[cfg(unix)]
 const ICON: &str = "container-manage-center";
 const MAX_SUMMARY: usize = 120;
 const MAX_BODY: usize = 500;
@@ -25,8 +29,45 @@ fn clip(s: &str, n: usize) -> String {
     t.trim().to_owned()
 }
 
+/// Windows (1.9.0, D-114): notificación del sistema (WinRT). El instalador
+/// registra el acceso directo con el identificador de la aplicación, que es
+/// con el que Windows la muestra.
+#[cfg(windows)]
+pub async fn send(summary: &str, body: &str) -> Result<u32, String> {
+    use windows::core::HSTRING;
+    use windows::Data::Xml::Dom::XmlDocument;
+    use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
+    let summary = clip(summary, MAX_SUMMARY);
+    if summary.is_empty() {
+        return Err("notificación vacía".into());
+    }
+    let body = clip(body, MAX_BODY);
+    let esc = |t: &str| {
+        t.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;")
+    };
+    let xml = format!(
+        "<toast><visual><binding template=\"ToastGeneric\"><text>{}</text><text>{}</text></binding></visual></toast>",
+        esc(&summary),
+        esc(&body)
+    );
+    let r = (|| -> windows::core::Result<()> {
+        let doc = XmlDocument::new()?;
+        doc.LoadXml(&HSTRING::from(xml))?;
+        let toast = ToastNotification::CreateToastNotification(&doc)?;
+        let notifier = ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(
+            crate::migration::IDENTIFIER,
+        ))?;
+        notifier.Show(&toast)
+    })();
+    r.map(|()| 0).map_err(|e| e.to_string())
+}
+
 /// Envía la notificación por la conexión dada. Devuelve el id que asigna el
 /// servidor de notificaciones.
+#[cfg(unix)]
 pub async fn send_on(conn: &zbus::Connection, summary: &str, body: &str) -> Result<u32, String> {
     let summary = clip(summary, MAX_SUMMARY);
     if summary.is_empty() {
@@ -57,6 +98,7 @@ pub async fn send_on(conn: &zbus::Connection, summary: &str, body: &str) -> Resu
 }
 
 /// Envía por el bus de sesión del usuario.
+#[cfg(unix)]
 pub async fn send(summary: &str, body: &str) -> Result<u32, String> {
     let conn = zbus::Connection::session()
         .await
@@ -64,7 +106,7 @@ pub async fn send(summary: &str, body: &str) -> Result<u32, String> {
     send_on(&conn, summary, body).await
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};

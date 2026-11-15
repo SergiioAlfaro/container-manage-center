@@ -368,3 +368,15 @@ Text complet de la llicència: https://www.gnu.org/licenses/gpl-3.0.html (també
 **Marques.** Container Manage Center és un projecte independent: no està afiliat a Docker, Inc. ni avalat per aquesta empresa. «Docker» és una marca de Docker, Inc. i aquí només s'utilitza per anomenar la tecnologia amb què treballa l'aplicació (Docker Engine, la seva API, Docker Compose i la CLI de Docker).
 
 Les mateixes dades són a **Configuració › Legal**.
+
+## 29. Windows {#windows}
+
+A Windows, Container Manage Center funciona igual que a Linux, amb aquestes diferències:
+
+- **Docker local**: es connecta amb **Docker Desktop** per la seva canonada amb nom (`\\.\pipe\docker_engine`). Docker Desktop ha d'estar en marxa, i el teu usuari, al grup local `docker-users` (l'afegeix l'instal·lador de Docker Desktop).
+- **Servidors remots per SSH**: fan servir el client OpenSSH de Windows (`ssh.exe`, inclòs a Windows 10 i 11). Com que no admet connexions multiplexades, cada operació obre la seva pròpia connexió: la primera vegada es comprova la identitat del servidor igual que a Linux, i la contrasenya o la frase de pas desada s'utilitza sola. Els **servidors intermedis** (ProxyJump) encara no estan disponibles, i a la **terminal del servidor** el canvi de mida de la finestra no arriba al servidor.
+- **Contrasenyes recordades**: a l'**Administrador de credencials** de Windows (credencials de Windows), amb el nom `container-manage-center/…`.
+- **Còpies programades**: amb el **Programador de tasques**, a la carpeta «Container Manage Center», amb el teu usuari i sense privilegis d'administrador. S'executen amb la sessió iniciada; si l'equip estava apagat a aquella hora, la còpia es fa tan aviat com es pot.
+- **Notificacions**: les del sistema (centre de notificacions).
+- **Dades**: configuració a `%APPDATA%\container-manage-center` i historial a `%LOCALAPPDATA%\container-manage-center`.
+- **Desinstal·lar**: des de Configuració de Windows › Aplicacions › Aplicacions instal·lades. Les teves dades i Docker Desktop no es toquen. L'apartat «Desinstal·lació i components» només existeix a Debian i Ubuntu.

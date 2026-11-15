@@ -64,11 +64,17 @@ bash scripts/install.sh --check  # solo comprueba el sistema
 bash scripts/install.sh --uninstall
 ```
 
-O directamente: `sudo apt install ./container-manage-center_1.7.0_amd64.deb`
+O directamente: `sudo apt install ./container-manage-center_1.9.0_amd64.deb`
 (sustituye a una versión anterior si estaba instalada y pasa tus datos al nombre nuevo).
 Después se abre desde el menú de aplicaciones o con `container-manage-center`
 (desde el código fuente: `bash scripts/run.sh`). Requisitos, acceso a Docker,
 compilación y diagnóstico en [INSTALL.md](INSTALL.md).
+
+**Windows 10 y 11** (en pruebas, 1.9.0): instalador para el usuario actual, con
+Docker Desktop y el OpenSSH de Windows. Todavía no se ha probado en un Windows
+real y, hasta resolver una cuestión de licencia de un componente de Microsoft
+(WebView2Loader), el instalador es solo para pruebas y no se redistribuye.
+Detalles en [INSTALL.md](INSTALL.md#opción-d-windows-10-y-11-x86_64--en-pruebas).
 
 ## Documentación
 
@@ -90,7 +96,7 @@ compilación y diagnóstico en [INSTALL.md](INSTALL.md).
 ## Comprobación
 
 ```bash
-bash scripts/verify-evolution-1.8.0.sh --deb   # regresión completa, paquete, licencias y migración
+bash scripts/verify-evolution-1.9.0.sh --deb   # regresión completa, paquete, licencias y migración
 cargo run -q -p cmc-engine --bin cmc-diagnose   # diagnóstico de la conexión con Docker
 npm run lint                                    # ESLint (configuración mínima, reglas de seguridad)
 cargo deny check                                # dependencias de Rust (deny.toml)

@@ -101,6 +101,7 @@ impl CliRequest {
         match &self.remote {
             None => {
                 let mut cmd = Command::new(&self.program);
+                crate::sys::no_console(&mut cmd);
                 cmd.args(&self.args)
                     .envs(self.env.iter().map(|(k, v)| (k.as_str(), v.as_str())));
                 if let Some(d) = &self.cwd {
@@ -304,6 +305,21 @@ impl Tail {
     }
 }
 
+#[cfg(unix)]
+const SIGTERM: i32 = libc::SIGTERM;
+#[cfg(unix)]
+const SIGKILL: i32 = libc::SIGKILL;
+#[cfg(windows)]
+const SIGTERM: i32 = 15;
+#[cfg(windows)]
+const SIGKILL: i32 = 9;
+
+/// Windows no tiene grupos de procesos ni señales: el proceso se termina con
+/// `kill` (TerminateProcess) cuando vence el plazo.
+#[cfg(windows)]
+fn signal_group(_pid: Option<u32>, _sig: i32) {}
+
+#[cfg(unix)]
 fn signal_group(pid: Option<u32>, sig: i32) {
     if let Some(pid) = pid {
         // El proceso es líder de su propio grupo: se avisa también a sus hijos
@@ -346,8 +362,9 @@ where
     })
     .stdout(std::process::Stdio::piped())
     .stderr(std::process::Stdio::piped())
-    .process_group(0)
     .kill_on_drop(true);
+    #[cfg(unix)]
+    cmd.process_group(0);
     let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => {
@@ -419,12 +436,12 @@ where
             _ = tick.tick() => {}
             _ = opts.cancel.cancelled(), if !stopped => {
                 stopped = true;
-                signal_group(pid, libc::SIGTERM);
+                signal_group(pid, SIGTERM);
             }
             _ = &mut deadline, if !stopped => {
                 stopped = true;
                 timed_out = true;
-                signal_group(pid, libc::SIGTERM);
+                signal_group(pid, SIGTERM);
             }
         }
         if !batch.is_empty()
@@ -439,7 +456,7 @@ where
                 listener_gone = true;
                 if !stopped {
                     stopped = true;
-                    signal_group(pid, libc::SIGTERM);
+                    signal_group(pid, SIGTERM);
                 }
             }
             batch.clear();
@@ -452,7 +469,7 @@ where
     let status = match tokio::time::timeout(GRACE, child.wait()).await {
         Ok(s) => s.ok(),
         Err(_) => {
-            signal_group(pid, libc::SIGKILL);
+            signal_group(pid, SIGKILL);
             child.wait().await.ok()
         }
     };
@@ -676,6 +693,7 @@ mod tests {
         assert_eq!(rec.exit_code, Some(15));
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn cancelling_stops_the_whole_process_group() {
         let log = ActivityLog::new(10);

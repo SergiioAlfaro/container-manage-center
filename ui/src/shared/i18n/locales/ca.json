@@ -392,6 +392,18 @@
       "other": {
         "title": "Error en connectar amb Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "Docker Desktop no està en marxa",
+        "body": "La canonada de Docker (\\\\.\\pipe\\docker_engine) no respon. Docker Desktop està instal·lat, però no s'ha iniciat o encara s'està iniciant."
+      },
+      "desktopNotInstalled": {
+        "title": "Sembla que Docker Desktop no està instal·lat",
+        "body": "No s'ha trobat la canonada de Docker ni el programa docker.exe."
+      },
+      "desktopPermission": {
+        "title": "Sense permís per utilitzar Docker Desktop",
+        "body": "El teu usuari ({{user}}) no pot obrir la canonada de Docker. Docker Desktop només en permet l'ús als membres del grup local «docker-users»."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Comprova que la ruta correspon al sòcol de Docker i no a un altre servei.",
       "upgrade": "Actualitza Docker Engine a la versió 20.10 o posterior.",
       "restart": "Reinicia el servei de Docker:",
-      "retry": "Quan ho hagis resolt, prem «Tornar a connectar». L’aplicació també ho torna a provar sola."
+      "retry": "Quan ho hagis resolt, prem «Tornar a connectar». L’aplicació també ho torna a provar sola.",
+      "startDesktop": "Obre Docker Desktop des del menú Inici i espera que indiqui que el motor està en marxa.",
+      "installDesktop": "Instal·la Docker Desktop per a Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Afegeix el teu usuari al grup «docker-users» des d'un Símbol del sistema obert com a administrador:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "S’ha desinstal·lat {{count}} paquet.",
     "done_other": "S’han desinstal·lat {{count}} paquets.",
     "doneSelf": "Container Manage Center ja no està instal·lat: tanca l’aplicació.",
-    "stillInstalled": "Continuen instal·lats: {{list}}."
+    "stillInstalled": "Continuen instal·lats: {{list}}.",
+    "unsupportedWin": "A Windows, Container Manage Center es desinstal·la des de Configuració de Windows › Aplicacions › Aplicacions instal·lades. Les teves dades es conserven; Docker Desktop no es toca."
   },
   "help": {
     "title": "Ajuda i documentació",
@@ -3170,7 +3186,12 @@
       "authBody": "Per programar la tasca es crearan aquests dos fitxers a la teva carpeta de systemd d'usuari i s'executaran aquestes ordres. No cal ser administrador i no es toca res del sistema.",
       "authAction": "Crea la programació",
       "commands": "Ordres",
-      "authCheck": "Autoritzo crear aquests fitxers i executar aquestes ordres"
+      "authCheck": "Autoritzo crear aquests fitxers i executar aquestes ordres",
+      "foreignWin": "Hi ha una tasca programada amb aquest nom que no és de l'aplicació: no es toca.",
+      "problemWin": "No s'ha pogut consultar el Programador de tasques: {{problem}}",
+      "removeBodyWin": "S'eliminarà la tasca programada de «{{name}}» del Programador de tasques. La tasca i les seves còpies es queden.",
+      "authBodyWin": "Per programar la tasca es crearà aquesta tasca al Programador de tasques de Windows (carpeta «Container Manage Center»), amb el teu usuari i sense privilegis d'administrador, i s'executarà aquesta ordre.",
+      "authCheckWin": "Autoritzo crear aquesta tasca programada"
     },
     "schedule": {
       "dailyAt": "Cada dia a les {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "No hi ha connexió amb Docker Engine."
     },
     "fromAudit": "Selecció preparada des de l’auditoria per a «{{name}}»: la seva configuració, la seva base de dades si ho és i els volums que munta. Revisa-la abans de copiar.",
-    "fromAuditGone": "«{{name}}» ja no existeix en aquest servidor: tria què vols copiar."
+    "fromAuditGone": "«{{name}}» ja no existeix en aquest servidor: tria què vols copiar.",
+    "noSystemdWin": "No es troba el Programador de tasques de Windows (schtasks.exe): les tasques es poden executar a mà, però no programar.",
+    "jobsHintWin": "Les tasques es programen amb el Programador de tasques de Windows, que les executa encara que l'aplicació estigui tancada (amb la sessió iniciada). Si l'equip estava apagat a aquella hora, la còpia es fa tan aviat com es pot. No es crea res sense la teva autorització expressa."
   },
   "monitor": {
     "intro": "Container Manage Center pren mostres amb «docker stats» i «inspect» (sense instal·lar res al servidor). Els talls de connexió es veuen com a buits: no s’inventen dades.",

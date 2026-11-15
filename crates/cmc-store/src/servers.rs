@@ -247,6 +247,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[test]
     fn roundtrip_with_private_permissions_and_no_secrets() {
         let dir = tempfile::tempdir().unwrap();

@@ -253,6 +253,7 @@ mod tests {
 
     /// Los guiones funcionan en un `sh` real (sin Docker): con herramientas
     /// simuladas que imprimen su entorno y sus argumentos.
+    #[cfg(unix)]
     #[test]
     fn scripts_run_in_a_real_shell_with_fake_tools() {
         use std::os::unix::fs::PermissionsExt;

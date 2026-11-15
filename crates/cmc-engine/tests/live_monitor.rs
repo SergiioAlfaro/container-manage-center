@@ -10,6 +10,8 @@
 //! - Las alertas saltan con datos reales (CPU, OOM) sin repetirse.
 //!
 //! Todo lo creado lleva `cmc-test-mon-` en el nombre y se elimina al terminar.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

@@ -15,6 +15,7 @@ import type { DbEngine } from "@/shared/ipc/bindings/DbEngine";
 import type { VolumeSummary } from "@/shared/ipc/bindings/VolumeSummary";
 import type { Retention } from "@/shared/ipc/bindings/Retention";
 import type { RestoreItem } from "@/shared/ipc/bindings/RestoreItem";
+import { isWindows } from "@/shared/platform";
 
 type T = (k: string, o?: Record<string, unknown>) => string;
 type Exists = (k: string) => boolean;
@@ -107,10 +108,10 @@ export function retentionText(t: T, r: Retention): string {
 
 /** Estado del temporizador en una frase. */
 export function timerText(t: T, s: BackupTimerStatus): { text: string; tone: "ok" | "warn" | "muted" } {
-  if (s.foreign) return { text: t("backup.timer.foreign"), tone: "warn" };
+  if (s.foreign) return { text: t(isWindows() ? "backup.timer.foreignWin" : "backup.timer.foreign"), tone: "warn" };
   if (!s.installed) return { text: t("backup.timer.none"), tone: "muted" };
   if (s.outdated) return { text: t("backup.timer.outdated"), tone: "warn" };
-  if (s.problem) return { text: t("backup.timer.problem", { problem: s.problem }), tone: "warn" };
+  if (s.problem) return { text: t(isWindows() ? "backup.timer.problemWin" : "backup.timer.problem", { problem: s.problem }), tone: "warn" };
   if (s.unitFileState === "disabled" || s.activeState === "inactive") return { text: t("backup.timer.disabled"), tone: "muted" };
   return { text: s.nextRun ? t("backup.timer.next", { when: s.nextRun }) : t("backup.timer.active"), tone: "ok" };
 }

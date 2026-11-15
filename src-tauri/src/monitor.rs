@@ -12,9 +12,9 @@
 //! - Nunca bloquea: los comandos leen lo último que hay en memoria; las
 //!   desconexiones son huecos.
 
+use cmc_engine::fsx::{DirBuilderExt, OpenOptionsExt};
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader, Write};
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -686,6 +686,7 @@ pub fn start_enabled<R: Runtime>(app: &AppHandle<R>) {
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     fn minute(t: i64, ids: &[&str]) -> MinuteRecord {
         MinuteRecord {
             t,
@@ -714,6 +715,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[test]
     fn minute_store_filters_compacts_by_age_and_size_and_is_private() {
         let d = tempfile::Builder::new()
@@ -767,6 +769,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn settings_are_validated_and_survive_a_restart() {
         let d = tempfile::Builder::new()

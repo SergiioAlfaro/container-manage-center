@@ -1675,6 +1675,7 @@ fn record_op(h: &Harness, kind: &str, ok: bool) {
     }
 }
 
+#[cfg(unix)]
 fn restart(h: Harness) -> Harness {
     let Harness {
         app, window, _dir, ..
@@ -1688,6 +1689,7 @@ fn restart(h: Harness) -> Harness {
     harness_with(_dir, docker)
 }
 
+#[cfg(unix)]
 fn wait_history(h: &Harness, n: u64) -> serde_json::Value {
     let mut last = json!(null);
     for _ in 0..100 {
@@ -1700,6 +1702,7 @@ fn wait_history(h: &Harness, n: u64) -> serde_json::Value {
     panic!("el historial no llegó a {n}: {last}");
 }
 
+#[cfg(unix)]
 #[test]
 fn history_survives_a_restart_without_secrets() {
     let h = harness();
@@ -1725,6 +1728,7 @@ fn history_survives_a_restart_without_secrets() {
         raw.contains("NPM_TOKEN"),
         "se conservan los nombres de los argumentos"
     );
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     assert_eq!(
         std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
@@ -2011,6 +2015,7 @@ fn live_events_via_ipc() {
 /// 0.9.1 · Varias terminales por IPC contra Docker real: independientes, cierre
 /// individual sin afectar a las demás y cierre de todas (como al cerrar la
 /// ventana) sin dejar procesos en el contenedor (D-063).
+#[cfg(unix)]
 #[test]
 fn live_multiple_terminals_via_ipc() {
     if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
@@ -2998,6 +3003,7 @@ fn audit_history_and_get_without_docker() {
 /// montado, se guarda en el historial (0600) del servidor, se puede abrir y
 /// **no cambia nada**: durante la auditoría solo hay lecturas en el panel de
 /// actividad.
+#[cfg(unix)]
 #[test]
 fn live_e3_audit_via_ipc_is_read_only_and_saved() {
     if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
@@ -3119,6 +3125,7 @@ fn live_e3_audit_via_ipc_is_read_only_and_saved() {
     let got = invoke(&h, "audit_get", json!({ "id": report["id"] })).unwrap();
     assert_eq!(&got, report);
     let file = state_dir.join("auditorias.jsonl");
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     assert_eq!(
         std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
@@ -3187,8 +3194,10 @@ fn reopen(store: &ConfigStore) -> Harness {
 /// Tareas y temporizadores sin Docker, con un `systemctl` simulado: la
 /// programación necesita autorización expresa, se consulta, se desactiva, se
 /// elimina y sobrevive a un reinicio de la aplicación.
+#[cfg(unix)]
 #[test]
 fn e4_jobs_and_timers_need_authorization_and_survive_a_restart() {
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     let h = harness();
     let base = h.store.path().parent().unwrap().to_path_buf();
@@ -3635,6 +3644,7 @@ fn e5_monitor_without_docker_shows_gaps_and_survives_a_restart() {
 /// E5 contra Docker real: muestras con los contenedores, series en vivo,
 /// registros por minuto en disco y una alerta de OOM que llega por los eventos
 /// que ya recibe la aplicación.
+#[cfg(unix)]
 #[test]
 fn live_e5_monitor_samples_minutes_and_event_alerts() {
     if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
@@ -3756,6 +3766,7 @@ fn live_e5_monitor_samples_minutes_and_event_alerts() {
         .parent()
         .unwrap()
         .join("estado/monitor/local/metricas.jsonl");
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     assert_eq!(
         std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,

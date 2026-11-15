@@ -8,6 +8,8 @@
 //!
 //! Se ejecuta con `--test-threads=1`: varias pruebas comprueban que no queda
 //! ningún proceso `ssh` hijo de la prueba, y esa cuenta es de todo el proceso.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 
@@ -208,6 +210,7 @@ fn local(socket: &str) -> bollard::Docker {
 
 // ------------------------------------------------------------------ identidad
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn first_contact_shows_the_fingerprint_and_only_the_confirmed_key_is_trusted() {
     let Some(lab) = lab() else { return };
@@ -924,6 +927,7 @@ async fn orphaned_sessions_of_dead_instances_are_closed_at_startup() {
 /// los del servidor (uno del equipo no cuenta), las acciones afectan solo a
 /// ese servidor, cancelar los registros no deja procesos en el servidor y
 /// el guardado se niega si el archivo cambió.
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn compose_runs_on_the_server_with_server_files() {
     use cmc_engine::compose::project::{ComposeAction, ComposeCli, ProjectRef};
@@ -1584,6 +1588,7 @@ async fn local_registry_credentials_reach_a_server_only_with_consent() {
     );
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn bind_folders_are_checked_on_the_server() {
     use cmc_engine::binds::PathKind;

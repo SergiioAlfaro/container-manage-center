@@ -392,6 +392,18 @@
       "other": {
         "title": "Erro ao ligar ao Docker",
         "body": "{{message}}"
+      },
+      "desktopNotRunning": {
+        "title": "O Docker Desktop não está em execução",
+        "body": "O pipe do Docker (\\\\.\\pipe\\docker_engine) não responde. O Docker Desktop está instalado, mas não foi iniciado ou ainda está a arrancar."
+      },
+      "desktopNotInstalled": {
+        "title": "O Docker Desktop não parece estar instalado",
+        "body": "Não foi encontrado o pipe do Docker nem o programa docker.exe."
+      },
+      "desktopPermission": {
+        "title": "Sem permissão para usar o Docker Desktop",
+        "body": "O seu utilizador ({{user}}) não consegue abrir o pipe do Docker. O Docker Desktop só deixa usá-lo aos membros do grupo local «docker-users»."
       }
     },
     "stepsText": {
@@ -411,7 +423,10 @@
       "checkPath": "Verifique se o caminho corresponde ao socket do Docker e não a outro serviço.",
       "upgrade": "Atualize o Docker Engine para a versão 20.10 ou posterior.",
       "restart": "Reinicie o serviço do Docker:",
-      "retry": "Quando estiver resolvido, prima «Voltar a ligar». A aplicação também tenta novamente sozinha."
+      "retry": "Quando estiver resolvido, prima «Voltar a ligar». A aplicação também tenta novamente sozinha.",
+      "startDesktop": "Abra o Docker Desktop a partir do menu Iniciar e aguarde até indicar que o motor está em execução.",
+      "installDesktop": "Instale o Docker Desktop para Windows (docs.docker.com/desktop/setup/install/windows-install).",
+      "addDockerUsers": "Adicione o seu utilizador ao grupo «docker-users» a partir de uma Linha de comandos aberta como administrador:"
     }
   },
   "dashboard": {
@@ -2143,7 +2158,8 @@
     "done_one": "Foi desinstalado {{count}} pacote.",
     "done_other": "Foram desinstalados {{count}} pacotes.",
     "doneSelf": "O Container Manage Center já não está instalado: feche a aplicação.",
-    "stillInstalled": "Continuam instalados: {{list}}."
+    "stillInstalled": "Continuam instalados: {{list}}.",
+    "unsupportedWin": "No Windows, o Container Manage Center é desinstalado em Definições do Windows › Aplicações › Aplicações instaladas. Os seus dados mantêm-se; o Docker Desktop não é alterado."
   },
   "help": {
     "title": "Ajuda e documentação",
@@ -3170,7 +3186,12 @@
       "authBody": "Para agendar a tarefa, serão criados estes dois ficheiros na sua pasta de systemd de utilizador e executados estes comandos. Não é preciso ser administrador e nada do sistema é tocado.",
       "authAction": "Criar o agendamento",
       "commands": "Comandos",
-      "authCheck": "Autorizo criar estes ficheiros e executar estes comandos"
+      "authCheck": "Autorizo criar estes ficheiros e executar estes comandos",
+      "foreignWin": "Há uma tarefa agendada com esse nome que não é da aplicação: não é alterada.",
+      "problemWin": "Não foi possível consultar o Agendador de Tarefas: {{problem}}",
+      "removeBodyWin": "A tarefa agendada de «{{name}}» será removida do Agendador de Tarefas. A tarefa e as suas cópias mantêm-se.",
+      "authBodyWin": "Para agendar a tarefa, será criada esta tarefa no Agendador de Tarefas do Windows (pasta «Container Manage Center»), com o seu utilizador e sem privilégios de administrador, e será executado este comando.",
+      "authCheckWin": "Autorizo criar esta tarefa agendada"
     },
     "schedule": {
       "dailyAt": "Todos os dias às {{time}}",
@@ -3293,7 +3314,9 @@
       "engine_notConnected": "Não há ligação ao Docker Engine."
     },
     "fromAudit": "Seleção preparada a partir da auditoria para «{{name}}»: a sua configuração, a sua base de dados se o for e os volumes que monta. Reveja-a antes de copiar.",
-    "fromAuditGone": "«{{name}}» já não existe neste servidor: escolha o que copiar."
+    "fromAuditGone": "«{{name}}» já não existe neste servidor: escolha o que copiar.",
+    "noSystemdWin": "Não se encontra o Agendador de Tarefas do Windows (schtasks.exe): as tarefas podem ser executadas manualmente, mas não agendadas.",
+    "jobsHintWin": "As tarefas são agendadas com o Agendador de Tarefas do Windows, que as executa mesmo com a aplicação fechada (com a sessão iniciada). Se o computador estava desligado a essa hora, a cópia é feita assim que possível. Nada é criado sem a sua autorização expressa."
   },
   "monitor": {
     "intro": "O Container Manage Center recolhe amostras com «docker stats» e «inspect» (sem instalar nada no servidor). As quebras de ligação aparecem como lacunas: não se inventam dados.",

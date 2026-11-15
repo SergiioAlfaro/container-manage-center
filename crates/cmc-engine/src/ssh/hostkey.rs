@@ -14,8 +14,8 @@
 //! - Solo se modifica el `known_hosts` de la aplicación; `~/.ssh/known_hosts`
 //!   se lee pero nunca se toca.
 
+use crate::fsx::OpenOptionsExt;
 use std::io::Write;
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 use std::process::Stdio;
 use std::time::Duration;
@@ -42,6 +42,7 @@ pub fn host_pattern(p: &SshProfile) -> String {
 /// Lanza `ssh` (o `ssh-keygen`) sin shell, sin entrada y sin heredar askpass.
 fn command(program: &Path, args: &[String]) -> Command {
     let mut c = Command::new(program);
+    crate::sys::no_console(&mut c);
     c.args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -294,7 +295,7 @@ pub async fn forget(paths: &SshPaths, p: &SshProfile) -> Result<(), String> {
         .map_err(|e| format!("{e:?}"))?;
     // ssh-keygen deja una copia `.old`: no se conserva.
     let _ = std::fs::remove_file(format!("{}.old", file.display()));
-    let _ = std::fs::set_permissions(file, std::fs::Permissions::from_mode(0o600));
+    let _ = crate::fsx::set_mode(file, 0o600);
     if r.code == Some(0) || r.stderr.contains("not found") {
         Ok(())
     } else {
@@ -312,7 +313,7 @@ fn append(file: &Path, lines: &str) -> std::io::Result<()> {
         .append(true)
         .mode(0o600)
         .open(file)?;
-    std::fs::set_permissions(file, std::fs::Permissions::from_mode(0o600))?;
+    crate::fsx::set_mode(file, 0o600)?;
     for line in lines
         .lines()
         .map(str::trim)

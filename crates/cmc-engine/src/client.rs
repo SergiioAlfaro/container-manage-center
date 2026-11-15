@@ -84,7 +84,13 @@ pub enum Dialer {
 impl Dialer {
     pub async fn connect(&self) -> std::io::Result<Box<dyn RawStream>> {
         match self {
+            #[cfg(unix)]
             Dialer::Unix(path) => Ok(Box::new(tokio::net::UnixStream::connect(path).await?)),
+            // Windows: la tubería con nombre de Docker Desktop (1.9.0, D-114).
+            #[cfg(windows)]
+            Dialer::Unix(path) => Ok(Box::new(
+                tokio::net::windows::named_pipe::ClientOptions::new().open(path)?,
+            )),
             Dialer::Ssh(s) => Ok(Box::new(s.dial().await?)),
         }
     }
@@ -109,7 +115,15 @@ impl std::fmt::Debug for Engine {
 
 impl Engine {
     pub fn new(endpoint: Endpoint, activity: ActivityLog) -> Result<Self, EngineError> {
+        #[cfg(unix)]
         let docker = Docker::connect_with_unix(
+            &endpoint.socket_path,
+            CLIENT_TIMEOUT_SECS,
+            bollard::API_DEFAULT_VERSION,
+        )?;
+        // Windows: Docker Desktop por su tubería con nombre (1.9.0, D-114).
+        #[cfg(windows)]
+        let docker = Docker::connect_with_named_pipe(
             &endpoint.socket_path,
             CLIENT_TIMEOUT_SECS,
             bollard::API_DEFAULT_VERSION,
@@ -445,6 +459,7 @@ pub fn summary(version: &EngineVersion, info: &EngineInfo) -> EngineSummary {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use crate::model::EndpointSource;
 
     #[test]
@@ -456,6 +471,7 @@ mod tests {
         assert!(api_at_least("2.0", (1, 41)));
     }
 
+    #[cfg(unix)]
     #[test]
     fn equivalent_includes_host_only_for_non_system_socket() {
         let dir = tempfile::tempdir().unwrap();

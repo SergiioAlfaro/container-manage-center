@@ -85,6 +85,28 @@ generan las suyas al vuelo, fuera del árbol del proyecto.
 5. Se genera el .tar.gz y se hacen las comprobaciones del apartado 4.
 6. `scripts/release-sums.sh` genera `SHA256SUMS`.
 
+## 5 bis. Windows (1.9.0, D-114): no se distribuye todavía
+
+El instalador de Windows incluye **WebView2Loader** de Microsoft (como
+`WebView2Loader.dll` en la compilación con MinGW y dentro del programa en la
+de MSVC). Su licencia es BSD-3-Clause, compatible con la GPL, pero Microsoft
+**no publica su código fuente**, y la GPL v3 pide ofrecer el código fuente
+correspondiente de lo que se distribuye. No está claro que la excepción de
+bibliotecas del sistema lo cubra.
+
+Mientras el titular del copyright no decida (por ejemplo, un permiso
+adicional de la sección 7 de la GPL v3 para enlazar con el cargador de
+WebView2, o asesoramiento jurídico):
+- los instaladores de Windows llevan «SOLO-PRUEBAS» en el nombre, son para
+  probar en equipos propios y **no se publican ni se pasan a terceros**;
+- el flujo de GitHub Actions solo se lanza a mano y guarda el instalador como
+  artefacto privado de la ejecución, sin crear versiones.
+
+Cuando se distribuya, además de lo de los apartados anteriores: el instalador
+lleva `LICENSE.txt`, `THIRD_PARTY_NOTICES.md` (la de Windows, generada con
+`scripts/third-party-licenses.py --windows`) y los textos de WebView2Loader y
+de MinGW-w64/libgcc en la carpeta `legal\` de la instalación.
+
 ## 6. Historial
 
 Hasta la 1.6.0, el paquete incluía

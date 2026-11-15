@@ -3,16 +3,34 @@
 //! Información del sistema necesaria para diagnosticar el acceso a Docker.
 //! Se leen /etc/passwd y /etc/group directamente: no se ejecuta ningún programa.
 
-use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::path::Path;
+use std::path::PathBuf;
 
 use crate::model::{Installation, UserContext};
 
+#[cfg(unix)]
 pub fn uid() -> u32 {
     // SAFETY: getuid no falla ni tiene precondiciones.
     unsafe { libc::getuid() }
 }
 
+/// En Windows no hay uid: se usa el de un usuario normal, para que nada se
+/// trate como «root» (1.9.0, D-114).
+#[cfg(windows)]
+pub fn uid() -> u32 {
+    1000
+}
+
+/// Grupos activos del proceso (en Windows, ninguno: el acceso a Docker no
+/// depende de grupos de Unix).
+#[cfg(windows)]
+pub fn process_groups() -> Vec<u32> {
+    Vec::new()
+}
+
 /// Grupos activos del proceso (primario y suplementarios).
+#[cfg(unix)]
 pub fn process_groups() -> Vec<u32> {
     // SAFETY: primero se pide el tamaño (0, null) y después se pasa un búfer de ese tamaño.
     unsafe {
@@ -79,6 +97,9 @@ fn read(path: &str) -> String {
 
 pub fn user_context() -> UserContext {
     let uid = uid();
+    #[cfg(windows)]
+    let name = std::env::var("USERNAME").unwrap_or_else(|_| uid.to_string());
+    #[cfg(unix)]
     let name = parse_passwd_for(&read("/etc/passwd"), uid)
         .map(|(n, _)| n)
         .or_else(|| std::env::var("USER").ok())
@@ -102,6 +123,29 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
     let mut dirs: Vec<PathBuf> = std::env::var_os("PATH")
         .map(|p| std::env::split_paths(&p).collect())
         .unwrap_or_default();
+    #[cfg(windows)]
+    {
+        // Docker Desktop instala sus programas aquí aunque no estén en el PATH.
+        for v in ["ProgramFiles", "ProgramW6432"] {
+            if let Some(pf) = std::env::var_os(v) {
+                dirs.push(PathBuf::from(pf).join(r"Docker\Docker\resources\bin"));
+            }
+        }
+        let exts: Vec<String> = std::env::var("PATHEXT")
+            .unwrap_or_else(|_| ".EXE;.CMD;.BAT".into())
+            .split(';')
+            .filter(|e| !e.is_empty())
+            .map(|e| e.to_ascii_lowercase())
+            .collect();
+        #[allow(clippy::needless_return)]
+        return dirs.into_iter().find_map(|d| {
+            exts.iter()
+                .map(|e| d.join(format!("{name}{e}")))
+                .chain(std::iter::once(d.join(name)))
+                .find(|p| p.is_file())
+        });
+    }
+    #[cfg(unix)]
     for d in [
         "/usr/local/bin",
         "/usr/bin",
@@ -112,20 +156,35 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
     ] {
         dirs.push(PathBuf::from(d));
     }
+    #[cfg(unix)]
     if let Some(home) = dirs::home_dir() {
         dirs.push(home.join("bin"));
         dirs.push(home.join(".local/bin"));
     }
+    #[cfg(unix)]
     dirs.into_iter()
         .map(|d| d.join(name))
         .find(|p| is_executable(p))
 }
 
+#[cfg(unix)]
 fn is_executable(p: &Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
     std::fs::metadata(p)
         .map(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
         .unwrap_or(false)
+}
+
+/// En Windows, un programa de consola lanzado desde la aplicación abriría
+/// una ventana negra: se pide que no la tenga (1.9.0, D-114).
+pub fn no_console(cmd: &mut tokio::process::Command) {
+    #[cfg(windows)]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    #[cfg(unix)]
+    let _ = cmd;
 }
 
 pub fn installation() -> Installation {
@@ -163,6 +222,7 @@ mod tests {
         assert_eq!(parse_passwd_for(p, 5), None);
     }
 
+    #[cfg(unix)]
     #[test]
     fn process_groups_includes_effective_gid() {
         // SAFETY: getegid no tiene precondiciones.
@@ -170,6 +230,7 @@ mod tests {
         assert!(process_groups().contains(&egid));
     }
 
+    #[cfg(unix)]
     #[test]
     fn finds_sh() {
         assert!(find_executable("sh").is_some());

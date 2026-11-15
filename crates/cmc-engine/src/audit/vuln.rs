@@ -56,6 +56,7 @@ async fn run(
     cancel: &CancellationToken,
 ) -> Result<Run, String> {
     let mut cmd = tokio::process::Command::new(program);
+    crate::sys::no_console(&mut cmd);
     cmd.args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -517,6 +518,7 @@ mod tests {
 
     /// Herramienta falsa (un script) para comprobar la ejecución, el tiempo
     /// máximo, los errores y que nunca se informa de 0 sin análisis completo.
+    #[cfg(unix)]
     #[tokio::test]
     async fn scanning_with_fake_tools() {
         let dir = tempfile::Builder::new()

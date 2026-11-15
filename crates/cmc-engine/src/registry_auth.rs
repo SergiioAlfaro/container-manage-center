@@ -317,7 +317,9 @@ async fn run_helper(
         equivalent_command: None,
     });
     let result = async {
-        let mut child = Command::new(&program)
+        let mut cmd = Command::new(&program);
+        crate::sys::no_console(&mut cmd);
+        let mut child = cmd
             .arg("get")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -416,6 +418,7 @@ pub fn registry_config_header(creds: &HashMap<String, DockerCredentials>) -> Str
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
 
     fn write(dir: &Path, name: &str, s: &str) -> PathBuf {
@@ -463,6 +466,7 @@ mod tests {
     }
 
     /// Helper falso en el PATH: recibe el servidor por stdin y responde como los reales.
+    #[cfg(unix)]
     #[tokio::test]
     async fn credential_helper_is_run_without_shell_and_its_output_is_never_recorded() {
         let d = tempfile::tempdir().unwrap();

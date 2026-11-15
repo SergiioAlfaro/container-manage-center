@@ -20,12 +20,15 @@ use serde::Serialize;
 use ts_rs::TS;
 
 /// Atributos con los que se guardan en el keyring.
+#[cfg(unix)]
 const ATTR_APP: &str = "application";
 /// Identificador de la aplicación en el keyring (1.8.0, D-113). Las entradas
 /// guardadas con el nombre anterior ([`cmc_store::legacy`]) se pasan a este al
 /// usarlas o al arrancar ([`Secrets::migrate_legacy`]).
 const APP: &str = "container-manage-center";
+#[cfg(unix)]
 const ATTR_SERVER: &str = "cmc-server";
+#[cfg(unix)]
 const ATTR_KIND: &str = "cmc-kind";
 /// Abrir el keyring puede mostrar un diálogo del sistema para desbloquearlo.
 const KEYRING_TIMEOUT: Duration = Duration::from_secs(60);
@@ -58,10 +61,12 @@ pub enum KeyringStatus {
 #[derive(Debug, thiserror::Error)]
 pub enum KeyringError {
     #[error("no hay un almacén seguro de secretos disponible: {0}")]
+    #[cfg_attr(windows, allow(dead_code))]
     Unavailable(String),
     #[error("el almacén de secretos no respondió a tiempo")]
     Timeout,
     #[error("el almacén de secretos está bloqueado")]
+    #[cfg_attr(windows, allow(dead_code))]
     Locked,
     #[error("error del almacén de secretos: {0}")]
     Other(String),
@@ -71,7 +76,110 @@ fn other(e: impl std::fmt::Display) -> KeyringError {
     KeyringError::Other(e.to_string())
 }
 
+/// Windows (1.9.0, D-114): Administrador de credenciales de Windows
+/// (credenciales genéricas del usuario, cifradas por Windows con su sesión).
+/// Nombre: `container-manage-center/<servidor>/<tipo>`.
+#[cfg(windows)]
+mod keyring {
+    use super::*;
+    use windows_sys::Win32::Security::Credentials::{
+        CredDeleteW, CredFree, CredReadW, CredWriteW, CREDENTIALW, CRED_PERSIST_LOCAL_MACHINE,
+        CRED_TYPE_GENERIC,
+    };
+
+    const KINDS: [SecretKind; 2] = [SecretKind::Passphrase, SecretKind::Password];
+
+    fn wide(s: &str) -> Vec<u16> {
+        s.encode_utf16().chain(std::iter::once(0)).collect()
+    }
+
+    fn target(server: &str, kind: SecretKind) -> Vec<u16> {
+        wide(&format!("{APP}/{server}/{}", kind_code(kind)))
+    }
+
+    pub async fn probe() -> Result<(), KeyringError> {
+        Ok(())
+    }
+
+    pub async fn store(
+        server: &str,
+        label: &str,
+        kind: SecretKind,
+        secret: &str,
+    ) -> Result<(), KeyringError> {
+        let mut name = target(server, kind);
+        let mut comment = wide(label);
+        let mut user = wide(server);
+        let blob = zeroize::Zeroizing::new(secret.as_bytes().to_vec());
+        let cred = CREDENTIALW {
+            Type: CRED_TYPE_GENERIC,
+            TargetName: name.as_mut_ptr(),
+            Comment: comment.as_mut_ptr(),
+            CredentialBlobSize: blob.len() as u32,
+            CredentialBlob: blob.as_ptr() as *mut u8,
+            Persist: CRED_PERSIST_LOCAL_MACHINE,
+            UserName: user.as_mut_ptr(),
+            ..Default::default()
+        };
+        // SAFETY: todos los punteros apuntan a búferes vivos hasta el final de la llamada.
+        if unsafe { CredWriteW(&cred, 0) } == 0 {
+            return Err(other(std::io::Error::last_os_error()));
+        }
+        Ok(())
+    }
+
+    pub async fn load(server: &str, kind: SecretKind) -> Result<Option<Secret>, KeyringError> {
+        let name = target(server, kind);
+        let mut p: *mut CREDENTIALW = std::ptr::null_mut();
+        // SAFETY: `name` termina en 0; `p` recibe una estructura que se libera con CredFree.
+        if unsafe { CredReadW(name.as_ptr(), CRED_TYPE_GENERIC, 0, &mut p) } == 0 {
+            let e = std::io::Error::last_os_error();
+            // ERROR_NOT_FOUND
+            return if e.raw_os_error() == Some(1168) {
+                Ok(None)
+            } else {
+                Err(other(e))
+            };
+        }
+        // SAFETY: CredReadW ha devuelto una credencial válida.
+        let bytes = unsafe {
+            let c = &*p;
+            zeroize::Zeroizing::new(
+                std::slice::from_raw_parts(c.CredentialBlob, c.CredentialBlobSize as usize)
+                    .to_vec(),
+            )
+        };
+        // SAFETY: liberar lo que reservó CredReadW.
+        unsafe { CredFree(p as *const _) };
+        Ok(std::str::from_utf8(&bytes)
+            .ok()
+            .map(|s| Secret::new(s.to_owned())))
+    }
+
+    pub async fn delete(server: &str) -> Result<usize, KeyringError> {
+        let mut n = 0;
+        for k in KINDS {
+            let name = target(server, k);
+            // SAFETY: `name` termina en 0.
+            if unsafe { CredDeleteW(name.as_ptr(), CRED_TYPE_GENERIC, 0) } != 0 {
+                n += 1;
+            }
+        }
+        Ok(n)
+    }
+
+    pub async fn has(server: &str, kind: SecretKind) -> Result<bool, KeyringError> {
+        Ok(load(server, kind).await?.is_some())
+    }
+
+    /// En Windows no hubo versiones con el nombre anterior.
+    pub async fn migrate_unlocked() -> Result<usize, KeyringError> {
+        Ok(0)
+    }
+}
+
 /// Acceso al keyring del sistema por Secret Service (D-Bus).
+#[cfg(unix)]
 mod keyring {
     use super::*;
     use secret_service::{EncryptionType, SecretService};
@@ -375,7 +483,7 @@ impl Secrets {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
 
@@ -401,7 +509,7 @@ mod tests {
 
     /// Keyring real (Secret Service). Se ejecuta solo con `CMC_KEYRING_TEST=1`
     /// dentro de una sesión D-Bus con un keyring desbloqueado (ver
-    /// `scripts/verify-evolution-1.8.0.sh`).
+    /// `scripts/verify-evolution-1.9.0.sh`).
     #[tokio::test]
     async fn real_keyring_store_load_delete() {
         if std::env::var_os("CMC_KEYRING_TEST").is_none() {

@@ -7,6 +7,8 @@
 //!
 //! Cada proyecto tiene un nombre único, todos sus recursos llevan la etiqueta
 //! `cmc.test=true` y se eliminan al terminar aunque la prueba falle.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 

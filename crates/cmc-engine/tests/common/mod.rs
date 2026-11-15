@@ -235,6 +235,7 @@ pub fn ssh_profile(
 /// Deja que el usuario remoto (otro usuario del mismo equipo en las pruebas)
 /// llegue al socket: directorio 0755 y socket 0666. Solo en modo SSH.
 pub fn expose_for_remote(socket: &Path) {
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     // Solo sockets creados por la prueba en un directorio temporal (el proxy):
     // nunca el socket real de Docker ni su directorio.

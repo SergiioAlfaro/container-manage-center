@@ -6,6 +6,8 @@
 //! Docker son de lectura y los contenedores quedan igual.
 //!
 //! Todo lo creado lleva `cmc-test-audit-` en el nombre y se elimina al terminar.
+// Pruebas contra Docker Engine por socket Unix (Linux); no en Windows (D-114).
+#![cfg(unix)]
 
 mod common;
 
@@ -94,6 +96,7 @@ impl Drop for Guard {
     }
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn audit_detects_dangerous_settings_ignores_hardened_ones_and_only_reads() {
     if !enabled() {

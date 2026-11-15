@@ -21,6 +21,8 @@ use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, ReadBuf};
 use tokio::process::{Child, ChildStdin, ChildStdout, Command};
 
+#[cfg(windows)]
+use super::args::direct_args;
 use super::args::{channel_args, control_args, master_args};
 use super::askpass::{private_dir, random_hex, AskpassServer, PromptTarget, SOCKET_ENV};
 use super::hostkey::{run, Run};
@@ -98,23 +100,28 @@ async fn effective_hostname(paths: &SshPaths, p: &SshProfile) -> Option<String> 
 
 /// Variables de entorno de un `ssh`: askpass si hace falta y nada heredado que
 /// pueda alterar la autenticación.
-fn ssh_env(c: &mut Command, paths: &SshPaths, askpass: Option<&Path>) {
+fn ssh_env(c: &mut Command, paths: &SshPaths, askpass: Option<&AskpassServer>) {
+    crate::sys::no_console(c);
     c.env_remove("SSH_ASKPASS")
         .env_remove("SSH_ASKPASS_REQUIRE")
         .env_remove(SOCKET_ENV)
         // OpenSSH ejecuta `ProxyCommand` con `$SHELL -c`: el del servidor
         // intermedio está entrecomillado para un shell POSIX (D-087).
         .env("SHELL", "/bin/sh");
-    if let Some(sock) = askpass {
+    if let Some(a) = askpass {
         c.env("SSH_ASKPASS", &paths.askpass)
             .env("SSH_ASKPASS_REQUIRE", "force")
-            .env(SOCKET_ENV, sock);
+            .env(SOCKET_ENV, a.socket());
+        #[cfg(windows)]
+        c.env(super::askpass::TOKEN_ENV, a.token());
     }
 }
 
 impl SshSession {
     /// Autentica con el servidor y deja la conexión maestra preparada.
     /// No comprueba Docker (eso lo hace quien conecta).
+    // En Windows, la rama propia termina con `return` (sin ControlMaster).
+    #[cfg_attr(windows, allow(unreachable_code))]
     pub async fn open(ctx: &SshContext, p: &SshProfile) -> Result<Arc<Self>, RemoteProblem> {
         let issues = validate(p);
         if !issues.is_empty() {
@@ -161,6 +168,60 @@ impl SshSession {
                 )
             }
         };
+        // Windows: sin conexión maestra. Se comprueba que se autentica con una
+        // conexión directa que solo ejecuta `true`; después, cada canal es una
+        // conexión directa con las mismas opciones (1.9.0, D-114).
+        #[cfg(windows)]
+        {
+            if !p.options.proxy_jump.is_empty() {
+                return Err(RemoteProblem::Other {
+                    message: "Los servidores intermedios (ProxyJump) todavía no están disponibles en Windows.".into(),
+                });
+            }
+            let mut cmd = Command::new(&paths.ssh);
+            cmd.args(direct_args(p, &paths, &["true".to_owned()], false))
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .kill_on_drop(true);
+            ssh_env(&mut cmd, &paths, askpass.as_ref());
+            let child = cmd.spawn().map_err(|e| {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    RemoteProblem::SshMissing
+                } else {
+                    RemoteProblem::Other {
+                        message: e.to_string(),
+                    }
+                }
+            })?;
+            let limit = Duration::from_secs(u64::from(p.options.connect_timeout) + 20);
+            let out = match tokio::time::timeout(limit, child.wait_with_output()).await {
+                Ok(Ok(o)) => o,
+                Ok(Err(e)) => {
+                    return Err(RemoteProblem::Other {
+                        message: e.to_string(),
+                    })
+                }
+                Err(_) => return Err(RemoteProblem::Timeout),
+            };
+            if !out.status.success() {
+                return Err(classify_ssh(
+                    out.status.code(),
+                    &String::from_utf8_lossy(&out.stderr),
+                    &p.host,
+                    p.port,
+                ));
+            }
+            #[allow(clippy::needless_return)]
+            return Ok(Arc::new(Self {
+                profile: p.clone(),
+                paths,
+                control: PathBuf::new(),
+                master: parking_lot::Mutex::new(None),
+                master_err: StderrBuf::default(),
+                _askpass: askpass,
+            }));
+        }
         let short: String =
             p.id.chars()
                 .rev()
@@ -182,7 +243,7 @@ impl SshSession {
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .kill_on_drop(true);
-        ssh_env(&mut cmd, &paths, askpass.as_ref().map(|a| a.socket()));
+        ssh_env(&mut cmd, &paths, askpass.as_ref());
         let mut child = cmd.spawn().map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
                 RemoteProblem::SshMissing
@@ -242,8 +303,17 @@ impl SshSession {
     }
 
     /// Orden `ssh` para un canal que ejecuta `remote` en el servidor.
+    // En Windows, la rama propia termina con `return` (sin ControlMaster).
+    #[cfg_attr(windows, allow(unreachable_code))]
     pub fn channel(&self, remote: &[String], tty: bool) -> Command {
         let mut c = Command::new(&self.paths.ssh);
+        #[cfg(windows)]
+        {
+            c.args(direct_args(&self.profile, &self.paths, remote, tty))
+                .kill_on_drop(true);
+            ssh_env(&mut c, &self.paths, self._askpass.as_ref());
+            return c;
+        }
         c.args(channel_args(
             &self.profile,
             &self.paths,
@@ -252,8 +322,7 @@ impl SshSession {
             tty,
         ))
         .kill_on_drop(true);
-        let sock = self._askpass.as_ref().map(|a| a.socket().to_owned());
-        ssh_env(&mut c, &self.paths, sock.as_deref());
+        ssh_env(&mut c, &self.paths, self._askpass.as_ref());
         c
     }
 
@@ -311,8 +380,16 @@ impl SshSession {
         })
     }
 
-    /// La conexión maestra sigue viva.
+    /// La conexión maestra sigue viva (en Windows, que se puede conectar).
+    // En Windows, la rama propia termina con `return` (sin ControlMaster).
+    #[cfg_attr(windows, allow(unreachable_code))]
     pub async fn alive(&self) -> bool {
+        #[cfg(windows)]
+        return matches!(
+            self.run(&["true".to_owned()], Duration::from_secs(20))
+                .await,
+            Ok(RemoteOutput { code: Some(0), .. })
+        );
         if let Some(c) = self.master.lock().as_mut() {
             if !matches!(c.try_wait(), Ok(None)) {
                 return false;
@@ -338,6 +415,11 @@ impl SshSession {
 
     /// Cierra la conexión maestra y con ella todos sus canales.
     pub async fn close(&self) {
+        // Windows: no hay maestra; los canales terminan con sus procesos.
+        #[cfg(windows)]
+        if self.control.as_os_str().is_empty() {
+            return;
+        }
         let _ = run(
             &self.paths.ssh,
             &control_args(&self.profile, &self.control, "exit"),
@@ -358,7 +440,9 @@ impl Drop for SshSession {
         if let Some(mut c) = self.master.lock().take() {
             let _ = c.start_kill();
         }
-        let _ = std::fs::remove_file(&self.control);
+        if !self.control.as_os_str().is_empty() {
+            let _ = std::fs::remove_file(&self.control);
+        }
     }
 }
 
@@ -462,6 +546,19 @@ impl tower_service::Service<hyper::Uri> for SshConnector {
 /// sobre sockets de control del directorio privado de la aplicación cuyo PID
 /// ya no existe; nunca sobre los de otra instancia en marcha. Devuelve cuántos.
 pub async fn close_orphans(paths: &SshPaths) -> usize {
+    // Windows: no hay conexiones maestras.
+    #[cfg(windows)]
+    {
+        let _ = paths;
+        #[allow(clippy::needless_return)]
+        return 0;
+    }
+    #[cfg(unix)]
+    close_orphans_unix(paths).await
+}
+
+#[cfg(unix)]
+async fn close_orphans_unix(paths: &SshPaths) -> usize {
     let Ok(dir) = std::fs::read_dir(&paths.runtime_dir) else {
         return 0;
     };
@@ -494,6 +591,7 @@ pub async fn close_orphans(paths: &SshPaths) -> usize {
     closed
 }
 
+#[cfg(unix)]
 fn process_alive(pid: i32) -> bool {
     // SAFETY: kill con la señal 0 solo comprueba si el proceso existe.
     let r = unsafe { libc::kill(pid, 0) };

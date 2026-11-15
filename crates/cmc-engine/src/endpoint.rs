@@ -14,6 +14,14 @@ use crate::model::{ConnectionMode, Endpoint, EndpointSource};
 
 pub const SYSTEM_SOCKET: &str = "/var/run/docker.sock";
 
+/// Tuberías con nombre de Docker Desktop en Windows (1.9.0, D-114), en orden:
+/// la general (lleva al motor activo) y la del motor Linux.
+#[cfg(windows)]
+pub const WINDOWS_PIPES: [&str; 2] = [
+    r"\\.\pipe\docker_engine",
+    r"\\.\pipe\dockerDesktopLinuxEngine",
+];
+
 /// Entorno relevante para localizar Docker.
 #[derive(Debug, Clone, Default)]
 pub struct HostEnv {
@@ -53,6 +61,16 @@ pub fn parse_host(host: &str) -> ParsedHost {
     let host = host.trim();
     if host.contains('\0') {
         return ParsedHost::Invalid("contiene un carácter nulo".into());
+    }
+    // Windows: `npipe:////./pipe/docker_engine` → `\\.\pipe\docker_engine`.
+    #[cfg(windows)]
+    if let Some(rest) = host.strip_prefix("npipe://") {
+        let p = rest.replace('/', "\\");
+        return if p.starts_with(r"\\.\pipe\") && p.len() > 9 && !p.contains("..") {
+            ParsedHost::Unix(p)
+        } else {
+            ParsedHost::Invalid("no es una tubería con nombre local".into())
+        };
     }
     let path = if let Some(rest) = host.strip_prefix("unix://") {
         rest
@@ -159,10 +177,20 @@ pub fn resolve(mode: &ConnectionMode, env: &HostEnv) -> Resolution {
         }
     }
 
+    #[cfg(windows)]
+    {
+        for pipe in WINDOWS_PIPES {
+            push(&mut r, pipe.to_owned(), EndpointSource::System);
+        }
+        #[allow(clippy::needless_return)]
+        return r;
+    }
+    #[cfg(unix)]
     let runtime = env
         .xdg_runtime_dir
         .clone()
         .unwrap_or_else(|| PathBuf::from(format!("/run/user/{}", env.uid)));
+    #[cfg(unix)]
     if env.uid != 0 {
         push(
             &mut r,
@@ -170,7 +198,9 @@ pub fn resolve(mode: &ConnectionMode, env: &HostEnv) -> Resolution {
             EndpointSource::Rootless,
         );
     }
+    #[cfg(unix)]
     push(&mut r, SYSTEM_SOCKET.to_owned(), EndpointSource::System);
+    #[cfg(unix)]
     r
 }
 

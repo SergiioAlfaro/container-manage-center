@@ -12,11 +12,13 @@
 //! No se ejecuta ninguna orden propia: solo se abre la shell de inicio de
 //! sesión del usuario; lo que se escriba lo decide el usuario.
 
+#[cfg(unix)]
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd, RawFd};
 use std::sync::Arc;
 use std::time::Duration;
 
 use cmc_activity::{Category, Failure, OperationSpec, Outcome, Transport};
+#[cfg(unix)]
 use tokio::io::unix::AsyncFd;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
@@ -34,6 +36,7 @@ fn io_err(what: &str, e: std::io::Error) -> EngineError {
     }
 }
 
+#[cfg(unix)]
 fn winsize(cols: u16, rows: u16) -> libc::winsize {
     libc::winsize {
         ws_row: rows,
@@ -43,6 +46,7 @@ fn winsize(cols: u16, rows: u16) -> libc::winsize {
     }
 }
 
+#[cfg(unix)]
 /// Par PTY (maestro, esclavo) con el tamaño indicado.
 fn open_pty(cols: u16, rows: u16) -> Result<(OwnedFd, OwnedFd), EngineError> {
     let mut master: RawFd = -1;
@@ -75,12 +79,14 @@ fn open_pty(cols: u16, rows: u16) -> Result<(OwnedFd, OwnedFd), EngineError> {
     Ok((m, s))
 }
 
+#[cfg(unix)]
 fn set_size(master: RawFd, cols: u16, rows: u16) {
     let ws = winsize(cols.clamp(10, 1000), rows.clamp(3, 500));
     // SAFETY: fd válido del maestro y puntero a `winsize`.
     unsafe { libc::ioctl(master, libc::TIOCSWINSZ, &ws) };
 }
 
+#[cfg(unix)]
 fn write_all(master: RawFd, mut data: &[u8]) -> std::io::Result<()> {
     while !data.is_empty() {
         // SAFETY: fd válido; puntero y longitud del búfer.
@@ -120,6 +126,7 @@ fn transport(p: &super::SshProfile) -> Transport {
     }
 }
 
+#[cfg(unix)]
 /// Abre la shell del servidor y la mantiene hasta que termina o se cancela.
 ///
 /// Recibe el motor del servidor: la sesión y el registro de actividad (ya
@@ -297,6 +304,156 @@ where
                 Some(0) => "La sesión SSH terminó".into(),
                 Some(c) => format!("La sesión SSH terminó con código {c}"),
                 None => "La sesión SSH terminó por una señal".into(),
+            },
+            exit_code: code.map(i64::from),
+            container: None,
+        }
+    };
+    handle.succeed(Outcome {
+        summary: Some(end.summary.clone()),
+        exit_code: code,
+        ..Default::default()
+    });
+    Ok(end)
+}
+
+/// Windows (1.9.0, D-114): no hay PTY local para `ssh`. Se lanza `ssh -tt`
+/// con tuberías: el servidor asigna su terminal y la shell funciona igual,
+/// pero los cambios de tamaño de la ventana no llegan al servidor.
+#[cfg(windows)]
+pub async fn run_server_shell<F>(
+    engine: &crate::client::Engine,
+    _size: (u16, u16),
+    cancel: CancellationToken,
+    mut input: mpsc::Receiver<TerminalInput>,
+    mut on_output: F,
+) -> Result<StreamEnd, EngineError>
+where
+    F: FnMut(Vec<u8>) -> bool,
+{
+    use std::process::Stdio;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    let session: Arc<SshSession> =
+        engine
+            .ssh_session()
+            .cloned()
+            .ok_or_else(|| EngineError::Other {
+                message: "la terminal SSH solo existe para servidores remotos".into(),
+            })?;
+    let activity = engine.activity();
+    let p = session.profile().clone();
+    let handle = activity.begin(OperationSpec {
+        category: Category::System,
+        kind: "server.shell".into(),
+        target: Some(p.name.clone()),
+        transport: transport(&p),
+        request_body: None,
+        equivalent_command: None,
+    });
+    let mut cmd = session.channel(&[], true);
+    cmd.stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    let mut child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(e) => {
+            let e = io_err("ssh", e);
+            handle.fail(Failure {
+                error: e.to_string(),
+                ..Default::default()
+            });
+            return Err(e);
+        }
+    };
+    let mut stdin = child.stdin.take();
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| io_err("ssh", std::io::Error::other("sin salida")))?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| io_err("ssh", std::io::Error::other("sin salida de error")))?;
+    let mut out_buf = vec![0u8; 16 * 1024];
+    let mut err_buf = vec![0u8; 4 * 1024];
+    let mut closed_by_user = false;
+    let mut listener_gone = false;
+    let mut status: Option<std::process::ExitStatus> = None;
+    let mut out_open = true;
+    let mut err_open = true;
+    loop {
+        tokio::select! {
+            r = stdout.read(&mut out_buf), if out_open => match r {
+                Ok(0) | Err(_) => out_open = false,
+                Ok(n) => {
+                    if !on_output(out_buf[..n].to_vec()) {
+                        listener_gone = true;
+                        closed_by_user = true;
+                        break;
+                    }
+                }
+            },
+            r = stderr.read(&mut err_buf), if err_open => match r {
+                Ok(0) | Err(_) => err_open = false,
+                Ok(n) => {
+                    if !on_output(err_buf[..n].to_vec()) {
+                        listener_gone = true;
+                        closed_by_user = true;
+                        break;
+                    }
+                }
+            },
+            msg = input.recv() => match msg {
+                Some(TerminalInput::Data(d)) => {
+                    if let Some(w) = stdin.as_mut() {
+                        if w.write_all(&d).await.is_err() || w.flush().await.is_err() {
+                            break;
+                        }
+                    }
+                }
+                Some(TerminalInput::Resize { .. }) | None => {}
+            },
+            s = child.wait() => {
+                status = s.ok();
+                break;
+            }
+            _ = cancel.cancelled() => {
+                closed_by_user = true;
+                break;
+            }
+        }
+    }
+    if status.is_none() {
+        drop(stdin.take());
+        status = match tokio::time::timeout(GRACE, child.wait()).await {
+            Ok(s) => s.ok(),
+            Err(_) => {
+                let _ = child.kill().await;
+                child.wait().await.ok()
+            }
+        };
+    }
+    let code = status.and_then(|s| s.code());
+    let end = if closed_by_user {
+        StreamEnd {
+            reason: EndReason::Closed,
+            summary: if listener_gone {
+                "Sesión SSH cerrada (la ventana dejó de escuchar)".into()
+            } else {
+                "Sesión SSH cerrada por el usuario".into()
+            },
+            exit_code: code.map(i64::from),
+            container: None,
+        }
+    } else {
+        StreamEnd {
+            reason: EndReason::Finished,
+            summary: match code {
+                Some(0) => "La sesión SSH terminó".into(),
+                Some(c) => format!("La sesión SSH terminó con código {c}"),
+                None => "La sesión SSH terminó".into(),
             },
             exit_code: code.map(i64::from),
             container: None,

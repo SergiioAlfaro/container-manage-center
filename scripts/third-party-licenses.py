@@ -17,13 +17,21 @@ descargar nada (`cargo metadata --offline`, el registro local de Cargo y
   que solo se usa para compilar o probar), la clasificación frente a
   GPL-3.0-or-later y las incidencias.
 
+Con `--windows` (1.9.0, D-114) hace lo mismo para Windows x86_64
+(`THIRD_PARTY_NOTICES-windows.md` y `DEPENDENCY_LICENSE_AUDIT-windows.md`) y
+añade lo que solo va en el instalador de Windows: WebView2Loader.dll de
+Microsoft y, en la compilación con MinGW, su runtime y el de GCC (textos en
+`packaging/windows/licenses/`).
+
 Uso (desde la raíz del proyecto):
     python3 scripts/third-party-licenses.py           # escribe los dos archivos
     python3 scripts/third-party-licenses.py --check   # falla si no están al día
+    python3 scripts/third-party-licenses.py --windows [--check]
 """
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -32,9 +40,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LEGAL = ROOT / "docs" / "legal"
-NOTICES = LEGAL / "THIRD_PARTY_NOTICES.md"
-AUDIT = LEGAL / "DEPENDENCY_LICENSE_AUDIT.md"
-TARGET = "x86_64-unknown-linux-gnu"
+WINDOWS = "--windows" in sys.argv
+SUFFIX = "-windows" if WINDOWS else ""
+NOTICES = LEGAL / f"THIRD_PARTY_NOTICES{SUFFIX}.md"
+AUDIT = LEGAL / f"DEPENDENCY_LICENSE_AUDIT{SUFFIX}.md"
+# CMC_LICENSE_TARGET permite generar la lista de Windows para MSVC (GitHub
+# Actions); por defecto, la de la compilación con MinGW.
+TARGET = os.environ.get("CMC_LICENSE_TARGET") or ("x86_64-pc-windows-gnu" if WINDOWS else "x86_64-unknown-linux-gnu")
+PLATFORM = "Windows x86_64" if WINDOWS else "Linux x86_64"
+WIN_LICENSES = ROOT / "packaging" / "windows" / "licenses"
+# Componentes que no vienen de Cargo ni de npm y solo van en Windows.
+WINDOWS_EXTRA = [
+    # (nombre, versión, licencia, archivo, origen, nota)
+    ("WebView2Loader.dll (Microsoft Edge WebView2 SDK)", "1.0.3650.58", "BSD-3-Clause",
+     "WebView2Loader.LICENSE.txt", "estándar",
+     "binario de Microsoft incluido en webview2-com-sys 0.39.1 (sin código fuente publicado)"),
+    ("Runtime de MinGW-w64 (solo compilación con MinGW)", "11.0.1", "ZPL-2.1 AND MIT AND LicenseRef-public-domain",
+     "mingw-w64-runtime.copyright", "sistema", "archivo copyright de Debian/Ubuntu"),
+    ("libgcc de GCC (solo compilación con MinGW)", "13.2.0", "GPL-3.0-or-later WITH GCC-exception-3.1",
+     "gcc-mingw-w64.copyright", "sistema", "archivo copyright de Debian/Ubuntu"),
+]
 # Crates del propio proyecto (nombres internos, D-110).
 OWN = {"container-manage-center", "cmc-engine", "cmc-store", "cmc-activity"}
 LICENSE_FILE = re.compile(r"^(LICEN[CS]E|COPYING|NOTICE|COPYRIGHT|UNLICENSE)([-._].*)?$", re.I)
@@ -44,9 +69,11 @@ LICENSE_FILE = re.compile(r"^(LICEN[CS]E|COPYING|NOTICE|COPYRIGHT|UNLICENSE)([-.
 PERMISSIVE = {
     "MIT", "MIT-0", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause",
     "ISC", "Zlib", "0BSD", "Unlicense", "CC0-1.0", "BSL-1.0", "Unicode-3.0", "BlueOak-1.0.0",
+    # Runtime de MinGW-w64 (solo en Windows con MinGW).
+    "ZPL-2.1", "LicenseRef-public-domain",
 }
 # Compatibles con condiciones concretas (ver CONDITIONS).
-CONDITIONAL = {"MPL-2.0", "OFL-1.1", "LGPL-2.1-or-later"}
+CONDITIONAL = {"MPL-2.0", "OFL-1.1", "LGPL-2.1-or-later", "GPL-3.0-or-later WITH GCC-exception-3.1"}
 CONDITIONS = {
     "MPL-2.0": "copyleft por archivo: se conservan sus avisos y su código fuente está disponible "
     "(crates.io y el .tar.gz con Cargo.lock). Ningún archivo lleva el aviso «Incompatible With "
@@ -54,7 +81,19 @@ CONDITIONS = {
     "OFL-1.1": "tipografías: se distribuyen con el programa conservando su licencia y sus avisos; "
     "no se venden por separado ni se modifican (no se usa su nombre reservado en versiones modificadas).",
     "LGPL-2.1-or-later": "biblioteca: se conserva su aviso y se puede sustituir.",
+    "GPL-3.0-or-later WITH GCC-exception-3.1": "libgcc (solo compilación con MinGW): la excepción de "
+    "bibliotecas de ejecución de GCC permite distribuir el programa compilado con cualquier licencia; "
+    "se conserva su aviso.",
 }
+
+
+def audit_class(eco, origin, lic):
+    """Clase de auditoría: la de la licencia, salvo los binarios de Windows sin
+    código fuente publicado, que quedan pendientes (WebView2Loader.dll)."""
+    c, conds = classify(lic)
+    if eco == "Windows" and origin == "estándar":
+        return "pendiente", conds
+    return c, conds
 
 
 def norm_expr(expr):
@@ -113,7 +152,7 @@ def cargo_meta():
 
 
 def rust_sets(meta):
-    """(enlazadas en el programa, solo compilación, solo pruebas) para Linux x86_64."""
+    """(enlazadas en el programa, solo compilación, solo pruebas) para la plataforma elegida."""
     pkgs = {p["id"]: p for p in meta["packages"]}
     nodes = {n["id"]: n for n in meta["resolve"]["nodes"]}
     ws = set(meta["workspace_members"])
@@ -177,6 +216,8 @@ def standard_texts():
     return {
         "Apache-2.0": first(("serde", "LICENSE-APACHE"), ("tokio", "LICENSE-APACHE")),
         "MPL-2.0": first(("cssparser", "LICENSE")),
+        # clipboard-win (Windows) no trae archivo; error-code, del mismo autor, sí.
+        "BSL-1.0": first(("error-code", "LICENSE")),
     }
 
 
@@ -280,6 +321,11 @@ def collect():
             files = [(f"{n} (de @tauri-apps/api: mismo proyecto y titulares)", t) for n, t in tauri_api]
             origin = "proyecto"
         shipped.append(("npm", name, version, lic, files, origin))
+    if WINDOWS:
+        for name, version, lic, fname, origin, _note in WINDOWS_EXTRA:
+            text = (WIN_LICENSES / fname).read_text(encoding="utf-8", errors="replace").strip()
+            label = "BSD-3-Clause (texto estándar con el titular de Microsoft)" if origin == "estándar" else fname
+            shipped.append(("Windows", name, version, lic, [(label, text)], origin))
     rust_build = [(pkgs[i]["name"], pkgs[i]["version"], pkgs[i].get("license") or "") for i in build if pkgs[i]["name"] not in OWN]
     rust_dev = [(pkgs[i]["name"], pkgs[i]["version"], pkgs[i].get("license") or "") for i in dev if pkgs[i]["name"] not in OWN]
     total_lock = len([p for p in meta["packages"] if p["name"] not in OWN])
@@ -327,17 +373,31 @@ def render_notices(shipped):
         "`package-lock.json`, copiando tal cual los archivos de licencia y aviso de cada",
         "componente (los textos idénticos aparecen una sola vez). No se edita a mano.",
         "",
-        "Las bibliotecas del sistema (WebKitGTK, GTK, glib, libc…) no se incluyen en el paquete:",
-        "las instala el sistema como dependencias y conservan sus propios avisos en",
-        "`/usr/share/doc/` de cada paquete de Debian.",
-        "",
+    ]
+    if WINDOWS:
+        lines += [
+            "Esta es la lista del **instalador de Windows**. Las bibliotecas de Windows (WebView2",
+            "Runtime de Microsoft Edge, kernel32, user32, ucrt…) forman parte del sistema y no se",
+            "incluyen. WebView2Loader.dll sí se incluye: es un binario de Microsoft (BSD-3-Clause).",
+            "El runtime de MinGW-w64 y libgcc solo se incluyen en la compilación con MinGW; la",
+            "compilación con MSVC usa el runtime de Visual C++ del sistema.",
+            "",
+        ]
+    else:
+        lines += [
+            "Las bibliotecas del sistema (WebKitGTK, GTK, glib, libc…) no se incluyen en el paquete:",
+            "las instala el sistema como dependencias y conservan sus propios avisos en",
+            "`/usr/share/doc/` de cada paquete de Debian.",
+            "",
+        ]
+    lines += [
         f"## Componentes incluidos ({len(comp)})",
         "",
         "| Componente | Versión | Ecosistema | Licencia | Textos |",
         "|---|---|---|---|---|",
     ]
     for eco, name, version, lic, refs, origin in comp:
-        mark = "" if origin == "paquete" else (" (estándar)" if origin == "estándar" else " (del proyecto)")
+        mark = {"paquete": "", "estándar": " (estándar)", "sistema": " (del sistema de compilación)"}.get(origin, " (del proyecto)")
         lines.append(f"| {name} | {version} | {eco} | {lic or 'sin indicar'} | {', '.join('T-' + r for r in refs) or '—'}{mark} |")
     lines += ["", "## Textos de licencia y avisos", ""]
     for h, (fname, text) in texts.items():
@@ -352,7 +412,7 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
     by_class = defaultdict(list)
     lic_count = Counter()
     for eco, name, version, lic, files, origin in shipped:
-        c, conds = classify(lic)
+        c, conds = audit_class(eco, origin, lic)
         cls[c] += 1
         by_class[c].append((eco, name, version, lic, conds, origin))
         lic_count[norm_expr(lic) or "sin indicar"] += 1
@@ -360,10 +420,12 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
         # No debería ocurrir: el aviso impide combinarlo con la GPL.
         cls["pendiente"] += sum(1 for v in mpl_flags.values() if v)
     rust_n = sum(1 for s in shipped if s[0] == "Rust")
-    npm_n = len(shipped) - rust_n
+    win_n = sum(1 for s in shipped if s[0] == "Windows")
+    npm_n = len(shipped) - rust_n - win_n
     std_n = [s for s in shipped if s[5] != "paquete"]
     L = [
-        f"# Auditoría de licencias de dependencias · Container Manage Center {json.loads((ROOT / 'package.json').read_text())['version']}",
+        f"# Auditoría de licencias de dependencias · Container Manage Center {json.loads((ROOT / 'package.json').read_text())['version']}"
+        + (" · Windows" if WINDOWS else ""),
         "",
         "Generada por `scripts/third-party-licenses.py` a partir de `Cargo.lock` y",
         "`package-lock.json` (sin conexión). La licencia del proyecto es **GPL-3.0-or-later**.",
@@ -373,20 +435,29 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
         "",
         "| Ecosistema | Analizados | Se distribuyen en el paquete |",
         "|---|---|---|",
-        f"| Rust (`Cargo.lock`, Linux x86_64) | {total_lock} crates de terceros | **{rust_n}** enlazadas en el programa; {len(rust_build)} solo de compilación y {len(rust_dev)} solo de pruebas no se distribuyen |",
+        f"| Rust (`Cargo.lock`, {PLATFORM}) | {total_lock} crates de terceros | **{rust_n}** enlazadas en el programa; {len(rust_build)} solo de compilación y {len(rust_dev)} solo de pruebas no se distribuyen |",
         f"| npm (`package-lock.json`) | {npm_n + len(npm_dev)} paquetes | **{npm_n}** de producción incluidos en la interfaz (con las tipografías); {len(npm_dev)} de desarrollo no se distribuyen |",
-        "| Sistema (Debian) | dependencias del paquete | Ninguna: `libwebkit2gtk-4.1-0`, `libgtk-3-0` y `libc6` las instala apt y se enlazan dinámicamente; `openssh-client` es recomendada |",
+        (
+            f"| Windows | componentes binarios del instalador | **{win_n}**: WebView2Loader.dll (Microsoft) y, en la compilación con MinGW, su runtime y libgcc. El WebView2 Runtime, el runtime de Visual C++ y las bibliotecas de Windows son del sistema y no se incluyen |"
+            if WINDOWS
+            else "| Sistema (Debian) | dependencias del paquete | Ninguna: `libwebkit2gtk-4.1-0`, `libgtk-3-0` y `libc6` las instala apt y se enlazan dinámicamente; `openssh-client` es recomendada |"
+        ),
         "| Recursos | logotipo e iconos de la aplicación, iconos de la interfaz, tipografías | Logotipo e iconos de la aplicación: propios del proyecto. Iconos de la interfaz: lucide-react (ISC, con partes de Feather, MIT). Tipografías: IBM Plex Sans y JetBrains Mono (OFL-1.1) |",
-        "| Herramientas externas | Docker Engine, Docker Compose, OpenSSH, Trivy/Grype (opcionales), systemd | No se incluyen: se usan las del sistema o del servidor |",
+        (
+            "| Herramientas externas | Docker Desktop o Docker Engine, Docker Compose, OpenSSH de Windows, Trivy/Grype (opcionales), Programador de tareas | No se incluyen: se usan las del sistema o del servidor |"
+            if WINDOWS
+            else "| Herramientas externas | Docker Engine, Docker Compose, OpenSSH, Trivy/Grype (opcionales), systemd | No se incluyen: se usan las del sistema o del servidor |"
+        ),
         "",
         "## 2. Resultado (componentes que se distribuyen)",
         "",
         "| Clase | Componentes | Significado |",
         "|---|---|---|",
-        f"| 1. Compatibles | {cls['compatible']} | Licencias permisivas compatibles con GPL-3.0-or-later. Obligan a conservar su aviso y su licencia: están completos en `THIRD_PARTY_NOTICES.md` |",
-        f"| 2. Compatibles bajo condiciones | {cls['condicionada']} | MPL-2.0 y OFL-1.1 (condiciones abajo). Apache-2.0 sola es compatible con GPL v3 (no lo sería con GPL v2) y se cuenta en la clase 1 |",
-        f"| 3. Requieren avisos o materiales adicionales | {len(std_n)} (también contados en la clase 1 o 2) | Sin archivo de licencia propio en su paquete: se reproduce el texto estándar de su licencia declarada con sus autores declarados. Ningún componente trae archivo NOTICE de Apache |",
-        f"| 4. Pendientes de revisión | {cls['pendiente']} | — |",
+        f"| 1. Compatibles | {cls['compatible']} | Licencias permisivas compatibles con GPL-3.0-or-later. Obligan a conservar su aviso y su licencia: están completos en `{NOTICES.name}` |",
+        f"| 2. Compatibles bajo condiciones | {cls['condicionada']} | {'MPL-2.0, OFL-1.1 y la excepción de GCC' if WINDOWS else 'MPL-2.0 y OFL-1.1'} (condiciones abajo). Apache-2.0 sola es compatible con GPL v3 (no lo sería con GPL v2) y se cuenta en la clase 1 |",
+        f"| 3. Requieren avisos o materiales adicionales | {len(std_n)} (también contados en {'otra clase' if WINDOWS else 'la clase 1 o 2'}) | Sin archivo de licencia propio en su paquete: se reproduce el texto estándar de su licencia declarada con sus autores declarados. Ningún componente trae archivo NOTICE de Apache |",
+        f"| 4. Pendientes de revisión | {cls['pendiente']} | "
+        + ("WebView2Loader.dll: licencia compatible, pero es un binario sin código fuente publicado (ver «Decisión pendiente») |" if WINDOWS else "— |"),
         "| 5. Potencialmente incompatibles | 0 | — |",
         f"| 6. Licencia no determinable | {cls['indeterminada']} | — |",
         "",
@@ -410,8 +481,36 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
         "- **lucide-react** (ISC): su `LICENSE` reconoce partes de Feather (MIT, Cole Bemis); el aviso se conserva.",
         "- **Complementos de Tauri** (`@tauri-apps/plugin-*`): solo traen `LICENSE.spdx` (MIT OR Apache-2.0); "
         "se reproducen los textos de `@tauri-apps/api`, del mismo proyecto y titulares.",
-        "- **Bibliotecas del sistema**: no se redistribuyen; se enlazan dinámicamente desde Debian.",
+        "- **Bibliotecas del sistema**: no se redistribuyen; se enlazan dinámicamente "
+        + ("(Windows, WebView2 Runtime)." if WINDOWS else "desde Debian."),
         "",
+    ]
+    if WINDOWS:
+        L += [
+            "### Decisión pendiente del propietario: WebView2Loader.dll",
+            "",
+            "- Tauri usa WebView2 en Windows a través de `webview2-com-sys`, que trae `WebView2Loader.dll` "
+            "(MinGW: se instala junto al programa) y `WebView2LoaderStatic.lib` (MSVC: queda dentro del programa). "
+            "Son binarios de Microsoft bajo BSD-3-Clause, licencia compatible con la GPL, **pero Microsoft no "
+            "publica su código fuente** (Eclipse IP Lab, incidencia 14072).",
+            "- La GPL v3 exige ofrecer el «código fuente correspondiente» del programa distribuido. El cargador "
+            "no es una «biblioteca del sistema» en el sentido de la sección 1 de la GPL v3 en todos los casos "
+            "(se distribuye con el programa), así que no está claro que la excepción de bibliotecas del sistema lo cubra.",
+            "- Opciones: (a) que el titular del copyright de CMC añada un **permiso adicional** (GPL v3, sección 7) "
+            "que permita enlazar con el cargador de WebView2 de Microsoft, como hacen otros proyectos GPL con "
+            "componentes no libres; (b) consultar a un asesor jurídico; (c) no distribuir la versión de Windows.",
+            "- **Hasta que se decida, los instaladores de Windows son solo para pruebas y no se publican ni se "
+            "redistribuyen.**",
+            "- El texto de la licencia es el BSD-3-Clause estándar con el titular «Microsoft Corporation», como "
+            "indica el paquete NuGet Microsoft.Web.WebView2; el `LICENSE.txt` original del paquete no se ha podido "
+            "descargar en este entorno (nuget.org bloqueado). La compilación de GitHub Actions lo descarga y lo "
+            "compara.",
+            "- **Runtime de MinGW-w64 y libgcc**: partes enlazadas estáticamente al compilar con MinGW. libgcc "
+            "tiene la excepción de bibliotecas de ejecución de GCC 3.1, que permite distribuir el programa con "
+            "cualquier licencia; el runtime de MinGW-w64 es ZPL-2.1 y MIT, con partes en dominio público.",
+            "",
+        ]
+    L += [
         "### Componentes de la clase 3 (texto estándar)",
         "",
     ]
@@ -428,7 +527,7 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
         "",
         "## 4. Herramientas y límites",
         "",
-        "- `cargo metadata --offline` (grafo de dependencias para Linux x86_64) y `cargo deny check licenses` "
+        f"- `cargo metadata --offline` (grafo de dependencias para {PLATFORM}) y `cargo deny check licenses` "
         "(política de `deny.toml`, que forma parte de la verificación).",
         "- Lectura de los archivos `LICENSE*`, `COPYING*` y `NOTICE*` de cada componente en el registro "
         "local de Cargo y en `node_modules`.",
@@ -443,7 +542,7 @@ def render_audit(shipped, rust_build, rust_dev, npm_dev, total_lock, mpl_flags):
         "|---|---|---|---|---|",
     ]
     for eco, name, version, lic, _f, origin in shipped:
-        c, conds = classify(lic)
+        c, conds = audit_class(eco, origin, lic)
         tag = {"compatible": "1", "condicionada": "2", "pendiente": "4", "indeterminada": "6"}[c]
         if origin != "paquete":
             tag += " · 3"

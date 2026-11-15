@@ -368,3 +368,15 @@ Testo completo della licenza: https://www.gnu.org/licenses/gpl-3.0.html (anche i
 **Marchi.** Container Manage Center è un progetto indipendente: non è affiliato a Docker, Inc. né approvato da essa. «Docker» è un marchio di Docker, Inc. ed è usato qui solo per indicare la tecnologia con cui lavora l'applicazione (Docker Engine, la sua API, Docker Compose e la CLI di Docker).
 
 Gli stessi dati si trovano in **Impostazioni › Note legali**.
+
+## 29. Windows {#windows}
+
+Su Windows, Container Manage Center funziona come su Linux, con queste differenze:
+
+- **Docker locale**: si connette a **Docker Desktop** tramite la sua named pipe (`\\.\pipe\docker_engine`). Docker Desktop deve essere in esecuzione e il tuo utente deve far parte del gruppo locale `docker-users` (lo aggiunge il programma di installazione di Docker Desktop).
+- **Server remoti via SSH**: usano il client OpenSSH di Windows (`ssh.exe`, incluso in Windows 10 e 11). Poiché non supporta le connessioni multiplexate, ogni operazione apre la propria connessione: la prima volta l'identità del server viene verificata come su Linux, e la password o la passphrase salvata viene usata automaticamente. I **server intermedi** (ProxyJump) non sono ancora disponibili e, nel **terminale del server**, il ridimensionamento della finestra non arriva al server.
+- **Password memorizzate**: nella **Gestione credenziali** di Windows (credenziali di Windows), con il nome `container-manage-center/…`.
+- **Copie pianificate**: con l'**Utilità di pianificazione**, nella cartella «Container Manage Center», con il tuo utente e senza privilegi di amministratore. Vengono eseguite con la sessione aperta; se il computer era spento a quell'ora, la copia viene fatta appena possibile.
+- **Notifiche**: quelle di sistema (centro notifiche).
+- **Dati**: configurazione in `%APPDATA%\container-manage-center` e cronologia in `%LOCALAPPDATA%\container-manage-center`.
+- **Disinstallare**: da Impostazioni di Windows › App › App installate. I tuoi dati e Docker Desktop non vengono toccati. La sezione «Disinstallazione e componenti» esiste solo su Debian e Ubuntu.

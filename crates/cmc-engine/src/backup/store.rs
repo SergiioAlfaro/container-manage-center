@@ -19,10 +19,10 @@
 //! archivos sincronizados y el manifiesto con sus SHA-256 escrito, se renombra
 //! a `<id>`. Una copia interrumpida nunca se da por buena ni se restaura.
 
+use crate::fsx::{DirBuilderExt, OpenOptionsExt};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::{self, Read, Write};
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
 use chrono::{DateTime, Datelike, Utc};
@@ -601,7 +601,7 @@ pub fn check_retention(r: &Retention) -> Result<(), String> {
 
 /// Permisos de un archivo o carpeta (para mostrarlos y probarlos).
 pub fn mode_of(p: &Path) -> io::Result<u32> {
-    Ok(fs::metadata(p)?.permissions().mode() & 0o777)
+    Ok(crate::fsx::mode_of(&fs::metadata(p)?, 0o700) & 0o777)
 }
 
 #[cfg(test)]

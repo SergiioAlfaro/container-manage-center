@@ -9,10 +9,10 @@
 //! las `max` entradas más recientes: el archivo se compacta al abrirlo y cuando
 //! crece un 25 % por encima del máximo.
 
+use crate::fsx::{DirBuilderExt, OpenOptionsExt};
 use std::collections::VecDeque;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -73,7 +73,7 @@ fn write_all<T: Serialize>(path: &Path, entries: &VecDeque<T>) -> std::io::Resul
         }
         f.sync_all()?;
     }
-    fs::set_permissions(&tmp, fs::Permissions::from_mode(0o600))?;
+    crate::fsx::set_mode(&tmp, 0o600)?;
     fs::rename(&tmp, path)
 }
 
@@ -84,7 +84,7 @@ fn open_append(path: &Path) -> std::io::Result<File> {
         .mode(0o600)
         .open(path)?;
     // Un archivo creado antes con otros permisos queda privado.
-    fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
+    crate::fsx::set_mode(path, 0o600)?;
     Ok(f)
 }
 
@@ -205,6 +205,8 @@ impl<T: Serialize + DeserializeOwned + Clone> Journal<T> {
 mod tests {
     use super::*;
     use serde::Deserialize;
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
 
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
     struct E {
@@ -219,6 +221,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[test]
     fn entries_survive_a_restart_with_private_permissions() {
         let d = tempfile::tempdir().unwrap();
@@ -313,6 +316,7 @@ mod tests {
         assert_eq!(j.entries(), [e(2)]);
     }
 
+    #[cfg(unix)]
     #[test]
     fn refuses_a_symlink_or_directory() {
         let d = tempfile::tempdir().unwrap();

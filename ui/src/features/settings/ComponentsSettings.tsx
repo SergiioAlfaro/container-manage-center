@@ -13,6 +13,7 @@ import type { RemovalPlan } from "@/shared/ipc/bindings/RemovalPlan";
 import type { RemovalResult } from "@/shared/ipc/bindings/RemovalResult";
 import { Button, CopyButton } from "@/shared/ui/controls";
 import { Banner, Checkbox, Dialog, Spinner } from "@/shared/ui/feedback";
+import { isWindows } from "@/shared/platform";
 
 /** KiB → texto legible. */
 export function formatKib(kib: number, lang: string): string {
@@ -119,7 +120,7 @@ export function ComponentsSettings() {
       )}
       {remove.error && <Banner tone="error">{(remove.error as { message: string }).message}</Banner>}
 
-      {report && !report.supported && <Banner tone="warn">{t("components.unsupported")}</Banner>}
+      {report && !report.supported && <Banner tone="warn">{t(isWindows() ? "components.unsupportedWin" : "components.unsupported")}</Banner>}
       {report?.supported && !own && <Banner tone="info">{t("components.notPackaged")}</Banner>}
 
       {report && own && (
