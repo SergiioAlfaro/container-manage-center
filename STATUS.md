@@ -8,9 +8,9 @@
 |---|---|
 | **Etapa actual** | 1.7.0: identidad **Container Manage Center**, licencia GPL-3.0-or-later y copyright (D-110–D-112) |
 | **Versión** | 1.7.0 |
-| **Estado** | Implementada y verificada automáticamente; pendiente de la validación manual de la 1.7.0 en Debian 13 (identidad, paquete, instalación, actualización, persistencia, Legal, distribución) |
+| **Estado** | **Validada** (validación manual de la 1.7.0 en Debian 13 confirmada por el propietario, 2026-11-15) |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | Solo lo nuevo de la 1.7.0 (validación manual en Debian 13) |
+| **Pendiente de validar** | Nada |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -31,7 +31,7 @@
 | Evolución E0. Revisión y línea base | Completada (2026-11-12): plan aprobado por el propietario |
 | Evolución E1. Correcciones de seguridad prioritarias | **Validada** (versión 1.1.0; confirmada por el propietario, 2026-11-15) |
 | Evolución E2–E6 (1.2.0–1.6.0) | **Validadas** (confirmadas por el propietario en la solicitud de la 1.7.0, 2026-11-15) |
-| 1.7.0. Identidad Container Manage Center, licencia y copyright | Implementada y verificada automáticamente; pendiente de la validación manual |
+| 1.7.0. Identidad Container Manage Center, licencia y copyright | **Validada** (confirmada por el propietario, 2026-11-15) |
 
 ---
 
@@ -1388,7 +1388,7 @@ Fecha: 2026-11-15. Decisiones D-110 (identidad), D-111 (licencia y copyright), D
 - El análisis de licencias es técnico, no asesoramiento jurídico.
 
 ### Validación manual
-[docs/validation/VALIDACION-1.7.0.md](docs/validation/VALIDACION-1.7.0.md): identidad, paquete, instalación, actualización desde la 1.6.0, migración, persistencia, Legal y distribución, en Debian 13.
+[docs/validation/VALIDACION-1.7.0.md](docs/validation/VALIDACION-1.7.0.md): identidad, paquete, instalación, actualización desde la 1.6.0, migración, persistencia, Legal y distribución, en Debian 13. **Hecha y correcta** (confirmada por el propietario, 2026-11-15).
 
 ## Próximos pasos
 
