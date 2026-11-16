@@ -620,7 +620,7 @@ dependencies = [
 
 [[package]]
 name = "cmc-activity"
-version = "1.9.0"
+version = "1.9.1"
 dependencies = [
  "chrono",
  "parking_lot",
@@ -633,7 +633,7 @@ dependencies = [
 
 [[package]]
 name = "cmc-engine"
-version = "1.9.0"
+version = "1.9.1"
 dependencies = [
  "base64 0.22.1",
  "bollard",
@@ -661,12 +661,13 @@ dependencies = [
  "tower-service",
  "tracing",
  "ts-rs",
+ "windows-sys 0.61.2",
  "zeroize",
 ]
 
 [[package]]
 name = "cmc-store"
-version = "1.9.0"
+version = "1.9.1"
 dependencies = [
  "dirs 6.0.0",
  "parking_lot",
@@ -712,7 +713,7 @@ checksum = "be95d4a884358a21a199689323c29e9256b4a1b315e22f183d155422041d3a9a"
 
 [[package]]
 name = "container-manage-center"
-version = "1.9.0"
+version = "1.9.1"
 dependencies = [
  "base64 0.22.1",
  "bollard",

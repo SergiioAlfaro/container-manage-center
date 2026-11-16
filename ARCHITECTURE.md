@@ -4,7 +4,7 @@
 > módulos `legacy` de `cmc-store` y `cmc-engine`, para encontrar y pasar al
 > nombre nuevo los datos de una versión anterior (1.8.0, D-113).
 
-Versión 0.7.1 (Fase 7 con correcciones).
+Documento iniciado en la 0.7.1 y ampliado en cada versión (última revisión: 1.9.1). Las cifras de pruebas de cada versión están en STATUS.md.
 
 ## Visión general
 
@@ -57,7 +57,7 @@ container-manage-center/
 │   │   ├── dashboard/  containers/  images/  settings/  pending/
 │   ├── shared/                   ipc (cliente y tipos generados), i18n, query, format, ui
 │   └── test/                     Dobles y fixtures SOLO para pruebas
-└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.9.0.sh
+└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.9.1.sh
 ```
 
 ## cmc-engine
@@ -379,12 +379,14 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | `packaging/copyright`, `LICENSE` | Licencia (DEP-5) |
 | `scripts/third-party-licenses.py` → `docs/legal/THIRD_PARTY_NOTICES.md` y `docs/legal/DEPENDENCY_LICENSE_AUDIT.md` | Avisos completos de los componentes de terceros incluidos y auditoría de sus licencias (`--check` en la verificación, D-112) |
 | `scripts/third-party-licenses.py --windows` → `…-windows.md` | Lo mismo para Windows: crates de Windows, WebView2Loader.dll, runtime de MinGW-w64 y libgcc (D-114) |
-| `scripts/build-windows.sh`, `src-tauri/tauri.windows.conf.json`, `.github/workflows/windows.yml` | Instalador NSIS de Windows: de prueba desde Linux con MinGW-w64, o con MSVC en GitHub Actions (manual). Solo de pruebas hasta la decisión sobre WebView2Loader (D-114) |
+| `scripts/build-windows.sh`, `src-tauri/tauri.windows.conf.json`, `packaging/windows/installer-hooks.nsh` | Instalador NSIS de Windows: de prueba desde Linux con MinGW-w64, o con MSVC en GitHub Actions. El gancho del desinstalador quita las copias programadas propias (1.9.1). Solo de pruebas hasta aprobar el permiso de WebView2 (D-114, D-115) |
+| `.github/workflows/ci.yml`, `linux-build.yml`, `windows-build.yml` | Integración continua (interfaz, Rust en Linux y Windows, licencias), paquete `.deb` y pruebas contra Docker del runner, e instalador de Windows con MSVC (D-115) |
+| `crates/cmc-engine/src/hostpath.rs` | Rutas del equipo (en Windows, `C:\…`) frente a rutas de los servidores y de los contenedores (siempre Linux) (1.9.1, D-115) |
 | `scripts/spdx-headers.py` | Encabezados SPDX del código propio (`--check` en la verificación, D-111) |
 | `scripts/install.sh` | Instalación, comprobación y desinstalación para el usuario final |
 | `scripts/run.sh` | Ejecutar la versión instalada o la compilación del código |
 | `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba); con `UPGRADE_FROM`, actualización desde una versión anterior comprobando que los datos del usuario no cambian (1.7.0) |
-| `scripts/verify-evolution-1.9.0.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
+| `scripts/verify-evolution-1.9.1.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
 
 ## Pruebas
 
@@ -403,6 +405,6 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | Desinstalación real (0.9.1) | `CMC_TEST_CHROOT=… CMC_TEST_DEB=… cargo test -p container-manage-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-evolution-1.9.0.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
+| Paquete | `scripts/verify-evolution-1.9.1.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
 | Instalación limpia | `scripts/dev/clean-install-test.sh` (root, máquina de pruebas) | Ubuntu 24.04 y 22.04: instalación con un usuario normal, archivos, arranque y desinstalación |
 | Manual | `docs/validation/VALIDACION-1.8.0.md` | Solo lo que cambia en la 1.8.0 |

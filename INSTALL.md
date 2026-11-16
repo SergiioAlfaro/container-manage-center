@@ -16,8 +16,8 @@ Hay dos paquetes de la misma versión:
 
 | Paquete | Para |
 |---|---|
-| `container-manage-center_1.9.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `container-manage-center_1.9.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `container-manage-center_1.9.1_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `container-manage-center_1.9.1_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -63,7 +63,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./container-manage-center_1.9.0_amd64.deb
+sudo apt install ./container-manage-center_1.9.1_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -139,32 +139,52 @@ descarga la imagen `ubuntu:22.04` y unos 700 MB de paquetes de compilación.
 
 ## Opción D: Windows 10 y 11 (x86_64) — en pruebas
 
-> **Solo para pruebas.** El instalador de Windows incluye un componente de
-> Microsoft (WebView2Loader, BSD-3-Clause) cuyo código fuente no está
-> publicado. Hasta que el propietario decida cómo cumplir la GPL v3 con él
-> (`docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md`), el instalador no se
-> publica ni se redistribuye. La versión de Windows **no se ha probado todavía
-> en un Windows real**: la guía es `docs/validation/VALIDACION-WINDOWS.md`.
+> **Solo para pruebas.** La versión de Windows **no se ha ejecutado todavía en
+> un Windows real** (solo compilación, Clippy y pruebas unitarias con Wine; ver
+> `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`). El instalador incluye el
+> cargador de WebView2 de Microsoft (binario sin código fuente publicado); el
+> permiso adicional de la GPL v3 que lo cubre está en borrador
+> (`docs/legal/WEBVIEW2_EXCEPTION.md`). Hasta que el titular lo apruebe, el
+> instalador no se publica ni se redistribuye. La guía de la primera prueba es
+> `docs/validation/VALIDACION-WINDOWS.md`.
 
 Instalación para el usuario actual (sin permisos de administrador) en
 `%LOCALAPPDATA%\Container Manage Center`, con acceso en el menú Inicio. Si
-falta el WebView2 Runtime de Microsoft Edge (Windows 11 y Windows 10 al día ya
-lo tienen), el instalador lo descarga.
+falta el WebView2 Runtime de Microsoft Edge (Windows 11 lo trae), el instalador
+lo descarga. El instalador **no está firmado**: SmartScreen avisará
+(«Más información › Ejecutar de todas formas»).
 
-Requisitos:
-- **Docker Desktop** (con el motor de Linux) para el equipo local: la
-  aplicación usa `\\.\pipe\docker_engine` o `\\.\pipe\dockerDesktopLinuxEngine`.
-  Tu usuario debe estar en el grupo `docker-users`.
-- **OpenSSH de Windows** (`ssh.exe`, característica opcional «Cliente OpenSSH»,
-  incluida por defecto en Windows 10 1809+ y Windows 11) para los servidores
-  remotos. ProxyJump no está disponible en Windows.
+### Requisitos
 
-Diferencias con Linux: contraseñas en el **Administrador de credenciales** de
-Windows; copias programadas en el **Programador de tareas** (carpeta
-`\Container Manage Center\`); configuración en `%APPDATA%\container-manage-center`
-y estado en `%LOCALAPPDATA%\container-manage-center`.
+| | Requisito | Para qué |
+|---|---|---|
+| Windows | 10 o 11 de 64 bits (x86_64) | La aplicación (Tauri y WebView2) |
+| Docker local | **Docker Desktop** con el motor de Linux (WSL 2 o Hyper-V). Según Docker: Windows 10 22H2 (compilación 19045) o Windows 11 23H2 (22631) o posterior, ediciones Pro, Enterprise o Education, 8 GB de RAM y virtualización activada; con WSL 2, WSL 2.1.5 o posterior | Docker en este equipo, por `\\.\pipe\docker_engine` o `\\.\pipe\dockerDesktopLinuxEngine` |
+| Servidores remotos | **Cliente OpenSSH de Windows** (`ssh.exe`; Windows 10 1809 o posterior, característica opcional «Cliente OpenSSH») | Docker en servidores Linux por SSH |
 
-Compilar:
+Lo que **no** se admite: contenedores de Windows (Docker Desktop en modo
+«Windows containers»), Docker Engine instalado dentro de WSL sin Docker
+Desktop, `DOCKER_HOST=tcp://…` (la aplicación lo detecta y lo explica) y
+ProxyJump en los servidores remotos. Sin Docker Desktop (por ejemplo, en
+Windows Home o en versiones anteriores) se pueden usar igualmente los
+servidores remotos por SSH.
+
+### Diferencias con Linux
+
+- Contraseñas en el **Administrador de credenciales** de Windows
+  (`container-manage-center/<servidor>/<tipo>`).
+- Copias programadas en el **Programador de tareas** (carpeta
+  `\Container Manage Center\`); el desinstalador las quita (al actualizar, no).
+- Configuración en `%APPDATA%\container-manage-center`; estado y registros en
+  `%LOCALAPPDATA%\container-manage-center`. Desinstalar no los borra.
+- Rutas del equipo con letra de unidad (`C:\proyectos\web\compose.yaml`,
+  `C:\datos:/datos`); las de los servidores y los contenedores siguen siendo de
+  Linux. Las reglas de seguridad de Compose excluyen las carpetas ocultas,
+  `AppData` y las del sistema (`C:\Windows`, `C:\Program Files`,
+  `C:\ProgramData`).
+- La terminal de un servidor remoto no cambia de tamaño con la ventana.
+
+### Compilar
 
 ```bash
 # En Linux, con MinGW-w64 (instalador de prueba):
@@ -178,10 +198,10 @@ npm ci
 npx tauri build --bundles nsis      # resultado: target\release\bundle\nsis\
 ```
 
-También hay un flujo de GitHub Actions (`.github/workflows/windows.yml`, se
-lanza a mano) que pasa las pruebas en Windows, comprueba la licencia de
-WebView2Loader con la del paquete NuGet de Microsoft y guarda el instalador
-como artefacto privado de la ejecución.
+En GitHub Actions: `ci.yml` compila y prueba también en un runner de Windows, y
+`windows-build.yml` (se lanza a mano) compara la licencia de WebView2Loader con
+la del paquete NuGet de Microsoft y guarda el instalador como artefacto de la
+ejecución.
 
 ## Acceso a Docker
 
@@ -222,7 +242,7 @@ Socket personalizado**. "Probar conexión" comprueba una ruta sin guardarla.
 
 La aplicación funciona sin Docker Compose, pero el apartado **Docker Compose**
 lo necesita (si falta, el apartado explica cómo instalarlo) y
-la verificación (`scripts/verify-evolution-1.9.0.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
+la verificación (`scripts/verify-evolution-1.9.1.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
 (`docker compose`) o como binario independiente (`docker-compose` v2). Compose
 v1 (`docker-compose 1.x`) no se admite.
 

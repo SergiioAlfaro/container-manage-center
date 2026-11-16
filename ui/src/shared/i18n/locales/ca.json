@@ -426,7 +426,10 @@
       "retry": "Quan ho hagis resolt, prem «Tornar a connectar». L’aplicació també ho torna a provar sola.",
       "startDesktop": "Obre Docker Desktop des del menú Inici i espera que indiqui que el motor està en marxa.",
       "installDesktop": "Instal·la Docker Desktop per a Windows (docs.docker.com/desktop/setup/install/windows-install).",
-      "addDockerUsers": "Afegeix el teu usuari al grup «docker-users» des d'un Símbol del sistema obert com a administrador:"
+      "addDockerUsers": "Afegeix el teu usuari al grup «docker-users» des d'un Símbol del sistema obert com a administrador:",
+      "unsetHostWin": "Per utilitzar Docker Desktop, treu DOCKER_HOST del teu entorn (a PowerShell) i torna al context per defecte; si el vas definir a les variables d'entorn de Windows, treu-lo també d'allà:",
+      "restartDesktop": "Reinicia Docker Desktop (menú de la seva icona a la barra de tasques › Restart) i espera que el motor estigui en marxa.",
+      "upgradeDesktop": "Actualitza Docker Desktop a una versió recent (menú de la seva icona › Check for updates)."
     }
   },
   "dashboard": {
@@ -2037,7 +2040,9 @@
     "lastFailed": "L’última comprovació ha fallat: {{message}}",
     "howTo": "Per actualitzar, baixa el paquet nou i instal·la’l amb «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb». La teva configuració i el teu historial es conserven.",
     "banner": "Hi ha una versió nova de Container Manage Center: {{latest}}.",
-    "bannerOpen": "Veure-ho a Configuració"
+    "bannerOpen": "Veure-ho a Configuració",
+    "howToWin": "Per actualitzar, baixa l'instal·lador nou (…_x64-setup.exe) i executa'l: substitueix la versió instal·lada. La configuració i l'historial es conserven.",
+    "installedWin": "Aplicació de Windows"
   },
   "system": {
     "title": "Sistema",
@@ -2815,7 +2820,9 @@
       "verifyJumpFingerprint": "Demana a l'administrador l'empremta del servidor intermedi o comprova-la en ell.",
       "jumpUseKey": "Fes servir una clau SSH o l'agent SSH per al servidor intermedi (la clau del perfil serveix si l'intermedi l'accepta).",
       "tryJump": "Prova la connexió amb el servidor intermedi sense contrasenya:",
-      "jumpInProfile": "Escriu el servidor intermedi a «Servidor intermedi» del perfil (usuari@host:port)."
+      "jumpInProfile": "Escriu el servidor intermedi a «Servidor intermedi» del perfil (usuari@host:port).",
+      "installSshWin": "Instal·la el client OpenSSH de Windows: Configuració › Sistema › Característiques opcionals › «Client OpenSSH», o des de PowerShell obert com a administrador:",
+      "keyPermissionsWin": "La clau ha de ser privada: només el teu usuari la pot llegir. Des de PowerShell:"
     },
     "target": "Servidor",
     "paths": {

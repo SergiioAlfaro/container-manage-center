@@ -1,0 +1,32 @@
+% SPDX-License-Identifier: GPL-3.0-or-later
+% SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+\begin{titlepage}
+\AddToShipoutPictureBG*{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[cmcoscuro] (current page.north west) rectangle ([yshift=-11cm]current page.north east);
+    \fill[cmcmorado] ([yshift=-11cm]current page.north west) rectangle ([yshift=-11.35cm]current page.north east);
+  \end{tikzpicture}}
+\centering
+\vspace*{0.4cm}
+\includegraphics[height=3.4cm]{imagenes/logo.pdf}\par
+\vspace{0.8cm}
+{\sffamily\color{white}\fontsize{34}{40}\selectfont\bfseries Container Manage Center\par}
+\vspace{0.3cm}
+{\sffamily\color{cmcclaro}\LARGE CMC\par}
+\vspace{3.3cm}
+{\sffamily\color{cmcoscuro}\Huge\bfseries Manual técnico y de usuario\par}
+\vspace{0.6cm}
+{\sffamily\color{cmcmorado}\Large Versión 1.9.1\par}
+\vspace{0.3cm}
+{\sffamily\color{cmcgris}\large Generado el \fechageneracion\par}
+\vfill
+\begin{tabular}{@{}l l@{}}
+\sffamily\color{cmcgris}Licencia & \sffamily GNU General Public License v3.0 o posterior (GPL-3.0-or-later)\\[2pt]
+\sffamily\color{cmcgris}Copyright & \sffamily Copyright © 2026 Sergio Alfaro Lorite\\[2pt]
+\sffamily\color{cmcgris}Repositorio & \sffamily\url{https://github.com/SergiioAlfaro/container-manage-center}\\
+\end{tabular}
+\par\vspace{0.6cm}
+{\footnotesize\sffamily\color{cmcgris}Container Manage Center es un proyecto independiente, no afiliado a Docker, Inc.\par}
+\end{titlepage}
+\tableofcontents
+\clearpage

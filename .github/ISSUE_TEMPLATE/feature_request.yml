@@ -1,0 +1,30 @@
+name: Propuesta
+description: Una función nueva o una mejora.
+labels: ["propuesta"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué problema resuelve
+      description: Describe la situación y por qué hoy no se puede hacer (o cuesta).
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Seguridad
+      description: ¿Toca credenciales, el socket de Docker, órdenes en el equipo o en servidores, o borra algo? Explica cómo se protegería.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Plataformas
+      multiple: true
+      options:
+        - Linux
+        - Windows

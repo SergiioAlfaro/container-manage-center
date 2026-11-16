@@ -1,0 +1,24 @@
+sequenceDiagram
+  autonumber
+  participant U as Usuario
+  participant APP as Aplicación
+  participant K as Llavero del sistema
+  participant SSH as OpenSSH (ssh)
+  participant S as Servidor Linux
+  U->>APP: Conectar con el servidor
+  APP->>APP: valida el perfil (usuario, host, puerto, clave)
+  APP->>SSH: comprueba la huella del servidor
+  SSH->>S: intercambio de claves
+  S-->>APP: huella presentada
+  alt huella desconocida o cambiada
+    APP-->>U: mostrar la huella y pedir confirmación
+  end
+  APP->>K: ¿contraseña o frase guardada?
+  APP->>SSH: sesión con StrictHostKeyChecking=yes y SSH_ASKPASS = la aplicación
+  SSH->>APP: askpass pide el secreto (socket privado o 127.0.0.1 con testigo)
+  APP-->>SSH: secreto (solo a la pregunta esperada)
+  SSH->>S: autenticación
+  Note over APP,S: Linux: sesión maestra (ControlMaster) y un canal por conexión.<br/>Windows: un ssh directo por canal.
+  APP->>SSH: docker system dial-stdio
+  SSH->>S: abre un canal con el Docker del servidor
+  APP->>S: peticiones de la API de Docker por el canal (bollard)

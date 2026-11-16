@@ -1,6 +1,6 @@
 # Guía de usuario · Container Manage Center
 
-> Versión 1.8.0. Para actualizar desde una versión anterior, véase
+> Versión 1.9.1. Para actualizar desde una versión anterior, véase
 > [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 >
 > Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)

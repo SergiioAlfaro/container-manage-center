@@ -418,11 +418,18 @@ pub async fn compose_find_file(
     server: String,
     dir: String,
 ) -> CmdResult<Option<String>> {
-    if !dir.starts_with('/') {
+    // Carpeta del servidor (`/…`) o de este equipo (en Windows, `C:\…`; 1.9.1).
+    if !dir.starts_with('/') && !cmc_engine::hostpath::is_local_absolute(&dir) {
         return Ok(None);
     }
     if let Some(e) = remote_engine(&state, &server).await? {
+        if !dir.starts_with('/') {
+            return Ok(None);
+        }
         return Ok(cmc_engine::compose::remote_file::existing_default(&e, &dir).await?);
+    }
+    if !cmc_engine::hostpath::is_local_absolute(&dir) {
+        return Ok(None);
     }
     Ok(cfile::existing_default(std::path::Path::new(&dir)).map(|p| p.display().to_string()))
 }

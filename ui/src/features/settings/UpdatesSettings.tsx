@@ -11,6 +11,7 @@ import type { UpdateCheck } from "@/shared/ipc/bindings/UpdateCheck";
 import { Button, CopyButton, Switch } from "@/shared/ui/controls";
 import { Banner, Spinner } from "@/shared/ui/feedback";
 import { Group, Row } from "./layout";
+import { isWindows } from "@/shared/platform";
 
 /** Resultado de una comprobación (manual o al iniciar). */
 export function UpdateResult({ check }: { check: UpdateCheck }) {
@@ -83,9 +84,11 @@ export function UpdatesSettings() {
   });
   const result = check.data ?? (check.isIdle ? (last.data?.check ?? null) : null);
   const lastError = check.isIdle && last.data?.error ? last.data.error : null;
-  const installed = sys.data?.packageVersion
-    ? t("updates.installedPackage", { version: sys.data.packageVersion })
-    : t("updates.installedLocal");
+  const installed = isWindows()
+    ? t("updates.installedWin")
+    : sys.data?.packageVersion
+      ? t("updates.installedPackage", { version: sys.data.packageVersion })
+      : t("updates.installedLocal");
 
   return (
     <Group title={t("updates.title")}>
@@ -131,7 +134,7 @@ export function UpdatesSettings() {
           onChange={(checkOnStart) => void updateConfig({ updates: { checkOnStart } })}
         />
       </Row>
-      <p className="px-5 py-3 text-[12px] text-ink-3">{t("updates.howTo")}</p>
+      <p className="px-5 py-3 text-[12px] text-ink-3">{t(isWindows() ? "updates.howToWin" : "updates.howTo")}</p>
     </Group>
   );
 }

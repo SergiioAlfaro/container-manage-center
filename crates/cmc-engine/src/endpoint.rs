@@ -62,15 +62,11 @@ pub fn parse_host(host: &str) -> ParsedHost {
     if host.contains('\0') {
         return ParsedHost::Invalid("contiene un carácter nulo".into());
     }
-    // Windows: `npipe:////./pipe/docker_engine` → `\\.\pipe\docker_engine`.
+    // Windows: `npipe:////./pipe/docker_engine` → `\\.\pipe\docker_engine`;
+    // también la ruta de la tubería escrita tal cual (1.9.1).
     #[cfg(windows)]
-    if let Some(rest) = host.strip_prefix("npipe://") {
-        let p = rest.replace('/', "\\");
-        return if p.starts_with(r"\\.\pipe\") && p.len() > 9 && !p.contains("..") {
-            ParsedHost::Unix(p)
-        } else {
-            ParsedHost::Invalid("no es una tubería con nombre local".into())
-        };
+    if let Some(p) = windows_pipe(host) {
+        return p;
     }
     let path = if let Some(rest) = host.strip_prefix("unix://") {
         rest
@@ -89,6 +85,26 @@ pub fn parse_host(host: &str) -> ParsedHost {
         return ParsedHost::Invalid("la ruta no puede contener «..»".into());
     }
     ParsedHost::Unix(path.to_owned())
+}
+
+/// `npipe://…` o `\\.\pipe\…` (con `\` o `/`) → tubería con nombre local.
+/// Pura, para poder probarla en Linux; solo se usa en Windows.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn windows_pipe(host: &str) -> Option<ParsedHost> {
+    let raw = host.strip_prefix("npipe://").unwrap_or(host);
+    let p = raw.replace('/', "\\");
+    if !p.starts_with(r"\\.\") {
+        return host
+            .starts_with("npipe://")
+            .then(|| ParsedHost::Invalid("no es una tubería con nombre local".into()));
+    }
+    Some(
+        if p.starts_with(r"\\.\pipe\") && p.len() > 9 && !p.contains("..") {
+            ParsedHost::Unix(p)
+        } else {
+            ParsedHost::Invalid("no es una tubería con nombre local".into())
+        },
+    )
 }
 
 /// Nombre del contexto activo (`DOCKER_CONTEXT` o `currentContext` de config.json).
@@ -219,12 +235,75 @@ fn same_socket(a: &str, b: &str) -> bool {
 mod tests {
     use super::*;
 
+    #[test]
+    fn windows_named_pipes() {
+        let pipe = |h: &str| windows_pipe(h);
+        let ok = ParsedHost::Unix(r"\\.\pipe\docker_engine".into());
+        assert_eq!(pipe("npipe:////./pipe/docker_engine"), Some(ok.clone()));
+        assert_eq!(pipe(r"\\.\pipe\docker_engine"), Some(ok.clone()));
+        assert_eq!(pipe("//./pipe/docker_engine"), Some(ok));
+        assert!(matches!(
+            pipe("npipe://nas/pipe/x"),
+            Some(ParsedHost::Invalid(_))
+        ));
+        assert!(matches!(
+            pipe(r"\\.\pipe\..\x"),
+            Some(ParsedHost::Invalid(_))
+        ));
+        assert!(matches!(pipe(r"\\.\C:\x"), Some(ParsedHost::Invalid(_))));
+        assert_eq!(pipe("/var/run/docker.sock"), None);
+        assert_eq!(pipe("tcp://localhost:2375"), None);
+    }
+
     fn env() -> HostEnv {
         HostEnv {
             uid: 1000,
             xdg_runtime_dir: Some("/run/user/1000".into()),
             ..Default::default()
         }
+    }
+
+    /// Windows (1.9.1): DOCKER_HOST con `npipe://` primero y después las dos
+    /// tuberías de Docker Desktop; `tcp://` se informa como no admitido; una
+    /// ruta de tubería escrita tal cual se acepta en el modo personalizado.
+    #[cfg(windows)]
+    #[test]
+    fn windows_candidates_are_docker_desktop_pipes() {
+        let r = resolve(&ConnectionMode::Auto, &HostEnv::default());
+        assert_eq!(
+            paths(&r),
+            [
+                (r"\\.\pipe\docker_engine", &EndpointSource::System),
+                (
+                    r"\\.\pipe\dockerDesktopLinuxEngine",
+                    &EndpointSource::System
+                )
+            ]
+        );
+        let e = HostEnv {
+            docker_host: Some("npipe:////./pipe/otro".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            resolve(&ConnectionMode::Auto, &e).candidates[0].socket_path,
+            r"\\.\pipe\otro"
+        );
+        let e = HostEnv {
+            docker_host: Some("tcp://localhost:2375".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            resolve(&ConnectionMode::Auto, &e).unsupported.as_deref(),
+            Some("tcp://localhost:2375")
+        );
+        let c = resolve(
+            &ConnectionMode::Custom {
+                socket_path: r"\\.\pipe\docker_engine".into(),
+            },
+            &HostEnv::default(),
+        );
+        assert_eq!(c.candidates.len(), 1);
+        assert!(c.invalid.is_none());
     }
 
     fn paths(r: &Resolution) -> Vec<(&str, &EndpointSource)> {
@@ -261,6 +340,7 @@ mod tests {
         assert!(matches!(parse_host("/a\0b"), ParsedHost::Invalid(_)));
     }
 
+    #[cfg(unix)]
     #[test]
     fn default_order_is_rootless_then_system() {
         let r = resolve(&ConnectionMode::Auto, &env());
@@ -273,6 +353,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn root_user_has_no_rootless_candidate() {
         let r = resolve(
@@ -285,6 +366,7 @@ mod tests {
         assert_eq!(paths(&r), vec![(SYSTEM_SOCKET, &EndpointSource::System)]);
     }
 
+    #[cfg(unix)]
     #[test]
     fn missing_xdg_runtime_dir_falls_back_to_run_user() {
         let r = resolve(
@@ -336,6 +418,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn context_from_config_json_is_used() {
         let dir = tempfile::tempdir().unwrap();

@@ -1,0 +1,92 @@
+% SPDX-License-Identifier: GPL-3.0-or-later
+% SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+% Estilo del manual técnico de Container Manage Center (pandoc + XeLaTeX).
+\usepackage{fontspec}
+\setmainfont{Inter}[Scale=0.92]
+\setsansfont{Inter}[Scale=0.92]
+\setmonofont{DejaVu Sans Mono}[Scale=0.80]
+\usepackage{polyglossia}
+\setdefaultlanguage{spanish}
+\usepackage{xcolor}
+\definecolor{cmcmorado}{HTML}{6D3FC0}
+\definecolor{cmcoscuro}{HTML}{3D2A63}
+\definecolor{cmcclaro}{HTML}{F3EDFC}
+\definecolor{cmcgris}{HTML}{5F5A6B}
+\usepackage{etoolbox}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\usepackage[nobottomtitles*]{titlesec}
+\renewcommand{\bottomtitlespace}{0.18\textheight}
+\usepackage{tocloft}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{eso-pic}
+\usepackage{tikz}
+\usepackage[most]{tcolorbox}
+
+% Párrafos
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\linespread{1.12}
+\raggedbottom
+
+% Títulos
+\titleformat{\chapter}[display]
+  {\sffamily\color{cmcoscuro}}
+  {\colorbox{cmcmorado}{\parbox[c][1.6em][c]{2.2em}{\centering\color{white}\Large\bfseries\thechapter}}\hspace{0.6em}{\large\color{cmcmorado}\MakeUppercase{Capítulo}}}
+  {0.6em}
+  {\Huge\bfseries}
+  [\vspace{0.3em}{\color{cmcmorado}\titlerule[1.2pt]}]
+\titlespacing*{\chapter}{0pt}{-1.2em}{1.6em}
+\titleformat{\section}{\sffamily\Large\bfseries\color{cmcoscuro}}{\color{cmcmorado}\thesection}{0.6em}{}
+\titleformat{\subsection}{\sffamily\large\bfseries\color{cmcoscuro}}{\color{cmcmorado}\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries\color{cmcmorado}}{}{0em}{}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{1}
+
+% Índice
+\renewcommand{\cfttoctitlefont}{\sffamily\Huge\bfseries\color{cmcoscuro}}
+\renewcommand{\cftchapfont}{\sffamily\bfseries\color{cmcoscuro}}
+\renewcommand{\cftchappagefont}{\sffamily\bfseries\color{cmcmorado}}
+\setlength{\cftbeforechapskip}{0.55em}
+\setlength{\cftsecnumwidth}{2.8em}
+
+% Encabezados y pies
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{{\color{cmcmorado}\hrule width\headwidth height\headrulewidth}}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\fancyhead[L]{\small\sffamily\color{cmcgris}Container Manage Center · Manual técnico y de usuario}
+\fancyhead[R]{\small\sffamily\color{cmcmorado}\leftmark}
+\fancyfoot[L]{\small\sffamily\color{cmcgris}Versión 1.9.1 · GPL-3.0-or-later}
+\fancyfoot[R]{\small\sffamily\color{cmcgris}Página \thepage\ de \pageref*{LastPage}}
+\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyfoot[L]{\small\sffamily\color{cmcgris}Versión 1.9.1 · GPL-3.0-or-later}%
+  \fancyfoot[R]{\small\sffamily\color{cmcgris}Página \thepage\ de \pageref*{LastPage}}}
+
+% Figuras y tablas: cada figura queda donde está en el texto (sin flotar), para
+% que ningún título se quede sin su diagrama.
+\usepackage{float}
+\floatplacement{figure}{H}
+\captionsetup{font={small,sf},labelfont={bf,color=cmcmorado},labelsep=period}
+\captionsetup[figure]{name=Figura}
+\captionsetup[table]{name=Tabla}
+\AtBeginEnvironment{longtable}{\small\renewcommand{\arraystretch}{1.25}}
+\AtBeginEnvironment{Shaded}{\small}
+
+% Código
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}
+\RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere,fontsize=\small}
+\definecolor{shadecolor}{HTML}{F6F3FB}
+\let\oldtexttt\texttt
+\renewcommand{\texttt}[1]{\leavevmode{\color{cmcoscuro}\oldtexttt{#1}}}
+
+% Enlaces
+\AtBeginDocument{\hypersetup{colorlinks=true,linkcolor=cmcmorado,urlcolor=cmcmorado,citecolor=cmcmorado,pdfauthor={Sergio Alfaro Lorite},pdftitle={Container Manage Center · Manual técnico y de usuario}}}
+
+% Notas destacadas: > **Nota:** … se convierte en cuadro por el filtro.
+\newtcolorbox{cmcnota}{colback=cmcclaro,colframe=cmcmorado,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=4pt,bottom=4pt,breakable}
+\renewenvironment{quote}{\begin{cmcnota}}{\end{cmcnota}}

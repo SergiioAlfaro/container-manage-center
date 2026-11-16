@@ -230,6 +230,19 @@ fn absolute(p: &str) -> bool {
     p.starts_with('/') && !p.split('/').any(|c| c == "..") && !p.contains('\0')
 }
 
+/// Origen de un bind mount: en un Docker local (`local`, el que comprueba las
+/// carpetas), una ruta del equipo (en Windows, `C:\…`; 1.9.1); en un
+/// servidor remoto, una ruta de Linux.
+fn bind_source_ok(p: &str, local: bool) -> bool {
+    if local {
+        crate::hostpath::is_local_bind_source(p)
+            && !crate::hostpath::has_parent_component(p)
+            && !p.contains('\0')
+    } else {
+        absolute(p)
+    }
+}
+
 /// Rutas del equipo cuyo montaje da control sobre el sistema.
 /// Valor que sustituye a los secretos en lo que se muestra o se registra.
 pub use cmc_activity::redact::REDACTED;
@@ -466,7 +479,7 @@ impl ContainerSpec {
                             "bind.required",
                             &[],
                         ));
-                    } else if !absolute(s) {
+                    } else if !bind_source_ok(s, check_fs) {
                         v.push(issue(
                             Error,
                             format!("mounts.{i}.source"),
@@ -474,7 +487,12 @@ impl ContainerSpec {
                             &[],
                         ));
                     } else {
-                        if check_fs && std::fs::metadata(Path::new(s)).is_err() {
+                        // En Windows, una ruta de Linux es de la máquina virtual
+                        // de Docker Desktop (no se puede comprobar desde aquí).
+                        if check_fs
+                            && crate::hostpath::is_local_absolute(s)
+                            && std::fs::metadata(Path::new(s)).is_err()
+                        {
                             v.push(issue(
                                 Error,
                                 format!("mounts.{i}.source"),
@@ -971,22 +989,20 @@ pub fn from_inspect(c: &ContainerInspectResponse, image: Option<&ImageConfig>) -
         });
     }
     for b in host.binds.clone().unwrap_or_default() {
-        let parts: Vec<&str> = b.splitn(3, ':').collect();
-        if parts.len() < 2 {
+        // `C:\datos:/datos` (Docker Desktop) también es un bind mount (1.9.1).
+        let Some((source, target, opts)) = crate::hostpath::split_bind(&b) else {
             continue;
-        }
-        let ro = parts
-            .get(2)
-            .is_some_and(|o| o.split(',').any(|x| x == "ro"));
-        let kind = if parts[0].starts_with('/') {
+        };
+        let ro = opts.is_some_and(|o| o.split(',').any(|x| x == "ro"));
+        let kind = if source.starts_with('/') || crate::hostpath::is_windows_absolute(source) {
             MountKind::Bind
         } else {
             MountKind::Volume
         };
         mounts.push(MountSpec {
             kind,
-            source: parts[0].to_owned(),
-            target: parts[1].to_owned(),
+            source: source.to_owned(),
+            target: target.to_owned(),
             read_only: ro,
         });
     }

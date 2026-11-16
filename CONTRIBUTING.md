@@ -7,6 +7,11 @@ Container Manage Center se distribuye con la licencia **GPL-3.0-or-later**
 Al enviar una contribución aceptas publicarla con esa misma licencia.
 Conservas el copyright de lo que aportes.
 
+Las contribuciones se aceptan también con el permiso adicional para el
+cargador de WebView2 de Microsoft en Windows
+([docs/legal/WEBVIEW2_EXCEPTION.md](docs/legal/WEBVIEW2_EXCEPTION.md)), para
+que el proyecto pueda seguir distribuyendo la versión de Windows.
+
 ## Encabezados SPDX
 
 Cada archivo de código propio empieza con:

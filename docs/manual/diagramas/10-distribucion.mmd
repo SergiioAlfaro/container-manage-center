@@ -1,0 +1,13 @@
+flowchart LR
+  SRC["Código fuente<br/>(Git, GPL-3.0-or-later)"] --> V["verify-evolution-1.9.1.sh<br/>regresión, licencias, paquete"]
+  V --> P1["Paquetes .deb"]
+  V --> P2["Instalador de Windows<br/>(solo pruebas)"]
+  SRC --> TAR["…-src.tar.gz<br/>sin secretos"]
+  P1 --> SUM["SHA256SUMS"]
+  P2 --> SUM
+  TAR --> SUM
+  SUM --> REL["Publicación<br/>(decisión del titular)"]
+  LEG["LICENSE · THIRD_PARTY_NOTICES<br/>COPYRIGHT · permiso WebView2"] --> P1
+  LEG --> P2
+  REL --> U1["install.sh → apt"]
+  REL --> U2["Instalador NSIS<br/>usuario actual"]

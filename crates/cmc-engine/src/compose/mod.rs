@@ -417,6 +417,7 @@ mod tests {
         ));
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn nothing_installed_reports_searched_locations_without_running_anything() {
         let log = ActivityLog::new(10);

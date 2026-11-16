@@ -140,6 +140,13 @@ for r in "${RELEASES[@]}"; do
   # Como root no arranca (CMC-SEC-11).
   out=$(chroot "$D" env CMC_ALLOW_ROOT=1 timeout 20 /usr/bin/$PKG 2>&1); rc=$?
   if [ $rc -eq 1 ] && printf '%s' "$out" | grep -q "no debe ejecutarse como root"; then pass "No arranca como root"; else bad "Como root (código $rc): $out"; fi
+  # Datos del usuario que existen antes de desinstalar. La aplicación solo crea
+  # ~/.config/<paquete> cuando se guarda algo; en el primer arranque crea
+  # ~/.local/state/<paquete>. Se comprueba que lo que había sigue ahí.
+  before=()
+  for f in .config/$PKG .local/state/$PKG; do
+    [ -e "$D/home/tester/$f" ] && before+=("$f")
+  done
   if as_tester "bash ~/release/install.sh --uninstall --yes" \
      && ! chroot "$D" dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed" \
      && [ ! -e "$D/usr/bin/$PKG" ] && [ ! -e "$D/usr/share/applications/$PKG.desktop" ]; then
@@ -150,7 +157,15 @@ for r in "${RELEASES[@]}"; do
   if [ -n "$OLD" ]; then
     (cd "$D/home/tester" && ls "${NEWDATA[@]}") >>"$LOG" 2>&1 && pass "Tras desinstalar, los datos del usuario se conservan" || bad "Datos del usuario borrados al desinstalar"
   else
-    [ -d "$D/home/tester/.config/$PKG" ] && pass "Tras desinstalar, la configuración del usuario se conserva" || bad "Configuración borrada al desinstalar"
+    lost=""
+    for f in "${before[@]}"; do [ -e "$D/home/tester/$f" ] || lost="$lost ~/$f"; done
+    if [ ${#before[@]} -eq 0 ]; then
+      bad "La aplicación no creó datos del usuario: no se puede comprobar que se conservan"
+    elif [ -z "$lost" ]; then
+      pass "Tras desinstalar, los datos del usuario se conservan:$(printf ' ~/%s' "${before[@]}")"
+    else
+      bad "Datos del usuario borrados al desinstalar:$lost"
+    fi
   fi
   cleanup
   rm -rf "$D"

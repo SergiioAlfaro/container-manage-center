@@ -88,10 +88,30 @@ impl Dialer {
             Dialer::Unix(path) => Ok(Box::new(tokio::net::UnixStream::connect(path).await?)),
             // Windows: la tubería con nombre de Docker Desktop (1.9.0, D-114).
             #[cfg(windows)]
-            Dialer::Unix(path) => Ok(Box::new(
-                tokio::net::windows::named_pipe::ClientOptions::new().open(path)?,
-            )),
+            Dialer::Unix(path) => Ok(Box::new(open_pipe(path).await?)),
             Dialer::Ssh(s) => Ok(Box::new(s.dial().await?)),
+        }
+    }
+}
+
+/// Abre la tubería con nombre de Docker Desktop. Si todas sus instancias están
+/// ocupadas (`ERROR_PIPE_BUSY`), lo vuelve a intentar durante 2 s como mucho
+/// (1.9.1), como recomienda la documentación de tokio y como hace bollard.
+#[cfg(windows)]
+async fn open_pipe(
+    path: &str,
+) -> std::io::Result<tokio::net::windows::named_pipe::NamedPipeClient> {
+    const ERROR_PIPE_BUSY: i32 = 231;
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    loop {
+        match tokio::net::windows::named_pipe::ClientOptions::new().open(path) {
+            Err(e)
+                if e.raw_os_error() == Some(ERROR_PIPE_BUSY)
+                    && tokio::time::Instant::now() < deadline =>
+            {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+            }
+            r => return r,
         }
     }
 }

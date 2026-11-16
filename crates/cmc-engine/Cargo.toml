@@ -39,6 +39,7 @@ zeroize = "1"
 # Windows (1.9.0, D-114): números aleatorios del sistema (no hay /dev/urandom).
 [target.'cfg(windows)'.dependencies]
 getrandom = "0.3"
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
 
 [dev-dependencies]
 tempfile.workspace = true

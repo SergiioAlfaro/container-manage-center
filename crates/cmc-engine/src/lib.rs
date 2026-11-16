@@ -26,6 +26,7 @@ pub mod endpoint;
 mod error;
 pub mod events;
 pub mod fsx;
+pub mod hostpath;
 pub mod images;
 pub mod legacy;
 pub mod manager;

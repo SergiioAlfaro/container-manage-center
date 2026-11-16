@@ -207,6 +207,49 @@ const FORBIDDEN: [&str; 12] = [
 
 /// Destino válido: ruta absoluta de una carpeta existente, fuera del sistema.
 pub fn check_destination(dest: &str) -> CmdResult<PathBuf> {
+    #[cfg(windows)]
+    return check_windows_destination(dest);
+    #[cfg(not(windows))]
+    check_unix_destination(dest)
+}
+
+/// Windows (1.9.1): `C:\…` o `\\servidor\recurso\…`, sin `..`, fuera de
+/// las carpetas del sistema (`C:\Windows`, `C:\Program Files`…). Se
+/// devuelve la ruta escrita (sin la barra final): Windows no distingue
+/// mayúsculas, y la normalizada solo sirve para comparar.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn check_windows_destination(dest: &str) -> CmdResult<PathBuf> {
+    let d = dest.trim();
+    let norm = cmc_engine::hostpath::windows_normalize(d).ok_or_else(|| {
+        CommandError::new(
+            "backup.destinationInvalid",
+            format!("ruta no válida: {dest:?}"),
+        )
+    })?;
+    if cmc_engine::hostpath::windows_system_dir(&norm) {
+        return Err(CommandError::new(
+            "backup.destinationSystem",
+            format!("{d} es una carpeta del sistema"),
+        ));
+    }
+    let keep = d.trim_end_matches(['/', '\\']);
+    // `C:\` sin la barra sería `C:` (la carpeta actual de esa unidad).
+    let path = if keep.len() == 2 {
+        format!("{keep}\\")
+    } else {
+        keep.to_owned()
+    };
+    if !Path::new(&path).is_dir() {
+        return Err(CommandError::new(
+            "backup.destinationMissing",
+            format!("no existe la carpeta {path}"),
+        ));
+    }
+    Ok(PathBuf::from(path))
+}
+
+#[cfg_attr(windows, allow(dead_code))]
+fn check_unix_destination(dest: &str) -> CmdResult<PathBuf> {
     let norm = cmc_engine::risk::normalize(dest).ok_or_else(|| {
         CommandError::new(
             "backup.destinationInvalid",

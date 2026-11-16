@@ -6,7 +6,7 @@ con la **1.1.0** (Etapa 1 de evolución, 12-11-2026) y la **1.2.0** (Etapa 2,
 13-11-2026), la **1.3.0** (Etapa 3, auditoría de seguridad), la **1.4.0**
 (Etapa 4, copias de seguridad), la **1.5.0** (Etapa 5, monitorización) y la
 **1.6.0** (Etapa 6, integración). Las líneas cambiadas llevan su evidencia
-entre corchetes (prueba automática que lo demuestra; `verify-evolution-1.9.0.sh`
+entre corchetes (prueba automática que lo demuestra; `verify-evolution-1.9.1.sh`
 las ejecuta todas):
 
 - ✅ cumple;
@@ -195,7 +195,7 @@ seguridad de Docker Engine y RustSec.
 - ✅ `install.sh` usa `sudo` solo para `apt-get` y no ejecuta la aplicación como
   root.
 - ⚠️ `SHA256SUMS` verificado por `install.sh` (no instala si no coincide o falta
-  la entrada) ✅ desde la 1.2.0 [paso de `verify-evolution-1.9.0.sh --deb`];
+  la entrada) ✅ desde la 1.2.0 [paso de `verify-evolution-1.9.1.sh --deb`];
   **sin firmar**: la firma GPG necesita la clave del propietario (CMC-SEC-09,
   decisión pendiente).
 - ✅ La aplicación no instala Docker ni cambia grupos ni permisos del sistema.
@@ -205,7 +205,7 @@ seguridad de Docker Engine y RustSec.
 ## Proceso para cada cambio
 
 - [ ] Pruebas unitarias o IPC de la validación nueva.
-- [ ] `bash scripts/verify-evolution-1.9.0.sh --deb` (o su sucesor) sin regresiones,
+- [ ] `bash scripts/verify-evolution-1.9.1.sh --deb` (o su sucesor) sin regresiones,
       con Docker 24, 26 y 29.
 - [ ] `cargo audit`, `cargo deny check`, `npm audit` y `npm run lint` sin
       hallazgos nuevos (las excepciones de `deny.toml`, revisadas).
@@ -322,7 +322,7 @@ seguridad de Docker Engine y RustSec.
 - ✅ Solo se tocan unidades de systemd con la marca de la aplicación; las
   ajenas con el mismo prefijo no se tocan [`systemd.rs`].
 - ✅ El paquete ya no instala ningún archivo con el nombre anterior y no
-  arranca como root [`verify-evolution-1.9.0.sh --deb`, prueba de instalación].
+  arranca como root [`verify-evolution-1.9.1.sh --deb`, prueba de instalación].
 - ✅ La desinstalación desde la aplicación reconoce en el historial de APT el
   paquete anterior y solo propone quitar dependencias que instaló la
   aplicación [`uninstall.rs`].

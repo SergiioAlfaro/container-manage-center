@@ -426,7 +426,10 @@
       "retry": "Konpondu duzunean, sakatu «Konektatu berriro». Aplikazioa ere bere kabuz saiatzen da berriro.",
       "startDesktop": "Ireki Docker Desktop Hasiera menutik eta itxaron motorra martxan dagoela adierazi arte.",
       "installDesktop": "Instalatu Docker Desktop Windows-erako (docs.docker.com/desktop/setup/install/windows-install).",
-      "addDockerUsers": "Gehitu zure erabiltzailea «docker-users» taldera administratzaile gisa irekitako Komando-gonbitetik:"
+      "addDockerUsers": "Gehitu zure erabiltzailea «docker-users» taldera administratzaile gisa irekitako Komando-gonbitetik:",
+      "unsetHostWin": "Docker Desktop erabiltzeko, kendu DOCKER_HOST zure ingurunetik (PowerShell-en) eta itzuli testuinguru lehenetsira; Windows-eko ingurune-aldagaietan definitu bazenuen, kendu hor ere:",
+      "restartDesktop": "Berrabiarazi Docker Desktop (ataza-barrako ikonoaren menua › Restart) eta itxaron motorra martxan egon arte.",
+      "upgradeDesktop": "Eguneratu Docker Desktop bertsio berri batera (ikonoaren menua › Check for updates)."
     }
   },
   "dashboard": {
@@ -2037,7 +2040,9 @@
     "lastFailed": "Azken egiaztapenak huts egin du: {{message}}",
     "howTo": "Eguneratzeko, deskargatu pakete berria eta instalatu «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb» komandoarekin. Zure konfigurazioa eta historia mantendu egiten dira.",
     "banner": "Container Manage Centerren bertsio berri bat dago: {{latest}}.",
-    "bannerOpen": "Ikusi Konfigurazioan"
+    "bannerOpen": "Ikusi Konfigurazioan",
+    "howToWin": "Eguneratzeko, deskargatu instalatzaile berria (…_x64-setup.exe) eta exekutatu: instalatutako bertsioa ordezten du. Konfigurazioa eta historia gordetzen dira.",
+    "installedWin": "Windows-eko aplikazioa"
   },
   "system": {
     "title": "Sistema",
@@ -2815,7 +2820,9 @@
       "verifyJumpFingerprint": "Eskatu administratzaileari tarteko zerbitzariaren hatz-marka edo egiaztatu hartan bertan.",
       "jumpUseKey": "Erabili SSH gako bat edo SSH agentea tarteko zerbitzarirako (profileko gakoak balio du tartekoak onartzen badu).",
       "tryJump": "Probatu tarteko zerbitzariarekiko konexioa pasahitzik gabe:",
-      "jumpInProfile": "Idatzi tarteko zerbitzaria profileko «Tarteko zerbitzaria» eremuan (erabiltzailea@ostalaria:ataka)."
+      "jumpInProfile": "Idatzi tarteko zerbitzaria profileko «Tarteko zerbitzaria» eremuan (erabiltzailea@ostalaria:ataka).",
+      "installSshWin": "Instalatu Windows-eko OpenSSH bezeroa: Ezarpenak › Sistema › Aukerako eginbideak › «OpenSSH bezeroa», edo administratzaile gisa irekitako PowerShell-etik:",
+      "keyPermissionsWin": "Gakoak pribatua izan behar du: zure erabiltzaileak bakarrik irakur dezake. PowerShell-etik:"
     },
     "target": "Zerbitzaria",
     "paths": {

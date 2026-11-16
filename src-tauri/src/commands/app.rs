@@ -155,7 +155,44 @@ pub(crate) fn terminal_link_allowed(url: &str) -> bool {
         && !authority.starts_with(':')
 }
 
+/// Abre `url` (ya validada, `http`/`https`) con el navegador predeterminado de
+/// Windows: `ShellExecuteW` con el verbo «open», sin shell (1.9.1; antes se
+/// buscaba `xdg-open`, que no existe en Windows).
+#[cfg(windows)]
+pub(crate) fn open_in_browser(url: &str) -> CmdResult<()> {
+    use windows_sys::Win32::UI::Shell::ShellExecuteW;
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err(CommandError::new(
+            "app.open",
+            "solo se abren enlaces http o https",
+        ));
+    }
+    let wide = |s: &str| s.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+    let (verb, target) = (wide("open"), wide(url));
+    // SAFETY: cadenas UTF-16 terminadas en cero que viven durante la llamada.
+    let r = unsafe {
+        ShellExecuteW(
+            std::ptr::null_mut(),
+            verb.as_ptr(),
+            target.as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    };
+    // Según la documentación, un valor mayor que 32 indica éxito.
+    if (r as isize) <= 32 {
+        return Err(CommandError::new(
+            "app.open",
+            format!("No se pudo abrir el navegador (código {})", r as isize),
+        ));
+    }
+    Ok(())
+}
+
 /// Abre `url` (ya validada) con `xdg-open`, como argumento y sin shell.
+#[cfg(not(windows))]
 pub(crate) fn open_in_browser(url: &str) -> CmdResult<()> {
     let program = cmc_engine::sys::find_executable("xdg-open").ok_or_else(|| {
         CommandError::new(
@@ -198,6 +235,80 @@ pub struct SystemInfo {
     pub state_dir: Option<String>,
 }
 
+/// Nombre de Windows a partir del registro (1.9.1). El registro sigue diciendo
+/// «Windows 10» en Windows 11: lo distingue el número de compilación (22000 o
+/// posterior).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn windows_product_name(product: &str, display: Option<&str>, build: u32) -> String {
+    let name = if build >= 22000 {
+        product.replacen("Windows 10", "Windows 11", 1)
+    } else {
+        product.to_owned()
+    };
+    match display.filter(|d| !d.is_empty()) {
+        Some(d) => format!("{name} {d}"),
+        None => name,
+    }
+}
+
+/// `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`: nombre y versión.
+#[cfg(windows)]
+fn windows_version() -> (Option<String>, Option<String>) {
+    use windows_sys::Win32::System::Registry::{
+        RegGetValueW, HKEY_LOCAL_MACHINE, RRF_RT_REG_DWORD, RRF_RT_REG_SZ,
+    };
+    let wide = |s: &str| s.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+    let key = wide(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+    let text = |name: &str| -> Option<String> {
+        let mut buf = [0u16; 256];
+        let mut len = (buf.len() * 2) as u32;
+        // SAFETY: búfer y nombres válidos durante la llamada.
+        let r = unsafe {
+            RegGetValueW(
+                HKEY_LOCAL_MACHINE,
+                key.as_ptr(),
+                wide(name).as_ptr(),
+                RRF_RT_REG_SZ,
+                std::ptr::null_mut(),
+                buf.as_mut_ptr().cast(),
+                &mut len,
+            )
+        };
+        (r == 0).then(|| {
+            let n = (len as usize / 2).saturating_sub(1).min(buf.len());
+            String::from_utf16_lossy(&buf[..n])
+        })
+    };
+    let dword = |name: &str| -> Option<u32> {
+        let mut v = 0u32;
+        let mut len = 4u32;
+        // SAFETY: destino de 4 bytes.
+        let r = unsafe {
+            RegGetValueW(
+                HKEY_LOCAL_MACHINE,
+                key.as_ptr(),
+                wide(name).as_ptr(),
+                RRF_RT_REG_DWORD,
+                std::ptr::null_mut(),
+                (&mut v as *mut u32).cast(),
+                &mut len,
+            )
+        };
+        (r == 0).then_some(v)
+    };
+    let build: u32 = text("CurrentBuild")
+        .and_then(|b| b.parse().ok())
+        .unwrap_or(0);
+    let name = text("ProductName")
+        .map(|p| windows_product_name(&p, text("DisplayVersion").as_deref(), build));
+    let version = (build > 0).then(|| match dword("UBR") {
+        Some(u) => format!("10.0.{build}.{u}"),
+        None => format!("10.0.{build}"),
+    });
+    (name, version)
+}
+
+#[cfg_attr(windows, allow(dead_code))]
 fn os_release() -> Option<String> {
     let s = std::fs::read_to_string("/etc/os-release")
         .or_else(|_| std::fs::read_to_string("/usr/lib/os-release"))
@@ -209,6 +320,7 @@ fn os_release() -> Option<String> {
 }
 
 /// Versión del paquete instalado según la base de datos de dpkg (solo lectura).
+#[cfg_attr(windows, allow(dead_code))]
 pub fn dpkg_version(status: &str, package: &str) -> Option<String> {
     status.split("\n\n").find_map(|stanza| {
         let mut name = None;
@@ -253,13 +365,22 @@ pub fn system_info(state: State<'_, AppState>) -> SystemInfo {
     let env = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
     SystemInfo {
         app_version: env!("CARGO_PKG_VERSION").into(),
+        #[cfg(windows)]
+        package_version: None,
+        #[cfg(not(windows))]
         package_version: std::fs::read_to_string("/var/lib/dpkg/status")
             .ok()
             .and_then(|s| dpkg_version(&s, crate::uninstall::OWN_PACKAGE)),
         executable: std::env::current_exe()
             .ok()
             .map(|p| p.display().to_string()),
+        #[cfg(windows)]
+        os: windows_version().0,
+        #[cfg(not(windows))]
         os: os_release(),
+        #[cfg(windows)]
+        kernel: windows_version().1,
+        #[cfg(not(windows))]
         kernel: std::fs::read_to_string("/proc/sys/kernel/osrelease")
             .ok()
             .map(|s| s.trim().to_owned()),
@@ -276,6 +397,22 @@ pub fn system_info(state: State<'_, AppState>) -> SystemInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_names_from_the_registry() {
+        assert_eq!(
+            windows_product_name("Windows 10 Pro", Some("22H2"), 19045),
+            "Windows 10 Pro 22H2"
+        );
+        assert_eq!(
+            windows_product_name("Windows 10 Pro", Some("24H2"), 26100),
+            "Windows 11 Pro 24H2"
+        );
+        assert_eq!(
+            windows_product_name("Windows 10 Home", None, 22631),
+            "Windows 11 Home"
+        );
+    }
 
     #[test]
     fn dpkg_status_is_read_only_for_installed_packages() {

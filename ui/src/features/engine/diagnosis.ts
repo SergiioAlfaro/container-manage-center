@@ -56,6 +56,20 @@ export function explain(d: Diagnosis, windows: boolean = isWindows()): Explanati
         steps: [{ key: "addDockerUsers", command: `net localgroup docker-users "${d.user.name}" /add` }, { key: "relogin" }, retry],
       };
     }
+    // 1.9.1: sin órdenes de Linux (systemctl, unset) en Windows.
+    if (p.kind === "unsupportedHost") {
+      return {
+        problem: "unsupportedHost",
+        params: { host: p.host },
+        steps: [{ key: "unsetHostWin", command: "Remove-Item Env:DOCKER_HOST -ErrorAction SilentlyContinue; docker context use default" }, { key: "customPath" }, retry],
+      };
+    }
+    if (p.kind === "timeout") {
+      return { problem: "timeout", params: { path: p.socketPath }, steps: [{ key: "restartDesktop" }, retry] };
+    }
+    if (p.kind === "apiTooOld") {
+      return { problem: "apiTooOld", params: { api: p.apiVersion, min: p.minimum }, steps: [{ key: "upgradeDesktop" }, retry] };
+    }
   }
   switch (p.kind) {
     case "noSocket": {

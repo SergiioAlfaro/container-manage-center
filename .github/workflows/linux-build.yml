@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
+# Paquete .deb y pruebas contra Docker real (se lanza a mano).
+#
+#   - deb: compila en Ubuntu 22.04 (glibc 2.35), así el paquete sirve también
+#     para Debian 12; calcula sus dependencias reales y lo guarda como
+#     artefacto de la ejecución (no publica ninguna versión).
+#   - docker-integration: pruebas de cmc-engine contra el Docker del runner
+#     (CMC_DOCKER_TESTS=1). Crean y borran contenedores, imágenes, redes y
+#     volúmenes de prueba con la etiqueta cmc.test; descargan imágenes
+#     públicas. Algunas necesitan imágenes que prepara el laboratorio de
+#     scripts/verify-evolution-*.sh y se omiten o fallan sin él: la
+#     verificación completa sigue siendo ese script en Debian/Ubuntu.
+name: linux-build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  deb:
+    name: Paquete .deb (Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Dependencias de compilación
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev \
+            libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev dpkg-dev
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tauri build --bundles deb --ci
+      - name: Dependencias reales y sumas
+        run: |
+          set -euo pipefail
+          DEB=$(ls target/release/bundle/deb/*.deb)
+          bash scripts/deb-set-depends.sh "$DEB"
+          mkdir -p out
+          cp "$DEB" out/
+          (cd out && sha256sum -- *.deb > SHA256SUMS)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: container-manage-center-deb
+          path: out/
+          retention-days: 14
+
+  docker-integration:
+    name: Pruebas contra Docker real (runner)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Dependencias de compilación
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev \
+            libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: docker version
+      - name: cmc-engine contra Docker
+        env:
+          CMC_DOCKER_TESTS: "1"
+        run: cargo test --locked -p cmc-engine --test live_docker --test live_containers --test live_networks --test live_volumes -- --test-threads=2

@@ -509,7 +509,7 @@ mod tests {
 
     /// Keyring real (Secret Service). Se ejecuta solo con `CMC_KEYRING_TEST=1`
     /// dentro de una sesión D-Bus con un keyring desbloqueado (ver
-    /// `scripts/verify-evolution-1.9.0.sh`).
+    /// `scripts/verify-evolution-1.9.1.sh`).
     #[tokio::test]
     async fn real_keyring_store_load_delete() {
         if std::env::var_os("CMC_KEYRING_TEST").is_none() {
@@ -573,5 +573,35 @@ mod tests {
             )
             .await
             .is_err());
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+
+    /// Windows (1.9.1): ida y vuelta por el Administrador de credenciales
+    /// (en Wine, su implementación; en Windows real, el del usuario).
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn windows_credential_manager_roundtrip() {
+        let server = format!("srv-test{}", std::process::id());
+        let _ = keyring::delete(&server).await;
+        assert!(!keyring::has(&server, SecretKind::Password).await.unwrap());
+        keyring::store(&server, "prueba", SecretKind::Password, "s3cr3t ñ")
+            .await
+            .unwrap();
+        assert!(keyring::has(&server, SecretKind::Password).await.unwrap());
+        assert!(!keyring::has(&server, SecretKind::Passphrase).await.unwrap());
+        let got = keyring::load(&server, SecretKind::Password)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.as_str(), "s3cr3t ñ");
+        assert_eq!(keyring::delete(&server).await.unwrap(), 1);
+        assert!(keyring::load(&server, SecretKind::Password)
+            .await
+            .unwrap()
+            .is_none());
     }
 }

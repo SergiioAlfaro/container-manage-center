@@ -87,4 +87,15 @@ describe("servidores remotos: problemas y soluciones", () => {
     expect(statusOf(down({ kind: "dockerNotRunning", message: "" }))).toBe("dockerUnavailable");
     expect(statusOf(down({ kind: "hostKeyChanged", presented: null, file: null, inUserFile: false }))).toBe("identityError");
   });
+
+  it("Windows (1.9.1): las órdenes de este equipo son de PowerShell; las del servidor no cambian", () => {
+    const local = (p: RemoteProblem) => explainRemote(p, c, true).steps.filter((s) => s.where === "local").map((s) => s.command ?? "");
+    const all = ALL.flatMap(local);
+    expect(all.some((x) => /sudo|apt |getent|chmod|ping -c/.test(x))).toBe(false);
+    expect(local({ kind: "sshMissing" })[0]).toContain("Add-WindowsCapability");
+    expect(local({ kind: "hostUnresolvable", host: "srv" })).toContain("Resolve-DnsName srv");
+    expect(local({ kind: "keyUnreadable", path: "C:\\Users\\ana\\.ssh\\id" })[0]).toContain("icacls");
+    const server = (p: RemoteProblem, w: boolean) => explainRemote(p, c, w).steps.filter((s) => s.where === "server").map((s) => s.command);
+    for (const p of ALL) expect(server(p, true), p.kind).toEqual(server(p, false));
+  });
 });

@@ -1,0 +1,27 @@
+flowchart TB
+  subgraph UI["Interfaz · ui/ (React + TypeScript, Vite)"]
+    direction LR
+    V["Apartados<br/>features/"] --> Q["TanStack Query<br/>caché e invalidación"]
+    V --> Z["Zustand<br/>estado de la interfaz"]
+    Q --> C["Cliente IPC tipado<br/>shared/ipc"]
+  end
+  subgraph APP["Aplicación · src-tauri/ (Rust, Tauri 2)"]
+    direction LR
+    CMD["130 órdenes IPC<br/>commands/"] --> ST["AppState<br/>servidores, flujos, diarios"]
+    ST --> SRV["Servicios del sistema<br/>systemd / schtasks · llavero · notificaciones"]
+  end
+  subgraph ENG["Crates de Rust"]
+    direction LR
+    E["cmc-engine<br/>Docker, Compose, SSH,<br/>copias, auditoría, monitor"]
+    S["cmc-store<br/>config.toml, servidores, diarios"]
+    A["cmc-activity<br/>registro y ocultación de secretos"]
+  end
+  C <-- "invoke() · eventos y canales" --> CMD
+  ST --> E
+  ST --> S
+  E --> A
+  E --> D1["Docker Engine API<br/>(bollard)"]
+  E --> D2["CLI de Docker Compose"]
+  E --> D3["OpenSSH"]
+  D1 --> T1["Socket Unix · tubería de Docker Desktop"]
+  D3 --> T2["Servidor Linux remoto<br/>docker system dial-stdio"]

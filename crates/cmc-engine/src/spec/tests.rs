@@ -167,9 +167,15 @@ fn mounts_are_validated() {
         target: t.into(),
         read_only: ro,
     };
+    // Carpeta de este equipo que no existe (en Windows, `C:\…`).
+    let missing = if cfg!(windows) {
+        r"C:\no\existe\cmc"
+    } else {
+        "/no/existe/cmc"
+    };
     let s = ContainerSpec {
         mounts: vec![
-            m(MountKind::Bind, "/no/existe/cmc", "/a", false),
+            m(MountKind::Bind, missing, "/a", false),
             m(MountKind::Bind, "relativa", "/b", false),
             m(MountKind::Bind, "", "/c", false),
             m(MountKind::Volume, "mal nombre", "/d", false),
@@ -199,6 +205,25 @@ fn mounts_are_validated() {
     ] {
         assert!(c.contains(&want.to_string()), "falta {want} en {c:?}");
     }
+    // Docker Desktop (1.9.1): carpetas de Windows válidas y sin `..`; en Linux
+    // no son rutas absolutas.
+    let win = ContainerSpec {
+        mounts: vec![
+            m(MountKind::Bind, r"C:\Users\ana\web", "/web", false),
+            m(MountKind::Bind, r"C:\Users\ana\..\x", "/x", false),
+        ],
+        ..base()
+    };
+    let c = codes(&win);
+    assert_eq!(
+        c.contains(&"mounts.0.source:path.notAbsolute".to_string()),
+        !cfg!(windows),
+        "{c:?}"
+    );
+    assert!(
+        c.contains(&"mounts.1.source:path.notAbsolute".to_string()),
+        "{c:?}"
+    );
     // Sin comprobar el disco, una ruta inexistente no es error (vista previa).
     let s = ContainerSpec {
         mounts: vec![m(MountKind::Bind, "/no/existe/cmc", "/a", false)],

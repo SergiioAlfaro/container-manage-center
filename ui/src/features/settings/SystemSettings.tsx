@@ -11,6 +11,7 @@ import type { SystemOverview } from "@/shared/ipc/bindings/SystemOverview";
 import { keys } from "@/shared/query";
 import { CopyButton } from "@/shared/ui/controls";
 import { Group } from "./layout";
+import { isWindows } from "@/shared/platform";
 
 type Line = [label: string, value: string | null | undefined];
 
@@ -39,11 +40,13 @@ export function SystemSettings() {
   const s: SystemInfo | undefined = sys.data;
   const info = overview.data?.info;
   const version = overview.data?.version;
+  // Windows (1.9.1): sin paquete .deb, glibc ni escritorio de Linux; la vista web es WebView2.
+  const win = isWindows();
   const app: Line[] = [
     [t("system.appVersion"), s?.appVersion],
-    [t("system.package"), s ? (s.packageVersion ?? t("system.notInstalled")) : null],
+    win ? [t("system.package"), t("updates.installedWin")] : [t("system.package"), s ? (s.packageVersion ?? t("system.notInstalled")) : null],
     [t("system.executable"), s?.executable],
-    [t("system.webkit"), s?.webkitGtk],
+    [win ? "WebView2" : t("system.webkit"), s?.webkitGtk],
     [t("system.configPath"), s?.configPath],
     [t("system.stateDir"), s?.stateDir],
   ];
@@ -51,8 +54,12 @@ export function SystemSettings() {
     [t("system.os"), s?.os],
     [t("system.kernel"), s?.kernel],
     [t("system.arch"), s?.arch],
-    [t("system.glibc"), s?.glibc],
-    [t("system.desktop"), s ? [s.desktop, s.sessionType].filter(Boolean).join(" · ") || null : null],
+    ...(win
+      ? []
+      : ([
+          [t("system.glibc"), s?.glibc],
+          [t("system.desktop"), s ? [s.desktop, s.sessionType].filter(Boolean).join(" · ") || null : null],
+        ] as Line[])),
   ];
   const docker: Line[] = connected
     ? [

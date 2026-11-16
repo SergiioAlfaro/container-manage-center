@@ -82,4 +82,17 @@ describe("explain", () => {
     expect(explain(diagnosis({ kind: "apiTooOld", socketPath: "/var/run/docker.sock", apiVersion: "1.40", minimum: "1.41" })).params).toEqual({ api: "1.40", min: "1.41" });
     expect(explain(diagnosis({ kind: "timeout", socketPath: "/var/run/docker.sock" })).steps[0]!.command).toBe("sudo systemctl restart docker");
   });
+
+  it("Windows (1.9.1): sin órdenes de Linux en DOCKER_HOST, tiempo agotado ni API antigua", () => {
+    const host = explain(diagnosis({ kind: "unsupportedHost", host: "tcp://localhost:2375" }), true);
+    expect(host.steps[0]!.key).toBe("unsetHostWin");
+    expect(host.steps[0]!.command).toContain("Remove-Item Env:DOCKER_HOST");
+    expect(explain(diagnosis({ kind: "timeout", socketPath: "\\\\.\\pipe\\docker_engine" }), true).steps.map((s) => s.key)).toEqual(["restartDesktop", "retry"]);
+    expect(explain(diagnosis({ kind: "apiTooOld", socketPath: "x", apiVersion: "1.40", minimum: "1.41" }), true).steps[0]!.key).toBe("upgradeDesktop");
+    for (const kind of ["unsupportedHost", "timeout", "apiTooOld", "noSocket", "daemonNotRunning", "permissionDenied"] as const) {
+      const d = kind === "unsupportedHost" ? { kind, host: "tcp://x" } : kind === "apiTooOld" ? { kind, socketPath: "x", apiVersion: "1", minimum: "2" } : kind === "permissionDenied" ? { kind, permissions: { socketPath: "x", owner: "", group: "docker-users", mode: "", userInGroup: false, groupActiveInSession: false } } : { kind, socketPath: "x" };
+      const cmds = explain(diagnosis(d as never), true).steps.map((s) => s.command ?? "");
+      expect(cmds.some((c) => /systemctl|sudo|apt |unset /.test(c)), kind).toBe(false);
+    }
+  });
 });

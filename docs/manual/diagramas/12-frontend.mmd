@@ -1,0 +1,18 @@
+flowchart TB
+  M["main.tsx<br/>i18n · tema · QueryClientProvider"] --> APP["App.tsx<br/>carga diferida de apartados"]
+  APP --> SB["Sidebar<br/>sections.ts"]
+  APP --> TOP["Barra superior<br/>servidor · conexión · actividad"]
+  APP --> VIEW["Apartado activo<br/>features/*/…View.tsx"]
+  APP --> ACT["Panel de actividad<br/>features/activity"]
+  APP --> LR["useLiveRefresh<br/>eventos de Docker → invalidación"]
+  TOP --> SRV["app/server.tsx<br/>servidor elegido (Zustand)"]
+  TOP --> ENG["features/engine/store.ts<br/>estado de la conexión"]
+  VIEW --> RQ["RequireConnection"]
+  VIEW --> Q["TanStack Query<br/>useQuery · useMutation"]
+  VIEW --> ST["store.ts del apartado<br/>(Zustand: lista, detalle, asistente)"]
+  VIEW --> UI["shared/ui<br/>controles, diálogos, menú, riesgos"]
+  Q --> API["shared/ipc/client.ts<br/>api(server)"]
+  API --> TAURI["invoke() · Channel<br/>@tauri-apps/api"]
+  ENG --> TAURI
+  ACT --> TAURI
+  LR --> Q

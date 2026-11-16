@@ -157,9 +157,11 @@ impl<T: Serialize + DeserializeOwned + Clone> Journal<T> {
                 g.entries.pop_front();
             }
             let path = g.path.clone();
-            write_all(&path, &g.entries)?;
+            // Windows no deja sustituir un archivo abierto (1.9.1): se cierra antes.
+            g.file = None;
+            let written = write_all(&path, &g.entries);
             g.file = Some(open_append(&path)?);
-            return Ok(());
+            return written;
         }
         match g.file.as_mut() {
             Some(f) => {
@@ -191,9 +193,11 @@ impl<T: Serialize + DeserializeOwned + Clone> Journal<T> {
         let mut g = self.inner.lock();
         g.entries.clear();
         let path = g.path.clone();
-        write_all(&path, &g.entries)?;
+        // Windows no deja sustituir un archivo abierto (1.9.1): se cierra antes.
+        g.file = None;
+        let written = write_all(&path, &g.entries);
         g.file = Some(open_append(&path)?);
-        Ok(())
+        written
     }
 
     pub fn path(&self) -> PathBuf {

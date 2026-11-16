@@ -1,86 +1,117 @@
-# Validación manual de Container Manage Center 1.9.0 en Windows
+# Validación manual de Container Manage Center 1.9.1 en Windows
 
-La versión de Windows se ha compilado (MinGW desde Linux y, si lo lanzas, MSVC
-en GitHub Actions), pero **nunca se ha ejecutado en un Windows real**. Esta
-guía es la primera prueba. Hazla en un equipo o máquina virtual de pruebas,
-no en el equipo con tus datos de trabajo, y apunta cualquier fallo tal cual
-(captura y texto del error).
+La versión de Windows se ha compilado y sus pruebas unitarias pasan con Wine,
+pero **nunca se ha ejecutado en un Windows real**. Esta guía es la primera
+prueba. Hazla en un equipo o una máquina virtual de pruebas, no en el equipo
+con tus datos de trabajo, y apunta cualquier fallo tal cual (captura y texto
+del error). Los identificadores (`WIN-…`) son los de la matriz de pruebas de
+`AUDITORIA-WINDOWS-1.9.1.md`: al terminar, cambia allí su estado de
+NOT TESTED a PASS o FAIL.
 
 > **Recordatorio legal**: el instalador es **solo para pruebas**. No lo
-> publiques ni lo pases a terceros hasta que decidas lo de WebView2Loader
-> (`docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md`, «Decisión pendiente»).
+> publiques ni lo pases a terceros hasta que apruebes el permiso adicional de
+> WebView2 (`docs/legal/WEBVIEW2_EXCEPTION.md`).
 
-Tiempo estimado: 45–60 minutos.
+Tiempo estimado: 60–90 minutos.
 
 ## 0. Preparación
 
-- [ ] Windows 10 22H2 o Windows 11, x86_64, con tu usuario normal (sin ser
-      administrador si puedes).
-- [ ] Docker Desktop instalado y en marcha (motor de Linux); tu usuario en el
-      grupo `docker-users`. `docker version` en PowerShell responde.
+- [ ] Windows 10 22H2 o Windows 11 23H2 o posterior, x86_64, Pro, Enterprise o
+      Education (lo que pide Docker Desktop), con tu usuario normal.
+- [ ] Docker Desktop instalado y en marcha, con el motor de Linux.
+      `docker version` en PowerShell responde.
 - [ ] Cliente OpenSSH: `ssh -V` en PowerShell responde.
 - [ ] Opcional: un servidor Linux con Docker accesible por SSH (con clave y,
       si puedes, otro con contraseña).
-- [ ] Comprueba el instalador: `Get-FileHash .\<instalador>.exe -Algorithm SHA256`
-      coincide con `SHA256SUMS`.
+- [ ] Una carpeta de pruebas, por ejemplo `C:\cmc-pruebas`, con un
+      `compose.yaml` sencillo:
+
+      ```yaml
+      services:
+        web:
+          image: nginx:alpine
+          ports: ["8081:80"]
+      ```
+
+- [ ] Comprueba el instalador:
+      `Get-FileHash .\<instalador>.exe -Algorithm SHA256` coincide con `SHA256SUMS`.
 
 ## 1. Instalación
 
-| # | Paso | Resultado esperado |
+| ID | Paso | Resultado esperado |
 |---|---|---|
-| I1 | Ejecuta el instalador (SmartScreen avisará: el instalador no está firmado; «Más información › Ejecutar de todas formas») | Instalador en tu idioma (inglés, español, francés, italiano o portugués; si no, inglés), muestra la licencia GPL-3.0 y **no pide permisos de administrador** |
-| I2 | Termina la instalación | Acceso «Container Manage Center» en el menú Inicio (carpeta «Container Manage Center») |
-| I3 | `dir "$env:LOCALAPPDATA\Container Manage Center"` | `container-manage-center.exe`, `legal\` (LICENSE.txt, THIRD_PARTY_NOTICES.md, WebView2Loader.LICENSE.txt…), `docs\`; con el instalador de MinGW, también `WebView2Loader.dll` |
-| I4 | Abre la aplicación | Se abre **una ventana** (sin consola negra detrás), con el tema morado y tu idioma |
+| WIN-INS-01 | Ejecuta el instalador (SmartScreen avisará: no está firmado; «Más información › Ejecutar de todas formas») | En tu idioma (inglés, español, francés, italiano o portugués; si no, inglés), muestra la licencia GPL-3.0 y **no pide permisos de administrador** |
+| WIN-INS-02 | Termina la instalación | Acceso «Container Manage Center» en el menú Inicio, con el icono morado |
+| WIN-INS-03 | `dir "$env:LOCALAPPDATA\Container Manage Center"` | `container-manage-center.exe`, `legal\` (LICENSE.txt, THIRD_PARTY_NOTICES.md, WEBVIEW2_EXCEPTION.md…), `docs\`; con el instalador de MinGW, también `WebView2Loader.dll` |
+| WIN-INS-04 | Abre la aplicación | **Una ventana** (sin consola negra detrás), tema morado, en tu idioma |
+| WIN-INS-05 | Configuración › Sistema | Sistema «Windows 10/11 … (versión)», versión 10.0.x, «Aplicación de Windows», WebView2 con su versión; sin glibc ni escritorio de Linux |
 
 ## 2. Docker local (Docker Desktop)
 
-| # | Paso | Resultado esperado |
+| ID | Paso | Resultado esperado |
 |---|---|---|
-| D1 | Panel de inicio | Conectado a Docker Desktop; versión del motor correcta |
-| D2 | Contenedores: crea uno (`nginx:alpine`, puerto 8080), inícialo, mira sus registros, ábrelo en el navegador, detenlo y bórralo | Todo funciona y aparece en el panel de actividad |
-| D3 | Imágenes, redes y volúmenes: lista, crea y borra uno de cada | Correcto |
-| D4 | Compose: abre un proyecto con un `compose.yaml` en una carpeta tuya, levántalo y bájalo | Correcto (necesita `docker compose` de Docker Desktop) |
-| D5 | Cierra Docker Desktop y vuelve a la aplicación | Diagnóstico «Docker Desktop no está en marcha» con la solución para Windows (no los pasos de Linux) |
-| D6 | Configuración › Componentes | Rutas y textos de Windows (Docker Desktop, OpenSSH), no de apt/systemd |
+| WIN-DOC-01 | Panel de inicio | Conectado a Docker Desktop; versión del motor correcta |
+| WIN-DOC-02 | Contenedores: crea `nginx:alpine` con el puerto 8080, inícialo, mira sus registros y estadísticas, reinícialo, detenlo y bórralo | Todo funciona y aparece en el panel de actividad |
+| WIN-DOC-03 | En ese contenedor, **Abrir en el navegador** (puerto publicado) | Se abre el navegador predeterminado en `http://localhost:8080` |
+| WIN-DOC-04 | Terminal del contenedor (`sh`): `ls`, `echo ñandú`, cambia el tamaño de la ventana | Responde, muestra la `ñ` y se adapta al tamaño |
+| WIN-DOC-05 | Crea un contenedor con una **carpeta vinculada** `C:\cmc-pruebas` → `/datos` (selector de carpetas) | Se crea; dentro, `ls /datos` muestra `compose.yaml` |
+| WIN-DOC-06 | Crea un contenedor que monte `C:\Users\<tú>` | Aviso de riesgo alto (credenciales) antes de crear |
+| WIN-DOC-07 | Edita el contenedor de WIN-DOC-05 (por ejemplo, cambia la política de reinicio) | Conserva la carpeta vinculada `C:\cmc-pruebas` |
+| WIN-DOC-08 | Imágenes, redes y volúmenes: lista, crea y borra uno de cada | Correcto |
+| WIN-DOC-09 | Imágenes › Construir desde la carpeta `C:\cmc-pruebas` con un `Dockerfile` (`FROM alpine`) | Se construye la imagen |
+| WIN-DOC-10 | Compose: abre `C:\cmc-pruebas\compose.yaml`, levántalo, mira los registros y bájalo | Correcto |
+| WIN-DOC-11 | Compose: levanta un proyecto con una imagen grande que no tengas y pulsa **Detener** mientras descarga | Se detiene en pocos segundos; en el Administrador de tareas no queda ningún `docker-compose.exe` |
+| WIN-DOC-12 | Compose › Nuevo proyecto en `C:\cmc-pruebas\nuevo` | Crea `compose.yaml` |
+| WIN-DOC-13 | Intenta abrir un archivo Compose dentro de `%APPDATA%` o de `C:\Windows` | Se rechaza (carpeta de configuración o del sistema) |
+| WIN-DOC-14 | Cierra Docker Desktop y vuelve a la aplicación | Diagnóstico «Docker Desktop no está en marcha» con la solución de Windows (sin `systemctl` ni `sudo`) |
+| WIN-DOC-15 | Vuelve a abrir Docker Desktop | La aplicación se reconecta sola o con «Reintentar» |
+| WIN-DOC-16 | Configuración › Docker › ruta personalizada `\\.\pipe\docker_engine` | Se acepta y conecta |
+| WIN-DOC-17 | Configuración › Componentes | Textos de Windows (Docker Desktop, OpenSSH, cómo desinstalar), no de apt ni systemd |
 
 ## 3. Servidores remotos por SSH
 
-| # | Paso | Resultado esperado |
+| ID | Paso | Resultado esperado |
 |---|---|---|
-| S1 | Añade un servidor con clave (`C:\Users\<tú>\.ssh\id_ed25519`) | Pide confirmar la huella la primera vez; conecta |
-| S2 | Lista contenedores del servidor y abre los registros de uno | Correcto; sin ventanas de consola que aparecen y desaparecen |
-| S3 | Servidor con contraseña o clave con frase de paso, marcando «Recordar» | Conecta; en el **Administrador de credenciales › Credenciales de Windows** hay una entrada `container-manage-center/<servidor>/…` |
-| S4 | Cierra y abre la aplicación; conecta de nuevo | No vuelve a pedir la contraseña |
-| S5 | Terminal del servidor | Se abre y responde (sin cambio de tamaño automático: limitación conocida) |
-| S6 | Un servidor con ProxyJump | Mensaje claro de que ProxyJump no está disponible en Windows |
+| WIN-SSH-01 | Añade un servidor con clave elegida con el **selector** (`C:\Users\<tú>\.ssh\id_ed25519`) | Se acepta la ruta; pide confirmar la huella la primera vez; conecta |
+| WIN-SSH-02 | Lista contenedores del servidor y abre los registros de uno | Correcto; sin ventanas de consola que aparecen y desaparecen |
+| WIN-SSH-03 | Servidor con contraseña o clave con frase de paso, marcando «Recordar» | Conecta; en el **Administrador de credenciales › Credenciales de Windows** hay una entrada `container-manage-center/<servidor>/…` |
+| WIN-SSH-04 | Cierra y abre la aplicación; conecta de nuevo | No vuelve a pedir la contraseña |
+| WIN-SSH-05 | Terminal del servidor | Se abre y responde (sin cambio de tamaño: limitación conocida) |
+| WIN-SSH-06 | Un servidor con un nombre que no existe | Diagnóstico con `Resolve-DnsName …` y `ping -n 3 …` (PowerShell), no `getent` |
+| WIN-SSH-07 | Un servidor con ProxyJump | Mensaje claro de que ProxyJump no está disponible en Windows |
+| WIN-SSH-08 | Cambia la clave del servidor (o usa otro con la misma dirección) | Se detecta el cambio de huella y no se conecta |
 
-## 4. Copias, tareas programadas y notificaciones
+## 4. Copias, tareas programadas, notificaciones y registros
 
-| # | Paso | Resultado esperado |
+| ID | Paso | Resultado esperado |
 |---|---|---|
-| C1 | Haz una copia de un volumen a una carpeta tuya | Copia correcta; «Comprobar» la da por buena |
-| C2 | Restaura esa copia en un volumen nuevo | Correcto |
-| C3 | Crea una tarea programada (cada día) | En el **Programador de tareas**, carpeta `\Container Manage Center\`, aparece la tarea con su descripción |
-| C4 | En el Programador de tareas, «Ejecutar» esa tarea | La copia se hace y aparece en el historial de copias de la aplicación |
-| C5 | Desactívala y bórrala desde la aplicación | Cambia y desaparece también en el Programador de tareas |
-| C6 | Monitorización: activa una alerta fácil de disparar (p. ej. un contenedor que se detiene) | Notificación de Windows con el nombre «Container Manage Center» |
+| WIN-BAK-01 | Haz una copia de un volumen a `C:\cmc-pruebas\copias` | Copia correcta; **Comprobar** la da por buena (sin archivos «de más») |
+| WIN-BAK-02 | Restaura esa copia en un volumen nuevo | Correcto |
+| WIN-BAK-03 | Intenta usar `C:\Windows\Temp` como destino de copias | Se rechaza (carpeta del sistema) |
+| WIN-BAK-04 | Crea una tarea programada (cada día) | En el **Programador de tareas**, carpeta `\Container Manage Center\`, aparece la tarea con su descripción |
+| WIN-BAK-05 | En el Programador de tareas, «Ejecutar» esa tarea | La copia se hace y aparece en el historial de copias de la aplicación |
+| WIN-BAK-06 | Desactívala y bórrala desde la aplicación | Cambia y desaparece también en el Programador de tareas |
+| WIN-MON-01 | Monitorización: una alerta fácil de disparar (un contenedor que se detiene) | Notificación de Windows con el nombre «Container Manage Center» |
+| WIN-ACT-01 | Panel de actividad › Vaciar; Eventos › Vaciar el diario | Se vacían sin error |
 
-## 5. Ayuda, legal y desinstalación
+## 5. Ayuda, legal, actualización y desinstalación
 
-| # | Paso | Resultado esperado |
+| ID | Paso | Resultado esperado |
 |---|---|---|
-| L1 | Ayuda › «Windows» | Sección presente y en tu idioma |
-| L2 | Configuración › Legal | GPL-3.0-or-later, copyright de Sergio Alfaro Lorite, ruta de los avisos de terceros (copiable) |
-| L3 | Configuración de Windows › Aplicaciones › «Container Manage Center» › Desinstalar | Se desinstala; desaparece del menú Inicio |
-| L4 | `dir "$env:APPDATA\container-manage-center"`, `dir "$env:LOCALAPPDATA\container-manage-center"` | Tus datos siguen ahí (la desinstalación no los borra); las tareas programadas que no borraste siguen en el Programador de tareas |
+| WIN-LEG-01 | Ayuda › «Windows» | Sección presente y en tu idioma |
+| WIN-LEG-02 | Configuración › Legal | GPL-3.0-or-later, copyright de Sergio Alfaro Lorite, ruta de los avisos de terceros |
+| WIN-UPD-01 | Configuración › Actualizaciones | Instrucciones de Windows (descargar y ejecutar el instalador nuevo), no `apt` |
+| WIN-UPD-02 | Con una tarea programada creada, instala de nuevo el mismo instalador (o uno más nuevo) | Se actualiza; la tarea programada **sigue** en el Programador de tareas; tus datos siguen |
+| WIN-UNI-01 | Configuración de Windows › Aplicaciones › «Container Manage Center» › Desinstalar | Se desinstala; desaparece del menú Inicio |
+| WIN-UNI-02 | Programador de tareas, carpeta `\Container Manage Center\` | Ya no están las tareas de la aplicación |
+| WIN-UNI-03 | `dir "$env:APPDATA\container-manage-center"`, `dir "$env:LOCALAPPDATA\container-manage-center"`, `C:\cmc-pruebas\copias` | Tus datos y tus copias siguen ahí; en el Administrador de credenciales siguen las contraseñas guardadas (bórralas a mano si quieres) |
 
 ## Hoja de resultados
 
-| Bloque | Correcto | Fallos (número de paso y texto) |
+| Bloque | Correcto | Fallos (ID y texto) |
 |---|---|---|
 | 1. Instalación | | |
 | 2. Docker local | | |
 | 3. SSH | | |
-| 4. Copias, tareas, notificaciones | | |
-| 5. Ayuda, legal, desinstalación | | |
+| 4. Copias, tareas, notificaciones, registros | | |
+| 5. Ayuda, legal, actualización, desinstalación | | |

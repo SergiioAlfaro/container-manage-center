@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-# Verificación de Container Manage Center 1.9.0 en Debian/Ubuntu. Repite toda
-# la regresión automática de las fases 1-10, las etapas 1-6, la 1.7.0 y la
-# 1.8.0, y comprueba lo nuevo de la 1.9.0 (D-114, versión de Windows):
+# Verificación de Container Manage Center 1.9.1 en Debian/Ubuntu. Repite toda
+# la regresión automática de las fases 1-10, las etapas 1-6 y las versiones
+# 1.7.0 a 1.9.0, y comprueba lo nuevo de la 1.9.1 (D-115: auditoría de Windows
+# y preparación para GitHub):
+#   - Linux no cambia de comportamiento (toda la regresión);
+#   - con Wine, MinGW-w64 y RUST_SRC: las pruebas unitarias compiladas para
+#     Windows (sin Wine, solo la compilación);
+#   - archivos del repositorio para GitHub y flujos con acciones fijadas por
+#     commit; permiso adicional de WebView2 (borrador) en los textos legales.
+# De la 1.9.0 (D-114, versión de Windows):
 #   - Linux no cambia: toda la regresión anterior;
 #   - avisos de terceros y auditoría de Windows al día, con WebView2Loader
 #     pendiente de la decisión del propietario y los instaladores marcados
@@ -49,9 +56,9 @@
 #   - correcciones propuestas en «Editar configuración» sin aplicar nada.
 #
 # Uso (desde la raíz del proyecto, con tu usuario normal, NO como root):
-#   bash scripts/verify-evolution-1.9.0.sh --deb            # recomendado: incluye la compilación
+#   bash scripts/verify-evolution-1.9.1.sh --deb            # recomendado: incluye la compilación
 #                                                    # de producción y el paquete .deb
-#   bash scripts/verify-evolution-1.9.0.sh --deb --compat   # y el paquete compatible con
+#   bash scripts/verify-evolution-1.9.1.sh --deb --compat   # y el paquete compatible con
 #        Debian 12+/Ubuntu 22.04+ (compilado en un contenedor de Docker con
 #        Ubuntu 22.04: descarga la imagen ubuntu:22.04 y ~700 MB de paquetes)
 #   --net    además consulta un servidor HTTPS real (TLS con los certificados
@@ -80,15 +87,15 @@
 # (scripts/dev/clean-install-test.sh) necesitan root y sistemas de prueba: no se
 # ejecutan en tu equipo (se listan como omitidas o se hacen a mano en M1).
 #
-# Resultado: verify-evolution-1.9.0-report.txt y los registros completos de cada paso
-# en target/verify-evolution-1.9.0/. Código de salida 0 solo si no hay ningún fallo
+# Resultado: verify-evolution-1.9.1-report.txt y los registros completos de cada paso
+# en target/verify-evolution-1.9.1/. Código de salida 0 solo si no hay ningún fallo
 # obligatorio. Las omisiones justificadas se listan aparte.
 
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
-REPORT="$ROOT/verify-evolution-1.9.0-report.txt"
-LOGDIR="$ROOT/target/verify-evolution-1.9.0"
+REPORT="$ROOT/verify-evolution-1.9.1-report.txt"
+LOGDIR="$ROOT/target/verify-evolution-1.9.1"
 rm -rf "$LOGDIR"
 mkdir -p "$LOGDIR"
 : > "$REPORT"
@@ -212,7 +219,7 @@ finish() {
 trap finish EXIT
 trap 'exit 130' INT TERM
 
-say "Container Manage Center - verificación de la 1.9.0 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
+say "Container Manage Center - verificación de la 1.9.1 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
 say "Fecha: $(date -Is)"
 say "Proyecto: $ROOT"
 say ""
@@ -552,7 +559,7 @@ old_name_gone() {
   # 1.8.0 (D-113): el nombre anterior solo aparece donde hace falta para
   # encontrar y pasar los datos de una versión anterior. Lista cerrada: un
   # archivo nuevo con el nombre anterior hace fallar este paso.
-  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.9\.0\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
+  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.9\.1\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
   local hits bad_
   hits=$(git grep -nIiE 'docker-control-center|dockercontrolcenter|docker control center|\bdcc[-_.]|\bDCC[-_]' -- crates src-tauri ui/src ui/index.html ui/public packaging scripts Cargo.toml package.json || true)
   bad_=$(printf '%s\n' "$hits" | grep -v '^$' | grep -vE "$allowed" || true)
@@ -566,7 +573,7 @@ run_tests "1.8.0 · Tareas programadas: las unidades dcc-backup-* pasan a cmc-ba
 run_tests "1.8.0 · Identificador de Tauri igual en el código y en tauri.conf.json (datos de WebKit)" cargo test --locked -p container-manage-center --lib migration::
 run_tests "1.8.0 · Interfaz: la preferencia del servidor elegido pasa a la clave nueva" npx vitest run ui/src/app/server.test.ts
 say ""
-say "5.1j 1.9.0: versión de Windows (en pruebas)"
+say "5.1j 1.9.0 y 1.9.1: versión de Windows (en pruebas) y repositorio para GitHub"
 run_step "1.9.0 · Avisos de terceros y auditoría de licencias de Windows al día (crates de Windows, WebView2Loader.dll, runtime de MinGW-w64 y libgcc)" python3 scripts/third-party-licenses.py --windows --check
 windows_legal() {
   local a=docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md
@@ -574,9 +581,9 @@ windows_legal() {
     grep -q '| 5. Potencialmente incompatibles | 0 |' "$a" &&
     grep -q '| 6. Licencia no determinable | 0 |' "$a" &&
     grep -q 'solo para pruebas' "$a" &&
-    grep -q 'SOLO-PRUEBAS' scripts/build-windows.sh .github/workflows/windows.yml &&
-    ! grep -qE '^\s*(release|push|tags):' .github/workflows/windows.yml &&
-    grep -q 'workflow_dispatch' .github/workflows/windows.yml &&
+    grep -q 'SOLO-PRUEBAS' scripts/build-windows.sh .github/workflows/windows-build.yml &&
+    ! grep -qE '^\s*(release|push|tags):' .github/workflows/windows-build.yml &&
+    grep -q 'workflow_dispatch' .github/workflows/windows-build.yml &&
     for f in WebView2Loader.LICENSE.txt mingw-w64-runtime.copyright gcc-mingw-w64.copyright; do test -s "packaging/windows/licenses/$f" || return 1; done
 }
 run_step "1.9.0 · Windows: WebView2Loader pendiente de la decisión del propietario (sin código fuente publicado), nada incompatible ni indeterminado, instaladores marcados como solo de pruebas, flujo de GitHub Actions manual y sin publicar versiones" windows_legal
@@ -603,13 +610,47 @@ else
   run_step "1.9.0 · Script de compilación de Windows (sintaxis)" bash -n scripts/build-windows.sh
 fi
 run_tests "1.9.0 · Interfaz: plataforma, diagnóstico de Docker Desktop y del grupo docker-users en Windows, ayuda «Windows» en los 8 idiomas" npx vitest run ui/src/shared/platform.test.ts ui/src/features/engine/diagnosis.test.ts ui/src/features/help/HelpView.test.tsx ui/src/shared/i18n/i18n.test.ts
-if command -v x86_64-w64-mingw32-gcc >/dev/null && [ -n "${RUST_SRC:-}" ] && [ -f "${RUST_SRC}/std/Cargo.toml" ]; then
-  run_step "1.9.0 · El código compila para Windows (x86_64-pc-windows-gnu, cargo check)" env RUSTC_BOOTSTRAP=1 __CARGO_TESTS_ONLY_SRC_ROOT="$RUST_SRC" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc CARGO_TARGET_DIR="$ROOT/target/windows-check" cargo check --locked -Zbuild-std=std,panic_abort --target x86_64-pc-windows-gnu --workspace
-elif rustup target list --installed 2>/dev/null | grep -qx x86_64-pc-windows-gnu && command -v x86_64-w64-mingw32-gcc >/dev/null; then
-  run_step "1.9.0 · El código compila para Windows (x86_64-pc-windows-gnu, cargo check)" env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc CARGO_TARGET_DIR="$ROOT/target/windows-check" cargo check --locked --target x86_64-pc-windows-gnu --workspace
-else
-  skip "1.9.0 · Compilación para Windows: falta MinGW-w64 o el destino x86_64-pc-windows-gnu (o RUST_SRC)"
+WINE=$(command -v wine64 || ls /usr/lib/wine/wine64 2>/dev/null || true)
+win_env=(CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc CARGO_TARGET_DIR="$ROOT/target/windows-check" CARGO_INCREMENTAL=0)
+win_std=()
+if [ -n "${RUST_SRC:-}" ] && [ -f "${RUST_SRC}/std/Cargo.toml" ]; then
+  win_env+=(RUSTC_BOOTSTRAP=1 __CARGO_TESTS_ONLY_SRC_ROOT="$RUST_SRC")
+  win_std=("-Zbuild-std=std,panic_abort")
 fi
+if ! command -v x86_64-w64-mingw32-gcc >/dev/null \
+   || { [ ${#win_std[@]} -eq 0 ] && ! rustup target list --installed 2>/dev/null | grep -qx x86_64-pc-windows-gnu; }; then
+  skip "1.9.x · Windows: falta MinGW-w64 o el destino x86_64-pc-windows-gnu (o RUST_SRC)"
+elif [ -n "$WINE" ]; then
+  # 1.9.1: las pruebas unitarias compiladas para Windows, ejecutadas con Wine.
+  # WebView2Loader.dll junto a las pruebas de la aplicación (la copia de la crate).
+  wv2=$(find "$HOME/.cargo/registry/src" -path '*webview2-com-sys*/x64/WebView2Loader.dll' 2>/dev/null | head -1)
+  mkdir -p "$ROOT/target/windows-check/x86_64-pc-windows-gnu/debug/deps"
+  [ -n "$wv2" ] && cp "$wv2" "$ROOT/target/windows-check/x86_64-pc-windows-gnu/debug/deps/"
+  run_tests "1.9.1 · Pruebas unitarias compiladas para Windows y ejecutadas con Wine (rutas de Windows, tuberías de Docker Desktop, job objects, Administrador de credenciales, Programador de tareas, IPC); Wine no es Windows" \
+    env "${win_env[@]}" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER="$WINE" WINEDEBUG=-all WINEPREFIX="$ROOT/target/windows-check/wineprefix" \
+    cargo test --locked "${win_std[@]}" --target x86_64-pc-windows-gnu --workspace --lib --bins
+else
+  run_step "1.9.x · El código compila para Windows (x86_64-pc-windows-gnu, cargo check; sin Wine no se ejecutan las pruebas)" \
+    env "${win_env[@]}" cargo check --locked "${win_std[@]}" --target x86_64-pc-windows-gnu --workspace
+fi
+github_files() {
+  for f in README.md LICENSE CHANGELOG.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md .gitignore .gitattributes \
+           .github/PULL_REQUEST_TEMPLATE.md .github/ISSUE_TEMPLATE/bug_report.yml .github/ISSUE_TEMPLATE/feature_request.yml \
+           .github/ISSUE_TEMPLATE/config.yml .github/workflows/ci.yml .github/workflows/linux-build.yml \
+           .github/workflows/windows-build.yml docs/legal/WEBVIEW2_EXCEPTION.md; do
+    test -s "$f" || { echo "falta $f"; return 1; }
+  done
+  # Acciones de terceros fijadas por commit (40 caracteres hexadecimales).
+  if grep -hE '^\s*-?\s*uses:' .github/workflows/*.yml | grep -vE '@[0-9a-f]{40}( |$)'; then
+    echo "acciones sin fijar por commit"; return 1
+  fi
+  ! grep -qE 'secrets\.' .github/workflows/*.yml &&
+    ! grep -lE 'permissions:\s*write-all|contents:\s*write' .github/workflows/*.yml &&
+    grep -q 'WEBVIEW2_EXCEPTION' docs/legal/COPYRIGHT.md docs/legal/LICENSE_OVERVIEW.md CONTRIBUTING.md &&
+    grep -q 'legal/WEBVIEW2_EXCEPTION.md' src-tauri/tauri.windows.conf.json
+}
+run_step "1.9.1 · Repositorio para GitHub: archivos de la comunidad, flujos con acciones fijadas por commit, sin secretos ni permisos de escritura; permiso adicional de WebView2 citado en los textos legales y en el instalador" github_files
+run_tests "1.9.1 · Interfaz en Windows: diagnóstico de Docker (sin systemctl, sudo ni apt) y de SSH (órdenes de PowerShell en el equipo; las del servidor no cambian)" npx vitest run ui/src/features/engine/diagnosis.test.ts ui/src/features/servers/remote.test.ts
 run_tests "1.7.0 · Desinstalación: reconoce los dos nombres de paquete y el cambio de nombre en el historial de APT no cuenta como desinstalación" cargo test --locked -p container-manage-center --lib uninstall::tests::the_rename_to_container_manage_center_keeps_the_history
 run_tests "1.7.0 · Interfaz: barra lateral con el nombre nuevo, Configuración › Legal (nombre, versión, licencia SPDX, copyright, declaración GPL, URL, avisos de terceros, independencia de Docker, Inc.) y sección «Legal» de la ayuda en los 8 idiomas" npx vitest run ui/src/features/settings/LegalSettings.test.tsx ui/src/features/help/HelpView.test.tsx ui/src/shared/i18n/i18n.test.ts ui/src/app/App.test.tsx
 if [ $NET_TESTS -eq 1 ]; then
@@ -936,16 +977,16 @@ if [ "$SKIP" -gt 0 ]; then
   say "Omitidas (no cuentan como superadas):"; for s in "${SKIPS[@]}"; do say "  - $s"; done
 fi
 if [ "$FAIL" -gt 0 ]; then
-  say "VEREDICTO: 1.9.0 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
+  say "VEREDICTO: 1.9.1 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
 else
   say "VEREDICTO: parte automática superada. Falta la validación manual de la 1.8.0 en Debian 13 (docs/validation/VALIDACION-1.8.0.md) y la primera prueba en Windows (docs/validation/VALIDACION-WINDOWS.md)."
 fi
 say ""
 cat <<'EOF' | tee -a "$REPORT"
 8. Validación manual (solo si la parte automática está superada)
-   a) Windows: la 1.9.0 no se ha ejecutado nunca en un Windows real:
+   a) Windows: la 1.9.1 no se ha ejecutado nunca en un Windows real:
        docs/validation/VALIDACION-WINDOWS.md (instalador solo de pruebas)
-   b) Linux: la 1.9.0 no cambia nada en Linux. Si aún no has validado la
+   b) Linux: la 1.9.1 no cambia nada en Linux. Si aún no has validado la
       1.8.0, hazlo en Debian 13 con la 1.7.0 instalada y en uso antes:
        docs/validation/VALIDACION-1.8.0.md
       (actualización y migración de tus datos reales, que no quede nada con

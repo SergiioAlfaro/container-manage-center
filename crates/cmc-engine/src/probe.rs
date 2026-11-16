@@ -123,6 +123,17 @@ pub fn permissions(path: &str) -> SocketPermissions {
 mod tests {
     use super::*;
 
+    /// Windows (1.9.1): una tubería con nombre que no existe es «falta Docker».
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn windows_missing_pipe() {
+        assert_eq!(
+            probe(r"\\.\pipe\cmc-test-no-existe").await,
+            ProbeResult::Missing
+        );
+    }
+
+    #[cfg(unix)]
     #[tokio::test]
     async fn missing_and_not_a_socket() {
         let dir = tempfile::tempdir().unwrap();

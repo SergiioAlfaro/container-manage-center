@@ -426,7 +426,10 @@
       "retry": "Cando o teñas resolto, preme «Volver conectar». A aplicación tamén o tenta de novo soa.",
       "startDesktop": "Abre Docker Desktop desde o menú Inicio e agarda a que indique que o motor está en marcha.",
       "installDesktop": "Instala Docker Desktop para Windows (docs.docker.com/desktop/setup/install/windows-install).",
-      "addDockerUsers": "Engade o teu usuario ao grupo «docker-users» desde un Símbolo do sistema aberto como administrador:"
+      "addDockerUsers": "Engade o teu usuario ao grupo «docker-users» desde un Símbolo do sistema aberto como administrador:",
+      "unsetHostWin": "Para usar Docker Desktop, quita DOCKER_HOST do teu contorno (en PowerShell) e volve ao contexto predeterminado; se o definiches nas variables de contorno de Windows, quítao tamén alí:",
+      "restartDesktop": "Reinicia Docker Desktop (menú da súa icona na barra de tarefas › Restart) e agarda a que o motor estea en marcha.",
+      "upgradeDesktop": "Actualiza Docker Desktop a unha versión recente (menú da súa icona › Check for updates)."
     }
   },
   "dashboard": {
@@ -2037,7 +2040,9 @@
     "lastFailed": "A última comprobación fallou: {{message}}",
     "howTo": "Para actualizar, descarga o paquete novo e instálao con «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb». A túa configuración e o teu historial consérvanse.",
     "banner": "Hai unha versión nova de Container Manage Center: {{latest}}.",
-    "bannerOpen": "Ver en Configuración"
+    "bannerOpen": "Ver en Configuración",
+    "howToWin": "Para actualizar, descarga o instalador novo (…_x64-setup.exe) e execútao: substitúe a versión instalada. A configuración e o historial consérvanse.",
+    "installedWin": "Aplicación de Windows"
   },
   "system": {
     "title": "Sistema",
@@ -2815,7 +2820,9 @@
       "verifyJumpFingerprint": "Pídelle ao administrador a pegada do servidor intermedio ou compróbaa nel.",
       "jumpUseKey": "Usa unha chave SSH ou o axente SSH para o servidor intermedio (a chave do perfil serve se o intermedio a acepta).",
       "tryJump": "Proba a conexión co servidor intermedio sen contrasinal:",
-      "jumpInProfile": "Escribe o servidor intermedio en «Servidor intermedio» do perfil (usuario@host:porto)."
+      "jumpInProfile": "Escribe o servidor intermedio en «Servidor intermedio» do perfil (usuario@host:porto).",
+      "installSshWin": "Instala o cliente OpenSSH de Windows: Configuración › Sistema › Características opcionais › «Cliente OpenSSH», ou desde PowerShell aberto como administrador:",
+      "keyPermissionsWin": "A clave debe ser privada: só o teu usuario pode lela. Desde PowerShell:"
     },
     "target": "Servidor",
     "paths": {

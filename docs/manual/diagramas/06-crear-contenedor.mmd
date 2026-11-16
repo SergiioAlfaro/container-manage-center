@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  participant W as Asistente (CreateWizard)
+  participant T as Rust (órdenes)
+  participant S as ContainerSpec (spec.rs)
+  participant D as Docker Engine
+  W->>T: image_defaults, networks_brief, volumes_brief
+  T->>D: consultas de solo lectura
+  D-->>W: datos reales para rellenar el asistente
+  loop cada cambio (200 ms)
+    W->>T: container_preview(spec)
+    T->>S: validar + riesgos (sin hablar con Docker)
+    S-->>W: problemas, riesgos, docker run equivalente,<br/>cuerpo JSON con secretos ocultos
+  end
+  W->>T: container_create(spec, start)
+  T->>S: validar de nuevo
+  T->>D: POST /containers/create
+  T->>D: POST /containers/{id}/start
+  D-->>T: contenedor creado (o startError)
+  T-->>W: resultado y registro en la actividad

@@ -32,7 +32,7 @@ fn harness() -> Harness {
     let dir = tempfile::tempdir().unwrap();
     let docker = DockerConfig {
         mode: DockerMode::Custom,
-        custom_socket: dir.path().join("no-docker.sock").display().to_string(),
+        custom_socket: missing_socket(dir.path(), "no-docker.sock"),
     };
     harness_with(dir, docker)
 }
@@ -89,7 +89,15 @@ fn invoke_exact(
             cmd: cmd.into(),
             callback: CallbackFn(0),
             error: CallbackFn(1),
-            url: "tauri://localhost".parse().unwrap(),
+            // Origen de la interfaz en cada sistema (en Windows, WebView2 la
+            // sirve como `http://tauri.localhost`).
+            url: if cfg!(windows) {
+                "http://tauri.localhost"
+            } else {
+                "tauri://localhost"
+            }
+            .parse()
+            .unwrap(),
             body: InvokeBody::Json(body),
             headers: Default::default(),
             invoke_key: INVOKE_KEY.to_string(),
@@ -220,6 +228,24 @@ fn activity_events_reach_the_window() {
 
 // ------------------------------------------------------------------ Docker
 
+/// Socket que no existe: en Linux, un archivo de la carpeta de la prueba; en
+/// Windows, una tubería con nombre que nadie ha creado (1.9.1).
+fn missing_socket(dir: &std::path::Path, name: &str) -> String {
+    if cfg!(windows) {
+        let unique = dir.file_name().unwrap().to_string_lossy().replace('.', "");
+        format!(r"\\.\pipe\cmc-test-{unique}-{name}")
+    } else {
+        dir.join(name).display().to_string()
+    }
+}
+
+/// Carpeta de este equipo que no existe (en Windows, `C:\…`).
+const MISSING_DIR: &str = if cfg!(windows) {
+    r"C:\no\existe\cmc"
+} else {
+    "/no/existe/cmc"
+};
+
 fn wait_for<F: Fn() -> bool>(what: &str, f: F) {
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
     while !f() {
@@ -314,7 +340,7 @@ fn changing_docker_config_reconnects_and_emits_state() {
             .unwrap()
             .push(serde_json::from_str(e.payload()).unwrap())
     });
-    let other = h._dir.path().join("otro.sock").display().to_string();
+    let other = missing_socket(h._dir.path(), "otro.sock");
     let mut cfg = h.app.state::<AppState>().config();
     cfg.docker.custom_socket = other.clone();
     invoke(&h, "config_set", json!({ "config": cfg })).unwrap();
@@ -420,12 +446,17 @@ fn preview_validates_and_translates_without_docker() {
     let v = invoke(
         &h,
         "container_preview",
-        json!({ "spec": { "name": "web", "image": "nginx:1.27", "ports": [{ "hostIp": "", "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }], "mounts": [{ "kind": "bind", "source": "/no/existe/cmc", "target": "/x", "readOnly": false }] } }),
+        json!({ "spec": { "name": "web", "image": "nginx:1.27", "ports": [{ "hostIp": "", "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }], "mounts": [{ "kind": "bind", "source": MISSING_DIR, "target": "/x", "readOnly": false }] } }),
     )
     .unwrap();
     assert_eq!(
         v["runCommand"],
-        "docker run --detach --name web --publish 8080:80/tcp --mount type=bind,source=/no/existe/cmc,target=/x --restart no nginx:1.27"
+        if cfg!(windows) {
+            // La orden equivalente se da entre comillas simples (también valen en PowerShell).
+            format!("docker run --detach --name web --publish 8080:80/tcp --mount 'type=bind,source={MISSING_DIR},target=/x' --restart no nginx:1.27")
+        } else {
+            format!("docker run --detach --name web --publish 8080:80/tcp --mount type=bind,source={MISSING_DIR},target=/x --restart no nginx:1.27")
+        }
     );
     assert!(v["createCommand"]
         .as_str()
@@ -626,7 +657,7 @@ fn build_preview_validates_scans_context_and_hides_secrets_without_docker() {
     let v = invoke(
         &h,
         "build_preview",
-        json!({ "spec": { "context": "/no/existe/cmc", "tags": ["app:1"] } }),
+        json!({ "spec": { "context": MISSING_DIR, "tags": ["app:1"] } }),
     )
     .unwrap();
     assert_eq!(v["issues"][0]["code"], "context.missing");
@@ -731,7 +762,7 @@ fn phase4_commands_fail_cleanly_without_connection() {
     let e = invoke(
         &h,
         "build_open",
-        json!({ "spec": { "context": "/no/existe/cmc" }, "onEvent": "__CHANNEL__:11" }),
+        json!({ "spec": { "context": MISSING_DIR }, "onEvent": "__CHANNEL__:11" }),
     )
     .unwrap_err();
     assert_eq!(e["code"], "engine.invalidSpec");
@@ -1339,7 +1370,7 @@ fn compose_files_via_ipc_create_read_save_and_conflict() {
     )
     .unwrap();
     let path = c["path"].as_str().unwrap().to_owned();
-    assert!(path.ends_with("/compose.yaml"));
+    assert!(path.ends_with("compose.yaml"), "{path}");
     assert_eq!(
         invoke(&h, "compose_find_file", json!({ "dir": dir })).unwrap(),
         path.as_str()
@@ -1378,12 +1409,27 @@ fn compose_files_via_ipc_create_read_save_and_conflict() {
     // E2 (CMC-SEC-06, D-089): las órdenes de archivos no sirven para leer ni
     // sobrescribir otros archivos del usuario o del sistema.
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home/x".into());
-    for bad in [
+    #[cfg(not(windows))]
+    let bads = [
         "/etc/passwd".to_owned(),
         format!("{home}/.ssh/id_ed25519"),
         format!("{home}/.bashrc"),
         format!("{dir}/notas.txt"),
-    ] {
+    ];
+    // Windows (1.9.1): las mismas reglas con las carpetas de Windows.
+    #[cfg(windows)]
+    let bads = {
+        let _ = &home;
+        let profile = std::env::var("USERPROFILE").unwrap_or_else(|_| r"C:\Users\x".into());
+        [
+            r"C:\Windows\win.ini".to_owned(),
+            r"C:\ProgramData\app\compose.yaml".to_owned(),
+            format!(r"{profile}\.ssh\config.yaml"),
+            format!(r"{profile}\AppData\Roaming\app\compose.yaml"),
+            format!(r"{dir}\notas.txt"),
+        ]
+    };
+    for bad in bads {
         let e = invoke(&h, "compose_file_read", json!({ "path": bad })).unwrap_err();
         assert_eq!(e["code"], "engine.pathNotAllowed", "{bad}: {e}");
         let e = invoke(
@@ -1841,10 +1887,15 @@ fn phase9_system_info_and_updates() {
     let info = invoke(&h, "system_info", json!({})).unwrap();
     assert_eq!(info["appVersion"], env!("CARGO_PKG_VERSION"));
     assert_eq!(info["arch"], std::env::consts::ARCH);
-    assert!(
-        info["glibc"].as_str().is_some_and(|v| v.starts_with("2.")),
-        "{info}"
-    );
+    if cfg!(windows) {
+        assert!(info["glibc"].is_null(), "{info}");
+        assert!(info["packageVersion"].is_null(), "{info}");
+    } else {
+        assert!(
+            info["glibc"].as_str().is_some_and(|v| v.starts_with("2.")),
+            "{info}"
+        );
+    }
     assert!(info["configPath"]
         .as_str()
         .unwrap()
@@ -2339,6 +2390,10 @@ fn server_profiles_are_managed_without_touching_anything_else() {
     );
     // Conectar a un puerto cerrado: error de conexión de ese servidor; el
     // equipo local no cambia de estado.
+    // El equipo local termina antes su primer intento de conexión.
+    wait_for("estado local estable", || {
+        invoke(&h, "engine_state", json!({ "server": "local" })).unwrap()["state"] != "connecting"
+    });
     let local_before =
         invoke(&h, "engine_state", json!({ "server": "local" })).unwrap()["state"].clone();
     let out = invoke(

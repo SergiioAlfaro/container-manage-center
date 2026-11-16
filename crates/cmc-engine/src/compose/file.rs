@@ -115,19 +115,84 @@ pub fn check_compose_path(path: &str) -> Result<(), EngineError> {
     Ok(())
 }
 
+/// Las reglas de [`check_compose_path`] para las rutas de **este equipo**: en
+/// Linux, las mismas; en Windows, las equivalentes (1.9.1,
+/// [`check_windows_compose_path`]). Los servidores remotos usan siempre las de
+/// Linux.
+pub fn check_local_compose_path(path: &str) -> Result<(), EngineError> {
+    #[cfg(windows)]
+    {
+        check_windows_compose_path(path)
+    }
+    #[cfg(not(windows))]
+    {
+        check_compose_path(path)
+    }
+}
+
+/// Ruta de un archivo Compose de Windows: absoluta (`C:\…` o
+/// `\\servidor\recurso\…`), sin `..`, solo `.yml`/`.yaml`, ninguna carpeta
+/// oculta (`.ssh`, `.docker`…) ni `AppData` (credenciales y configuración de
+/// los programas) y ninguna carpeta del sistema (`C:\Windows`,
+/// `C:\Program Files`, `C:\ProgramData`…).
+pub fn check_windows_compose_path(path: &str) -> Result<(), EngineError> {
+    if path.len() > 4096 || path.contains('\n') {
+        return Err(invalid(format!("ruta no válida: {path:?}")));
+    }
+    let norm = crate::hostpath::windows_normalize(path)
+        .ok_or_else(|| invalid(format!("ruta no válida: {path:?}")))?;
+    let segs = crate::hostpath::windows_components(&norm);
+    let Some((name, dirs)) = segs.split_last() else {
+        return Err(invalid(format!("ruta no válida: {path:?}")));
+    };
+    if !(name.ends_with(".yml") || name.ends_with(".yaml")) {
+        return Err(not_allowed(path, "solo archivos .yml o .yaml"));
+    }
+    if dirs.iter().any(|c| c.starts_with('.') || *c == "appdata") {
+        return Err(not_allowed(
+            path,
+            "carpeta oculta o de configuración, como .ssh o AppData",
+        ));
+    }
+    if crate::hostpath::windows_system_dir(&norm) {
+        return Err(not_allowed(path, "carpeta del sistema"));
+    }
+    Ok(())
+}
+
+/// Separadores de las rutas de este equipo.
+const SEPARATORS: &[char] = if cfg!(windows) { &['/', '\\'] } else { &['/'] };
+
+/// Ruta absoluta de este equipo (en Windows, `C:\…`).
+fn local_absolute(path: &str) -> Result<PathBuf, EngineError> {
+    if cfg!(windows) {
+        if path.is_empty()
+            || path.contains('\0')
+            || path.contains('\n')
+            || !crate::hostpath::is_local_absolute(path)
+            || path.len() > 4096
+        {
+            return Err(invalid(format!("ruta no válida: {path:?}")));
+        }
+        return Ok(PathBuf::from(path));
+    }
+    absolute(path)
+}
+
 /// Ruta real (sigue los enlaces simbólicos) comprobada con las mismas reglas.
 /// Si el archivo aún no existe, la ruta escrita.
 fn resolved(path: &str) -> Result<PathBuf, EngineError> {
-    check_compose_path(path)?;
+    check_local_compose_path(path)?;
     match std::fs::canonicalize(path) {
         Ok(real) => {
             let r = real.to_string_lossy().into_owned();
             if r != path {
-                check_compose_path(&r).map_err(|_| not_allowed(path, &format!("enlace a {r}")))?;
+                check_local_compose_path(&r)
+                    .map_err(|_| not_allowed(path, &format!("enlace a {r}")))?;
             }
             Ok(real)
         }
-        Err(_) => absolute(path),
+        Err(_) => local_absolute(path),
     }
 }
 
@@ -211,13 +276,13 @@ pub fn existing_default(dir: &Path) -> Option<PathBuf> {
 
 /// Crea `compose.yaml` en `dir`. Se niega si la carpeta ya tiene un archivo Compose.
 pub fn create(dir: &str, content: &str) -> Result<ComposeFile, EngineError> {
-    let d = absolute(dir)?;
+    let d = local_absolute(dir)?;
     // Mismas reglas de rutas que al leer y guardar (D-089), también para la
     // carpeta real si es un enlace.
-    let target = |d: &str| format!("{}/{}", d.trim_end_matches('/'), DEFAULT_FILES[0]);
-    check_compose_path(&target(dir))?;
+    let target = |d: &str| format!("{}/{}", d.trim_end_matches(SEPARATORS), DEFAULT_FILES[0]);
+    check_local_compose_path(&target(dir))?;
     if let Ok(real) = std::fs::canonicalize(&d) {
-        check_compose_path(&target(&real.to_string_lossy()))?;
+        check_local_compose_path(&target(&real.to_string_lossy()))?;
     }
     if !d.is_dir() {
         return Err(invalid(format!("{dir} no es una carpeta")));
@@ -258,10 +323,15 @@ mod tests {
 
     /// `tempfile` crea `.tmpXXXX` (carpeta oculta, rechazada por la política).
     fn tmp() -> tempfile::TempDir {
-        tempfile::Builder::new()
-            .prefix("cmc-test")
-            .tempdir()
-            .unwrap()
+        let mut b = tempfile::Builder::new();
+        b.prefix("cmc-test");
+        // En Windows, la carpeta temporal está dentro de AppData, que las
+        // reglas de rutas de Compose no permiten: se usa la del proyecto.
+        if cfg!(windows) {
+            b.tempdir_in(std::env::current_dir().unwrap()).unwrap()
+        } else {
+            b.tempdir().unwrap()
+        }
     }
 
     #[cfg(unix)]
@@ -319,7 +389,7 @@ mod tests {
         let d = tmp();
         let dir = d.path().to_str().unwrap();
         let c = create(dir, "services: {}\n").unwrap();
-        assert!(c.path.ends_with("/compose.yaml"));
+        assert!(c.path.ends_with("compose.yaml"), "{}", c.path);
         assert!(matches!(
             create(dir, "x").unwrap_err(),
             EngineError::AlreadyExists { .. }

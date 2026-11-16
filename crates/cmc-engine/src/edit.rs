@@ -272,21 +272,17 @@ pub(crate) struct OrigMount {
 }
 
 fn parse_bind(b: &str) -> Option<MountSpec> {
-    let parts: Vec<&str> = b.splitn(3, ':').collect();
-    if parts.len() < 2 {
-        return None;
-    }
-    let ro = parts
-        .get(2)
-        .is_some_and(|o| o.split(',').any(|x| x == "ro"));
+    // `C:\datos:/datos` (Docker Desktop) también es un bind mount (1.9.1).
+    let (source, target, opts) = crate::hostpath::split_bind(b)?;
+    let ro = opts.is_some_and(|o| o.split(',').any(|x| x == "ro"));
     Some(MountSpec {
-        kind: if parts[0].starts_with('/') {
+        kind: if source.starts_with('/') || crate::hostpath::is_windows_absolute(source) {
             MountKind::Bind
         } else {
             MountKind::Volume
         },
-        source: parts[0].to_owned(),
-        target: parts[1].to_owned(),
+        source: source.to_owned(),
+        target: target.to_owned(),
         read_only: ro,
     })
 }

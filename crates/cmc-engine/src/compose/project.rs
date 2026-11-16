@@ -132,7 +132,9 @@ pub fn valid_service_name(name: &str) -> bool {
 }
 
 fn check_path(p: &str, what: &str) -> Result<(), EngineError> {
-    if p.is_empty() || p.len() > MAX_PATH || p.contains('\0') || !p.starts_with('/') {
+    // Rutas de un servidor remoto (`/…`) o de este equipo (en Windows, `C:\…`; 1.9.1).
+    let absolute = p.starts_with('/') || crate::hostpath::is_local_absolute(p);
+    if p.is_empty() || p.len() > MAX_PATH || p.contains('\0') || !absolute {
         return Err(invalid(format!("{what} debe ser una ruta absoluta: {p:?}")));
     }
     Ok(())

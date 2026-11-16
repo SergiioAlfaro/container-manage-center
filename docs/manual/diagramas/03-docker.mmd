@@ -1,0 +1,21 @@
+flowchart LR
+  subgraph ENG["cmc-engine"]
+    EN["Engine<br/>client.rs"]
+    BO["bollard<br/>(API de Docker)"]
+    DI["Dialer propio<br/>construcción, eventos,<br/>tamaños, redes"]
+    CLI["cli.rs<br/>procesos sin shell"]
+  end
+  EN --> BO
+  EN --> DI
+  EN --> CLI
+  BO --> L1["Linux: socket Unix<br/>/var/run/docker.sock,<br/>rootless, contexto"]
+  BO --> W1["Windows: tubería con nombre<br/>npipe:////./pipe/docker_engine"]
+  BO --> R1["Remoto: canal SSH<br/>docker system dial-stdio"]
+  DI --> L1
+  DI --> W1
+  DI --> R1
+  CLI --> C1["docker compose …<br/>(local o por SSH)"]
+  L1 --> DE["Docker Engine"]
+  W1 --> DD["Docker Desktop<br/>(máquina virtual Linux)"]
+  R1 --> DR["Docker Engine del servidor"]
+  C1 --> DE

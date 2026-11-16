@@ -1,0 +1,13 @@
+flowchart TD
+  A["npm ci"] --> B["npm run build<br/>Vite → dist/"]
+  B --> C["tauri-build<br/>(build.rs: configuración y permisos)"]
+  C --> D["cargo build --release<br/>crates + src-tauri"]
+  D --> E{"Destino"}
+  E -- "Linux" --> F["tauri build --bundles deb<br/>+ deb-set-depends.sh (dpkg-shlibdeps)"]
+  E -- "Linux compatible" --> G["build-deb-compat.sh<br/>contenedor Ubuntu 22.04 (glibc 2.35)"]
+  E -- "Windows (MinGW)" --> H["build-windows.sh<br/>x86_64-pc-windows-gnu + NSIS"]
+  E -- "Windows (MSVC)" --> I["GitHub Actions windows-build.yml<br/>tauri build --bundles nsis"]
+  F --> J["…_amd64.deb"]
+  G --> K["…_amd64-compat-debian12-ubuntu2204.deb"]
+  H --> L["…_x64-setup.exe (pruebas)"]
+  I --> L

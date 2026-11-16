@@ -426,7 +426,10 @@
       "retry": "Once fixed, press “Reconnect”. The app also retries on its own.",
       "startDesktop": "Open Docker Desktop from the Start menu and wait until it shows that the engine is running.",
       "installDesktop": "Install Docker Desktop for Windows (docs.docker.com/desktop/setup/install/windows-install).",
-      "addDockerUsers": "Add your user to the “docker-users” group from a Command Prompt opened as administrator:"
+      "addDockerUsers": "Add your user to the “docker-users” group from a Command Prompt opened as administrator:",
+      "unsetHostWin": "To use Docker Desktop, remove DOCKER_HOST from your environment (in PowerShell) and go back to the default context; if you set it in the Windows environment variables, remove it there too:",
+      "restartDesktop": "Restart Docker Desktop (menu of its taskbar icon › Restart) and wait until the engine is running.",
+      "upgradeDesktop": "Update Docker Desktop to a recent version (menu of its icon › Check for updates)."
     }
   },
   "dashboard": {
@@ -2037,7 +2040,9 @@
     "lastFailed": "The last check failed: {{message}}",
     "howTo": "To update, download the new package and install it with \"sudo apt install ./container-manage-center_X.Y.Z_amd64.deb\". Your settings and history are kept.",
     "banner": "A new version of Container Manage Center is available: {{latest}}.",
-    "bannerOpen": "See Settings"
+    "bannerOpen": "See Settings",
+    "howToWin": "To update, download the new installer (…_x64-setup.exe) and run it: it replaces the installed version. Your settings and history are kept.",
+    "installedWin": "Windows application"
   },
   "system": {
     "title": "System",
@@ -2815,7 +2820,9 @@
       "verifyJumpFingerprint": "Ask the administrator for the jump host's fingerprint or check it on that host.",
       "jumpUseKey": "Use an SSH key or the SSH agent for the jump host (the profile's key works if the jump host accepts it).",
       "tryJump": "Test the connection to the jump host without a password:",
-      "jumpInProfile": "Enter the jump host under “Jump host” in the profile (user@host:port)."
+      "jumpInProfile": "Enter the jump host under “Jump host” in the profile (user@host:port).",
+      "installSshWin": "Install the Windows OpenSSH client: Settings › System › Optional features › “OpenSSH Client”, or from PowerShell opened as administrator:",
+      "keyPermissionsWin": "The key must be private: only your user can read it. From PowerShell:"
     },
     "target": "Server",
     "paths": {

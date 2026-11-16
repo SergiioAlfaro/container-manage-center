@@ -14,6 +14,10 @@ fn main() {
     if let Some(code) = cmc_app::migrate_main() {
         std::process::exit(code);
     }
+    // Windows: el desinstalador quita las copias programadas propias (1.9.1).
+    if let Some(code) = cmc_app::uninstall_main() {
+        std::process::exit(code);
+    }
     // Copia programada (temporizador de systemd, 1.4.0): sin ventana.
     if let Some(code) = cmc_app::headless_main() {
         std::process::exit(code);

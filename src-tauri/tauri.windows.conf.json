@@ -23,7 +23,8 @@
       "../docs/legal/DISTRIBUTION_COMPLIANCE.md": "legal/DISTRIBUTION_COMPLIANCE.md",
       "../packaging/windows/licenses/WebView2Loader.LICENSE.txt": "legal/WebView2Loader.LICENSE.txt",
       "../packaging/windows/licenses/mingw-w64-runtime.copyright": "legal/mingw-w64-runtime.copyright.txt",
-      "../packaging/windows/licenses/gcc-mingw-w64.copyright": "legal/gcc-mingw-w64.copyright.txt"
+      "../packaging/windows/licenses/gcc-mingw-w64.copyright": "legal/gcc-mingw-w64.copyright.txt",
+      "../docs/legal/WEBVIEW2_EXCEPTION.md": "legal/WEBVIEW2_EXCEPTION.md"
     },
     "windows": {
       "webviewInstallMode": {
@@ -41,7 +42,8 @@
         ],
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
-        "startMenuFolder": "Container Manage Center"
+        "startMenuFolder": "Container Manage Center",
+        "installerHooks": "../packaging/windows/installer-hooks.nsh"
       }
     }
   }

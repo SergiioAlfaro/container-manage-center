@@ -8,6 +8,7 @@
  * las revise y ejecute el usuario, en el equipo indicado.
  */
 import type { RemoteProblem } from "@/shared/ipc/bindings/RemoteProblem";
+import { isWindows } from "@/shared/platform";
 import type { ServerConfig } from "@/shared/ipc/bindings/ServerConfig";
 import type { ServerView } from "@/shared/ipc/bindings/ServerView";
 import type { ConnectionState } from "@/shared/ipc/bindings/ConnectionState";
@@ -53,7 +54,11 @@ export function sshCommand(c: Pick<ServerConfig, "host" | "port" | "user">, remo
   return parts.join(" ");
 }
 
-export function explainRemote(p: RemoteProblem, c: ServerConfig): RemoteExplanation {
+/**
+ * `windows`: las órdenes «local» (las de este equipo) se dan para PowerShell
+ * de Windows (1.9.1); las del servidor no cambian (siempre es Linux).
+ */
+export function explainRemote(p: RemoteProblem, c: ServerConfig, windows: boolean = isWindows()): RemoteExplanation {
   const retry: RemoteStep = { key: "retry" };
   const host = c.host;
   const port = String(c.port);
@@ -63,7 +68,12 @@ export function explainRemote(p: RemoteProblem, c: ServerConfig): RemoteExplanat
         problem: "sshMissing",
         params: {},
         check: "reach",
-        steps: [{ key: "installSsh", command: "sudo apt install openssh-client", where: "local" }, retry],
+        steps: [
+          windows
+            ? { key: "installSshWin", command: "Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0", where: "local" }
+            : { key: "installSsh", command: "sudo apt install openssh-client", where: "local" },
+          retry,
+        ],
       };
     case "invalidProfile":
       return { problem: "invalidProfile", params: { codes: p.codes.join(", ") }, check: null, steps: [{ key: "editProfile" }] };
@@ -72,14 +82,14 @@ export function explainRemote(p: RemoteProblem, c: ServerConfig): RemoteExplanat
         problem: "hostUnresolvable",
         params: { host: p.host },
         check: "resolve",
-        steps: [{ key: "checkName" }, { key: "resolveName", command: `getent hosts ${p.host}`, where: "local" }, retry],
+        steps: [{ key: "checkName" }, { key: "resolveName", command: windows ? `Resolve-DnsName ${p.host}` : `getent hosts ${p.host}`, where: "local" }, retry],
       };
     case "hostUnreachable":
       return {
         problem: "hostUnreachable",
         params: { host, message: p.message },
         check: "reach",
-        steps: [{ key: "checkNetwork" }, { key: "ping", command: `ping -c 3 ${host}`, where: "local" }, retry],
+        steps: [{ key: "checkNetwork" }, { key: "ping", command: windows ? `ping -n 3 ${host}` : `ping -c 3 ${host}`, where: "local" }, retry],
       };
     case "sshRefused":
       return {
@@ -171,7 +181,9 @@ export function explainRemote(p: RemoteProblem, c: ServerConfig): RemoteExplanat
         problem: "keyUnreadable",
         params: { path: p.path },
         check: "auth",
-        steps: [{ key: "checkKeyPath", params: { path: p.path } }, { key: "keyPermissions", command: `chmod 600 ${p.path}`, where: "local" }, retry],
+        steps: [{ key: "checkKeyPath", params: { path: p.path } }, windows
+            ? { key: "keyPermissionsWin", command: `icacls "${p.path}" /inheritance:r /grant:r "$($env:USERNAME):R"`, where: "local" }
+            : { key: "keyPermissions", command: `chmod 600 ${p.path}`, where: "local" }, retry],
       };
     case "dockerMissing":
       return {

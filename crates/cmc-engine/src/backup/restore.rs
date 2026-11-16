@@ -143,13 +143,12 @@ pub fn body_risks(body: &ContainerCreateBody, local: bool) -> Vec<Risk> {
         "capAdd",
     ));
     for (i, b) in h.binds.iter().flatten().enumerate() {
-        let mut parts = b.split(':');
-        let src = parts.next().unwrap_or("");
-        let _dst = parts.next();
-        let ro = parts
-            .next()
-            .is_some_and(|o| o.split(',').any(|x| x == "ro"));
-        if src.starts_with('/') {
+        // `C:\datos:/datos` en Docker Desktop (1.9.1).
+        let Some((src, _dst, opts)) = crate::hostpath::split_bind(b) else {
+            continue;
+        };
+        let ro = opts.is_some_and(|o| o.split(',').any(|x| x == "ro"));
+        if src.starts_with('/') || (local && crate::hostpath::is_windows_absolute(src)) {
             out.extend(risk::mount_risk(src, ro, local, &format!("binds.{i}")));
         }
     }
@@ -213,7 +212,7 @@ pub fn check_new_folder(target: &str) -> Result<PathBuf, EngineError> {
     if !p.is_absolute() || target.contains('\0') {
         return Err(invalid("restore.folderNotAbsolute"));
     }
-    crate::compose::file::check_compose_path(&p.join("compose.yaml").display().to_string())?;
+    crate::compose::file::check_local_compose_path(&p.join("compose.yaml").display().to_string())?;
     if std::fs::symlink_metadata(p).is_ok() {
         return Err(EngineError::AlreadyExists {
             path: target.to_owned(),

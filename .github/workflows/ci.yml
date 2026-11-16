@@ -1,0 +1,114 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
+# Integración continua: lo que se puede comprobar sin Docker ni pantalla.
+#   - interfaz: tipos, lint y pruebas (Vitest);
+#   - Rust en Linux: formato, Clippy y pruebas unitarias (las pruebas contra
+#     Docker real no se ejecutan aquí: necesitan CMC_DOCKER_TESTS=1; ver
+#     linux-build.yml);
+#   - Rust para Windows: compilación y Clippy en un runner de Windows;
+#   - licencias: avisos de terceros al día y encabezados SPDX.
+# No hay secretos ni permisos de escritura.
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  PYTHONUTF8: "1"
+
+jobs:
+  frontend:
+    name: Interfaz (tipos, lint, Vitest)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  rust-linux:
+    name: Rust en Linux (fmt, Clippy, pruebas unitarias)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Dependencias de Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev \
+            libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      # tauri-build necesita la interfaz compilada (frontendDist).
+      - run: npm ci && npm run build
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+
+  rust-windows:
+    name: Rust para Windows (Clippy y pruebas unitarias)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci && npm run build
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # Unitarias (sin Docker): rutas, tuberías, Programador de tareas,
+      # Administrador de credenciales, procesos, IPC con Tauri simulado.
+      - run: cargo test --workspace --locked
+        env:
+          # La carpeta temporal de Windows está dentro de AppData, donde las
+          # reglas de rutas de Compose no dejan crear archivos: las pruebas
+          # usan otra.
+          TMP: ${{ runner.temp }}
+          TEMP: ${{ runner.temp }}
+
+  legal:
+    name: Licencias y encabezados
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: cargo fetch --locked
+      - run: python3 scripts/spdx-headers.py --check
+      - run: python3 scripts/third-party-licenses.py --check
+      - run: python3 scripts/third-party-licenses.py --windows --check

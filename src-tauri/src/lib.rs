@@ -273,6 +273,46 @@ pub fn migrate_main() -> Option<i32> {
     migration::cli_main()
 }
 
+/// Desinstalación en Windows (1.9.1): `container-manage-center
+/// --remove-scheduled-tasks` quita del Programador de tareas las copias
+/// programadas **propias** (con la marca de la aplicación) de las tareas
+/// configuradas. Lo ejecuta el desinstalador (no al actualizar); los datos y
+/// las copias se conservan, como en Linux. `None` si no se pidió.
+pub fn uninstall_main() -> Option<i32> {
+    if std::env::args().nth(1).as_deref() != Some("--remove-scheduled-tasks") {
+        return None;
+    }
+    #[cfg(not(windows))]
+    {
+        eprintln!("--remove-scheduled-tasks solo se usa en Windows (el desinstalador lo ejecuta).");
+        Some(2)
+    }
+    #[cfg(windows)]
+    {
+        let store = match std::env::var_os("CMC_CONFIG") {
+            Some(p) => ConfigStore::at(p),
+            None => match ConfigStore::default_location() {
+                Ok(s) => s,
+                Err(_) => return Some(0),
+            },
+        };
+        let Some(sched) = systemd::Systemd::from_env() else {
+            return Some(0);
+        };
+        let log = cmc_activity::ActivityLog::new(64);
+        let mut failed = 0;
+        tauri::async_runtime::block_on(async {
+            for job in backups::load_jobs(store.path()) {
+                if let Err(e) = sched.remove(&log, &job.id).await {
+                    eprintln!("Container Manage Center: {}: {e}", job.id);
+                    failed += 1;
+                }
+            }
+        });
+        Some(if failed == 0 { 0 } else { 1 })
+    }
+}
+
 /// Modo sin ventana de los temporizadores de systemd (E4, D-100):
 /// `container-manage-center --run-backup <tarea>`. `None` si no se pidió.
 pub fn headless_main() -> Option<i32> {

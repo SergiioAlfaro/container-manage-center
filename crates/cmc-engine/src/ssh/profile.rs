@@ -167,11 +167,12 @@ pub fn valid_user(u: &str) -> bool {
         && cs.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '_' | '.' | '-'))
 }
 
-/// Ruta absoluta, sin caracteres de control ni comillas. Admite `~/` (se expande al conectar).
+/// Ruta absoluta de este equipo (en Windows, `C:\…`; 1.9.1), sin caracteres de
+/// control. Admite `~/` (se expande al conectar).
 fn valid_local_path(p: &str) -> bool {
     !p.is_empty()
         && p.len() <= MAX_PATH
-        && (p.starts_with('/') || p.starts_with("~/"))
+        && (crate::hostpath::is_local_absolute(p) || p.starts_with("~/"))
         && !p.chars().any(|c| c.is_control())
 }
 

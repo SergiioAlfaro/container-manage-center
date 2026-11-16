@@ -314,10 +314,118 @@ const SIGTERM: i32 = 15;
 #[cfg(windows)]
 const SIGKILL: i32 = 9;
 
-/// Windows no tiene grupos de procesos ni señales: el proceso se termina con
-/// `kill` (TerminateProcess) cuando vence el plazo.
+/// Árbol de procesos de una orden, para detenerla entera (1.9.1).
+///
+/// * Linux: el proceso es líder de su propio grupo; se avisa a todo el grupo
+///   (`docker compose` lanza el plugin como proceso hijo).
+/// * Windows: no hay grupos ni señales que se puedan enviar a un programa sin
+///   consola. El proceso entra en un *job object* de Windows (sus hijos
+///   también) y al detener se terminan todos con `TerminateJobObject`. Antes
+///   no se hacía nada y la espera final no acababa hasta que el programa
+///   terminaba solo. Si no se puede crear el job, se termina el proceso.
+struct ProcessTree {
+    pid: Option<u32>,
+    #[cfg(windows)]
+    job: Option<win_job::Job>,
+}
+
+impl ProcessTree {
+    fn attach(child: &tokio::process::Child) -> Self {
+        Self {
+            pid: child.id(),
+            #[cfg(windows)]
+            job: child.raw_handle().and_then(win_job::Job::assign),
+        }
+    }
+
+    #[cfg(unix)]
+    fn signal(&self, sig: i32) {
+        signal_group(self.pid, sig);
+    }
+
+    #[cfg(windows)]
+    fn signal(&self, _sig: i32) {
+        match &self.job {
+            Some(j) => j.terminate(),
+            None => {
+                if let Some(pid) = self.pid {
+                    win_job::terminate_pid(pid);
+                }
+            }
+        }
+    }
+}
+
 #[cfg(windows)]
-fn signal_group(_pid: Option<u32>, _sig: i32) {}
+mod win_job {
+    use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+    use windows_sys::Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, TerminateJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    };
+    use windows_sys::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
+
+    /// Job object propio: al cerrarse (o al terminarlo) acaban todos sus procesos.
+    pub struct Job(HANDLE);
+    // SAFETY: un HANDLE de job object se puede usar desde cualquier hilo.
+    unsafe impl Send for Job {}
+    unsafe impl Sync for Job {}
+
+    impl Job {
+        pub fn assign(process: std::os::windows::io::RawHandle) -> Option<Self> {
+            // SAFETY: llamadas a la API de Windows con punteros válidos; el
+            // job se cierra en `Drop`.
+            unsafe {
+                let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+                if job.is_null() {
+                    return None;
+                }
+                let j = Job(job);
+                let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+                info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+                let ok = SetInformationJobObject(
+                    job,
+                    JobObjectExtendedLimitInformation,
+                    &info as *const _ as *const core::ffi::c_void,
+                    std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+                );
+                if ok == 0 || AssignProcessToJobObject(job, process as HANDLE) == 0 {
+                    return None;
+                }
+                Some(j)
+            }
+        }
+
+        pub fn terminate(&self) {
+            // SAFETY: handle válido mientras viva `self`.
+            unsafe {
+                TerminateJobObject(self.0, 1);
+            }
+        }
+    }
+
+    impl Drop for Job {
+        fn drop(&mut self) {
+            // SAFETY: handle propio, se cierra una sola vez.
+            unsafe {
+                CloseHandle(self.0);
+            }
+        }
+    }
+
+    /// Sin job: se termina solo el proceso.
+    pub fn terminate_pid(pid: u32) {
+        // SAFETY: handle abierto y cerrado aquí.
+        unsafe {
+            let h = OpenProcess(PROCESS_TERMINATE, 0, pid);
+            if !h.is_null() {
+                TerminateProcess(h, 1);
+                CloseHandle(h);
+            }
+        }
+    }
+}
 
 #[cfg(unix)]
 fn signal_group(pid: Option<u32>, sig: i32) {
@@ -376,7 +484,7 @@ where
             return Err(EngineError::Process { message: msg });
         }
     };
-    let pid = child.id();
+    let tree = ProcessTree::attach(&child);
     if let (Some(data), Some(mut stdin)) = (opts.stdin, child.stdin.take()) {
         tokio::spawn(async move {
             let _ = stdin.write_all(&data).await;
@@ -436,12 +544,12 @@ where
             _ = tick.tick() => {}
             _ = opts.cancel.cancelled(), if !stopped => {
                 stopped = true;
-                signal_group(pid, SIGTERM);
+                tree.signal(SIGTERM);
             }
             _ = &mut deadline, if !stopped => {
                 stopped = true;
                 timed_out = true;
-                signal_group(pid, SIGTERM);
+                tree.signal(SIGTERM);
             }
         }
         if !batch.is_empty()
@@ -456,7 +564,7 @@ where
                 listener_gone = true;
                 if !stopped {
                     stopped = true;
-                    signal_group(pid, SIGTERM);
+                    tree.signal(SIGTERM);
                 }
             }
             batch.clear();
@@ -469,7 +577,7 @@ where
     let status = match tokio::time::timeout(GRACE, child.wait()).await {
         Ok(s) => s.ok(),
         Err(_) => {
-            signal_group(pid, SIGKILL);
+            tree.signal(SIGKILL);
             child.wait().await.ok()
         }
     };
@@ -556,6 +664,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn arguments_are_not_interpreted_by_a_shell() {
         let log = ActivityLog::new(10);
@@ -582,6 +691,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn non_zero_exit_is_recorded_as_failure_with_stderr() {
         let log = ActivityLog::new(10);
@@ -603,6 +713,7 @@ mod tests {
         assert_eq!(log.snapshot()[0].status, OpStatus::Failed);
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn timeout_kills_and_records() {
         let log = ActivityLog::new(10);
@@ -612,12 +723,120 @@ mod tests {
         assert_eq!(log.snapshot()[0].status, OpStatus::Failed);
     }
 
+    /// Windows (1.9.1): `cmd.exe` de este equipo.
+    #[cfg(windows)]
+    fn cmd(script: &str) -> CliRequest {
+        let root = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into());
+        let mut r = req(&format!(r"{root}\System32\cmd.exe"), &["/d", "/c", script]);
+        r.timeout = Duration::from_secs(60);
+        r
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn windows_exit_code_and_stderr_are_recorded() {
+        let log = ActivityLog::new(10);
+        let out = run(&log, cmd("echo fallo 1>&2 & exit /b 3")).await.unwrap();
+        assert_eq!(out.exit_code, Some(3));
+        let r = &log.snapshot()[0];
+        assert_eq!(r.status, OpStatus::Failed);
+        assert!(r.stderr.as_ref().unwrap().text.contains("fallo"));
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn windows_streaming_delivers_both_streams() {
+        let log = ActivityLog::new(10);
+        let mut got = Vec::new();
+        let r = run_streaming(
+            &log,
+            cmd("echo uno & echo dos 1>&2 & echo tres"),
+            StreamOptions::new(CancellationToken::new()),
+            |l| {
+                got.extend(l.into_iter().map(|x| (x.stream, x.text.trim().to_owned())));
+                true
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(r.end, RunEnd::Exited { code: Some(0) });
+        assert!(
+            got.contains(&(OutputStream::Stdout, "uno".into())),
+            "{got:?}"
+        );
+        assert!(
+            got.contains(&(OutputStream::Stderr, "dos".into())),
+            "{got:?}"
+        );
+        assert!(
+            got.contains(&(OutputStream::Stdout, "tres".into())),
+            "{got:?}"
+        );
+    }
+
+    /// Detener termina también los hijos (`ping` lanzado por `cmd`), sin
+    /// esperar a que acaben solos (antes, en Windows, no se detenía nada).
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn windows_cancelling_stops_the_process_tree() {
+        let log = ActivityLog::new(10);
+        let cancel = CancellationToken::new();
+        let c2 = cancel.clone();
+        let started = std::time::Instant::now();
+        let r = run_streaming(
+            &log,
+            cmd("echo listo & ping -n 40 127.0.0.1 >nul & echo fin"),
+            {
+                let mut o = StreamOptions::new(cancel);
+                o.collect_stdout = true;
+                o
+            },
+            move |l| {
+                if l.iter().any(|x| x.text.trim() == "listo") {
+                    c2.cancel();
+                }
+                true
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(r.end, RunEnd::Stopped);
+        assert!(
+            started.elapsed() < Duration::from_secs(20),
+            "{:?}",
+            started.elapsed()
+        );
+        assert!(!r.stdout.contains("fin"));
+        assert_eq!(log.snapshot()[0].status, OpStatus::Cancelled);
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn windows_streaming_timeout_is_an_error() {
+        let log = ActivityLog::new(10);
+        let mut r = cmd("ping -n 40 127.0.0.1 >nul");
+        r.timeout = Duration::from_millis(1500);
+        let started = std::time::Instant::now();
+        let e = run_streaming(
+            &log,
+            r,
+            StreamOptions::new(CancellationToken::new()),
+            |_| true,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(e, EngineError::Timeout);
+        assert!(started.elapsed() < Duration::from_secs(20));
+    }
+
+    #[cfg(unix)]
     fn sreq(args: &[&str]) -> CliRequest {
         let mut r = req("/bin/sh", args);
         r.timeout = Duration::from_secs(20);
         r
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn streaming_delivers_both_streams_in_order_and_records_once() {
         let log = ActivityLog::new(10);
@@ -658,6 +877,7 @@ mod tests {
         assert_eq!(recs[0].stderr.as_ref().unwrap().text, "dos\n");
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn streaming_feeds_stdin_and_can_keep_stdout_out_of_the_log() {
         let log = ActivityLog::new(10);
@@ -675,6 +895,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn non_zero_exit_is_a_recorded_failure() {
         let log = ActivityLog::new(10);
@@ -747,6 +968,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn listener_gone_closes_and_close_can_be_a_normal_end() {
         let log = ActivityLog::new(10);
@@ -770,6 +992,7 @@ mod tests {
             .starts_with("Cerrado por el usuario"));
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn streaming_timeout_is_an_error() {
         let log = ActivityLog::new(10);

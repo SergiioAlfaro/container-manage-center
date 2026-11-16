@@ -478,6 +478,7 @@ mod tests {
 
     /// El shell real del sistema vuelve a separar la orden en exactamente los
     /// mismos argumentos, sin ejecutar nada de lo que contienen.
+    #[cfg(unix)]
     #[test]
     fn remote_command_roundtrips_through_a_real_shell() {
         let dir = tempfile::tempdir().unwrap();

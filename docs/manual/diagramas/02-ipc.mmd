@@ -1,0 +1,21 @@
+sequenceDiagram
+  autonumber
+  participant V as Apartado (React)
+  participant Q as TanStack Query
+  participant I as Cliente IPC
+  participant T as Orden Tauri (Rust)
+  participant E as cmc-engine
+  participant A as Registro de actividad
+  V->>Q: useQuery / useMutation
+  Q->>I: api.containerAction(...)
+  I->>T: invoke("container_action", args)
+  T->>T: valida argumentos y servidor
+  T->>E: with_engine(...)
+  E->>A: begin(operación)
+  E->>E: petición a Docker
+  E->>A: succeed / fail
+  A-->>I: evento activity://event
+  E-->>T: resultado o EngineError
+  T-->>I: Ok(valor) o CommandError {code, message}
+  I-->>Q: datos o error traducido
+  Q-->>V: nuevo estado e invalidación de consultas

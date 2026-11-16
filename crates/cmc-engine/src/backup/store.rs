@@ -503,11 +503,15 @@ pub fn verify(dir: &Path) -> io::Result<IntegrityReport> {
     while let Some(d) = stack.pop() {
         for e in fs::read_dir(&d)?.flatten() {
             let p = e.path();
+            // Con `/` en todos los sistemas, como en el manifiesto (en Windows,
+            // `Path` usaría `\` y todo saldría «de más»; 1.9.1).
             let rel = p
                 .strip_prefix(dir)
                 .unwrap_or(&p)
-                .to_string_lossy()
-                .into_owned();
+                .components()
+                .map(|c| c.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/");
             match e.file_type() {
                 Ok(t) if t.is_dir() => stack.push(p),
                 _ if rel == MANIFEST => {}
@@ -691,13 +695,16 @@ mod tests {
         let dir = p
             .finalize(&manifest("20261114T100000Z-aaaaaa", vec![entry]))
             .unwrap();
-        // Permisos: carpetas 0700, archivos 0600.
-        assert_eq!(mode_of(t.root()).unwrap(), 0o700);
-        assert_eq!(mode_of(&t.root().join("local")).unwrap(), 0o700);
-        assert_eq!(mode_of(&dir).unwrap(), 0o700);
-        assert_eq!(mode_of(&dir.join("volumes")).unwrap(), 0o700);
-        assert_eq!(mode_of(&dir.join("volumes/datos.tar")).unwrap(), 0o600);
-        assert_eq!(mode_of(&dir.join(MANIFEST)).unwrap(), 0o600);
+        // Permisos: carpetas 0700, archivos 0600 (en Windows, los del perfil).
+        #[cfg(unix)]
+        {
+            assert_eq!(mode_of(t.root()).unwrap(), 0o700);
+            assert_eq!(mode_of(&t.root().join("local")).unwrap(), 0o700);
+            assert_eq!(mode_of(&dir).unwrap(), 0o700);
+            assert_eq!(mode_of(&dir.join("volumes")).unwrap(), 0o700);
+            assert_eq!(mode_of(&dir.join("volumes/datos.tar")).unwrap(), 0o600);
+            assert_eq!(mode_of(&dir.join(MANIFEST)).unwrap(), 0o600);
+        }
         let l = t.list("local").unwrap();
         assert_eq!(l.len(), 1);
         assert_eq!(l[0].state, BackupState::Complete);

@@ -1,9 +1,65 @@
+# Compilaciones y dependencias (se regeneran)
 /target/
 /dist/
 /node_modules/
 /src-tauri/gen/
+/src-tauri/target/
+/build/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Informes de los scripts de verificación (se regeneran)
 /verify-phase-*-report.txt
 /verify-evolution-*-report.txt
 /verify-update-*-report.txt
+
+# Paquetes y binarios generados: se publican como artefactos, no en Git
+*.deb
+*.rpm
+*.AppImage
+*.msi
+/*.exe
+*.nupkg
+SHA256SUMS
+!packaging/**/SHA256SUMS
+
+# Registros y archivos temporales
 *.log
+*.tmp
+*.swp
+*~
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Entornos y configuración personal de editores
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.code-workspace
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Secretos y credenciales: nunca en el repositorio
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+id_ed25519*
+id_ecdsa*
+known_hosts
+*.kdbx
+.npmrc
+.netrc
+
+# Datos locales de la aplicación (si se ejecuta con CMC_CONFIG en el proyecto)
+/config.toml
+/estado/

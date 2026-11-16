@@ -426,7 +426,10 @@
       "retry": "Quando estiver resolvido, prima «Voltar a ligar». A aplicação também tenta novamente sozinha.",
       "startDesktop": "Abra o Docker Desktop a partir do menu Iniciar e aguarde até indicar que o motor está em execução.",
       "installDesktop": "Instale o Docker Desktop para Windows (docs.docker.com/desktop/setup/install/windows-install).",
-      "addDockerUsers": "Adicione o seu utilizador ao grupo «docker-users» a partir de uma Linha de comandos aberta como administrador:"
+      "addDockerUsers": "Adicione o seu utilizador ao grupo «docker-users» a partir de uma Linha de comandos aberta como administrador:",
+      "unsetHostWin": "Para usar o Docker Desktop, remove DOCKER_HOST do teu ambiente (no PowerShell) e volta ao contexto predefinido; se o definiste nas variáveis de ambiente do Windows, remove-o também aí:",
+      "restartDesktop": "Reinicia o Docker Desktop (menu do seu ícone na barra de tarefas › Restart) e espera até o motor estar em funcionamento.",
+      "upgradeDesktop": "Atualiza o Docker Desktop para uma versão recente (menu do seu ícone › Check for updates)."
     }
   },
   "dashboard": {
@@ -2037,7 +2040,9 @@
     "lastFailed": "A última verificação falhou: {{message}}",
     "howTo": "Para atualizar, transfira o pacote novo e instale-o com «sudo apt install ./container-manage-center_X.Y.Z_amd64.deb». A sua configuração e o seu histórico são conservados.",
     "banner": "Há uma versão nova do Container Manage Center: {{latest}}.",
-    "bannerOpen": "Ver em Configuração"
+    "bannerOpen": "Ver em Configuração",
+    "howToWin": "Para atualizar, descarrega o novo instalador (…_x64-setup.exe) e executa-o: substitui a versão instalada. A configuração e o histórico são mantidos.",
+    "installedWin": "Aplicação para Windows"
   },
   "system": {
     "title": "Sistema",
@@ -2815,7 +2820,9 @@
       "verifyJumpFingerprint": "Peça ao administrador a impressão digital do servidor intermédio ou verifique-a nele.",
       "jumpUseKey": "Use uma chave SSH ou o agente SSH para o servidor intermédio (a chave do perfil serve se o intermédio a aceitar).",
       "tryJump": "Teste a ligação ao servidor intermédio sem palavra-passe:",
-      "jumpInProfile": "Escreva o servidor intermédio em «Servidor intermédio» do perfil (utilizador@host:porta)."
+      "jumpInProfile": "Escreva o servidor intermédio em «Servidor intermédio» do perfil (utilizador@host:porta).",
+      "installSshWin": "Instala o cliente OpenSSH do Windows: Definições › Sistema › Funcionalidades opcionais › «Cliente OpenSSH», ou a partir do PowerShell aberto como administrador:",
+      "keyPermissionsWin": "A chave deve ser privada: só o teu utilizador a pode ler. A partir do PowerShell:"
     },
     "target": "Servidor",
     "paths": {

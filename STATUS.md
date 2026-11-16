@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-15
+Última actualización: 2026-11-16
 
 ## Resumen
 
 | | |
 |---|---|
-| **Etapa actual** | 1.9.0: versión de Windows, en pruebas (D-114) |
-| **Versión** | 1.9.0 |
-| **Estado** | Linux: verificada automáticamente, sin cambios de funcionamiento. Windows: compila y genera el instalador, **sin probar en un Windows real**; instalador solo de pruebas hasta la decisión sobre WebView2Loader |
+| **Etapa actual** | 1.9.1: auditoría y correcciones de Windows, preparación para GitHub y manual técnico (D-115) |
+| **Versión** | 1.9.1 |
+| **Estado** | Linux: verificada automáticamente con Docker 29, 26 y 24, sin fallos. Windows: 613 pruebas superadas con Wine, **sin probar en un Windows real**; instalador solo de pruebas hasta la aprobación del permiso adicional de WebView2 |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | Lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md)) |
+| **Pendiente de validar** | Lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -34,6 +34,7 @@
 | 1.7.0. Identidad Container Manage Center, licencia y copyright | **Validada** (confirmada por el propietario, 2026-11-15) |
 | 1.8.0. Fin del nombre anterior, con migración de los datos | Implementada y verificada automáticamente; pendiente de la validación manual |
 | 1.9.0. Versión de Windows (en pruebas) | Compilada y verificada automáticamente en Linux; sin probar en Windows; instalador solo de pruebas |
+| 1.9.1. Auditoría de Windows, GitHub y manual técnico | Implementada y verificada automáticamente (Linux y Wine); sin probar en Windows real |
 
 ---
 
@@ -1434,13 +1435,35 @@ Fecha: 2026-11-15. Decisión D-114 (del propietario: versión de Windows complet
 - Instalador sin firmar (SmartScreen avisará).
 - El flujo de GitHub Actions no se ha ejecutado (no hay repositorio remoto configurado aquí).
 
+## 1.9.1 · Auditoría de Windows, preparación para GitHub y manual técnico
+
+Fecha: 2026-11-16. Decisión D-115.
+
+### Hecho
+- **Auditoría de Windows** ([AUDITORIA-WINDOWS-1.9.1.md](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)): 17 incidencias (W-01 a W-17) encontradas por lectura de código y con las pruebas ejecutadas con Wine, todas corregidas sin cambiar el funcionamiento en Linux: rutas del equipo (`hostpath`: `C:\…`, `\\servidor\…`) en Compose, carpetas vinculadas, construcción, claves SSH, copias y restauración; *job object* para detener árboles de procesos; `ShellExecuteW` para abrir enlaces; reintento con la tubería ocupada; textos de PowerShell en el diagnóstico (8 idiomas); tareas programadas eliminadas al desinstalar; riesgos de carpetas de Windows; diarios que se pueden vaciar y rotar; nombre y versión de Windows del registro.
+- **GitHub**: `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.gitattributes`, plantillas de issues y PR, flujos `ci.yml`, `linux-build.yml` y `windows-build.yml` con acciones fijadas por SHA y permisos de solo lectura (`actionlint` sin errores). README reescrito.
+- **Permiso adicional de la GPL v3 §7 para WebView2Loader**: borrador en [docs/legal/WEBVIEW2_EXCEPTION.md](docs/legal/WEBVIEW2_EXCEPTION.md), pendiente de la revisión del titular.
+- **Manual técnico y de usuario en PDF** (16 capítulos) con fuente reproducible en `docs/manual/` y `scripts/build-manual.sh`.
+
+### Verificación automática (entorno de desarrollo)
+- `verify-evolution-1.9.1.sh`: Docker 29.9.2 (`--deb --net --ssh-lab`) **172 correctas, 0 fallos**, 5 omitidas; Docker 26.1.3 y 24.0.7 **130 correctas, 0 fallos**, 6 omitidas; Compose 2.26.1: 6/6 en los tres.
+- Windows (compilación cruzada con MinGW, ejecución con Wine 9.0): **613 pruebas superadas, 0 fallidas** (antes de las correcciones: 26 fallos y la batería de la aplicación sin arrancar); Clippy `-D warnings` para Windows sin avisos.
+
+### Limitaciones
+- **No se ha ejecutado en un Windows real**: Docker Desktop, WebView2, el Programador de tareas, el Administrador de credenciales real y el instalador están sin probar (matriz WIN-\*, NOT TESTED).
+- El instalador NSIS no se pudo ejecutar con Wine (es de 32 bits y solo hay Wine de 64 bits).
+- **W-18**: en Windows la aplicación no se niega a ejecutarse como administrador (en Linux sí rechaza root). Pendiente de decisión.
+- Los flujos de GitHub Actions no se han ejecutado (no hay repositorio remoto).
+
 ## Próximos pasos
 
-1. El propietario decide sobre WebView2Loader (permiso adicional de la GPL v3, sección 7, asesoramiento jurídico o no distribuir la versión de Windows).
+1. El propietario revisa y, si procede, aprueba el permiso adicional de WebView2 ([borrador](docs/legal/WEBVIEW2_EXCEPTION.md)).
 2. Primera prueba en Windows con [docs/validation/VALIDACION-WINDOWS.md](docs/validation/VALIDACION-WINDOWS.md) y, si se quiere, el flujo de GitHub Actions.
 3. Validación manual de la 1.8.0 en Debian 13 ([docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md)), si no se ha hecho.
 
 ## Decisiones pendientes del propietario
-- WebView2Loader en el instalador de Windows (D-114): hasta decidirlo, los instaladores de Windows son solo para pruebas.
+- Permiso adicional de WebView2 (D-114, D-115): hasta aprobarlo, los instaladores de Windows son solo para pruebas.
+- W-18: si la aplicación debe negarse a ejecutarse como administrador en Windows.
+- Publicación del repositorio en GitHub (`git push`): solo con autorización expresa del titular.
 - Firma de `SHA256SUMS`: clave GPG del propietario y dónde publicar la clave pública (D-092).
 - Dónde se publicarán las versiones (repositorio de GitHub o dirección HTTPS): es la fuente que vendría configurada para la comprobación de actualizaciones (D-060). Hasta entonces la fuente está vacía y la aplicación no se conecta a Internet.

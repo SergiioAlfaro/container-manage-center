@@ -1,5 +1,23 @@
 # Cambios
 
+## 1.9.1 — 2026-11-16 (auditoría de Windows y preparación para GitHub)
+- **Auditoría de la versión de Windows** (D-115, `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`): se han encontrado y corregido fallos que impedían usar en Windows funciones que en Linux sí funcionaban:
+  - rutas de Windows (`C:\…`, `\\servidor\recurso\…`) en Compose (abrir, crear, levantar), carpetas vinculadas al crear o editar contenedores (`C:\datos:/datos`), construcción de imágenes, clave SSH elegida con el selector, destino de las copias de seguridad y carpeta nueva al restaurar;
+  - «Abrir en el navegador» (antes buscaba `xdg-open`; ahora usa el navegador predeterminado de Windows);
+  - detener una operación de Compose termina también los procesos hijos (antes no se detenía nada hasta que acababa sola);
+  - comprobar una copia de seguridad ya no da por «de más» todos sus archivos;
+  - el registro de actividad y el diario de eventos se pueden vaciar y rotar (Windows no deja sustituir un archivo abierto);
+  - reintento cuando la tubería de Docker Desktop está ocupada; ruta de la tubería escrita tal cual en la conexión personalizada;
+  - avisos de montajes peligrosos con carpetas de Windows (`C:\`, `C:\Users`, `C:\Windows`, `AppData`…);
+  - textos e instrucciones de Windows (PowerShell) en el diagnóstico de Docker y de SSH, en Actualizaciones y en Sistema (con el nombre y la versión de Windows);
+  - el desinstalador quita las copias programadas propias del Programador de tareas (no al actualizar).
+- **Pruebas de Windows**: las pruebas unitarias se compilan para Windows y se ejecutan con Wine (613 superadas). No sustituyen a la prueba en un Windows real.
+- **Permiso adicional de la GPL v3 (sección 7)** para el cargador de WebView2 de Microsoft, en borrador pendiente de revisión del titular (`docs/legal/WEBVIEW2_EXCEPTION.md`). Hasta su aprobación, el instalador de Windows sigue siendo solo para pruebas.
+- **Repositorio listo para GitHub**: `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.gitattributes`, `.gitignore` ampliado, plantillas de issues y de pull requests, flujos `ci.yml`, `linux-build.yml` y `windows-build.yml` con las acciones fijadas por commit.
+- **Manual técnico y de usuario en PDF** (16 capítulos, diagramas y capturas reales de Linux): fuente en `docs/manual/`, se genera con `scripts/build-manual.sh`.
+- **Linux no cambia de comportamiento**: regresión completa con Docker 29, 26 y 24, sin fallos; instalación limpia en Ubuntu 24.04 y 22.04.
+- `scripts/dev/clean-install-test.sh`: la comprobación de que la desinstalación conserva los datos del usuario buscaba `~/.config/container-manage-center`, que la aplicación solo crea cuando se guarda algo; ahora comprueba que siguen ahí las carpetas de datos que existían antes de desinstalar.
+
 ## 1.9.0 — 2026-11-15 (versión de Windows, en pruebas)
 - **Versión para Windows 10 y 11** (x86_64) con el mismo código (D-114): Docker Desktop en el equipo, servidores remotos por SSH con el OpenSSH de Windows, contraseñas en el Administrador de credenciales, copias programadas en el Programador de tareas y notificaciones de Windows. Textos de diagnóstico y ayuda propios de Windows (sección «Windows» en la ayuda, 8 idiomas). Limitaciones: sin ProxyJump y terminal del servidor sin cambio de tamaño.
 - **Instalador NSIS** para el usuario actual, sin permisos de administrador, con la licencia y los avisos de terceros de Windows. `scripts/build-windows.sh` (desde Linux con MinGW-w64) y `.github/workflows/windows.yml` (MSVC, manual).

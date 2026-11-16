@@ -1,0 +1,13 @@
+flowchart TD
+  A["Arranque o «Reintentar»"] --> B{"Modo de conexión"}
+  B -- "Personalizado" --> P["Ruta indicada<br/>(socket o tubería)"]
+  B -- "Automático" --> C["Candidatos en orden:<br/>1. DOCKER_HOST<br/>2. contexto activo<br/>3. socket rootless (Linux)<br/>4. socket del sistema<br/>(Windows: tuberías de Docker Desktop)"]
+  P --> D["Sondeo de cada candidato<br/>¿existe? ¿permiso? ¿responde?"]
+  C --> D
+  D --> E{"¿Responde como Docker?<br/>ping + versión de la API ≥ 1.41"}
+  E -- "Sí" --> F["Conectado<br/>evento engine://state"]
+  E -- "No" --> G["Diagnóstico con la causa más relevante:<br/>sin socket, daemon parado, sin permiso,<br/>host no admitido, API antigua…"]
+  G --> H["Pasos para el usuario<br/>(la aplicación no ejecuta nada)"]
+  F --> L["Latido cada 10 s"]
+  L -- "falla" --> R["Desconectado + reintentos<br/>de 2 s a 30 s"]
+  R --> D

@@ -115,7 +115,9 @@ impl BuildSpec {
         let ctx = self.context.trim();
         if ctx.is_empty() {
             v.push(err("context", "context.required", &[]));
-        } else if !ctx.starts_with('/') || ctx.split('/').any(|c| c == "..") {
+        } else if !crate::hostpath::is_local_absolute(ctx)
+            || crate::hostpath::has_parent_component(ctx)
+        {
             v.push(err("context", "path.notAbsolute", &[]));
         } else if check_fs {
             match std::fs::metadata(ctx) {
@@ -646,9 +648,11 @@ mod tests {
         };
         assert!(classic.path().ends_with("rm=1&forcerm=1&version=1"));
         assert!(classic.cli_args().contains(&"--force-rm".to_string()));
-        assert!(classic
-            .cli_args()
-            .contains(&format!("{ctx}/docker/Dockerfile.prod")));
+        let dockerfile = std::path::Path::new(ctx.as_ref())
+            .join("docker/Dockerfile.prod")
+            .display()
+            .to_string();
+        assert!(classic.cli_args().contains(&dockerfile));
     }
 
     #[test]
@@ -700,7 +704,11 @@ mod tests {
         };
         assert!(codes(&rel).contains(&"path.notAbsolute".to_string()));
         let missing = BuildSpec {
-            context: "/no/existe/cmc".into(),
+            context: if cfg!(windows) {
+                r"C:\no\existe\cmc".into()
+            } else {
+                "/no/existe/cmc".into()
+            },
             tags: vec!["a".into()],
             ..Default::default()
         };

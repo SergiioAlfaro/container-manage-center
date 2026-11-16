@@ -349,7 +349,12 @@ fn validation_only_reports_what_the_user_changed() {
             cur.mounts[1].clone(),
             MountSpec {
                 kind: MountKind::Bind,
-                source: "/no/existe/cmc".into(),
+                // Carpeta de este equipo que no existe (en Windows, `C:\…`).
+                source: if cfg!(windows) {
+                    r"C:\no\existe\cmc".into()
+                } else {
+                    "/no/existe/cmc".into()
+                },
                 target: "/x".into(),
                 read_only: false,
             },

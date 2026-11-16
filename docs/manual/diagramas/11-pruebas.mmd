@@ -1,0 +1,12 @@
+flowchart TD
+  CH["Cambio en el código"] --> U["Pruebas unitarias<br/>Rust (cargo test) · Vitest"]
+  CH --> STA["Estáticas<br/>clippy -D warnings · rustfmt · tsc · ESLint"]
+  U --> L{"Plataforma"}
+  L -- "Linux" --> LI["Integración contra Docker real<br/>CMC_DOCKER_TESTS=1<br/>Docker 29, 26 y 24 · laboratorio SSH"]
+  L -- "Windows" --> WI["Compilación cruzada y pruebas<br/>unitarias con Wine<br/>(+ runner de Windows en CI)"]
+  LI --> PK["Paquete .deb, instalación limpia<br/>y actualización (Ubuntu 22.04/24.04)"]
+  WI --> NS["Instalador NSIS<br/>(inspección)"]
+  PK --> M1["Validación manual en Debian 13"]
+  NS --> M2["Validación manual en Windows real<br/>(pendiente)"]
+  STA --> V["verify-evolution-1.9.1.sh"]
+  PK --> V

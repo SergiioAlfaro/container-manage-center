@@ -43,6 +43,13 @@ indicados arriba. La protección por derechos de autor de las partes generadas
 con ayuda de herramientas de IA depende de la legislación de cada país; este
 documento no hace ninguna afirmación jurídica sobre ello.
 
+## Permiso adicional (GPL v3, sección 7) — borrador
+
+Además de la GPL-3.0-or-later, el titular concede el permiso adicional de
+[WEBVIEW2_EXCEPTION.md](WEBVIEW2_EXCEPTION.md) para enlazar el programa con el
+cargador de Microsoft Edge WebView2 en Windows. **Pendiente de su revisión**
+antes de publicar la versión de Windows.
+
 ## Lo que **no** es de Sergio Alfaro Lorite
 
 - **Dependencias de terceros** (crates de Rust, paquetes npm, tipografías IBM

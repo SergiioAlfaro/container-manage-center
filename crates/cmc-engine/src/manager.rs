@@ -626,6 +626,7 @@ fn problem_text(p: &Problem) -> String {
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     fn env_with(dir: &std::path::Path) -> HostEnv {
         HostEnv {
             uid: 1000,
@@ -636,6 +637,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn custom_missing_socket_reports_no_socket() {
         let dir = tempfile::tempdir().unwrap();

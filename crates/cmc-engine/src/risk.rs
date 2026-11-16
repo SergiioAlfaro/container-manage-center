@@ -16,7 +16,6 @@
 //! montado y ser root en el equipo.
 
 use std::collections::BTreeMap;
-use std::path::{Component, Path};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -137,12 +136,16 @@ pub fn normalize(path: &str) -> Option<String> {
     if !p.starts_with('/') || p.contains('\0') {
         return None;
     }
+    // Léxica con `/` (rutas de Linux): igual que `Path::components` en Linux y
+    // también en Windows, donde `Path` tomaría `//var/run` por una ruta de red
+    // y la ruta de la máquina virtual de Docker Desktop se quedaría sin
+    // clasificar (1.9.1).
     let mut parts = Vec::new();
-    for c in Path::new(p).components() {
+    for c in p.split('/') {
         match c {
-            Component::RootDir | Component::CurDir => {}
-            Component::Normal(s) => parts.push(s.to_string_lossy().into_owned()),
-            Component::ParentDir | Component::Prefix(_) => return None,
+            "" | "." => {}
+            ".." => return None,
+            s => parts.push(s.to_owned()),
         }
     }
     Some(format!("/{}", parts.join("/")))
@@ -211,6 +214,10 @@ fn classify(p: &str, read_only: bool) -> Option<(&'static str, RiskLevel)> {
 /// que se resuelven además los enlaces simbólicos (solo para avisar; lo que se
 /// envía a Docker no cambia).
 pub fn mount_risk(source: &str, read_only: bool, local: bool, field: &str) -> Option<Risk> {
+    // Docker Desktop en Windows: carpetas de Windows (1.9.1).
+    if local && cfg!(windows) && crate::hostpath::is_windows_absolute(source.trim()) {
+        return windows_mount_risk(source.trim(), read_only, field);
+    }
     let norm = normalize(source)?;
     let mut found = classify(&norm, read_only).map(|(c, l)| (c, l, norm.clone()));
     if local {
@@ -233,6 +240,45 @@ pub fn mount_risk(source: &str, read_only: bool, local: bool, field: &str) -> Op
         r = r.with("resolved", resolved);
     }
     Some(r)
+}
+
+/// Carpetas de cada usuario de Windows con credenciales o configuración de
+/// programas (`C:\Users\<usuario>\…`).
+const WINDOWS_HOME_CREDENTIAL_DIRS: [&str; 6] =
+    [".ssh", ".gnupg", ".docker", ".kube", ".aws", "appdata"];
+
+/// Riesgo de montar una carpeta de Windows (ya normalizada con
+/// [`crate::hostpath::windows_normalize`]), con los mismos códigos que en Linux:
+/// la raíz de una unidad equivale a `/`; `C:\Users` y las carpetas de
+/// credenciales de cada usuario, a `/home`; `C:\Windows`, `C:\Program Files`…,
+/// a las carpetas del sistema.
+pub fn classify_windows(norm: &str, read_only: bool) -> Option<(&'static str, RiskLevel)> {
+    use RiskLevel::*;
+    let segs = crate::hostpath::windows_components(norm);
+    if !norm.starts_with("//") && segs.is_empty() {
+        return Some(("risk.hostRoot", Critical));
+    }
+    match segs.as_slice() {
+        ["users"] | ["users", _] => return Some(("risk.credentials", High)),
+        ["users", _, dir, ..] if WINDOWS_HOME_CREDENTIAL_DIRS.contains(dir) => {
+            return Some(("risk.credentials", High))
+        }
+        _ => {}
+    }
+    if crate::hostpath::windows_system_dir(norm) {
+        return Some(("risk.systemDir", if read_only { Medium } else { High }));
+    }
+    None
+}
+
+fn windows_mount_risk(source: &str, read_only: bool, field: &str) -> Option<Risk> {
+    let norm = crate::hostpath::windows_normalize(source)?;
+    let (code, level) = classify_windows(&norm, read_only)?;
+    Some(
+        Risk::new(code, level, field, &norm)
+            .with("path", source.to_owned())
+            .with("readOnly", read_only.to_string()),
+    )
 }
 
 // --------------------------------------------------------------- capacidades
@@ -413,6 +459,50 @@ pub fn port_risk(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_mount_risks() {
+        use crate::hostpath::windows_normalize as n;
+        let c = |p: &str, ro| classify_windows(&n(p).unwrap(), ro);
+        assert_eq!(
+            c(r"C:\", true),
+            Some(("risk.hostRoot", RiskLevel::Critical))
+        );
+        assert_eq!(
+            c(r"C:\Users", true),
+            Some(("risk.credentials", RiskLevel::High))
+        );
+        assert_eq!(
+            c(r"C:\Users\Ana", true),
+            Some(("risk.credentials", RiskLevel::High))
+        );
+        assert_eq!(
+            c(r"C:\Users\Ana\.ssh", true),
+            Some(("risk.credentials", RiskLevel::High))
+        );
+        assert_eq!(
+            c(r"c:/users/ana/AppData/Roaming", true),
+            Some(("risk.credentials", RiskLevel::High))
+        );
+        assert_eq!(
+            c(r"C:\Windows\System32", false),
+            Some(("risk.systemDir", RiskLevel::High))
+        );
+        assert_eq!(
+            c(r"C:\Program Files", true),
+            Some(("risk.systemDir", RiskLevel::Medium))
+        );
+        assert_eq!(c(r"C:\Users\Ana\proyectos\web", false), None);
+        assert_eq!(c(r"D:\datos", false), None);
+        assert_eq!(c(r"\\nas\copias", false), None);
+    }
+
+    /// En Linux las rutas de Windows no se clasifican (no hay Docker Desktop).
+    #[cfg(unix)]
+    #[test]
+    fn windows_paths_ignored_on_linux() {
+        assert!(mount_risk(r"C:\", false, true, "mounts.0.source").is_none());
+    }
     use RiskLevel::*;
 
     fn m(p: &str, ro: bool) -> Option<(String, RiskLevel)> {

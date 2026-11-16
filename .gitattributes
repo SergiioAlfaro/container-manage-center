@@ -1,0 +1,32 @@
+# Finales de línea: LF en el repositorio para todo el texto (Linux es la
+# plataforma principal y los scripts de shell no funcionan con CRLF).
+* text=auto eol=lf
+
+# Archivos de Windows que necesitan CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.nsh text eol=crlf
+*.nsi text eol=crlf
+
+# Binarios.
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.deb binary
+*.exe binary
+*.dll binary
+*.gz binary
+
+# Archivos generados: se pueden regenerar y no se revisan línea a línea.
+Cargo.lock linguist-generated=true
+package-lock.json linguist-generated=true
+ui/src/shared/ipc/bindings/** linguist-generated=true
+docs/legal/THIRD_PARTY_NOTICES*.md linguist-generated=true
+docs/legal/DEPENDENCY_LICENSE_AUDIT*.md linguist-generated=true

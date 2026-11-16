@@ -1,0 +1,18 @@
+sequenceDiagram
+  autonumber
+  participant P as Pestaña (React)
+  participant R as StreamRegistry (Rust)
+  participant D as Docker Engine
+  P->>R: logs_open(id, tail, canal) / terminal_open(id, shell, cols, rows, canal)
+  R->>D: GET /containers/{id}/logs?follow / POST exec + attach (TTY)
+  R-->>P: identificador del flujo
+  loop mientras la pestaña esté abierta
+    D-->>R: bytes
+    R-->>P: canal: lines / output (base64)
+    P->>R: terminal_input(datos) · terminal_resize(cols, rows)
+    R->>D: stdin del exec · POST /exec/{id}/resize
+  end
+  P->>R: stream_close(id) al cerrar la pestaña
+  R->>D: cierra la conexión
+  R-->>P: end
+  Note over R: Al cerrar la ventana se cierran todos los flujos<br/>y se espera a que terminen (máximo 8 s).

@@ -31,6 +31,16 @@
 La misma declaración, traducida, está en la ayuda de la aplicación (sección
 «Legal») y en **Configuración › Legal**. La versión inglesa es la que vale.
 
+### Permiso adicional para Windows (borrador)
+
+Para la versión de Windows, el titular añade un **permiso adicional** según la
+sección 7 de la GPL v3: permite distribuir el programa enlazado con el
+cargador de Microsoft Edge WebView2 (binario de Microsoft, BSD-3-Clause, sin
+código fuente publicado) sin incluir el código fuente de ese cargador. Texto
+completo y alcance en [WEBVIEW2_EXCEPTION.md](WEBVIEW2_EXCEPTION.md).
+**Pendiente de la revisión del titular**: hasta entonces, los instaladores de
+Windows son solo para pruebas.
+
 ## Qué cubre la licencia
 
 - **Cubre** el código propio del proyecto: los crates `cmc-activity`,
