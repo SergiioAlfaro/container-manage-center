@@ -78,7 +78,7 @@ Detalles en [ARCHITECTURE.md](ARCHITECTURE.md).
 | Debian 13 | Admitida | Validación manual del propietario hasta la 1.7.0; la 1.8.0 y posteriores, pendientes de validar a mano ([guía](docs/validation/VALIDACION-1.8.0.md)) |
 | Debian 12 | Admitida (paquete compatible) | Paquete compilado para glibc 2.35; sin validación manual |
 | Ubuntu 22.04 y 24.04 | Admitida | Regresión automática en Ubuntu 24.04 con Docker 29, 26 y 24; instalación limpia del paquete en Ubuntu 24.04 y 22.04 |
-| Windows 10 y 11 (x86_64) | **En pruebas** | Compilación, Clippy y 613 pruebas unitarias con Wine. **Nunca ejecutada en un Windows real**; instalador solo para pruebas ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+| Windows 10 y 11 (x86_64) | **En pruebas** | Compilación, Clippy y 614 pruebas unitarias con Wine. **Nunca ejecutada en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 
 ## Requisitos
 
@@ -108,11 +108,11 @@ Ubuntu 24.04 y el compatible en Ubuntu 22.04.
 
 ## Instalación en Windows
 
-**Solo para pruebas** hasta la primera validación en un Windows real y la
-aprobación del permiso adicional para el cargador de WebView2 de Microsoft
-([docs/legal/WEBVIEW2_EXCEPTION.md](docs/legal/WEBVIEW2_EXCEPTION.md)).
-El instalador (`…_x64-setup.exe`) instala para el usuario actual sin permisos
-de administrador. No está firmado: SmartScreen avisará. Requisitos y
+**En pruebas** hasta la primera validación en un Windows real
+([guía](docs/validation/VALIDACION-WINDOWS.md)). El instalador
+(`…_x64-setup.exe`) instala para el usuario actual sin permisos de
+administrador, y la aplicación no arranca como administrador (igual que en
+Linux no arranca como root). No está firmado: SmartScreen avisará. Requisitos y
 diferencias con Linux en
 [INSTALL.md](INSTALL.md#opción-d-windows-10-y-11-x86_64--en-pruebas).
 
@@ -196,8 +196,9 @@ bash scripts/verify-evolution-1.9.1.sh --deb   # regresión completa con Docker
 Container Manage Center se distribuye con la licencia **GNU General Public
 License v3.0 o posterior** ([LICENSE](LICENSE)): puedes redistribuirlo y
 modificarlo según sus términos. Se distribuye **sin ninguna garantía**.
-Para la versión de Windows hay un permiso adicional (sección 7 de la GPL v3)
-en borrador: [docs/legal/WEBVIEW2_EXCEPTION.md](docs/legal/WEBVIEW2_EXCEPTION.md).
+Para la versión de Windows, el titular concede un permiso adicional (sección 7
+de la GPL v3) para el cargador de WebView2 de Microsoft:
+[docs/legal/WEBVIEW2_EXCEPTION.md](docs/legal/WEBVIEW2_EXCEPTION.md).
 Los componentes de terceros conservan sus licencias y avisos:
 [THIRD_PARTY_NOTICES.md](docs/legal/THIRD_PARTY_NOTICES.md) (Linux) y
 [THIRD_PARTY_NOTICES-windows.md](docs/legal/THIRD_PARTY_NOTICES-windows.md)

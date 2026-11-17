@@ -46,13 +46,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 La traducción de esta declaración está en la ayuda de la aplicación y en
 **Configuración › Legal**; la versión inglesa es la que tiene efecto.
 
-## Permiso adicional para Windows (borrador)
+## Permiso adicional para Windows
 
 Para la versión de Windows, el titular añade un permiso adicional según la
 sección 7 de la GPL v3, que permite distribuir el programa enlazado con el
 cargador de Microsoft Edge WebView2 sin incluir el código fuente de ese
-cargador (que Microsoft no publica). Está **en borrador, pendiente de la
-revisión del titular**; texto completo en `docs/legal/WEBVIEW2_EXCEPTION.md`.
+cargador (que Microsoft no publica). Lo **aprobó el 17 de noviembre de 2026**
+y se aplica desde la versión 1.9.1. El texto completo (en inglés, el que tiene
+efecto, con su traducción) está en `docs/legal/WEBVIEW2_EXCEPTION.md` y, en
+Windows, en `legal\WEBVIEW2_EXCEPTION.md` de la carpeta de instalación.
 
 ## Redistribución
 

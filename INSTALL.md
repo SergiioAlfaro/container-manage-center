@@ -139,14 +139,16 @@ descarga la imagen `ubuntu:22.04` y unos 700 MB de paquetes de compilación.
 
 ## Opción D: Windows 10 y 11 (x86_64) — en pruebas
 
-> **Solo para pruebas.** La versión de Windows **no se ha ejecutado todavía en
-> un Windows real** (solo compilación, Clippy y pruebas unitarias con Wine; ver
-> `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`). El instalador incluye el
-> cargador de WebView2 de Microsoft (binario sin código fuente publicado); el
-> permiso adicional de la GPL v3 que lo cubre está en borrador
-> (`docs/legal/WEBVIEW2_EXCEPTION.md`). Hasta que el titular lo apruebe, el
-> instalador no se publica ni se redistribuye. La guía de la primera prueba es
-> `docs/validation/VALIDACION-WINDOWS.md`.
+> **En pruebas.** La versión de Windows **no se ha ejecutado todavía en un
+> Windows real** (solo compilación, Clippy y pruebas unitarias con Wine; ver
+> `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`). La guía de la primera prueba es
+> `docs/validation/VALIDACION-WINDOWS.md`. El instalador incluye el cargador de
+> WebView2 de Microsoft (binario sin código fuente publicado), cubierto por el
+> permiso adicional de la GPL v3 del titular (`docs/legal/WEBVIEW2_EXCEPTION.md`).
+>
+> La aplicación **no arranca como administrador** (por ejemplo, con «Ejecutar
+> como administrador»): muestra un aviso y se cierra. Ábrela con tu usuario
+> normal; Docker Desktop no necesita privilegios.
 
 Instalación para el usuario actual (sin permisos de administrador) en
 `%LOCALAPPDATA%\Container Manage Center`, con acceso en el menú Inicio. Si

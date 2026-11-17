@@ -100,7 +100,7 @@ artefactos de la ejecución, **sin publicar** ninguna versión.
 - **Idioma**: código, comentarios, documentación y mensajes en castellano;
   identificadores en inglés; interfaz en ocho idiomas.
 - **Decisiones**: cada decisión de diseño o de producto se anota en
-  `DECISIONS.md` (D-001 a D-115) y se cita en el código.
+  `DECISIONS.md` (D-001 a D-116) y se cita en el código.
 - **Versionado**: SemVer (`MAYOR.MENOR.PARCHE`); la versión está en
   `Cargo.toml`, `package.json` y `tauri.conf.json`.
 - **Mensajes de commit**: en castellano, con la versión y el resumen

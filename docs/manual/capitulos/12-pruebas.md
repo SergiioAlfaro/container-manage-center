@@ -105,9 +105,9 @@ las guías del repositorio:
 | Ubuntu 24.04 | Sí | Docker 29, 26 y 24 | `.deb` instalado y desinstalado (sistema limpio) | Entorno de pruebas | Verificada automáticamente |
 | Ubuntu 22.04 | Compilación del paquete compatible | No | `.deb` compatible instalado y desinstalado (sistema limpio) | No | Paquete comprobado |
 | Debian 12 / 13 | No | No | `.deb` compatible (exige glibc ≥ 2.34) | Pendiente | Compatible, sin validar a mano |
-| Windows 10 / 11 | Wine: 613 pruebas superadas | No | Instalador generado, no instalado | Pendiente | **En pruebas** |
+| Windows 10 / 11 | Wine: 614 pruebas superadas | No | Instalador generado, no instalado | Pendiente | **En pruebas** |
 
-La matriz detallada de Windows (AUT-01 a AUT-21, con los estados PASS,
+La matriz detallada de Windows (AUT-01 a AUT-22, con los estados PASS,
 PARTIAL y BLOCKED, y los pasos WIN-\* NOT TESTED) está en
 `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`.
 
@@ -133,9 +133,10 @@ proyecto no mide la cobertura de líneas.
 **Windows** (en un Windows 10 22H2 o Windows 11 real, con Docker Desktop;
 pasos completos en `docs/validation/VALIDACION-WINDOWS.md`):
 
-1. **WIN-INS-01 a 05**: ejecutar `…_1.9.1_x64-setup.exe`, comprobar el aviso
+1. **WIN-INS-01 a 06**: ejecutar `…_1.9.1_x64-setup.exe`, comprobar el aviso
    de SmartScreen (no está firmado), la instalación sin administrador, la
-   carpeta `legal\`, el acceso directo y que la ventana se abre.
+   carpeta `legal\`, el acceso directo, que la ventana se abre y que con
+   «Ejecutar como administrador» no arranca.
 2. **WIN-DOC-01 a 17**: conexión con Docker Desktop por `npipe`, contenedores,
    imágenes, redes, volúmenes, carpetas vinculadas `C:\…`, construir desde
    una carpeta, Compose con archivos del equipo y detener un `up` en curso.
@@ -155,9 +156,9 @@ pasos completos en `docs/validation/VALIDACION-WINDOWS.md`):
    repetir el recorrido del capítulo [Uso de la aplicación](#uso-de-la-aplicación).
 2. Probar Docker en modo *rootless* en un equipo real.
 
-**Decisiones del titular** antes de publicar: aprobar el permiso adicional de
-WebView2, decidir si la aplicación debe negarse a ejecutarse como
-administrador en Windows (W-18) y si los paquetes se firman con GPG.
+**Decisiones del titular** antes de publicar: si los paquetes se firman con
+GPG y cuándo se publica el repositorio. El permiso adicional de WebView2 y el
+rechazo del administrador en Windows (W-18) se aprobaron el 2026-11-17.
 
 ## Cómo informar de un fallo
 

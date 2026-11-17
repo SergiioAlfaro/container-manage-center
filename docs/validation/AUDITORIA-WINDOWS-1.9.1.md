@@ -74,6 +74,7 @@ Windows real** ([VALIDACION-WINDOWS.md](VALIDACION-WINDOWS.md)).
 | W-15 | Baja | `//var/run/docker.sock` sin clasificar en Windows | Pruebas con Wine | Normalización léxica (idéntica en Linux) | `docker_socket_is_critical_even_read_only` (Wine) |
 | W-16 | Alta | Vaciar o rotar el registro de actividad y el diario de eventos: «Acceso denegado» | Pruebas con Wine | Cerrar el archivo antes de sustituirlo | `journal::tests` (Wine) |
 | W-17 | Baja | Sistema sin el nombre ni la versión de Windows | Pruebas con Wine | Registro de Windows (`CurrentVersion`) | `windows_names_from_the_registry` |
+| W-18 | Media | La aplicación arranca como administrador (en Linux rechaza root) | Lectura de código | Comprobar `TokenElevation` al arrancar y negarse (aviso en un cuadro de mensaje; sin ventana, solo código 1); `CMC_ALLOW_ROOT` solo en desarrollo. Corregida el 2026-11-17 con la aprobación del titular | `root_tests`, `elevation_can_be_queried` (Wine) |
 
 En Linux todas estas correcciones conservan el comportamiento anterior; lo
 comprueba la regresión completa (§6).
@@ -90,7 +91,7 @@ ha marcado PASS sin ejecutarse.
 |---|---|---|---|---|---|---|---|
 | AUT-01 | Compilación | `tauri build` para `x86_64-pc-windows-gnu` | Instalador y programa | `…_1.9.1_x64-setup.exe` (5,1 MiB) | Linux → Windows (MinGW) | PASS | MSVC (GitHub Actions) sin ejecutar |
 | AUT-02 | Calidad | `cargo clippy --all-targets -D warnings` para Windows | Sin avisos | 0 avisos | Linux → Windows | PASS | |
-| AUT-03 | Lógica de Windows | `cargo test --lib --bins` compilado para Windows | Todas superadas | 613 superadas, 0 fallidas | Wine 9.0 | PASS | Antes de corregir: 26 fallos y la batería de la aplicación sin arrancar |
+| AUT-03 | Lógica de Windows | `cargo test --lib --bins` compilado para Windows | Todas superadas | 614 superadas, 0 fallidas (con la prueba de W-18) | Wine 9.0 | PASS | Antes de corregir: 26 fallos y la batería de la aplicación sin arrancar |
 | AUT-04 | Rutas | `hostpath`, Compose, carpetas vinculadas, copias, restauración | Rutas `C:\…` y `\\servidor\…` válidas; sin `..`; carpetas del sistema y `AppData` rechazadas | Correcto | Wine 9.0 | PASS | |
 | AUT-05 | Docker | Candidatos y `DOCKER_HOST`/`npipe://`; `tcp://` no admitido | Tuberías de Docker Desktop en orden | Correcto | Wine 9.0 | PASS | |
 | AUT-06 | Docker | Sonda de una tubería inexistente | «Falta Docker» | Correcto | Wine 9.0 | PASS | La conexión real con Docker Desktop: WIN-DOC-01 |
@@ -109,6 +110,7 @@ ha marcado PASS sin ejecutarse.
 | AUT-19 | Instalador | Instalación silenciosa con Wine | Instala | No arranca: el instalador NSIS es de 32 bits y solo hay Wine de 64 bits | Wine 9.0 | BLOCKED | WIN-INS-01 a 03 |
 | AUT-20 | Ventana | Abrir la aplicación | Ventana | No probado: Wine no tiene WebView2 Runtime | — | BLOCKED | WIN-INS-04 |
 | AUT-21 | Linux | Regresión completa (Docker 29, 26, 24) | Sin fallos | 172 / 130 / 130 correctas, 0 fallos | Ubuntu 24.04 | PASS | Detalle en §6 |
+| AUT-22 | Privilegios (W-18) | Regla de arranque (`root_tests`) y consulta de `TokenElevation` (`elevation_can_be_queried`) | Con privilegios no arranca salvo en desarrollo con `CMC_ALLOW_ROOT`; la consulta funciona | Correcto | Wine 9.0 y Linux | PARTIAL | El cuadro de mensaje y el rechazo con «Ejecutar como administrador» real: WIN-INS-06 |
 
 ### 5.2 Pendientes en Windows real
 
@@ -116,7 +118,7 @@ Todas las de [VALIDACION-WINDOWS.md](VALIDACION-WINDOWS.md) están **NOT TESTED*
 
 | ID | Funcionalidad | Estado |
 |---|---|---|
-| WIN-INS-01 a 05 | Instalación, ventana, sistema | NOT TESTED |
+| WIN-INS-01 a 06 | Instalación, ventana, sistema, rechazo como administrador | NOT TESTED |
 | WIN-DOC-01 a 17 | Docker Desktop: contenedores, navegador, terminal, carpetas vinculadas, riesgos, edición, imágenes, redes, volúmenes, construcción, Compose, detener, reglas de rutas, diagnóstico, reconexión, tubería personalizada, componentes | NOT TESTED |
 | WIN-SSH-01 a 08 | SSH: clave, contraseña y Administrador de credenciales, terminal, diagnóstico, ProxyJump, cambio de clave del servidor | NOT TESTED |
 | WIN-BAK-01 a 06, WIN-MON-01, WIN-ACT-01 | Copias, restauración, Programador de tareas, notificaciones, registros | NOT TESTED |
@@ -180,9 +182,11 @@ correcciones de Windows, en Ubuntu 24.04 (entorno de pruebas, como root con
 - **Instalador**: para el usuario actual, sin administrador; **sin firmar**
   (SmartScreen avisa y no hay forma de comprobar su origen salvo por las
   sumas SHA-256). Desinstalar no borra datos, copias ni credenciales guardadas.
-- **Legal**: el cargador de WebView2 de Microsoft se distribuye en binario; el
-  permiso adicional de la GPL v3 está en borrador
-  (`docs/legal/WEBVIEW2_EXCEPTION.md`).
+- **Privilegios**: la aplicación no arranca como administrador (W-18), igual
+  que en Linux no arranca como root.
+- **Legal**: el cargador de WebView2 de Microsoft se distribuye en binario,
+  cubierto por el permiso adicional de la GPL v3 que el titular aprobó el
+  2026-11-17 (`docs/legal/WEBVIEW2_EXCEPTION.md`).
 
 ## 9. Limitaciones conocidas
 
@@ -195,10 +199,8 @@ correcciones de Windows, en Ubuntu 24.04 (entorno de pruebas, como root con
    propio OpenSSH para Windows, que rechaza las claves demasiado abiertas (la
    aplicación lo explica con la orden `icacls` para corregirlo).
 6. Las pruebas de integración con Docker real solo existen para Linux.
-7. **W-18 (sin corregir, pendiente de decisión)**: en Windows la aplicación
-   no se niega a ejecutarse como administrador, mientras que en Linux rechaza
-   root. Causa: no hay comprobación de elevación en Windows. Solución
-   propuesta: comprobar el testigo del proceso (`TokenElevation`) al arrancar
-   y negarse, con una variable para entornos de prueba, como en Linux. No se
-   ha aplicado porque cambia lo que ve el usuario (por ejemplo, quien abra la
-   aplicación desde una consola elevada) y es una decisión del titular.
+7. W-18 (corregida el 2026-11-17): la aplicación se niega a arrancar como
+   administrador. Una cuenta de administrador con el control de cuentas de
+   usuario (UAC) desactivado ejecuta todo elevado, así que en ese equipo la
+   aplicación no arrancará: es lo que se decidió, igual que en Linux con root.
+   Comprobarlo en Windows real: WIN-INS-06.

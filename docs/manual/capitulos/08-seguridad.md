@@ -61,8 +61,9 @@
   en la interfaz, **sin ejecutar ninguna shell**.
 - Las órdenes que propone el diagnóstico son texto para copiar: la aplicación
   nunca las ejecuta.
-- La negativa a ejecutarse como **root** en Linux solo se puede desactivar en
-  compilaciones de desarrollo.
+- La negativa a ejecutarse como **root** en Linux, o **como administrador**
+  (proceso elevado) en Windows, solo se puede desactivar en compilaciones de
+  desarrollo.
 
 ## Gestión de secretos
 

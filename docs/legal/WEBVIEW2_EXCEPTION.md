@@ -1,9 +1,9 @@
 # Permiso adicional de la GPL v3 para el cargador de WebView2 de Microsoft
 
-> **Estado: borrador pendiente de la revisión del titular del copyright.**
-> Lo ha redactado el asistente de desarrollo a petición de Sergio Alfaro Lorite
-> (decisión del 2026-11-16). No es asesoramiento jurídico. Hasta que el titular
-> lo apruebe, los instaladores de Windows siguen siendo **solo para pruebas**.
+> **Estado: aprobado por el titular del copyright, Sergio Alfaro Lorite, el
+> 2026-11-17.** Lo redactó el asistente de desarrollo a petición del titular
+> (decisión del 2026-11-16) y no es asesoramiento jurídico. Se aplica desde la
+> versión 1.9.1.
 
 ## Por qué hace falta
 
@@ -73,11 +73,14 @@ WebView2 Loader.
 - Las contribuciones aceptadas en el proyecto se aceptan con este permiso
   (`CONTRIBUTING.md`).
 
-## Qué queda pendiente
+## Historial
 
-1. Que el titular revise y apruebe el texto (y, si lo desea, que lo revise un
-   asesor jurídico).
-2. Tras la aprobación: quitar el estado de borrador de este documento y de
-   `COPYRIGHT.md`, y dejar de marcar los instaladores de Windows como «solo
-   pruebas» (`scripts/build-windows.sh`, `.github/workflows/windows-build.yml`,
-   `DISTRIBUTION_COMPLIANCE.md`).
+- 2026-11-16: el titular decide añadir un permiso adicional; se redacta este
+  texto.
+- 2026-11-17: el titular lo aprueba. Se quita el estado de borrador de este
+  documento y de `COPYRIGHT.md`, y los instaladores de Windows dejan de estar
+  marcados como «solo pruebas» por motivos legales
+  (`scripts/build-windows.sh`, `.github/workflows/windows-build.yml`,
+  `DISTRIBUTION_COMPLIANCE.md`). La versión de Windows sigue **en pruebas**
+  porque aún no se ha validado en un Windows real
+  (`docs/validation/VALIDACION-WINDOWS.md`).

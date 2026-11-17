@@ -1,6 +1,6 @@
 # Cambios
 
-## 1.9.1 — 2026-11-16 (auditoría de Windows y preparación para GitHub)
+## 1.9.1 — 2026-11-17 (auditoría de Windows y preparación para GitHub)
 - **Auditoría de la versión de Windows** (D-115, `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`): se han encontrado y corregido fallos que impedían usar en Windows funciones que en Linux sí funcionaban:
   - rutas de Windows (`C:\…`, `\\servidor\recurso\…`) en Compose (abrir, crear, levantar), carpetas vinculadas al crear o editar contenedores (`C:\datos:/datos`), construcción de imágenes, clave SSH elegida con el selector, destino de las copias de seguridad y carpeta nueva al restaurar;
   - «Abrir en el navegador» (antes buscaba `xdg-open`; ahora usa el navegador predeterminado de Windows);
@@ -11,8 +11,9 @@
   - avisos de montajes peligrosos con carpetas de Windows (`C:\`, `C:\Users`, `C:\Windows`, `AppData`…);
   - textos e instrucciones de Windows (PowerShell) en el diagnóstico de Docker y de SSH, en Actualizaciones y en Sistema (con el nombre y la versión de Windows);
   - el desinstalador quita las copias programadas propias del Programador de tareas (no al actualizar).
-- **Pruebas de Windows**: las pruebas unitarias se compilan para Windows y se ejecutan con Wine (613 superadas). No sustituyen a la prueba en un Windows real.
-- **Permiso adicional de la GPL v3 (sección 7)** para el cargador de WebView2 de Microsoft, en borrador pendiente de revisión del titular (`docs/legal/WEBVIEW2_EXCEPTION.md`). Hasta su aprobación, el instalador de Windows sigue siendo solo para pruebas.
+- **Pruebas de Windows**: las pruebas unitarias se compilan para Windows y se ejecutan con Wine (614 superadas). No sustituyen a la prueba en un Windows real.
+- **Permiso adicional de la GPL v3 (sección 7)** para el cargador de WebView2 de Microsoft (`docs/legal/WEBVIEW2_EXCEPTION.md`), aprobado por el titular el 2026-11-17 (D-116). Los instaladores de Windows dejan de marcarse «solo pruebas»; la versión de Windows sigue en pruebas hasta validarla en un Windows real.
+- **En Windows la aplicación no arranca como administrador** (W-18, D-116), igual que en Linux no arranca como root: avisa en un cuadro de mensaje y se cierra.
 - **Repositorio listo para GitHub**: `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.gitattributes`, `.gitignore` ampliado, plantillas de issues y de pull requests, flujos `ci.yml`, `linux-build.yml` y `windows-build.yml` con las acciones fijadas por commit.
 - **Manual técnico y de usuario en PDF** (16 capítulos, diagramas y capturas reales de Linux): fuente en `docs/manual/`, se genera con `scripts/build-manual.sh`.
 - **Linux no cambia de comportamiento**: regresión completa con Docker 29, 26 y 24, sin fallos; instalación limpia en Ubuntu 24.04 y 22.04.

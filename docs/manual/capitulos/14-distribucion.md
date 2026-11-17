@@ -38,8 +38,9 @@ mantiene a la vez en `Cargo.toml` (workspace), `package.json`,
   de MinGW-w64/libgcc.
 - Descarga el WebView2 Runtime si falta.
 - **No está firmado** (sin certificado de firma de código).
-- **Solo para pruebas** hasta la validación en Windows real y la aprobación del
-  permiso adicional.
+- **En pruebas** hasta la validación en un Windows real. El cargador de
+  WebView2 está cubierto por el permiso adicional de la GPL v3 (aprobado el
+  2026-11-17).
 
 ## Código fuente
 
@@ -76,8 +77,7 @@ La publicación es una decisión del titular. Antes de publicar:
 1. `verify-evolution-1.9.1.sh --deb` sin fallos.
 2. Paquetes, instalador (si se publica), código fuente y `SHA256SUMS` en la
    misma publicación.
-3. Para Windows, aprobar el permiso adicional de WebView2 y validar en un
-   Windows real.
+3. Para Windows, validar en un Windows real.
 
 ## Requisitos de la GPL al distribuir
 
@@ -90,6 +90,5 @@ Quien distribuya CMC (también modificado) debe, según la GPL v3:
   modificado;
 - no añadir restricciones a los derechos de quien recibe el programa.
 
-Para la versión de Windows, el permiso adicional de la sección 7 (en
-borrador) exime de incluir el código fuente del cargador de WebView2 de
+Para la versión de Windows, el permiso adicional de la sección 7 exime de incluir el código fuente del cargador de WebView2 de
 Microsoft. El detalle está en `docs/legal/DISTRIBUTION_COMPLIANCE.md`.

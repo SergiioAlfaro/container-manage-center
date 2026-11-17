@@ -8,9 +8,10 @@ del error). Los identificadores (`WIN-…`) son los de la matriz de pruebas de
 `AUDITORIA-WINDOWS-1.9.1.md`: al terminar, cambia allí su estado de
 NOT TESTED a PASS o FAIL.
 
-> **Recordatorio legal**: el instalador es **solo para pruebas**. No lo
-> publiques ni lo pases a terceros hasta que apruebes el permiso adicional de
-> WebView2 (`docs/legal/WEBVIEW2_EXCEPTION.md`).
+> **Licencia**: el instalador incluye el cargador de WebView2 de Microsoft,
+> cubierto por el permiso adicional de la GPL v3 (`docs/legal/WEBVIEW2_EXCEPTION.md`,
+> aprobado el 2026-11-17). La versión de Windows sigue **en pruebas** hasta
+> completar esta guía.
 
 Tiempo estimado: 60–90 minutos.
 
@@ -45,6 +46,7 @@ Tiempo estimado: 60–90 minutos.
 | WIN-INS-03 | `dir "$env:LOCALAPPDATA\Container Manage Center"` | `container-manage-center.exe`, `legal\` (LICENSE.txt, THIRD_PARTY_NOTICES.md, WEBVIEW2_EXCEPTION.md…), `docs\`; con el instalador de MinGW, también `WebView2Loader.dll` |
 | WIN-INS-04 | Abre la aplicación | **Una ventana** (sin consola negra detrás), tema morado, en tu idioma |
 | WIN-INS-05 | Configuración › Sistema | Sistema «Windows 10/11 … (versión)», versión 10.0.x, «Aplicación de Windows», WebView2 con su versión; sin glibc ni escritorio de Linux |
+| WIN-INS-06 | Cierra la aplicación. Clic derecho en su acceso directo › **Ejecutar como administrador** y acepta el aviso de UAC | Aviso «Container Manage Center no debe ejecutarse como administrador» y la aplicación se cierra sin abrir la ventana. Abierta después de forma normal, funciona (W-18) |
 
 ## 2. Docker local (Docker Desktop)
 

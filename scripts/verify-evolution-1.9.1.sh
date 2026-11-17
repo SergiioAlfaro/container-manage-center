@@ -9,12 +9,14 @@
 #   - con Wine, MinGW-w64 y RUST_SRC: las pruebas unitarias compiladas para
 #     Windows (sin Wine, solo la compilación);
 #   - archivos del repositorio para GitHub y flujos con acciones fijadas por
-#     commit; permiso adicional de WebView2 (borrador) en los textos legales.
+#     commit; permiso adicional de WebView2 (aprobado el 2026-11-17) en los
+#     textos legales y en el instalador;
+#   - en Windows, la aplicación no arranca como administrador (W-18).
 # De la 1.9.0 (D-114, versión de Windows):
 #   - Linux no cambia: toda la regresión anterior;
-#   - avisos de terceros y auditoría de Windows al día, con WebView2Loader
-#     pendiente de la decisión del propietario y los instaladores marcados
-#     como solo de pruebas;
+#   - avisos de terceros y auditoría de Windows al día; WebView2Loader con el
+#     permiso adicional de la GPL v3 §7 (desde la 1.9.1; en la 1.9.0 estaba
+#     pendiente y los instaladores eran solo de pruebas);
 #   - configuración del instalador NSIS y script de compilación;
 #   - textos de Windows de la interfaz y de la ayuda (8 idiomas);
 #   - si hay MinGW-w64 y RUST_SRC, el código compila para Windows.
@@ -462,7 +464,7 @@ run_tests "1.2.0 · CMC-SEC-04 Sin falsos positivos (plan §9.5) con las reglas 
 run_tests "1.2.0 · CMC-SEC-06/13 Rutas de archivos Compose: /etc/passwd, ~/.ssh, ~/.bashrc, carpetas ocultas y del sistema, no YAML y enlaces a ellos rechazados; discos de /media y /run/media permitidos; guardar por un enlace escribe en el destino y conserva el enlace; crear en una carpeta oculta (o enlazada a ella) rechazado (D-089)" cargo test --locked -p cmc-engine --lib compose::file::tests
 run_tests "1.2.0 · CMC-SEC-06 Por IPC: leer, guardar y crear fuera de la política devuelve engine.pathNotAllowed" cargo test --locked -p container-manage-center --lib compose_files_via_ipc_create_read_save_and_conflict
 run_tests "1.2.0 · CMC-SEC-07 Credenciales de registro: en un servidor remoto, las de este equipo solo con permiso explícito; las escritas a mano, siempre (D-090)" cargo test --locked -p cmc-engine --lib registry_auth::tests::local_credentials_reach_remote_servers_only_with_consent
-run_tests "1.2.0 · CMC-SEC-11 Como root no arranca; CMC_ALLOW_ROOT solo vale en compilaciones de desarrollo (D-091)" cargo test --locked -p container-manage-center --lib root_tests
+run_tests "1.2.0 · CMC-SEC-11 Como root (y en Windows como administrador, W-18) no arranca; CMC_ALLOW_ROOT solo vale en compilaciones de desarrollo (D-091)" cargo test --locked -p container-manage-center --lib root_tests
 run_tests "1.2.0 · CMC-SEC-12/16 Enlaces: de las terminales solo http(s) sin credenciales; página de la versión solo de github.com o de la fuente de actualizaciones (D-091)" cargo test --locked -p container-manage-center --lib -- terminal_links_are_http_only only_https_links_are_opened release_pages_only_from_github_or_the_own_source
 run_tests "1.2.0 · CMC-SEC-17 Permisos de Tauri mínimos: escuchar eventos sí; ventana, rutas, aplicación, webviews y emitir eventos, denegados por la ACL real" cargo test --locked -p container-manage-center --lib only_the_minimal_tauri_permissions_are_granted
 run_tests "1.2.0 · Interfaz: enlaces de terminal con confirmación (Cancelar no abre nada), casilla de credenciales en servidores remotos (desmarcada por omisión), error de ruta traducido" npx vitest run ui/src/shared/ui/terminalLinks.test.tsx ui/src/features/images/ImagesView.test.tsx ui/src/app/languages.test.tsx
@@ -577,16 +579,17 @@ say "5.1j 1.9.0 y 1.9.1: versión de Windows (en pruebas) y repositorio para Git
 run_step "1.9.0 · Avisos de terceros y auditoría de licencias de Windows al día (crates de Windows, WebView2Loader.dll, runtime de MinGW-w64 y libgcc)" python3 scripts/third-party-licenses.py --windows --check
 windows_legal() {
   local a=docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md
-  grep -q '| 4. Pendientes de revisión | 1 | WebView2Loader.dll' "$a" &&
+  grep -q '| 4. Pendientes de revisión | 0 |' "$a" &&
     grep -q '| 5. Potencialmente incompatibles | 0 |' "$a" &&
     grep -q '| 6. Licencia no determinable | 0 |' "$a" &&
-    grep -q 'solo para pruebas' "$a" &&
-    grep -q 'SOLO-PRUEBAS' scripts/build-windows.sh .github/workflows/windows-build.yml &&
+    grep -q 'BSD-3-Clause + permiso adicional GPL v3 §7' "$a" &&
+    grep -q 'Estado: aprobado por el titular' docs/legal/WEBVIEW2_EXCEPTION.md &&
+    ! grep -q 'SOLO-PRUEBAS' scripts/build-windows.sh .github/workflows/windows-build.yml &&
     ! grep -qE '^\s*(release|push|tags):' .github/workflows/windows-build.yml &&
     grep -q 'workflow_dispatch' .github/workflows/windows-build.yml &&
     for f in WebView2Loader.LICENSE.txt mingw-w64-runtime.copyright gcc-mingw-w64.copyright; do test -s "packaging/windows/licenses/$f" || return 1; done
 }
-run_step "1.9.0 · Windows: WebView2Loader pendiente de la decisión del propietario (sin código fuente publicado), nada incompatible ni indeterminado, instaladores marcados como solo de pruebas, flujo de GitHub Actions manual y sin publicar versiones" windows_legal
+run_step "1.9.1 · Windows: WebView2Loader cubierto por el permiso adicional de la GPL v3 §7 (aprobado), nada pendiente, incompatible ni indeterminado, flujo de GitHub Actions manual y sin publicar versiones" windows_legal
 windows_installer_conf() {
   python3 - <<'PY'
 import json, pathlib, sys
@@ -985,7 +988,7 @@ say ""
 cat <<'EOF' | tee -a "$REPORT"
 8. Validación manual (solo si la parte automática está superada)
    a) Windows: la 1.9.1 no se ha ejecutado nunca en un Windows real:
-       docs/validation/VALIDACION-WINDOWS.md (instalador solo de pruebas)
+       docs/validation/VALIDACION-WINDOWS.md (versión de Windows en pruebas)
    b) Linux: la 1.9.1 no cambia nada en Linux. Si aún no has validado la
       1.8.0, hazlo en Debian 13 con la 1.7.0 instalada y en uso antes:
        docs/validation/VALIDACION-1.8.0.md

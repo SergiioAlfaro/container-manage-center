@@ -105,9 +105,10 @@ Docker y sus datos no se tocan.
 ## Windows
 
 > **En pruebas.** La versión de Windows **no se ha ejecutado todavía en un
-> Windows real**. El instalador es solo para pruebas hasta su validación y
-> hasta que el titular apruebe el permiso adicional para el cargador de
-> WebView2 (`docs/legal/WEBVIEW2_EXCEPTION.md`).
+> Windows real** (guía de la primera prueba:
+> `docs/validation/VALIDACION-WINDOWS.md`). El cargador de WebView2 que lleva
+> el instalador está cubierto por el permiso adicional de la GPL v3 del
+> titular (`docs/legal/WEBVIEW2_EXCEPTION.md`).
 
 ### Requisitos
 
@@ -140,7 +141,9 @@ de WSL sin Docker Desktop, ni `DOCKER_HOST=tcp://…`.
 ### Primera ejecución y conexión
 
 Abre Docker Desktop y espera a que el motor esté en marcha; después abre
-**Container Manage Center**. Si no conecta, el diagnóstico muestra la causa
+**Container Manage Center** con tu usuario normal: como administrador
+(«Ejecutar como administrador») no arranca, avisa y se cierra, igual que en
+Linux con root. Si no conecta, el diagnóstico muestra la causa
 con instrucciones de Windows (abrir Docker Desktop, añadir tu usuario al
 grupo `docker-users`, quitar `DOCKER_HOST`…).
 

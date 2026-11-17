@@ -80,7 +80,7 @@ se puede usar y probar sin interfaz.
 | Archivo o carpeta | Función |
 |---|---|
 | `main.rs` | Punto de entrada: modos sin ventana (askpass, migración, desinstalación en Windows, copia programada) y arranque |
-| `lib.rs` | Construcción de la aplicación Tauri, registro de las 130 órdenes, negativa a ejecutarse como root |
+| `lib.rs` | Construcción de la aplicación Tauri, registro de las 130 órdenes, negativa a ejecutarse como root o como administrador |
 | `state.rs` | `AppState`: actividad, configuración, servidores, flujos, diarios, monitorización |
 | `commands/` | Órdenes IPC por área: `app`, `config`, `engine`, `resources`, `containers`, `images`, `networks`, `volumes`, `compose`, `events`, `servers`, `audit`, `backup`, `monitor`, `links`, `components`, `activity` |
 | `servers.rs`, `secrets.rs` | Servidores locales y remotos; llavero (Secret Service o Administrador de credenciales) |
@@ -165,7 +165,7 @@ ui/src/
 | Documento | Contenido |
 |---|---|
 | `README.md`, `INSTALL.md`, `USER_GUIDE.md` | Presentación, instalación y guía de uso |
-| `ARCHITECTURE.md`, `DECISIONS.md`, `STATUS.md`, `CHANGELOG.md` | Arquitectura, decisiones (D-001 a D-115), estado y cambios |
+| `ARCHITECTURE.md`, `DECISIONS.md`, `STATUS.md`, `CHANGELOG.md` | Arquitectura, decisiones (D-001 a D-116), estado y cambios |
 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` | Contribución, seguridad y conducta |
 | `docs/legal/` | Licencia, copyright, avisos de terceros, permiso adicional de WebView2 |
 | `docs/security/` | Auditoría de seguridad, plan de corrección y lista de comprobación |

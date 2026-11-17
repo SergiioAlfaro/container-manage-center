@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 #
-# Instalador de Windows de PRUEBA compilado desde Linux con MinGW-w64
-# (1.9.0, D-114). Solo para probar en un Windows real: la compilación oficial
-# es la de GitHub Actions con MSVC (.github/workflows/windows.yml).
+# Instalador de Windows compilado desde Linux con MinGW-w64 (1.9.0, D-114).
+# Sirve para probar en un Windows real; la compilación oficial es la de GitHub
+# Actions con MSVC (.github/workflows/windows-build.yml).
 #
 # Requisitos (Debian/Ubuntu): gcc-mingw-w64-x86-64, nsis (makensis), Node.js,
 # Rust estable y el código fuente de la biblioteca estándar de la MISMA
@@ -19,10 +19,11 @@
 # Variables: CARGO_TARGET_DIR (por defecto target/), OUT (carpeta de salida,
 # por defecto target/windows-installer).
 #
-# AVISO LEGAL: el instalador incluye WebView2Loader.dll (Microsoft,
-# BSD-3-Clause, sin código fuente publicado). Hasta que el propietario decida
-# cómo cumplir la GPL v3 con ese componente (DEPENDENCY_LICENSE_AUDIT-windows.md),
-# el instalador es SOLO PARA PRUEBAS y no se publica ni se redistribuye.
+# Licencia: el instalador incluye WebView2Loader.dll (Microsoft, BSD-3-Clause,
+# sin código fuente publicado), cubierto por el permiso adicional de la GPL v3
+# §7 del titular (docs/legal/WEBVIEW2_EXCEPTION.md, aprobado el 2026-11-17),
+# que va en la carpeta legal\ del instalador. La versión de Windows sigue en
+# pruebas hasta su validación en un Windows real.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -79,9 +80,9 @@ BUNDLE="$CARGO_TARGET_DIR/$TARGET/release/bundle/nsis"
 mkdir -p "$OUT"
 for f in "$BUNDLE"/*.exe; do
     name=$(basename "$f" .exe)
-    cp "$f" "$OUT/${name}-mingw-SOLO-PRUEBAS.exe"
+    cp "$f" "$OUT/${name}-mingw.exe"
 done
-cp "$CARGO_TARGET_DIR/$TARGET/release/container-manage-center.exe" "$OUT/container-manage-center-$VERSION-mingw-SOLO-PRUEBAS-portable.exe"
+cp "$CARGO_TARGET_DIR/$TARGET/release/container-manage-center.exe" "$OUT/container-manage-center-$VERSION-mingw-portable.exe"
 cp "$CARGO_TARGET_DIR/$TARGET/release/WebView2Loader.dll" "$OUT/" 2>/dev/null || true
 (cd "$OUT" && sha256sum -- *.exe *.dll 2>/dev/null > SHA256SUMS)
 echo "Instalador de prueba en $OUT (no redistribuir)"

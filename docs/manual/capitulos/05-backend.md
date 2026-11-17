@@ -145,7 +145,7 @@ recibe `engine.busy`.
 - **Riesgos** (`risk.rs`) calculados en Rust y aceptados uno a uno.
 - **Secretos**: ocultación en el registro (`cmc-activity/redact.rs`),
   `zeroize` para las contraseñas en memoria, llavero del sistema.
-- **Negativa a ejecutarse como root** en Linux (`refuse_root`).
+- **Negativa a ejecutarse como root** en Linux y como administrador en Windows (`refuse_root`; en Windows consulta `TokenElevation`).
 
 Reglas de ocultación (`crates/cmc-activity/src/redact.rs`):
 
@@ -186,7 +186,7 @@ sustituirlo.
 
 1. `main.rs` comprueba los modos sin ventana: askpass (lo invoca `ssh`),
    `--migrate`, `--remove-scheduled-tasks` (Windows) y `--run-backup`.
-2. `run()` se niega a seguir como root (Linux), migra los datos del nombre
+2. `run()` se niega a seguir como root (Linux) o como administrador (Windows), migra los datos del nombre
    anterior si los hay, carga la configuración, crea el `AppState` y la
    ventana.
 3. El gestor del equipo local empieza a conectar con Docker (siguiente

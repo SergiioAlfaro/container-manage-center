@@ -112,7 +112,7 @@ npx tauri build --bundles nsis
 
 **En GitHub Actions**: `windows-build.yml` (se lanza a mano).
 
-**Pruebas de Windows desde Linux** con Wine (comprobado en la 1.9.1; 613
+**Pruebas de Windows desde Linux** con Wine (comprobado en la 1.9.1; 614
 pruebas superadas):
 
 ```bash

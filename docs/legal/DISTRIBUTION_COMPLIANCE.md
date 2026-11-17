@@ -94,13 +94,20 @@ de MSVC). Su licencia es BSD-3-Clause, compatible con la GPL, pero Microsoft
 correspondiente de lo que se distribuye. No está claro que la excepción de
 bibliotecas del sistema lo cubra.
 
-Mientras el titular del copyright no decida (por ejemplo, un permiso
-adicional de la sección 7 de la GPL v3 para enlazar con el cargador de
-WebView2, o asesoramiento jurídico):
-- los instaladores de Windows llevan «SOLO-PRUEBAS» en el nombre, son para
-  probar en equipos propios y **no se publican ni se pasan a terceros**;
-- el flujo de GitHub Actions solo se lanza a mano y guarda el instalador como
-  artefacto privado de la ejecución, sin crear versiones.
+Por eso el titular del copyright concede un **permiso adicional** según la
+sección 7 de la GPL v3 ([WEBVIEW2_EXCEPTION.md](WEBVIEW2_EXCEPTION.md),
+aprobado el 2026-11-17): se puede distribuir el programa enlazado con el
+cargador de WebView2 sin incluir el código fuente de ese cargador. El resto
+del código fuente correspondiente se ofrece completo, como siempre.
+
+- Quien redistribuya CMC para Windows debe conservar ese permiso junto a la
+  licencia (el instalador lo lleva en `legal\WEBVIEW2_EXCEPTION.md`); quien
+  distribuya una versión modificada puede quitarlo de su versión.
+- La versión de Windows sigue **en pruebas** hasta su validación en un
+  Windows real; eso no es una restricción legal.
+- El flujo de GitHub Actions solo se lanza a mano y guarda el instalador como
+  artefacto de la ejecución, sin crear versiones; publicarlas es una decisión
+  del titular.
 
 Cuando se distribuya, además de lo de los apartados anteriores: el instalador
 lleva `LICENSE.txt`, `THIRD_PARTY_NOTICES.md` (la de Windows, generada con

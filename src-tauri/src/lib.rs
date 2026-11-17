@@ -248,7 +248,7 @@ pub fn run() {
         )
         .init();
 
-    refuse_root();
+    refuse_root_with(Notice::Window);
     // Datos del nombre anterior: antes de abrir ningún archivo (D-113).
     migration::migrate_dirs();
 
@@ -445,17 +445,34 @@ fn job_lock(state: &state::AppState, id: &str) -> Result<std::fs::File, i32> {
     Ok(f)
 }
 
-/// La aplicación no debe ejecutarse como root (requisito de seguridad §12).
+/// La aplicación no debe ejecutarse como root (requisito de seguridad §12) ni,
+/// en Windows, con privilegios de administrador elevados (W-18, 1.9.1).
 /// `CMC_ALLOW_ROOT=1` lo permite solo en las compilaciones de desarrollo y
 /// prueba (entornos aislados). En la compilación de publicación se ignora
-/// (E2, CMC-SEC-11, D-091).
+/// (E2, CMC-SEC-11, D-091). Sin ventana (copias programadas, `--migrate`) solo
+/// se escribe el motivo en la salida de errores.
 fn refuse_root() {
+    refuse_root_with(Notice::Stderr);
+}
+
+/// Cómo se avisa de que no puede arrancar.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Notice {
+    /// Solo la salida de errores.
+    Stderr,
+    /// Además, un cuadro de mensaje en Windows: la compilación de publicación
+    /// no tiene consola y el usuario no vería nada.
+    Window,
+}
+
+fn refuse_root_with(notice: Notice) {
     #[cfg(unix)]
     {
+        let _ = notice;
         // SAFETY: geteuid no tiene precondiciones y siempre tiene éxito.
         let euid = unsafe { geteuid() };
         let override_set = std::env::var_os("CMC_ALLOW_ROOT").is_some();
-        if !may_run(euid, override_set, cfg!(debug_assertions)) {
+        if !may_run(euid == 0, override_set, cfg!(debug_assertions)) {
             eprintln!(
                 "Container Manage Center no debe ejecutarse como root.\n\
                  Ejecútalo con tu usuario normal. Para acceder a Docker, consulta INSTALL.md."
@@ -463,13 +480,103 @@ fn refuse_root() {
             std::process::exit(1);
         }
     }
+    #[cfg(windows)]
+    {
+        // Si no se puede saber, se deja arrancar: es una medida de prudencia,
+        // no un control de acceso (Windows ya decide qué puede hacer el proceso).
+        let elevated = match win_elevation::is_elevated() {
+            Ok(e) => e,
+            Err(code) => {
+                tracing::warn!("no se pudo comprobar si el proceso está elevado (error {code})");
+                false
+            }
+        };
+        let override_set = std::env::var_os("CMC_ALLOW_ROOT").is_some();
+        if !may_run(elevated, override_set, cfg!(debug_assertions)) {
+            const MSG: &str = "Container Manage Center no debe ejecutarse como administrador.\n\
+                 Ábrelo con tu usuario normal, sin «Ejecutar como administrador». \
+                 Docker Desktop no lo necesita.";
+            eprintln!("{MSG}");
+            if notice == Notice::Window {
+                win_elevation::message_box("Container Manage Center", MSG);
+            }
+            std::process::exit(1);
+        }
+    }
 }
 
-/// ¿Puede arrancar? Como root, solo en una compilación de desarrollo y con
-/// `CMC_ALLOW_ROOT` definida.
-#[cfg_attr(windows, allow(dead_code))]
-fn may_run(euid: u32, override_set: bool, dev_build: bool) -> bool {
-    euid != 0 || (override_set && dev_build)
+/// ¿Puede arrancar? Con privilegios (root en Linux, proceso elevado en
+/// Windows), solo en una compilación de desarrollo y con `CMC_ALLOW_ROOT`.
+fn may_run(privileged: bool, override_set: bool, dev_build: bool) -> bool {
+    !privileged || (override_set && dev_build)
+}
+
+/// Comprobación de elevación en Windows (W-18).
+#[cfg(windows)]
+mod win_elevation {
+    use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, HANDLE};
+    use windows_sys::Win32::Security::{
+        GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+    };
+    use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONERROR, MB_OK};
+
+    /// `true` si el proceso se ejecuta con el testigo elevado (UAC «Ejecutar
+    /// como administrador», o una cuenta de administrador con UAC desactivado).
+    /// `Err` con el código de Windows si no se puede consultar.
+    pub fn is_elevated() -> Result<bool, u32> {
+        let mut token: HANDLE = std::ptr::null_mut();
+        // SAFETY: GetCurrentProcess devuelve un seudo-identificador que no hay
+        // que cerrar; `token` es una salida válida.
+        if unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) } == 0 {
+            // SAFETY: sin precondiciones.
+            return Err(unsafe { GetLastError() });
+        }
+        let mut info = TOKEN_ELEVATION { TokenIsElevated: 0 };
+        let mut len = 0u32;
+        // SAFETY: `info` tiene el tamaño que se indica y `token` es válido.
+        let ok = unsafe {
+            GetTokenInformation(
+                token,
+                TokenElevation,
+                (&mut info as *mut TOKEN_ELEVATION).cast(),
+                std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+                &mut len,
+            )
+        };
+        // SAFETY: sin precondiciones.
+        let err = unsafe { GetLastError() };
+        // SAFETY: `token` lo abrió OpenProcessToken y no se usa después.
+        unsafe { CloseHandle(token) };
+        if ok == 0 {
+            return Err(err);
+        }
+        Ok(info.TokenIsElevated != 0)
+    }
+
+    pub fn message_box(title: &str, text: &str) {
+        let w = |s: &str| s.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+        let (t, m) = (w(title), w(text));
+        // SAFETY: cadenas UTF-16 terminadas en cero que viven durante la llamada.
+        unsafe {
+            MessageBoxW(
+                std::ptr::null_mut(),
+                m.as_ptr(),
+                t.as_ptr(),
+                MB_OK | MB_ICONERROR,
+            )
+        };
+    }
+
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn elevation_can_be_queried() {
+            // El valor depende de cómo se ejecuten las pruebas; lo que importa
+            // es que la consulta funciona.
+            assert!(super::is_elevated().is_ok());
+        }
+    }
 }
 
 #[cfg(test)]
@@ -478,15 +585,17 @@ mod root_tests {
 
     #[test]
     fn root_is_refused_in_release_builds_even_with_the_override() {
-        assert!(may_run(1000, false, false));
-        assert!(may_run(1000, true, false));
-        assert!(!may_run(0, false, false));
+        // Sin privilegios: siempre. Con privilegios (root o proceso elevado de
+        // Windows): solo en desarrollo y con CMC_ALLOW_ROOT.
+        assert!(may_run(false, false, false));
+        assert!(may_run(false, true, false));
+        assert!(!may_run(true, false, false));
         assert!(
-            !may_run(0, true, false),
+            !may_run(true, true, false),
             "publicación: CMC_ALLOW_ROOT se ignora"
         );
-        assert!(!may_run(0, false, true));
-        assert!(may_run(0, true, true), "desarrollo y pruebas aisladas");
+        assert!(!may_run(true, false, true));
+        assert!(may_run(true, true, true), "desarrollo y pruebas aisladas");
     }
 }
 

@@ -63,7 +63,7 @@
 | `INSTALL.md` | Instalación detallada |
 | `USER_GUIDE.md` | Guía de uso completa |
 | `ARCHITECTURE.md` | Arquitectura y referencia de las órdenes IPC |
-| `DECISIONS.md` | Decisiones de diseño (D-001 a D-115) |
+| `DECISIONS.md` | Decisiones de diseño (D-001 a D-116) |
 | `STATUS.md`, `CHANGELOG.md` | Estado y cambios |
 | `docs/validation/AUDITORIA-WINDOWS-1.9.1.md` | Auditoría de Windows y matriz de pruebas |
 | `docs/validation/VALIDACION-WINDOWS.md` | Guía de validación manual en Windows |

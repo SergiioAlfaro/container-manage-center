@@ -19,9 +19,9 @@ Las conclusiones sobre compatibilidad son técnicas, no asesoramiento jurídico.
 | Clase | Componentes | Significado |
 |---|---|---|
 | 1. Compatibles | 338 | Licencias permisivas compatibles con GPL-3.0-or-later. Obligan a conservar su aviso y su licencia: están completos en `THIRD_PARTY_NOTICES-windows.md` |
-| 2. Compatibles bajo condiciones | 8 | MPL-2.0, OFL-1.1 y la excepción de GCC (condiciones abajo). Apache-2.0 sola es compatible con GPL v3 (no lo sería con GPL v2) y se cuenta en la clase 1 |
+| 2. Compatibles bajo condiciones | 9 | MPL-2.0, OFL-1.1, la excepción de GCC y el permiso adicional de WebView2 (condiciones abajo). Apache-2.0 sola es compatible con GPL v3 (no lo sería con GPL v2) y se cuenta en la clase 1 |
 | 3. Requieren avisos o materiales adicionales | 16 (también contados en otra clase) | Sin archivo de licencia propio en su paquete: se reproduce el texto estándar de su licencia declarada con sus autores declarados. Ningún componente trae archivo NOTICE de Apache |
-| 4. Pendientes de revisión | 1 | WebView2Loader.dll: licencia compatible, pero es un binario sin código fuente publicado (ver «Decisión pendiente») |
+| 4. Pendientes de revisión | 0 | — |
 | 5. Potencialmente incompatibles | 0 | — |
 | 6. Licencia no determinable | 0 | — |
 
@@ -30,6 +30,7 @@ Las conclusiones sobre compatibilidad son técnicas, no asesoramiento jurídico.
 - **MPL-2.0** (cssparser 0.37.0, cssparser-macros 0.7.1, dtoa-short 0.3.5, option-ext 0.2.0, selectors 0.38.0): copyleft por archivo: se conservan sus avisos y su código fuente está disponible (crates.io y el .tar.gz con Cargo.lock). Ningún archivo lleva el aviso «Incompatible With Secondary Licenses», así que la cláusula 3.3 permite combinarlo con GPL-3.0-or-later.
 - **OFL-1.1** (@fontsource/ibm-plex-sans 5.3.0, @fontsource/jetbrains-mono 5.3.0): tipografías: se distribuyen con el programa conservando su licencia y sus avisos; no se venden por separado ni se modifican (no se usa su nombre reservado en versiones modificadas).
 - **GPL-3.0-or-later WITH GCC-exception-3.1** (libgcc de GCC (solo compilación con MinGW) 13.2.0): libgcc (solo compilación con MinGW): la excepción de bibliotecas de ejecución de GCC permite distribuir el programa compilado con cualquier licencia; se conserva su aviso.
+- **BSD-3-Clause + permiso adicional GPL v3 §7** (WebView2Loader.dll (Microsoft Edge WebView2 SDK) 1.0.3650.58): WebView2Loader.dll (Microsoft): binario sin código fuente publicado; el permiso adicional de la sección 7 de la GPL v3 del titular (`docs/legal/WEBVIEW2_EXCEPTION.md`, aprobado el 2026-11-17) exime de incluir su código fuente. Se conserva su licencia BSD-3-Clause.
 
 ### Comprobaciones hechas a mano
 
@@ -39,12 +40,11 @@ Las conclusiones sobre compatibilidad son técnicas, no asesoramiento jurídico.
 - **Complementos de Tauri** (`@tauri-apps/plugin-*`): solo traen `LICENSE.spdx` (MIT OR Apache-2.0); se reproducen los textos de `@tauri-apps/api`, del mismo proyecto y titulares.
 - **Bibliotecas del sistema**: no se redistribuyen; se enlazan dinámicamente (Windows, WebView2 Runtime).
 
-### Decisión pendiente del propietario: WebView2Loader.dll
+### WebView2Loader.dll: permiso adicional aprobado
 
 - Tauri usa WebView2 en Windows a través de `webview2-com-sys`, que trae `WebView2Loader.dll` (MinGW: se instala junto al programa) y `WebView2LoaderStatic.lib` (MSVC: queda dentro del programa). Son binarios de Microsoft bajo BSD-3-Clause, licencia compatible con la GPL, **pero Microsoft no publica su código fuente** (Eclipse IP Lab, incidencia 14072).
-- La GPL v3 exige ofrecer el «código fuente correspondiente» del programa distribuido. El cargador no es una «biblioteca del sistema» en el sentido de la sección 1 de la GPL v3 en todos los casos (se distribuye con el programa), así que no está claro que la excepción de bibliotecas del sistema lo cubra.
-- Opciones: (a) que el titular del copyright de CMC añada un **permiso adicional** (GPL v3, sección 7) que permita enlazar con el cargador de WebView2 de Microsoft, como hacen otros proyectos GPL con componentes no libres; (b) consultar a un asesor jurídico; (c) no distribuir la versión de Windows.
-- **Hasta que se decida, los instaladores de Windows son solo para pruebas y no se publican ni se redistribuyen.**
+- La GPL v3 exige ofrecer el «código fuente correspondiente» del programa distribuido, y no está claro que la excepción de bibliotecas del sistema cubra el cargador, porque se distribuye con el programa.
+- **Resuelto**: el titular del copyright de CMC aprobó el 2026-11-17 un permiso adicional según la sección 7 de la GPL v3 (`docs/legal/WEBVIEW2_EXCEPTION.md`) que permite distribuir el programa enlazado con el cargador de WebView2 sin incluir su código fuente. Se incluye en el instalador (`legal\WEBVIEW2_EXCEPTION.md`).
 - El texto de la licencia es el BSD-3-Clause estándar con el titular «Microsoft Corporation», como indica el paquete NuGet Microsoft.Web.WebView2; el `LICENSE.txt` original del paquete no se ha podido descargar en este entorno (nuget.org bloqueado). La compilación de GitHub Actions lo descarga y lo compara.
 - **Runtime de MinGW-w64 y libgcc**: partes enlazadas estáticamente al compilar con MinGW. libgcc tiene la excepción de bibliotecas de ejecución de GCC 3.1, que permite distribuir el programa con cualquier licencia; el runtime de MinGW-w64 es ZPL-2.1 y MIT, con partes en dominio público.
 
@@ -456,7 +456,7 @@ Las conclusiones sobre compatibilidad son técnicas, no asesoramiento jurídico.
 | scheduler | 0.28.0 | npm | MIT | 1 |
 | void-elements | 3.1.0 | npm | MIT | 1 |
 | zustand | 5.0.16 | npm | MIT | 1 |
-| WebView2Loader.dll (Microsoft Edge WebView2 SDK) | 1.0.3650.58 | Windows | BSD-3-Clause | 4 · 3 |
+| WebView2Loader.dll (Microsoft Edge WebView2 SDK) | 1.0.3650.58 | Windows | BSD-3-Clause | 2 · 3 (BSD-3-Clause + permiso adicional GPL v3 §7) |
 | Runtime de MinGW-w64 (solo compilación con MinGW) | 11.0.1 | Windows | ZPL-2.1 AND MIT AND LicenseRef-public-domain | 1 · 3 |
 | libgcc de GCC (solo compilación con MinGW) | 13.2.0 | Windows | GPL-3.0-or-later WITH GCC-exception-3.1 | 2 · 3 (GPL-3.0-or-later WITH GCC-exception-3.1) |
 

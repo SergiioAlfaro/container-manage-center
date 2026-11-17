@@ -379,7 +379,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | `packaging/copyright`, `LICENSE` | Licencia (DEP-5) |
 | `scripts/third-party-licenses.py` → `docs/legal/THIRD_PARTY_NOTICES.md` y `docs/legal/DEPENDENCY_LICENSE_AUDIT.md` | Avisos completos de los componentes de terceros incluidos y auditoría de sus licencias (`--check` en la verificación, D-112) |
 | `scripts/third-party-licenses.py --windows` → `…-windows.md` | Lo mismo para Windows: crates de Windows, WebView2Loader.dll, runtime de MinGW-w64 y libgcc (D-114) |
-| `scripts/build-windows.sh`, `src-tauri/tauri.windows.conf.json`, `packaging/windows/installer-hooks.nsh` | Instalador NSIS de Windows: de prueba desde Linux con MinGW-w64, o con MSVC en GitHub Actions. El gancho del desinstalador quita las copias programadas propias (1.9.1). Solo de pruebas hasta aprobar el permiso de WebView2 (D-114, D-115) |
+| `scripts/build-windows.sh`, `src-tauri/tauri.windows.conf.json`, `packaging/windows/installer-hooks.nsh` | Instalador NSIS de Windows: de prueba desde Linux con MinGW-w64, o con MSVC en GitHub Actions. El gancho del desinstalador quita las copias programadas propias (1.9.1). El cargador de WebView2 va con el permiso adicional de la GPL v3 (D-116) |
 | `.github/workflows/ci.yml`, `linux-build.yml`, `windows-build.yml` | Integración continua (interfaz, Rust en Linux y Windows, licencias), paquete `.deb` y pruebas contra Docker del runner, e instalador de Windows con MSVC (D-115) |
 | `crates/cmc-engine/src/hostpath.rs` | Rutas del equipo (en Windows, `C:\…`) frente a rutas de los servidores y de los contenedores (siempre Linux) (1.9.1, D-115) |
 | `scripts/spdx-headers.py` | Encabezados SPDX del código propio (`--check` en la verificación, D-111) |
