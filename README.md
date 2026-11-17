@@ -1,60 +1,221 @@
-# Container Manage Center (CMC)
+<p align="center">
+  <img src="packaging/logo.svg" alt="Logotipo de Container Manage Center" width="112">
+</p>
 
-**Container Manage Center** es una aplicación de escritorio de software libre
-para administrar Docker Engine en el propio equipo y en servidores remotos por
-SSH: contenedores, imágenes, redes, volúmenes, directorios vinculados y
-proyectos Docker Compose, mostrando en todo momento la operación real que se
-ejecuta y su orden `docker` equivalente.
+<h1 align="center">Container Manage Center</h1>
 
-Versión **1.9.1** · Licencia **GPL-3.0-or-later** · Tauri 2, Rust, React,
-TypeScript y Vite.
+<p align="center">
+  <strong>Administra Docker en tu equipo y en tus servidores, viendo siempre qué se ejecuta de verdad.</strong>
+</p>
 
-![Panel de inicio de Container Manage Center](docs/images/panel.png)
+<p align="center">
+  Versión 1.9.1 · GPL-3.0-or-later · Linux (Debian, Ubuntu) · Windows 10/11 (en pruebas)
+</p>
+
+<p align="center">
+  <a href="#instalación">Instalación</a> ·
+  <a href="#características">Características</a> ·
+  <a href="#especificaciones-técnicas">Especificaciones</a> ·
+  <a href="#documentación">Documentación</a> ·
+  <a href="#licencia">Licencia</a>
+</p>
+
+![Dashboard de Container Manage Center conectado a Docker 29](docs/images/panel.png)
+
+**Container Manage Center (CMC)** es una aplicación de escritorio de software
+libre para administrar Docker Engine en el propio equipo y en servidores
+remotos por SSH: contenedores, imágenes, redes, volúmenes, directorios
+vinculados y proyectos Docker Compose. Cada operación muestra la petición
+real que se envía a Docker y su orden `docker` equivalente, para aprender,
+copiar o comprobar lo que hace la aplicación.
+
+## Índice
+
+1. [Objetivo](#objetivo)
+2. [Características](#características)
+3. [Capturas de pantalla](#capturas-de-pantalla)
+4. [Estado por plataforma](#estado-por-plataforma)
+5. [Especificaciones técnicas](#especificaciones-técnicas)
+6. [Instalación](#instalación)
+7. [Configuración de Docker](#configuración-de-docker)
+8. [Compilación desde el código fuente](#compilación-desde-el-código-fuente)
+9. [Arquitectura](#arquitectura)
+10. [Estructura del repositorio](#estructura-del-repositorio)
+11. [Documentación](#documentación)
+12. [Seguridad](#seguridad)
+13. [Contribuciones](#contribuciones)
+14. [Licencia](#licencia)
+15. [Copyright y marcas](#copyright-y-marcas)
 
 ## Objetivo
 
 Docker se administra sobre todo desde la terminal. CMC quiere que trabajar con
-Docker sea **visible, comprensible y seguro** sin quitarle nada de control a
-quien ya conoce la terminal:
+Docker sea **visible, comprensible y seguro**, sin quitarle control a quien ya
+conoce la terminal:
 
-- cada operación se registra con la petición real a la API de Docker (o la
-  orden de la CLI), su orden equivalente para copiar, el servidor, la duración
-  y el resultado;
-- las operaciones destructivas piden confirmación y las configuraciones
-  peligrosas (socket de Docker montado, modo privilegiado, `/` del equipo…)
-  se avisan antes de crear nada;
-- la aplicación nunca instala Docker, no cambia permisos ni grupos del sistema
-  y no se ejecuta como administrador.
+- **Transparente**: cada operación queda registrada con la petición real a la
+  API de Docker (o la orden de la CLI), su orden equivalente, el servidor, la
+  duración y el resultado.
+- **Prudente**: las operaciones destructivas piden confirmación, y las
+  configuraciones peligrosas (socket de Docker montado, modo privilegiado, `/`
+  del equipo, `/etc`…) se avisan y hay que aceptarlas antes de crear nada.
+- **Respetuosa con el sistema**: nunca instala Docker, no cambia permisos ni
+  grupos, no se ejecuta como root ni como administrador y no envía telemetría.
 
-## Características principales
+## Características
 
 | Área | Qué se puede hacer |
 |---|---|
-| Contenedores | Crear con un asistente, iniciar, detener, pausar, reiniciar, eliminar, duplicar, editar la configuración (con recreación segura), crear una imagen, registros, estadísticas, inspección y terminal |
-| Imágenes | Descargar con progreso, buscar, construir (BuildKit y clásica), etiquetar, ver capas y uso, eliminar y limpiar |
-| Redes, volúmenes y carpetas vinculadas | Crear, conectar, inspeccionar, eliminar y limpiar con avisos de uso |
-| Docker Compose | Importar o crear proyectos, editor con validación, desplegar, detener, construir, servicios y registros |
-| Terminales | Varias sesiones a la vez, en contenedores y en servidores |
-| Servidores remotos | Varios servidores por SSH con la misma funcionalidad, huella del servidor verificada y credenciales en el almacén seguro del sistema |
-| Monitorización | CPU, memoria, red, disco y procesos, gráficas de 5 minutos a 24 horas, alertas y notificaciones |
-| Copias de seguridad | Volúmenes, bases de datos (MariaDB, MySQL, PostgreSQL, Redis, MongoDB), configuración y Compose, con manifiesto SHA-256, restauración, retención y tareas programadas |
-| Auditoría de seguridad | Revisión de contenedores, imágenes y proyectos Compose, correcciones con vista previa y análisis de vulnerabilidades con Trivy o Grype |
-| Panel de actividad | Cada operación con su petición real y su orden equivalente; eventos de Docker en tiempo real |
-| Interfaz | Ayuda integrada, 8 idiomas (English, Español, Català, Galego, Euskara, Français, Italiano, Português), tema claro u oscuro, color principal morado |
+| **Contenedores** | Crear con un asistente (con la orden `docker run` equivalente y los riesgos para el equipo), iniciar, detener, pausar, reiniciar, eliminar, duplicar, editar la configuración con recreación segura, crear una imagen, registros en directo, estadísticas, inspección JSON y terminal |
+| **Imágenes** | Descargar con progreso por capa, buscar, construir (BuildKit y clásica), etiquetar, ver capas y uso, eliminar y limpiar |
+| **Redes, volúmenes y carpetas** | Crear, conectar, inspeccionar, eliminar y limpiar, con avisos de quién los usa |
+| **Docker Compose** | Abrir o crear proyectos, editor con validación, desplegar, detener, construir, servicios, salida y registros |
+| **Terminales** | Hasta 12 sesiones a la vez, en contenedores locales o remotos y en servidores |
+| **Servidores remotos** | Varios servidores por SSH con la misma funcionalidad que en local; huella del servidor verificada; diagnóstico paso a paso |
+| **Monitorización** | CPU, memoria, red, disco y procesos; gráficas de 5 minutos a 24 horas; alertas y notificaciones |
+| **Copias de seguridad** | Volúmenes, bases de datos (MariaDB, MySQL, PostgreSQL, Redis, MongoDB), configuración y Compose; manifiesto SHA-256, restauración, retención y tareas programadas |
+| **Auditoría de seguridad** | Revisión de contenedores, imágenes y proyectos Compose; correcciones con vista previa; vulnerabilidades con Trivy o Grype |
+| **Panel de actividad** | Cada operación con su petición real y su orden equivalente; eventos de Docker en tiempo real |
+| **Interfaz** | Ayuda integrada, 8 idiomas, tema claro u oscuro, atajos de teclado |
 
 ## Capturas de pantalla
 
 | | |
 |---|---|
 | ![Lista de contenedores](docs/images/contenedores.png) | ![Asistente para crear un contenedor](docs/images/crear-contenedor.png) |
-| Contenedores | Asistente de creación |
-| ![Proyectos Docker Compose](docs/images/compose.png) | ![Panel de actividad](docs/images/actividad.png) |
-| Docker Compose | Panel de actividad |
+| **Contenedores**: filtros y acciones según el estado | **Creación**: orden equivalente y riesgos para el equipo |
+| ![Proyecto Docker Compose](docs/images/compose.png) | ![Panel de actividad](docs/images/actividad.png) |
+| **Docker Compose**: servicios, despliegue y registros | **Actividad**: la petición real y la orden `docker` |
 
-Capturas de la versión de Linux con datos de prueba. Las de Windows están
-pendientes de la primera validación en un Windows real.
+Capturas reales de la versión 1.9.1 de Linux con Docker 29 y datos de
+demostración. Las de Windows están pendientes de la primera validación en un
+Windows real.
 
-## Arquitectura tecnológica
+## Estado por plataforma
+
+| Plataforma | Estado | Cómo se ha comprobado |
+|---|---|---|
+| Ubuntu 24.04 | **Admitida** | Regresión automática con Docker 29, 26 y 24; instalación limpia del paquete |
+| Ubuntu 22.04 | **Admitida** (paquete compatible) | Instalación limpia del paquete compatible |
+| Debian 13 | **Admitida** | Validación manual del propietario hasta la 1.7.0; desde la 1.8.0, pendiente ([guía](docs/validation/VALIDACION-1.8.0.md)) |
+| Debian 12 | **Admitida** (paquete compatible) | Paquete para glibc ≥ 2.34; sin validación manual |
+| Windows 10 y 11 (x86_64) | **En pruebas** | Compilación, Clippy y 614 pruebas unitarias con Wine. **Nunca ejecutada en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+
+## Especificaciones técnicas
+
+### Requisitos del sistema
+
+| | Linux | Windows (en pruebas) |
+|---|---|---|
+| Sistema | Debian 12+, Ubuntu 22.04+ (64 bits, x86_64) | Windows 10 22H2 (19045) o posterior, Windows 11 (x64) |
+| Docker local | Docker Engine 20.10 o posterior, con acceso al socket (grupo `docker` o rootless) | Docker Desktop con el motor de Linux (WSL 2 o Hyper-V) |
+| Docker Compose | Plugin v2 (`docker compose`) | Incluido en Docker Desktop |
+| Servidores remotos | Cliente OpenSSH | Cliente OpenSSH de Windows |
+| Motor web | WebKitGTK 4.1 (dependencia del paquete) | WebView2 Runtime (incluido en Windows 11; el instalador lo descarga si falta) |
+| Pantalla | Ventana de 1320 × 840; mínimo 960 × 600 | Igual |
+
+### Compatibilidad con Docker
+
+| Aspecto | Especificación |
+|---|---|
+| API de Docker Engine | Mínimo **1.41** (Docker 20.10); si el motor es más antiguo, se explica y no se conecta |
+| Versiones probadas | Docker **29.9.2** (API 1.56), **26.1.3** (API 1.45) y **24.0.7** (API 1.43); Compose **2.26.1** |
+| Conexión local | `DOCKER_HOST`, contexto activo de Docker, socket rootless y `/var/run/docker.sock`; en Windows, `npipe:////./pipe/docker_engine` y las tuberías de Docker Desktop |
+| Conexión remota | SSH con `docker system dial-stdio`; contraseña, clave o agente; saltos (`ProxyJump`) |
+| Rootless | Admitido (detecta el socket del usuario); sin probar en un equipo real |
+
+### Pila tecnológica
+
+| Capa | Tecnología |
+|---|---|
+| Aplicación de escritorio | Tauri **2.12** |
+| Núcleo | Rust (edición 2021, versión mínima 1.80), Tokio 1.54 |
+| API de Docker | bollard 0.21 |
+| Interfaz | React 19, TypeScript 5.8, Vite 7 |
+| Terminal | xterm.js 5.5 |
+| Traducciones | i18next 25: English, Español, Català, Galego, Euskara, Français, Italiano, Português |
+| Pruebas | `cargo test`, Vitest 5 (444 pruebas de interfaz), pruebas con Docker real y laboratorio SSH |
+
+### Datos y almacenamiento
+
+| Qué | Linux | Windows |
+|---|---|---|
+| Configuración y servidores | `~/.config/container-manage-center/` (archivos 0600) | `%APPDATA%\container-manage-center` |
+| Historial, registros y estado | `~/.local/state/container-manage-center/` | `%LOCALAPPDATA%\container-manage-center` |
+| Contraseñas y frases de clave | Secret Service (llavero del escritorio) | Administrador de credenciales |
+| Huellas de servidores SSH | `known_hosts` propio de la aplicación (no toca `~/.ssh`) | Igual |
+
+Desinstalar no borra los datos del usuario.
+
+### Paquetes de la versión 1.9.1
+
+| Paquete | Para | Tamaño |
+|---|---|---|
+| `container-manage-center_1.9.1_amd64.deb` | Ubuntu 24.04, Debian 13 (glibc ≥ 2.39) | 7,4 MiB |
+| `container-manage-center_1.9.1_amd64-compat-debian12-ubuntu2204.deb` | Debian 12, Ubuntu 22.04 (glibc ≥ 2.34) | 7,8 MiB |
+| `Container Manage Center_1.9.1_x64-setup.exe` | Windows 10/11, instalación para el usuario sin administrador; sin firmar (en pruebas) | 5,1 MiB |
+| `container-manage-center-1.9.1-src.tar.gz` | Código fuente correspondiente | — |
+
+### Seguridad
+
+| Medida | Detalle |
+|---|---|
+| Sin shell | Las órdenes se ejecutan con argumentos separados, nunca a través de una shell |
+| Confirmaciones | Toda operación destructiva se confirma en el backend, no solo en la interfaz |
+| Riesgos para el equipo | Socket de Docker, modo privilegiado, capacidades, carpetas del sistema y de credenciales: se avisan y se aceptan uno a uno |
+| Secretos | En el llavero del sistema; ocultos en registros, actividad y exportaciones; borrados de la memoria al dejar de usarlos |
+| SSH | Huella verificada siempre; se avisa si cambia |
+| Privilegios | No arranca como root (Linux) ni como administrador (Windows) |
+| Red | Sin telemetría; solo se conecta a Docker, a los servidores configurados y, si se activa, a la fuente de actualizaciones |
+| Dependencias | `cargo deny` (avisos, licencias y orígenes) y `npm audit` en cada verificación |
+
+## Instalación
+
+### Debian y Ubuntu
+
+```bash
+bash scripts/install.sh          # elige el paquete adecuado para tu sistema y lo instala con apt
+bash scripts/install.sh --check  # solo comprueba el sistema
+```
+
+O directamente con el paquete: `sudo apt install ./container-manage-center_1.9.1_amd64.deb`
+(en Debian 12 o Ubuntu 22.04, el paquete `…-compat-debian12-ubuntu2204.deb`).
+Después se abre desde el menú de aplicaciones o con `container-manage-center`.
+
+### Windows (en pruebas)
+
+Ejecuta `Container Manage Center_1.9.1_x64-setup.exe`: instala para el usuario
+actual sin permisos de administrador. Como no está firmado, SmartScreen
+avisará («Más información › Ejecutar de todas formas»). La aplicación no
+arranca como administrador. Requisitos y diferencias con Linux en
+[INSTALL.md](INSTALL.md#opción-d-windows-10-y-11-x86_64--en-pruebas); guía de
+la primera prueba en [VALIDACION-WINDOWS.md](docs/validation/VALIDACION-WINDOWS.md).
+
+## Configuración de Docker
+
+CMC encuentra Docker igual que la CLI de Docker. Si no puede conectar, el
+Dashboard explica la causa y los pasos para resolverla, con las órdenes para
+copiar, sin ejecutar nada por ti. En Linux, tu usuario necesita acceso al
+socket (grupo `docker` o Docker rootless); la aplicación avisa de que el grupo
+`docker` equivale a administrador. Detalles en
+[INSTALL.md](INSTALL.md#acceso-a-docker).
+
+## Compilación desde el código fuente
+
+```bash
+git clone https://github.com/SergiioAlfaro/container-manage-center.git
+cd container-manage-center
+bash scripts/install-build-deps.sh   # dependencias de compilación (Debian/Ubuntu)
+npm ci
+bash scripts/run.sh                  # ejecutar sin instalar
+npx tauri build --bundles deb        # paquete .deb en target/release/bundle/deb/
+bash scripts/build-windows.sh        # instalador de Windows (MinGW-w64)
+```
+
+Requisitos de compilación: Rust estable (mínimo 1.80), Node.js 20 o
+posterior y WebKitGTK 4.1. Detalles en [INSTALL.md](INSTALL.md).
+
+## Arquitectura
 
 ```
 Interfaz (React + TypeScript, Vite)          ui/
@@ -69,74 +230,7 @@ Docker Engine API (bollard) · CLI de Docker Compose · OpenSSH
 Socket Unix · tubería de Docker Desktop · `docker system dial-stdio` por SSH
 ```
 
-Detalles en [ARCHITECTURE.md](ARCHITECTURE.md).
-
-## Plataformas y estado real de compatibilidad
-
-| Plataforma | Estado | Pruebas |
-|---|---|---|
-| Debian 13 | Admitida | Validación manual del propietario hasta la 1.7.0; la 1.8.0 y posteriores, pendientes de validar a mano ([guía](docs/validation/VALIDACION-1.8.0.md)) |
-| Debian 12 | Admitida (paquete compatible) | Paquete compilado para glibc 2.35; sin validación manual |
-| Ubuntu 22.04 y 24.04 | Admitida | Regresión automática en Ubuntu 24.04 con Docker 29, 26 y 24; instalación limpia del paquete en Ubuntu 24.04 y 22.04 |
-| Windows 10 y 11 (x86_64) | **En pruebas** | Compilación, Clippy y 614 pruebas unitarias con Wine. **Nunca ejecutada en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
-
-## Requisitos
-
-- **Linux**: Debian 12+ o Ubuntu 22.04+ de 64 bits; Docker Engine 20.10+ (API
-  1.41) con acceso al socket; Docker Compose v2 para los proyectos Compose;
-  cliente OpenSSH para los servidores remotos.
-- **Windows** (en pruebas): Windows 10 o 11 de 64 bits; Docker Desktop con el
-  motor de Linux para Docker local; cliente OpenSSH de Windows para los
-  servidores remotos.
-
-## Instalación en Debian
-
-```bash
-bash scripts/install.sh          # elige el paquete para tu sistema y lo instala con apt
-bash scripts/install.sh --check  # solo comprueba el sistema
-```
-
-O directamente con el paquete:
-`sudo apt install ./container-manage-center_1.9.1_amd64.deb` (en Debian 12, el
-paquete `…-compat-debian12-ubuntu2204.deb`). Después se abre desde el menú de
-aplicaciones o con `container-manage-center`.
-
-## Instalación en Ubuntu
-
-Igual que en Debian: `bash scripts/install.sh` elige el paquete normal en
-Ubuntu 24.04 y el compatible en Ubuntu 22.04.
-
-## Instalación en Windows
-
-**En pruebas** hasta la primera validación en un Windows real
-([guía](docs/validation/VALIDACION-WINDOWS.md)). El instalador
-(`…_x64-setup.exe`) instala para el usuario actual sin permisos de
-administrador, y la aplicación no arranca como administrador (igual que en
-Linux no arranca como root). No está firmado: SmartScreen avisará. Requisitos y
-diferencias con Linux en
-[INSTALL.md](INSTALL.md#opción-d-windows-10-y-11-x86_64--en-pruebas).
-
-## Configuración de Docker
-
-CMC encuentra Docker igual que la CLI de Docker: `DOCKER_HOST`, el contexto
-activo, el socket rootless y el socket del sistema (en Windows, las tuberías de
-Docker Desktop). Si no puede conectar, explica por qué y qué hacer, sin
-ejecutar nada por ti. En Linux, tu usuario necesita acceso al socket (grupo
-`docker` o Docker rootless); la aplicación avisa de que el grupo `docker`
-equivale a administrador. Detalles en [INSTALL.md](INSTALL.md#acceso-a-docker).
-
-## Compilación desde el código fuente
-
-```bash
-bash scripts/install-build-deps.sh   # dependencias de compilación (Debian/Ubuntu)
-npm ci
-npx tauri build --bundles deb        # paquete .deb en target/release/bundle/deb/
-bash scripts/run.sh                  # o ejecutar sin instalar
-bash scripts/build-windows.sh        # instalador de Windows de prueba (MinGW-w64)
-```
-
-Requisitos de compilación (Rust estable, Node.js 20+, WebKitGTK 4.1) en
-[INSTALL.md](INSTALL.md).
+Detalles en [ARCHITECTURE.md](ARCHITECTURE.md) y en el manual técnico.
 
 ## Estructura del repositorio
 
@@ -148,9 +242,9 @@ crates/
   cmc-activity/     Registro de actividad y ocultación de secretos
 src-tauri/          Aplicación Tauri: órdenes de la interfaz, estado, servicios del sistema
 ui/                 Interfaz React + TypeScript (Vite)
-scripts/            Instalación, compilación, verificación y avisos de licencias
+scripts/            Instalación, compilación, verificación, manual y avisos de licencias
 packaging/          Logotipo, recursos del paquete y del instalador de Windows
-docs/               Legal, seguridad, validación, hoja de ruta e imágenes
+docs/               Manual, legal, seguridad, validación e imágenes
 ```
 
 ## Documentación
@@ -159,8 +253,9 @@ docs/               Legal, seguridad, validación, hoja de ruta e imágenes
 |---|---|
 | [INSTALL.md](INSTALL.md) | Instalación, requisitos, dependencias, compilación y diagnóstico |
 | [USER_GUIDE.md](USER_GUIDE.md) | Uso de la aplicación |
+| Manual técnico y de usuario | PDF de 16 capítulos; se genera con `bash scripts/build-manual.sh` desde [docs/manual/](docs/manual/) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitectura técnica y pruebas |
-| [DECISIONS.md](DECISIONS.md) | Decisiones técnicas |
+| [DECISIONS.md](DECISIONS.md) | Decisiones técnicas (D-001 a D-116) |
 | [STATUS.md](STATUS.md) | Estado del proyecto y resultados de las pruebas |
 | [CHANGELOG.md](CHANGELOG.md) | Cambios de cada versión |
 | [docs/validation/](docs/validation/) | Auditoría de Windows y guías de validación manual |
@@ -170,12 +265,9 @@ docs/               Legal, seguridad, validación, hoja de ruta e imágenes
 
 ## Seguridad
 
-Las credenciales se guardan en el almacén seguro del sistema (Secret Service
-en Linux, Administrador de credenciales en Windows), nunca en texto plano, y se
-ocultan en el registro de actividad. La huella de los servidores SSH se
-verifica siempre. CMC no está certificado ni auditado por terceros. Para
-avisar de una vulnerabilidad, usa el aviso privado de GitHub: ver
-[SECURITY.md](SECURITY.md).
+CMC no está certificado ni auditado por terceros. Si encuentras una
+vulnerabilidad, **no abras un issue público**: usa el aviso privado de GitHub
+(ver [SECURITY.md](SECURITY.md)).
 
 ## Contribuciones
 
@@ -184,18 +276,19 @@ Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md)
 [código de conducta](CODE_OF_CONDUCT.md).
 
 ```bash
-git clone https://github.com/SergiioAlfaro/container-manage-center.git
-cd container-manage-center
-npm ci && npm test                  # interfaz
-cargo test --workspace              # Rust
-bash scripts/verify-evolution-1.9.1.sh --deb   # regresión completa con Docker
+npm ci && npm run typecheck && npm run lint && npm test   # interfaz
+cargo clippy --workspace --all-targets -- -D warnings     # Rust
+cargo test --workspace
+bash scripts/verify-evolution-1.9.1.sh --deb              # verificación completa con Docker
 ```
 
 ## Licencia
 
 Container Manage Center se distribuye con la licencia **GNU General Public
-License v3.0 o posterior** ([LICENSE](LICENSE)): puedes redistribuirlo y
-modificarlo según sus términos. Se distribuye **sin ninguna garantía**.
+License v3.0 o posterior** ([LICENSE](LICENSE)): puedes usarlo, estudiarlo,
+modificarlo y redistribuirlo según sus términos. Se distribuye **sin ninguna
+garantía**.
+
 Para la versión de Windows, el titular concede un permiso adicional (sección 7
 de la GPL v3) para el cargador de WebView2 de Microsoft:
 [docs/legal/WEBVIEW2_EXCEPTION.md](docs/legal/WEBVIEW2_EXCEPTION.md).
@@ -204,7 +297,7 @@ Los componentes de terceros conservan sus licencias y avisos:
 [THIRD_PARTY_NOTICES-windows.md](docs/legal/THIRD_PARTY_NOTICES-windows.md)
 (Windows).
 
-## Copyright
+## Copyright y marcas
 
 Copyright © 2026 Sergio Alfaro Lorite. Detalles de la titularidad en
 [docs/legal/COPYRIGHT.md](docs/legal/COPYRIGHT.md).
@@ -212,3 +305,4 @@ Copyright © 2026 Sergio Alfaro Lorite. Detalles de la titularidad en
 Container Manage Center es un proyecto independiente: no está afiliado a
 Docker, Inc. ni respaldado por ella. «Docker» es una marca de Docker, Inc. y
 aquí solo se usa para nombrar la tecnología con la que trabaja la aplicación.
+Windows, WebView2 y Microsoft Edge son marcas de Microsoft Corporation.
