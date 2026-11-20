@@ -4,7 +4,7 @@
 > módulos `legacy` de `cmc-store` y `cmc-engine`, para encontrar y pasar al
 > nombre nuevo los datos de una versión anterior (1.8.0, D-113).
 
-Documento iniciado en la 0.7.1 y ampliado en cada versión (última revisión: 1.10.0). Las cifras de pruebas de cada versión están en STATUS.md.
+Documento iniciado en la 0.7.1 y ampliado en cada versión (última revisión: 1.11.0). Las cifras de pruebas de cada versión están en STATUS.md.
 
 ## Visión general
 
@@ -57,7 +57,7 @@ container-manage-center/
 │   │   ├── dashboard/  containers/  images/  settings/  pending/
 │   ├── shared/                   ipc (cliente y tipos generados), i18n, query, format, ui
 │   └── test/                     Dobles y fixtures SOLO para pruebas
-└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.10.0.sh
+└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.11.0.sh
 ```
 
 ## cmc-engine
@@ -245,6 +245,13 @@ En la aplicación:
 - **IPC** (`commands/bulk.rs`): `bulk_inventory(refresh)` lista en paralelo los servidores conectados (sin conectar ninguno) y `bulk_run_open(request, onEvent)` valida y reserva antes de empezar, registra el flujo (`stream_close` cancela lo pendiente) y envía `BulkEvent` (`started` | `running` | `item` | `finished` con `BulkSummary`).
 - **Interfaz** (`ui/src/features/bulk/`): `model.ts` (filas por servidor con clave servidor+ID, indicadores, filtros, orden, páginas, selección y las mismas reglas que el motor para avisar antes), `store.ts` (operación en curso en un almacén global, para que el progreso siga al cambiar de apartado), `BulkView.tsx`, `dialogs.tsx` (confirmación con vista previa, política de reinicio, etiquetas solo informativas) y `RunPanel.tsx` (progreso, resultados, cancelar, «Ver en actividad»). La actividad filtra por lote (`ActivityFilter.batch`).
 
+### Comandos masivos (1.11.0, `cmc-engine/src/bulk_exec.rs`, `src-tauri/src/bulk_exec.rs`, D-121–D-124)
+- **Motor**: `BulkCommand { command: ExecCommand::{Direct{program,args}, Script{interpreter,flag,script}}, user, workdir, timeout_secs }` con `validate()`, `argv()` (lo que recibe Docker en `Cmd`, sin shell del equipo) y `exec_args()` (el `docker exec` equivalente). `classify()` da el `CommandRisk` (nivel, motivos, posible exposición de secretos). `Engine::bulk_exec(cmd, id, nombre, interrupt)`: ID completo → validación → `inspect` silencioso (no existe o no está en ejecución → `ExecDone::NotRun`) → `POST /containers/{id}/exec` (`container.exec.prepare`) → `POST /exec/{id}/start` adjuntado (`container.exec.run`, con el lote) → lectura de stdout/stderr con `Capture` (128 KiB por flujo) hasta el fin, el tiempo máximo o la interrupción → `GET /exec/{id}/json` (código de salida y si sigue vivo). Un fin de la salida sin respuesta de Docker o con el proceso vivo es una pérdida de conexión (`ItemError` en `Execute`, resultado desconocido).
+- **Aplicación**: `BulkExecRequest` (comando, destinos, concurrencia 1–16, confirmación y número escrito desde el riesgo «administrativo»), `validate` (reutiliza `validate_targets`), `ExecItemResult`/`ExecItemStatus`, `ExecCounts`, `ExecSummary`, `ExecEvent`, `ExecInterrupts` (token por flujo), resumen `container.exec.bulk` con el comando redactado, y `validate_templates` (rechaza secretos). El grupo de ejecución `run_pool` (con el rasgo `PoolItem`) es común a operaciones y comandos.
+- **IPC**: `bulk_exec_preview`, `bulk_exec_open` (canal de `ExecEvent`; `stream_close` cancela lo pendiente), `bulk_exec_interrupt`, `exec_templates_save`. La exportación reutiliza `audit_export_save`.
+- **Configuración**: `[exec]` con `templates` (`ExecTemplate`); `replace_config` no la toca.
+- **Interfaz**: `CommandsTab.tsx` (selector, editor, vista previa, plantillas), `ExecDialogs.tsx` (confirmación y riesgo), `ExecPanel.tsx` (progreso, resultados, detalle, exportación), `execModel.ts`, `execStore.ts`; `tabs.tsx` (Resumen, Configuración masiva, Historial) y los seis apartados en `BulkView.tsx`.
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 
@@ -341,6 +348,10 @@ Primer contacto: la clave se captura en un archivo temporal y se muestra la huel
 | `history_list(filter)` · `history_clear()` | Historial de operaciones guardado (`HistoryPage` con inicio de la sesión y carpeta) y borrarlo |
 | `bulk_inventory(refresh)` | 1.10.0: contenedores de todos los servidores conectados (`BulkInventory` con un `BulkEnvironment` por servidor, también los desconectados, sin contenedores); no se registra; `refresh` vuelve a leer la política de reinicio de todos |
 | `bulk_run_open(request, onEvent)` | 1.10.0: operación masiva (`BulkRequest` con operación, destinos servidor+ID completo, `confirmed` y `confirmCount` al eliminar). Errores antes de empezar: `engine.notConfirmed`, `bulk.notConfirmed`, `bulk.invalid`, `bulk.busy`, `server.unknown`, `engine.invalidInput`. Progreso por `BulkEvent`; se cancela lo pendiente con `stream_close` |
+| `bulk_exec_preview(command)` | 1.11.0: argumentos exactos, `docker exec` equivalente y riesgo de un comando masivo; no ejecuta ni registra |
+| `bulk_exec_open(request, onEvent)` | 1.11.0: comando masivo con Docker Exec (`BulkExecRequest`). Errores antes de empezar: `engine.notConfirmed`, `bulk.notConfirmed` (riesgo administrativo o mayor sin el número), `bulk.invalid`, `bulk.busy`, `server.unknown`, `engine.invalidInput`. Progreso por `ExecEvent`; `stream_close` cancela lo pendiente |
+| `bulk_exec_interrupt(sid)` | 1.11.0: deja de esperar a las ejecuciones activas y cancela las pendientes (Docker no permite detener el proceso) |
+| `exec_templates_save(templates)` | 1.11.0: sustituye los comandos guardados; `exec.templateInvalid` o `exec.templateSecret` |
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.fileChanged`, `engine.alreadyExists`, `engine.composeUnavailable`, `compose.duplicate`, `history.io`, `engine.other`, `config.io`.
 
@@ -348,7 +359,7 @@ El plugin `opener` de Tauri (0.9.1, D-066) solo puede abrir `https://github.com/
 
 Al cerrar la ventana (0.9.1, D-063) se cierran los flujos abiertos y se espera a que terminen (como mucho 8 s): `StreamRegistry::close_all_and_wait`.
 
-Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://state` (0.10.0), `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`), `BulkEvent` (`started` | `running` | `item` | `finished`).
+Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://state` (0.10.0), `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`), `BulkEvent` y `ExecEvent` (`started` | `running` | `item` | `finished`).
 
 ## Interfaz
 - `features/engine/store.ts`: estado de conexión; `App` lo alimenta con `engine_state` y el evento `engine://state`. Al pasar a conectado se invalidan todas las consultas; al perder la conexión se descartan.
@@ -369,7 +380,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 - `features/settings/`: `UpdatesSettings.tsx`, `SystemSettings.tsx` (con `systemReport`), restablecer en `SettingsView.tsx` y `layout.tsx` (`Group`, `Row`).
 - `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms y como mucho una vez por segundo durante las ráfagas, `refreshDelay`), `EventRow.tsx` (filas memorizadas con claves estables, `eventKeys`), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
 - `features/terminals/` (0.9.1, D-064): `sessions.ts` (gestor de sesiones fuera de React: una xterm y un flujo por sesión, generación por apertura, cierre sin huérfanos; estado visible en Zustand), `TerminalsView.tsx` (distribución según `layout.ts`, `Splitter.tsx` con ratón y teclado), `TerminalPane.tsx`, `NewTerminalDialog.tsx`.
-- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 30 secciones (1.10.0), `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
+- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 30 secciones (1.10.0; ampliada en 1.11.0), `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
 - `shared/i18n`: `en`, `es`, `ca`, `gl`, `eu`, `fr`, `it`, `pt` en el orden del selector (D-067, D-073); `LANGUAGE_NAMES` con los endónimos.
 - `features/containers/edit/` (0.9.2, D-069, D-070): `EditContainer.tsx` (pestañas, barra de cambios pendientes, ciclo de vida, copias de seguridad, redes con los diálogos de la Fase 5, Avanzado de solo lectura), `ReviewPanel.tsx` (comparación, asistente de recreación con riesgos y confirmación, resultado paso a paso), `model.ts` (borrador y clasificación para los indicadores; decide el backend), `CommitDialog.tsx`. `create/editors.tsx` reúne los editores de puertos, montajes, memoria y clave/valor que comparten el asistente de creación y la edición.
 - `shared/ui/Menu.tsx` (0.9.2): menú de acciones accesible (botón ⋯ y botón derecho en la fila).
@@ -394,7 +405,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | `scripts/install.sh` | Instalación, comprobación y desinstalación para el usuario final |
 | `scripts/run.sh` | Ejecutar la versión instalada o la compilación del código |
 | `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba); con `UPGRADE_FROM`, actualización desde una versión anterior comprobando que los datos del usuario no cambian (1.7.0) |
-| `scripts/verify-evolution-1.10.0.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
+| `scripts/verify-evolution-1.11.0.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
 
 ## Pruebas
 
@@ -411,9 +422,10 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | Edición, recreación y commit contra Docker real (0.9.2) | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |
 | Terminales múltiples contra Docker real (0.9.1) | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_terminals` | 5 |
 | Gestión masiva (1.10.0) | `cargo test -p cmc-engine --lib bulk::` · `--test bulk_protocol` (Docker simulado por socket) · `cargo test -p container-manage-center --lib bulk` · `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_bulk` | 17 unitarias + 7 de protocolo en el motor; 19 con el filtro `bulk::` y 4 IPC (una contra Docker real) en la aplicación; 1 contra Docker real con contenedores temporales propios |
+| Comandos masivos (1.11.0) | `cargo test -p cmc-engine --lib bulk_exec` · `cargo test -p container-manage-center --lib bulk_exec` · `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_bulk_exec` | 8 unitarias en el motor; 9 de coordinación y 4 IPC (una contra Docker real) en la aplicación; 1 contra Docker real (12 pasos: mismo comando en varios, argumentos, varias líneas, intérprete inexistente, contenedor sin shell, usuario y directorio, tiempo máximo, interrupción, detenido y eliminado, fallo parcial, pérdida de conexión, registro) |
 | Desinstalación real (0.9.1) | `CMC_TEST_CHROOT=… CMC_TEST_DEB=… cargo test -p container-manage-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-evolution-1.10.0.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
+| Paquete | `scripts/verify-evolution-1.11.0.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
 | Instalación limpia | `scripts/dev/clean-install-test.sh` (root, máquina de pruebas) | Ubuntu 24.04 y 22.04: instalación con un usuario normal, archivos, arranque y desinstalación |
 | Manual | `docs/validation/VALIDACION-1.8.0.md` | Solo lo que cambia en la 1.8.0 |

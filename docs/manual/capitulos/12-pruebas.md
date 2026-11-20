@@ -15,7 +15,7 @@ Las pruebas están junto al código que comprueban:
 | `src-tauri/src/ipc_tests.rs` | Órdenes IPC de la interfaz con Tauri simulado (sin ventana) |
 | `src-tauri/src/**` (otros `tests`) | Copias programadas, llavero, información del sistema |
 | `ui/src/**/*.test.ts(x)` | Pruebas de la interfaz con Vitest y jsdom |
-| `scripts/verify-evolution-1.10.0.sh` | Verificación completa: compila, prueba, empaqueta y comprueba los requisitos de cada versión |
+| `scripts/verify-evolution-1.11.0.sh` | Verificación completa: compila, prueba, empaqueta y comprueba los requisitos de cada versión |
 | `docs/validation/` | Matriz de la auditoría de Windows y guía de validación manual |
 
 ## Pruebas de Rust
@@ -49,7 +49,7 @@ npm test            # Vitest
 Cubren la traducción de errores en ocho idiomas, el diagnóstico de la
 conexión, los textos de cada plataforma, la ocultación de secretos en la
 interfaz, los formularios de creación y edición, el tema morado y su
-contraste. En la versión 1.10.0 pasan **475 pruebas**.
+contraste. En la versión 1.11.0 pasan **492 pruebas**.
 
 ## Pruebas de integración
 
@@ -73,14 +73,14 @@ servidor caído, Docker detenido, permisos insuficientes).
 ## Pruebas de empaquetado
 
 - `.deb`: dependencias calculadas con `dpkg-shlibdeps`, versión de glibc que
-  exige el binario y contenido del paquete (`verify-evolution-1.10.0.sh`).
+  exige el binario y contenido del paquete (`verify-evolution-1.11.0.sh`).
 - Instalación limpia (`scripts/dev/clean-install-test.sh`): en sistemas
   Ubuntu 24.04 y 22.04 recién creados con `debootstrap`, `install.sh` como
   usuario normal elige el paquete por la glibc (el normal en 24.04, el
   compatible en 22.04), lo instala, la aplicación arranca con ese usuario y se
   niega a hacerlo como root, y la desinstalación quita el programa y conserva
   los datos del usuario. La actualización desde una versión anterior no se
-  ha probado ni en la 1.9.1 ni en la 1.10.0.
+  ha probado ni en la 1.9.1, ni en la 1.10.0, ni en la 1.11.0.
 - Instalador de Windows: bibliotecas del `.exe` (solo de Windows y
   `WebView2Loader.dll`) e inspección del script NSIS generado (instalación
   para el usuario actual, idiomas, licencia, carpeta `legal\`, gancho de

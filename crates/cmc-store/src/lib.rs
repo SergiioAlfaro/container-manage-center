@@ -20,7 +20,8 @@ use std::path::{Path, PathBuf};
 
 pub use config::{
     Accent, ActivityConfig, AppConfig, BulkSettings, ComposeSettings, DockerConfig, DockerMode,
-    Language, SavedProject, Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
+    ExecTemplate, ExecTemplateMode, ExecTemplates, Language, SavedProject, Theme, UiConfig,
+    UpdatesConfig, CONFIG_VERSION,
 };
 pub use servers::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
 
@@ -430,5 +431,47 @@ mod tests {
         // Un config.toml de una versión anterior no tiene la sección.
         let old: AppConfig = toml::from_str("version = 1\n").unwrap();
         assert_eq!(old.bulk, BulkSettings::default());
+    }
+
+    /// Comandos frecuentes (1.11.0): los inválidos o repetidos se descartan,
+    /// se guardan y se leen, y un archivo anterior no tiene la sección.
+    #[test]
+    fn exec_templates_are_normalized_and_persisted() {
+        let t = |id: &str, name: &str| ExecTemplate {
+            id: id.into(),
+            name: name.into(),
+            program: "df".into(),
+            args: vec!["-h".into()],
+            ..ExecTemplate::default()
+        };
+        let c = AppConfig {
+            exec: ExecTemplates {
+                templates: vec![
+                    t("a", "Disco"),
+                    t("a", "Repetido"),
+                    t("", "Sin id"),
+                    t("b", " "),
+                    t("c", &"x".repeat(81)),
+                ],
+            },
+            ..AppConfig::default()
+        }
+        .normalized();
+        assert_eq!(c.exec.templates.len(), 1);
+        assert_eq!(c.exec.templates[0].name, "Disco");
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConfigStore::at(dir.path().join("config.toml"));
+        store.save(&c).unwrap();
+        assert_eq!(store.load().unwrap().config.exec, c.exec);
+        let old: AppConfig = toml::from_str("version = 1\n").unwrap();
+        assert!(old.exec.templates.is_empty());
+        let mut many = ExecTemplates::default();
+        for i in 0..250 {
+            many.templates.push(t(&i.to_string(), "x"));
+        }
+        assert_eq!(
+            many.normalized().templates.len(),
+            ExecTemplates::MAX_TEMPLATES
+        );
     }
 }

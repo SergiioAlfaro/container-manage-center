@@ -394,6 +394,48 @@ int main(int argc, char **argv) {
         }
     }
 
+    /// Imagen **sin ninguna shell** (1.11.0, comandos masivos): solo el
+    /// programa estático de prueba. Sirve para comprobar que nunca se supone
+    /// `/bin/sh`.
+    pub const NOSHELL_IMAGE: &str = "cmc-test/noshell:1";
+
+    pub async fn ensure_noshell_image(docker: &bollard::Docker) {
+        static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        let _guard = LOCK.lock().await;
+        if docker.inspect_image(NOSHELL_IMAGE).await.is_ok() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("sleeper.c");
+        let bin = dir.path().join("sleeper");
+        std::fs::write(&src, SLEEPER_C).unwrap();
+        let st = std::process::Command::new("cc")
+            .args(["-static", "-Os", "-s", "-o"])
+            .arg(&bin)
+            .arg(&src)
+            .status()
+            .expect("hace falta un compilador C (build-essential)");
+        assert!(st.success(), "no se pudo compilar el binario de prueba");
+        let mut tar = tar::Builder::new(Vec::new());
+        add_file(&mut tar, "/sleeper", &std::fs::read(&bin).unwrap(), 0o755);
+        let body = tar.into_inner().unwrap();
+        let opts = CreateImageOptions {
+            from_src: Some("-".into()),
+            repo: Some("cmc-test/noshell".into()),
+            tag: Some("1".into()),
+            changes: vec![r#"CMD ["/sleeper"]"#.into(), "LABEL cmc.test=true".into()],
+            ..Default::default()
+        };
+        let mut s = docker.create_image(
+            Some(opts),
+            Some(bollard::body_full(bytes::Bytes::from(body))),
+            None,
+        );
+        while let Some(r) = s.next().await {
+            r.expect("importación de la imagen de prueba sin shell");
+        }
+    }
+
     /// Imagen con shell y algunas órdenes del equipo (0.9.1, terminales
     /// múltiples): `sleep` para un programa en primer plano, `stty` para leer el
     /// tamaño de la TTY y `cat`. Sin descargar nada.

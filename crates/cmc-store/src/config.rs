@@ -286,6 +286,92 @@ impl Default for BulkSettings {
     }
 }
 
+/// Modalidad de una plantilla de comando masivo (1.11.0).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ExecTemplateMode {
+    /// Ejecutable con argumentos.
+    Direct,
+    /// Secuencia para un intérprete.
+    Script,
+}
+
+/// Comando frecuente guardado (1.11.0, D-124). Es una configuración que se
+/// reutiliza, no la garantía de que funcione en cualquier imagen. Nunca guarda
+/// secretos: la aplicación rechaza las que los contienen.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct ExecTemplate {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub mode: ExecTemplateMode,
+    /// Modalidad directa.
+    pub program: String,
+    pub args: Vec<String>,
+    /// Modalidad con intérprete.
+    pub interpreter: String,
+    pub flag: String,
+    pub script: String,
+    /// Opcionales; vacío = lo de la imagen.
+    pub user: String,
+    pub workdir: String,
+    /// Tiempo máximo recomendado.
+    pub timeout_secs: u32,
+}
+
+impl Default for ExecTemplate {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            name: String::new(),
+            description: String::new(),
+            mode: ExecTemplateMode::Direct,
+            program: String::new(),
+            args: Vec::new(),
+            interpreter: String::new(),
+            flag: String::new(),
+            script: String::new(),
+            user: String::new(),
+            workdir: String::new(),
+            timeout_secs: 30,
+        }
+    }
+}
+
+/// Comandos frecuentes de la gestión masiva (1.11.0). Se cambian solo con su
+/// propia orden, que los valida; guardar el resto de la configuración no los
+/// toca (igual que los proyectos Compose).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct ExecTemplates {
+    pub templates: Vec<ExecTemplate>,
+}
+
+impl ExecTemplates {
+    pub const MAX_TEMPLATES: usize = 200;
+    pub const MAX_NAME: usize = 80;
+    pub const MAX_DESCRIPTION: usize = 500;
+
+    /// Quita las que no tienen nombre o identificador, los repetidos y lo que
+    /// pase del máximo (un archivo editado a mano no rompe la aplicación).
+    pub fn normalized(mut self) -> Self {
+        let mut seen = std::collections::HashSet::new();
+        self.templates.retain(|t| {
+            !t.id.trim().is_empty()
+                && !t.name.trim().is_empty()
+                && t.name.chars().count() <= Self::MAX_NAME
+                && t.description.chars().count() <= Self::MAX_DESCRIPTION
+                && seen.insert(t.id.clone())
+        });
+        self.templates.truncate(Self::MAX_TEMPLATES);
+        self
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
@@ -298,6 +384,8 @@ pub struct AppConfig {
     pub updates: UpdatesConfig,
     /// Gestión masiva (1.10.0).
     pub bulk: BulkSettings,
+    /// Comandos frecuentes de la gestión masiva (1.11.0).
+    pub exec: ExecTemplates,
 }
 
 impl Default for AppConfig {
@@ -310,6 +398,7 @@ impl Default for AppConfig {
             compose: ComposeSettings::default(),
             updates: UpdatesConfig::default(),
             bulk: BulkSettings::default(),
+            exec: ExecTemplates::default(),
         }
     }
 }
@@ -343,6 +432,7 @@ impl AppConfig {
             self.updates.check_on_start = false;
         }
         self.bulk = self.bulk.normalized();
+        self.exec = self.exec.normalized();
         self
     }
 }

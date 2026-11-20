@@ -122,6 +122,11 @@ import type { AuditReport } from "@/shared/ipc/bindings/AuditReport";
 import type { AuditRequest } from "@/shared/ipc/bindings/AuditRequest";
 import type { AuditSummary } from "@/shared/ipc/bindings/AuditSummary";
 import type { VulnTool } from "@/shared/ipc/bindings/VulnTool";
+import type { BulkCommand } from "@/shared/ipc/bindings/BulkCommand";
+import type { BulkExecRequest } from "@/shared/ipc/bindings/BulkExecRequest";
+import type { ExecEvent } from "@/shared/ipc/bindings/ExecEvent";
+import type { ExecPreview } from "@/shared/ipc/bindings/ExecPreview";
+import type { ExecTemplate } from "@/shared/ipc/bindings/ExecTemplate";
 
 export function updateCheck(over: Partial<UpdateCheck> = {}): UpdateCheck {
   return {
@@ -161,6 +166,7 @@ const DEFAULT_CONFIG: AppConfig = {
   compose: { projects: [] },
   updates: { checkOnStart: false, source: "" },
   bulk: { concurrency: 4, autoRefresh: true, refreshSecs: 15 },
+  exec: { templates: [] },
 };
 
 export const connected: ConnectionState = {
@@ -294,6 +300,23 @@ export function bulkContainer(over: Partial<BulkContainer> = {}): BulkContainer 
 export function bulkEnvironment(over: Partial<BulkEnvironment> = {}): BulkEnvironment {
   return { server: "local", remote: false, name: "", address: "/var/run/docker.sock", connection: "connected", containers: [], error: null, ...over };
 }
+/** Vista previa de un comando como la del backend (1.11.0). El riesgo se
+ *  simplifica: «apt»/«rm» suben el nivel para probar las advertencias. */
+export function execPreview(c: BulkCommand): ExecPreview {
+  const argv = c.command.mode === "direct" ? [c.command.program, ...c.command.args] : [c.command.interpreter, ...(c.command.flag ? [c.command.flag] : []), c.command.script];
+  if (!argv[0]) throw { code: "engine.invalidInput", message: "falta el ejecutable", httpStatus: null, issues: null };
+  const text = argv.join(" ");
+  const level = /rm -rf/.test(text) ? "destructive" : /apt|apk/.test(text) ? "administrative" : /touch|>/.test(text) ? "modification" : "informative";
+  const reasons = level === "destructive" ? ["rmRecursive"] : level === "administrative" ? ["packages"] : level === "modification" ? ["create"] : [];
+  const user = c.user?.trim() ? `--user ${c.user.trim()} ` : "";
+  return {
+    argv,
+    equivalent: `docker exec ${user}'<contenedor>' ${argv.join(" ")}`,
+    risk: { level, reasons, exposesSecrets: /\benv\b|printenv/.test(text) },
+    needsCount: level === "administrative" || level === "destructive",
+  };
+}
+
 /** Tres en este equipo, dos en «Producción» (uno con el mismo ID que uno local)
  *  y un servidor sin conexión. */
 export function bulkInventory(): BulkInventory {
@@ -1079,6 +1102,10 @@ export const api = {
   bulkInventory: vi.fn(async (_refresh: boolean): Promise<BulkInventory> => bulkInventory()),
   /** El flujo queda abierto: la prueba emite los eventos con `streams.emit`. */
   bulkRunOpen: vi.fn(async (_r: BulkRequest, h: (e: BulkEvent) => void) => streams.add(h)),
+  bulkExecPreview: vi.fn(async (c: BulkCommand): Promise<ExecPreview> => execPreview(c)),
+  bulkExecOpen: vi.fn(async (_r: BulkExecRequest, h: (e: ExecEvent) => void) => streams.add(h)),
+  bulkExecInterrupt: vi.fn(async (_sid: number) => true),
+  execTemplatesSave: vi.fn(async (templates: ExecTemplate[]): Promise<AppConfig> => ({ ...DEFAULT_CONFIG, exec: { templates } })),
   pickFolder: vi.fn(async (_t: string): Promise<string | null> => "/home/u/datos"),
   pickFile: vi.fn(async (_t: string, _d?: string): Promise<string | null> => "/home/u/proyecto/docker/Dockerfile.prod"),
   imageDetails: vi.fn(async (reference: string): Promise<ImageDetails> => imageDetails(reference)),

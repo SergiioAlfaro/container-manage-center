@@ -47,7 +47,14 @@ import {
   type StateGroup,
 } from "./model";
 import { RunPanel } from "./RunPanel";
+import { CommandsTab } from "./CommandsTab";
+import { useBulkExec } from "./execStore";
+import { ConfigTab, HistoryTab, SummaryTab, TABS, type BulkTab } from "./tabs";
+import type { BulkCounts } from "@/shared/ipc/bindings/BulkCounts";
 import { useBulkRun } from "./store";
+
+/** Último comando masivo del que ya se avisó (sobrevive a cambiar de apartado). */
+let noticedBatch: string | null = null;
 
 export const BULK_INVENTORY_KEY = ["bulkInventory"] as const;
 
@@ -62,7 +69,10 @@ export function BulkView() {
   const phase = useBulkRun((s) => s.phase);
   const runBulk = useBulkRun((s) => s.run);
   const runError = useBulkRun((s) => s.error);
+  const runPhase = phase;
   const busy = phase === "starting" || phase === "running";
+  const execPhase = useBulkExec((s) => s.phase);
+  const execBusy = execPhase === "starting" || execPhase === "running";
 
   // «Actualizar» vuelve a pedir también los datos de inspect (política de reinicio).
   const force = useRef(false);
@@ -95,6 +105,8 @@ export function BulkView() {
   const [size, setSize] = useState<number>(50);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [dialog, setDialog] = useState<OpKind | "labels" | null>(null);
+  const [tab, setTab] = useState<BulkTab>("containers");
+  const [notice, setNotice] = useState<{ text: string; ok: boolean; tab: BulkTab } | null>(null);
 
   const setFilter = (patch: Partial<BulkFilter>) => {
     setFilterState((f) => ({ ...f, ...patch }));
@@ -141,9 +153,26 @@ export function BulkView() {
 
   const run = async (req: BulkRequest) => {
     setDialog(null);
-    const ok = await runBulk(req, () => void q.refetch());
-    if (ok) setSel(new Set());
+    const ok = await runBulk(req, () => {
+      void q.refetch();
+      // Aviso en la ventana con el resultado (también si se cambió de apartado).
+      const s = useBulkRun.getState().summary;
+      if (s) setNotice({ text: t("bulk.notice.operation", { counts: countsText(t, s.counts) }), ok: s.counts.failed + s.counts.unknown === 0, tab: "operations" });
+    });
+    if (ok) {
+      setSel(new Set());
+      setTab("operations");
+    }
   };
+
+  // Aviso cuando termina un comando masivo (una vez por ejecución).
+  const execSummary = useBulkExec((s) => s.summary);
+  useEffect(() => {
+    if (!execSummary || noticedBatch === execSummary.batch) return;
+    noticedBatch = execSummary.batch;
+    const c = execSummary.counts;
+    setNotice({ text: t("bulk.notice.command", { ok: c.succeeded, total: execSummary.total }), ok: c.succeeded === execSummary.total, tab: "commands" });
+  }, [execSummary, t]);
 
   const disconnected = envs.filter((e) => e.connection !== "connected");
   const failedEnvs = envs.filter((e) => e.error);
@@ -210,7 +239,54 @@ export function BulkView() {
         </div>
       )}
 
-      <RunPanel envName={envName} />
+      {notice && (
+        <div className="mb-3" data-testid="bulk-notice">
+          <Banner tone={notice.ok ? "info" : "warn"} onDismiss={() => setNotice(null)} dismissLabel={t("containers.dismiss")}>
+            {notice.text}{" "}
+            <button type="button" className="font-medium underline" onClick={() => setTab(notice.tab)}>
+              {t(`bulk.tabs.${notice.tab}`)}
+            </button>
+          </Banner>
+        </div>
+      )}
+
+      <div role="tablist" aria-label={t("sections.bulk.title")} className="mb-4 flex flex-wrap gap-1 border-b border-line">
+        {TABS.map((tb) => (
+          <button
+            key={tb}
+            type="button"
+            role="tab"
+            aria-selected={tab === tb}
+            onClick={() => setTab(tb)}
+            className={cx("-mb-px h-9 border-b-2 px-3 text-[13px]", tab === tb ? "border-beacon font-medium text-ink" : "border-transparent text-ink-2 hover:text-ink")}
+          >
+            {t(`bulk.tabs.${tb}`)}
+            {tb === "containers" && chosen.length > 0 && <span className="ml-1.5 text-[12px] text-ink-3 tabular-nums">{chosen.length}</span>}
+            {tb === "operations" && busy && <Spinner size={12} className="ml-1.5 inline" />}
+            {tb === "commands" && execBusy && <Spinner size={12} className="ml-1.5 inline" />}
+          </button>
+        ))}
+      </div>
+
+      {tab === "summary" && <SummaryTab envs={envs} rows={rows} onTab={setTab} />}
+
+      {tab === "operations" &&
+        (runPhase === "idle" ? (
+          <p className="py-10 text-center text-[13px] text-ink-3" data-testid="bulk-operations-empty">
+            {t("bulk.operations.empty")}
+          </p>
+        ) : (
+          <RunPanel envName={envName} />
+        ))}
+
+      {tab === "config" && <ConfigTab selected={chosen} busy={busy} onOpen={(k) => setDialog(k)} onLabels={() => setDialog("labels")} onTab={setTab} />}
+
+      {tab === "commands" && <CommandsTab rows={rows} envs={envs} selected={chosen} sel={sel} setSel={setSel} onFinish={() => void q.refetch()} />}
+
+      {tab === "history" && <HistoryTab />}
+
+      {tab === "containers" && (
+        <>
 
       {/* Filtros */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -398,6 +474,9 @@ export function BulkView() {
         </div>
       )}
 
+        </>
+      )}
+
       {dialog === "labels" && <LabelsDialog rows={chosen} onClose={() => setDialog(null)} />}
       {dialog && dialog !== "labels" && <ConfirmDialog kind={dialog} rows={chosen} onClose={() => setDialog(null)} onConfirm={(req) => void run(req)} />}
     </div>
@@ -497,4 +576,8 @@ function Row({ r, selected, onToggle }: { r: BulkRow; selected: boolean; onToggl
       </td>
     </tr>
   );
+}
+
+function countsText(t: (k: string, o?: Record<string, unknown>) => string, c: BulkCounts): string {
+  return t("bulk.notice.counts", { ok: c.succeeded, failed: c.failed, unknown: c.unknown, skipped: c.skipped, cancelled: c.cancelled });
 }

@@ -439,7 +439,10 @@ impl Engine {
         Ok(BulkDetails::from_inspect(&r))
     }
 
-    async fn inspect_silent(&self, id: &str) -> Result<ContainerInspectResponse, EngineError> {
+    pub(crate) async fn inspect_silent(
+        &self,
+        id: &str,
+    ) -> Result<ContainerInspectResponse, EngineError> {
         crate::resources::validate_ref("contenedor", id)?;
         let d = self.docker().clone();
         let id_s = id.to_owned();

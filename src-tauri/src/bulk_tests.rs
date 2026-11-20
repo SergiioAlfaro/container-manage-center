@@ -183,9 +183,9 @@ async fn cancel_stops_pending_items_but_lets_running_ones_finish() {
         move |i, t| {
             let (c, s) = (c2.clone(), s2.clone());
             async move {
-                s.fetch_add(1, Ordering::SeqCst);
-                // El primero pide cancelar cuando los dos huecos están ocupados.
-                if i == 0 {
+                // El primero que empieza (el orden entre tareas no está
+                // garantizado) pide cancelar cuando los dos huecos están ocupados.
+                if s.fetch_add(1, Ordering::SeqCst) == 0 {
                     while s.load(Ordering::SeqCst) < 2 {
                         tokio::time::sleep(Duration::from_millis(1)).await;
                     }
@@ -206,9 +206,11 @@ async fn cancel_stops_pending_items_but_lets_running_ones_finish() {
     );
     assert_eq!(counts.succeeded, 2, "los que estaban en marcha terminan");
     assert_eq!(counts.cancelled, 4);
-    assert!(results[2..]
+    assert!(results
         .iter()
-        .all(|r| r.status == BulkItemStatus::Cancelled && r.duration_ms == 0));
+        .filter(|r| r.status == BulkItemStatus::Cancelled)
+        .all(|r| r.duration_ms == 0));
+    assert!(results.iter().enumerate().all(|(i, r)| r.index == i as u32));
     assert!(!counts.clean());
 }
 

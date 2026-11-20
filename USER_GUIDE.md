@@ -1,6 +1,6 @@
 # Guía de usuario · Container Manage Center
 
-> Versión 1.10.0. Para actualizar desde una versión anterior, véase
+> Versión 1.11.0. Para actualizar desde una versión anterior, véase
 > [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 >
 > Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)
@@ -299,9 +299,25 @@ etiqueta, no se borra). **Ver la imagen** abre su detalle en Imágenes.
 
 ## Gestión masiva
 
-Novedad de la 1.10.0. Sirve para aplicar una misma operación a muchos
-contenedores a la vez, también de varios servidores. Está en la barra lateral,
-en «Recursos», justo después de «Contenedores».
+Novedad de la 1.10.0 (los comandos masivos, de la 1.11.0). Sirve para aplicar
+una misma operación o un mismo comando a muchos contenedores a la vez, también
+de varios servidores. Está en la barra lateral, en «Recursos», justo después de
+«Contenedores».
+
+Arriba están siempre los contadores y la actualización; debajo, seis apartados:
+
+| Apartado | Para qué |
+|---|---|
+| Resumen | Contenedores por servidor (en marcha, detenidos, en pausa, con error) y la última operación y el último comando |
+| Contenedores | La tabla con filtros, la selección y la barra de acciones |
+| Operaciones | Progreso y resultado de la operación masiva en curso o la última |
+| Configuración masiva | Política de reinicio y etiquetas de la selección |
+| Comandos masivos | Ejecutar un comando dentro de varios contenedores |
+| Historial | Operaciones y comandos masivos guardados, con las órdenes de cada uno |
+
+La selección es la misma en todos los apartados. Al lanzar una operación se pasa
+a «Operaciones»; cuando termina una operación o un comando aparece un aviso
+arriba con el resultado.
 
 ### Qué muestra
 
@@ -384,8 +400,9 @@ es la pedida.
 Docker **no permite** añadir, cambiar ni quitar etiquetas de un contenedor que
 ya existe: solo se fijan al crearlo. Hacerlo exigiría recrear cada contenedor
 (eliminarlo y volver a crearlo), y esta versión no recrea nada automáticamente.
-El botón **Etiquetas** muestra las etiquetas actuales de la selección y lo
-explica. Para un contenedor concreto, **Duplicar** (en su detalle) crea uno
+El botón **Etiquetas** de la barra y el apartado «Configuración masiva»
+muestran las etiquetas actuales de la selección y lo explican; allí los botones
+de añadir, modificar y eliminar etiquetas están desactivados por ese motivo. Para un contenedor concreto, **Duplicar** (en su detalle) crea uno
 nuevo con la misma configuración, donde puedes cambiar las etiquetas antes de
 crearlo. La edición masiva de etiquetas queda para una etapa posterior.
 
@@ -419,6 +436,102 @@ resumen «Operación masiva» con el resultado global. **Ver en actividad** abre
 el panel mostrando solo esa operación; la «×» del aviso vuelve a mostrarlo todo.
 El historial que se guarda en el disco también conserva el identificador.
 
+El apartado **Historial** lista las operaciones y los comandos masivos
+guardados en ese historial (fecha, tipo, qué se hizo, resultado y duración).
+Al desplegar uno se ven las órdenes enviadas a cada contenedor, con su resultado
+y su código de salida. Se guardan según la configuración del historial
+(«Eventos y registros»); si no se guarda en el disco, solo se ven los de esta
+sesión.
+
+### Comandos masivos
+
+Ejecutan un mismo comando **dentro** de varios contenedores con Docker Exec.
+El comando nunca pasa por una shell de este equipo ni se guarda en archivos:
+Docker recibe los argumentos tal cual y cada contenedor da su propio resultado.
+
+**Elegir contenedores.** Se usa la misma selección que en «Contenedores». Desde
+el propio apartado se pueden buscar y añadir más (por nombre, ID o servidor; por
+defecto solo los que están en ejecución) y quitar los que sobren. Solo se ejecuta
+en los que están **en ejecución**; los demás aparecen como «no se ejecutará» con
+su estado.
+
+**Escribir el comando.** Hay dos modalidades:
+
+* **Ejecutable con argumentos**: el programa (`df`, `/usr/bin/env`…) y sus
+  argumentos, **uno por línea** (los espacios forman parte del argumento). No se
+  usa ninguna shell, así que funciona también en imágenes sin `/bin/sh`, y
+  `;`, `|`, `>` o `$( )` no se interpretan: llegan como texto.
+* **Secuencia con un intérprete**: un texto de una o varias líneas que se pasa
+  al intérprete que elijas (`/bin/sh`, `/bin/bash`, `/bin/ash`,
+  `/usr/bin/python3` u otro escribiendo su ruta) con su opción (normalmente
+  `-c`). La sintaxis depende del intérprete: lo que funciona en bash puede no
+  funcionar en sh o en BusyBox. Si el intérprete no existe en una imagen, ese
+  contenedor da error («Docker no pudo lanzar el proceso»); CMC nunca cambia de
+  intérprete por su cuenta.
+
+Opcionalmente: **usuario** (`usuario`, `uid`, `usuario:grupo` o `uid:gid`; si no,
+el de la imagen), **directorio de trabajo** (ruta absoluta del contenedor),
+**tiempo máximo** (1 s a 1 hora) y **ejecuciones a la vez** (1 a 16).
+
+**Vista previa.** Antes de ejecutar se ven el `docker exec` equivalente, los
+argumentos exactos que recibirá Docker y el **nivel de riesgo**:
+informativo, modificación, administrativo o potencialmente destructivo, con los
+motivos (por ejemplo, «borrado recursivo» o «instala paquetes») y un aviso si el
+comando puede mostrar variables de entorno u otros secretos. La clasificación
+es orientativa (por palabras clave): no sustituye a revisar el comando.
+
+**Confirmar.** La confirmación repite el comando, el usuario, el directorio, el
+tiempo, la concurrencia, los servidores y las listas de contenedores donde se
+ejecutará y donde no. Si el riesgo es administrativo o destructivo, hay que
+escribir el número de contenedores.
+
+**Resultados.** Cada contenedor pasa por *Pendiente* y *En ejecución* hasta su
+estado final:
+
+| Estado | Significa |
+|---|---|
+| Correcto | Terminó con código de salida 0 |
+| Error | Terminó con otro código, Docker no pudo lanzar el proceso o rechazó la ejecución |
+| Tiempo agotado | Se dejó de esperar al cumplirse el tiempo máximo |
+| Cancelación solicitada | Se pidió la interrupción y se dejó de esperar |
+| No ejecutado | No estaba en ejecución, ya no existía o se canceló antes de empezar |
+| Desconocido | Se perdió la conexión durante la ejecución: pudo ejecutarse total o parcialmente |
+
+Al desplegar un contenedor se ven su nombre, ID, imagen, servidor, el comando,
+el usuario, la hora de inicio, la duración, el **código de salida**, la
+**salida estándar** (`stdout`, lo que el comando escribe normalmente) y la
+**salida de error** (`stderr`, avisos y errores), cada una con su botón para
+copiarla, y el error técnico si lo hubo. Un código de salida distinto de 0
+suele indicar que el comando falló; su significado depende del programa (126 y
+127 suelen ser «no se puede ejecutar» y «no existe»). Cada salida se guarda
+hasta 128 KiB; si es más larga se indica que está recortada. Se muestra tal
+cual, como en una terminal: si el comando imprime secretos, se verán.
+
+**Exportar** guarda los resultados en Markdown o JSON, con los secretos que se
+reconocen ocultos y el archivo solo legible por tu usuario.
+
+**Cancelar.** *Cancelar pendientes* no lanza ninguna ejecución más; las que ya
+están en curso terminan. *Interrumpir activas* además deja de esperar a las que
+se están ejecutando. Docker Exec **no permite detener un proceso ya lanzado**:
+al agotarse el tiempo o al interrumpir, el proceso puede seguir dentro del
+contenedor (el resultado lo indica). CMC nunca detiene ni reinicia un contenedor
+para cancelar un comando, y nunca repite un comando automáticamente.
+
+**Comandos frecuentes.** *Guardar como comando frecuente* guarda el comando
+actual con un nombre y una descripción (modalidad, argumentos o secuencia,
+usuario, directorio y tiempo). Se cargan desde *Cargar un comando…*, junto con
+siete ejemplos (versión del sistema, espacio en disco, memoria, procesos,
+actualizar índices de paquetes, información de red y variables de entorno). No
+guardes secretos: los comandos que parezcan contener contraseñas o tokens se
+rechazan. Los comandos guardados son una configuración reutilizable, no la
+garantía de que funcionen en cualquier imagen.
+
+**Registro.** En el panel de actividad queda un resumen «Comando masivo» con el
+comando (con los secretos ocultos), el usuario, los contenedores y el riesgo, y
+por cada contenedor el `docker exec` equivalente, el resultado, el código de
+salida y la duración, todo con el identificador del lote. La salida de los
+comandos **no** se registra.
+
 ### Limitaciones y seguridad
 
 * Como máximo 1000 contenedores por operación y una operación masiva a la vez
@@ -430,8 +543,11 @@ El historial que se guarda en el disco también conserva el identificador.
   nombres: no puede afectar por error a otro contenedor de nombre parecido ni de
   otro servidor.
 * Los errores se muestran sin contraseñas ni otros secretos.
-* No se gestionan proyectos Compose como tales, ni plantillas, automatizaciones
-  o políticas globales: para Compose, usa su apartado.
+* Un comando masivo solo se ejecuta dentro de los contenedores elegidos, nunca
+  en este equipo, y con la conexión de cada servidor.
+* No se gestionan proyectos Compose como tales, ni catálogos de aplicaciones,
+  automatizaciones programadas o políticas globales: para Compose, usa su
+  apartado.
 
 ## Imágenes
 

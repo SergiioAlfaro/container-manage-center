@@ -6,7 +6,7 @@
 
 - [ ] `npm run typecheck`, `npm run lint` y `npm test`
 - [ ] `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings` y `cargo test --workspace`
-- [ ] Si toca Docker: `bash scripts/verify-evolution-1.10.0.sh` (o la parte que aplique) en Debian/Ubuntu con Docker
+- [ ] Si toca Docker: `bash scripts/verify-evolution-1.11.0.sh` (o la parte que aplique) en Debian/Ubuntu con Docker
 - [ ] Si toca Windows: compila para Windows (`cargo check --target x86_64-pc-windows-gnu` o el flujo `windows-build`) y se indica qué se ha probado en un Windows real
 - [ ] Pruebas nuevas para lo que se corrige o se añade
 

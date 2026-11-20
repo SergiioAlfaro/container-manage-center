@@ -2,7 +2,7 @@
 
 Las capturas de este capítulo son **reales**: se tomaron el 16 de noviembre
 de 2026 de la versión 1.9.1 de Linux (las de «Gestión masiva», el 20 de
-noviembre de 2026 de la 1.10.0, con contenedores creados para la ocasión), en el entorno de pruebas (Ubuntu 24.04,
+noviembre de 2026 de la 1.10.0 y la 1.11.0, con contenedores creados para la ocasión), en el entorno de pruebas (Ubuntu 24.04,
 Docker 29.9.2), con contenedores, redes, volúmenes y un proyecto Compose
 creados para la ocasión. Ese entorno no tiene acceso a Docker Hub, por eso las
 imágenes que se ven son las de prueba del proyecto (`cmc-test/…`), y se
@@ -65,6 +65,14 @@ conectar**.
 ![Gestión masiva: indicadores, filtros y barra de acciones con seis contenedores seleccionados.](imagenes/captura-gestion-masiva.png){width=100%}
 
 ![Resultado de una detención masiva: cada contenedor con su resultado y su duración.](imagenes/captura-gestion-masiva-resultado.png){width=100%}
+
+**Comandos masivos** (1.11.0): en el apartado del mismo nombre, elige los
+contenedores (los que no están en ejecución no se usan), escribe el comando como
+ejecutable con argumentos o como secuencia para un intérprete, revisa la vista
+previa y el riesgo, confirma y despliega cada contenedor para ver su salida y su
+código de salida.
+
+![Comandos masivos: resultado del mismo comando en varios contenedores, con la salida de uno desplegada.](imagenes/captura-comandos-masivos.png){width=100%}
 
 ## Creación
 

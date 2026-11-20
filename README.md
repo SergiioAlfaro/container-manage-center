@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Versión 1.10.0 · GPL-3.0-or-later · Linux (Debian, Ubuntu) · Windows 10/11 (en pruebas)
+  Versión 1.11.0 · GPL-3.0-or-later · Linux (Debian, Ubuntu) · Windows 10/11 (en pruebas)
 </p>
 
 <p align="center">
@@ -67,7 +67,7 @@ conoce la terminal:
 | Área | Qué se puede hacer |
 |---|---|
 | **Contenedores** | Crear con un asistente (con la orden `docker run` equivalente y los riesgos para el equipo), iniciar, detener, pausar, reiniciar, eliminar, duplicar, editar la configuración con recreación segura, crear una imagen, registros en directo, estadísticas, inspección JSON y terminal |
-| **Gestión masiva** | Una tabla con los contenedores de todos los servidores conectados: indicadores, filtros, orden y selección; iniciar, detener, reiniciar, pausar, reanudar, eliminar (nunca volúmenes ni imágenes) y cambiar la política de reinicio de muchos a la vez, con confirmación, progreso y resultado por contenedor |
+| **Gestión masiva** | Una tabla con los contenedores de todos los servidores conectados: indicadores, filtros, orden y selección; iniciar, detener, reiniciar, pausar, reanudar, eliminar (nunca volúmenes ni imágenes) y cambiar la política de reinicio de muchos a la vez, con confirmación, progreso y resultado por contenedor. **Comandos masivos**: el mismo comando dentro de varios contenedores con Docker Exec (sin shell del equipo), con riesgo, tiempo máximo, salida y código de salida de cada uno, exportación y comandos frecuentes |
 | **Imágenes** | Descargar con progreso por capa, buscar, construir (BuildKit y clásica), etiquetar, ver capas y uso, eliminar y limpiar |
 | **Redes, volúmenes y carpetas** | Crear, conectar, inspeccionar, eliminar y limpiar, con avisos de quién los usa |
 | **Docker Compose** | Abrir o crear proyectos, editor con validación, desplegar, detener, construir, servicios, salida y registros |
@@ -100,7 +100,7 @@ Windows real.
 | Ubuntu 22.04 | **Admitida** (paquete compatible) | Instalación limpia del paquete compatible |
 | Debian 13 | **Admitida** | Validación manual del propietario hasta la 1.7.0; desde la 1.8.0, pendiente ([guía](docs/validation/VALIDACION-1.8.0.md)) |
 | Debian 12 | **Admitida** (paquete compatible) | Paquete para glibc ≥ 2.34; sin validación manual |
-| Windows 10 y 11 (x86_64) | **En pruebas** | Hasta la 1.9.1: compilación, Clippy y 614 pruebas unitarias con Wine (la 1.10.0 no se ha compilado para Windows). **Nunca ejecutada en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+| Windows 10 y 11 (x86_64) | **En pruebas** | Hasta la 1.9.1: compilación, Clippy y 614 pruebas unitarias con Wine (la 1.10.0 y la 1.11.0 no se han compilado para Windows). **Nunca ejecutada en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 
 ## Especificaciones técnicas
 
@@ -148,14 +148,14 @@ Windows real.
 
 Desinstalar no borra los datos del usuario.
 
-### Paquetes de la versión 1.10.0
+### Paquetes de la versión 1.11.0
 
 | Paquete | Para | Tamaño |
 |---|---|---|
-| `container-manage-center_1.10.0_amd64.deb` | Ubuntu 24.04, Debian 13 (glibc ≥ 2.39) | 7,5 MiB |
-| `container-manage-center_1.10.0_amd64-compat-debian12-ubuntu2204.deb` | Debian 12, Ubuntu 22.04 (glibc ≥ 2.34) | 7,9 MiB |
-| `Container Manage Center_1.9.1_x64-setup.exe` | Windows 10/11, instalación para el usuario sin administrador; sin firmar (en pruebas). **No hay instalador de la 1.10.0**: esta versión no se ha compilado para Windows | 5,1 MiB |
-| `container-manage-center-1.10.0-src.tar.gz` | Código fuente correspondiente | — |
+| `container-manage-center_1.11.0_amd64.deb` | Ubuntu 24.04, Debian 13 (glibc ≥ 2.39) | 7,6 MiB |
+| `container-manage-center_1.11.0_amd64-compat-debian12-ubuntu2204.deb` | Debian 12, Ubuntu 22.04 (glibc ≥ 2.34) | 8,0 MiB |
+| `Container Manage Center_1.9.1_x64-setup.exe` | Windows 10/11, instalación para el usuario sin administrador; sin firmar (en pruebas). **No hay instalador de la 1.10.0 ni de la 1.11.0**: no se han compilado para Windows | 5,1 MiB |
+| `container-manage-center-1.11.0-src.tar.gz` | Código fuente correspondiente | — |
 
 ### Seguridad
 
@@ -179,13 +179,13 @@ bash scripts/install.sh          # elige el paquete adecuado para tu sistema y l
 bash scripts/install.sh --check  # solo comprueba el sistema
 ```
 
-O directamente con el paquete: `sudo apt install ./container-manage-center_1.10.0_amd64.deb`
+O directamente con el paquete: `sudo apt install ./container-manage-center_1.11.0_amd64.deb`
 (en Debian 12 o Ubuntu 22.04, el paquete `…-compat-debian12-ubuntu2204.deb`).
 Después se abre desde el menú de aplicaciones o con `container-manage-center`.
 
 ### Windows (en pruebas)
 
-Ejecuta `Container Manage Center_1.9.1_x64-setup.exe` (el último instalador de Windows; la 1.10.0 no tiene): instala para el usuario
+Ejecuta `Container Manage Center_1.9.1_x64-setup.exe` (el último instalador de Windows; la 1.10.0 y la 1.11.0 no tienen): instala para el usuario
 actual sin permisos de administrador. Como no está firmado, SmartScreen
 avisará («Más información › Ejecutar de todas formas»). La aplicación no
 arranca como administrador. Requisitos y diferencias con Linux en
@@ -280,7 +280,7 @@ Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md)
 npm ci && npm run typecheck && npm run lint && npm test   # interfaz
 cargo clippy --workspace --all-targets -- -D warnings     # Rust
 cargo test --workspace
-bash scripts/verify-evolution-1.10.0.sh --deb             # verificación completa con Docker
+bash scripts/verify-evolution-1.11.0.sh --deb             # verificación completa con Docker
 ```
 
 ## Licencia

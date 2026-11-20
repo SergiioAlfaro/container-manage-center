@@ -189,17 +189,8 @@ pub enum BulkEvent {
 
 /// Valida la petición antes de tocar nada.
 pub fn validate(req: &BulkRequest, server_exists: impl Fn(&str) -> bool) -> CmdResult<()> {
-    let invalid = |m: &str| CommandError::new("bulk.invalid", m);
     if !req.confirmed {
         return Err(EngineError::NotConfirmed.into());
-    }
-    if req.targets.is_empty() {
-        return Err(invalid("no hay contenedores seleccionados"));
-    }
-    if req.targets.len() > MAX_TARGETS {
-        return Err(invalid(&format!(
-            "una operación masiva admite como máximo {MAX_TARGETS} contenedores"
-        )));
     }
     if req.operation.is_destructive() && req.confirm_count != Some(req.targets.len() as u32) {
         return Err(CommandError::new(
@@ -208,8 +199,27 @@ pub fn validate(req: &BulkRequest, server_exists: impl Fn(&str) -> bool) -> CmdR
         ));
     }
     req.operation.validate()?;
+    validate_targets(&req.targets, server_exists)
+}
+
+/// Destinos de una operación o de un comando masivo: entre 1 y
+/// `MAX_TARGETS`, con el ID completo, de un servidor conocido y sin repetir
+/// el mismo (servidor, ID).
+pub fn validate_targets(
+    targets: &[BulkTarget],
+    server_exists: impl Fn(&str) -> bool,
+) -> CmdResult<()> {
+    let invalid = |m: &str| CommandError::new("bulk.invalid", m);
+    if targets.is_empty() {
+        return Err(invalid("no hay contenedores seleccionados"));
+    }
+    if targets.len() > MAX_TARGETS {
+        return Err(invalid(&format!(
+            "una operación masiva admite como máximo {MAX_TARGETS} contenedores"
+        )));
+    }
     let mut seen = HashSet::new();
-    for t in &req.targets {
+    for t in targets {
         if !cmc_engine::bulk::is_full_id(&t.id) {
             return Err(invalid(&format!("{}: hace falta el ID completo", t.name)));
         }
@@ -296,29 +306,38 @@ fn cancelled(index: u32, target: BulkTarget) -> BulkItemResult {
     }
 }
 
-/// Ejecuta `exec` para cada contenedor con como mucho `concurrency` a la vez.
-/// Lo que no ha empezado cuando se cancela queda `Cancelled`; lo que ya está en
-/// marcha termina (interrumpir una orden enviada a Docker dejaría el
-/// contenedor en un estado desconocido). `on_event` recibe el progreso.
-pub async fn run_items<F, Fut>(
+/// Ejecuta `exec` para cada destino con como mucho `concurrency` a la vez
+/// (común a las operaciones y a los comandos masivos, 1.11.0). Lo que no ha
+/// empezado cuando se cancela no empieza (`cancelled`). `on_running` y
+/// `on_item` informan del progreso. Los resultados vuelven en el orden de la
+/// petición.
+pub async fn run_pool<R, F, Fut>(
     targets: Vec<BulkTarget>,
     concurrency: u8,
     cancel: CancellationToken,
     exec: F,
-    on_event: impl Fn(BulkEvent) + Send + Sync + 'static,
-) -> Vec<BulkItemResult>
+    on_running: impl Fn(u32) + Send + Sync + 'static,
+    on_item: impl Fn(&R) + Send + Sync + 'static,
+) -> Vec<R>
 where
+    R: PoolItem,
     F: Fn(u32, BulkTarget) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = BulkItemResult> + Send + 'static,
+    Fut: Future<Output = R> + Send + 'static,
 {
     let sem = Arc::new(Semaphore::new(usize::from(concurrency.max(1))));
     let exec = Arc::new(exec);
-    let on_event = Arc::new(on_event);
+    let on_running = Arc::new(on_running);
+    let on_item = Arc::new(on_item);
     let mut set = tokio::task::JoinSet::new();
     for (i, t) in targets.into_iter().enumerate() {
         let index = i as u32;
-        let (sem, exec, on_event, cancel) =
-            (sem.clone(), exec.clone(), on_event.clone(), cancel.clone());
+        let (sem, exec, on_running, on_item, cancel) = (
+            sem.clone(),
+            exec.clone(),
+            on_running.clone(),
+            on_item.clone(),
+            cancel.clone(),
+        );
         set.spawn(async move {
             let permit = tokio::select! {
                 // `biased`: si ya se ha cancelado, no se empieza aunque haya sitio.
@@ -328,14 +347,12 @@ where
             };
             let r = match permit {
                 Some(_permit) if !cancel.is_cancelled() => {
-                    on_event(BulkEvent::Running { index });
+                    on_running(index);
                     exec(index, t).await
                 }
-                _ => cancelled(index, t),
+                _ => R::cancelled(index, t),
             };
-            on_event(BulkEvent::Item {
-                result: Box::new(r.clone()),
-            });
+            on_item(&r);
             r
         });
     }
@@ -347,8 +364,54 @@ where
             Err(e) => tracing::error!("tarea de la operación masiva: {e}"),
         }
     }
-    out.sort_by_key(|r| r.index);
+    out.sort_by_key(R::index);
     out
+}
+
+/// Resultado de un elemento del grupo de ejecución.
+pub trait PoolItem: Send + 'static {
+    fn index(&self) -> u32;
+    /// Resultado de uno que no llegó a empezar por la cancelación.
+    fn cancelled(index: u32, target: BulkTarget) -> Self;
+}
+
+impl PoolItem for BulkItemResult {
+    fn index(&self) -> u32 {
+        self.index
+    }
+
+    fn cancelled(index: u32, target: BulkTarget) -> Self {
+        cancelled(index, target)
+    }
+}
+
+/// Operaciones masivas sobre [`run_pool`], con los eventos de la interfaz.
+pub async fn run_items<F, Fut>(
+    targets: Vec<BulkTarget>,
+    concurrency: u8,
+    cancel: CancellationToken,
+    exec: F,
+    on_event: impl Fn(BulkEvent) + Send + Sync + 'static,
+) -> Vec<BulkItemResult>
+where
+    F: Fn(u32, BulkTarget) -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = BulkItemResult> + Send + 'static,
+{
+    let on_event = Arc::new(on_event);
+    let ev = on_event.clone();
+    run_pool(
+        targets,
+        concurrency,
+        cancel,
+        exec,
+        move |index| ev(BulkEvent::Running { index }),
+        move |r| {
+            on_event(BulkEvent::Item {
+                result: Box::new(r.clone()),
+            })
+        },
+    )
+    .await
 }
 
 /// Convierte el resultado del motor en el de la interfaz.

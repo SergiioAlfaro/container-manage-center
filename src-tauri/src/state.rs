@@ -32,6 +32,8 @@ pub struct AppState {
     pub bulk_jobs: crate::bulk::BulkJobs,
     /// Datos de `inspect` de la gestión masiva (política de reinicio, `--rm`).
     pub bulk_details: std::sync::Arc<crate::bulk::DetailsCache>,
+    /// Interrupción de los comandos masivos activos (1.11.0, D-122).
+    pub exec_interrupts: crate::bulk_exec::ExecInterrupts,
 }
 
 /// Traduce la configuración persistida al modo de conexión del motor.
@@ -115,6 +117,7 @@ impl AppState {
             monitor,
             bulk_jobs: Default::default(),
             bulk_details: Default::default(),
+            exec_interrupts: Default::default(),
         }
     }
 
@@ -138,6 +141,8 @@ impl AppState {
         let mut cur = self.config.lock();
         let mut new = new.normalized();
         new.compose = cur.compose.clone();
+        // Los comandos guardados solo cambian con su orden, que los valida.
+        new.exec = cur.exec.clone();
         self.store.save(&new)?;
         self.activity
             .set_capacity(new.activity.max_records as usize);
@@ -170,6 +175,22 @@ impl AppState {
         self.store.save(&next)?;
         *cur = next.clone();
         Ok((out, next))
+    }
+
+    /// Sustituye los comandos frecuentes de la gestión masiva (1.11.0), ya
+    /// validados, y los guarda.
+    pub fn replace_exec_templates(
+        &self,
+        templates: Vec<cmc_store::ExecTemplate>,
+    ) -> CmdResult<AppConfig> {
+        crate::bulk_exec::validate_templates(&templates)?;
+        let mut cur = self.config.lock();
+        let mut next = cur.clone();
+        next.exec.templates = templates;
+        let next = next.normalized();
+        self.store.save(&next)?;
+        *cur = next.clone();
+        Ok(next)
     }
 }
 

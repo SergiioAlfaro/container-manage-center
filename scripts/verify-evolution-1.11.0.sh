@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-# Verificación de Container Manage Center 1.10.0 en Debian/Ubuntu. Repite toda
+# Verificación de Container Manage Center 1.11.0 en Debian/Ubuntu. Repite toda
 # la regresión automática de las fases 1-10, las etapas 1-6 y las versiones
-# 1.7.0 a 1.9.1, y comprueba lo nuevo de la 1.10.0 (D-117 a D-120: gestión
-# masiva de contenedores, etapa 1):
+# 1.7.0 a 1.10.0, y comprueba lo nuevo de la 1.11.0 (D-121 a D-124: comandos
+# masivos con Docker Exec): argumentos exactos sin shell del equipo, dos
+# modalidades, intérprete inexistente, contenedor sin shell, usuario,
+# directorio, tiempo máximo, interrupción, pérdida de conexión sin reintentos,
+# riesgo, comandos guardados sin secretos, registro sin la salida, IPC e
+# interfaz (apartados, editor, resultados, exportación, historial).
+# De la 1.10.0 (D-117 a D-120: gestión masiva de contenedores, etapa 1):
 #   - reglas de cada operación, validación, reservas (nada se aplica dos veces
 #     a la vez), límite de concurrencia, cancelación de lo pendiente, resultado
 #     por contenedor (correcto, fallido, omitido, cancelado o desconocido) y
@@ -72,9 +77,9 @@
 #   - correcciones propuestas en «Editar configuración» sin aplicar nada.
 #
 # Uso (desde la raíz del proyecto, con tu usuario normal, NO como root):
-#   bash scripts/verify-evolution-1.10.0.sh --deb            # recomendado: incluye la compilación
+#   bash scripts/verify-evolution-1.11.0.sh --deb            # recomendado: incluye la compilación
 #                                                    # de producción y el paquete .deb
-#   bash scripts/verify-evolution-1.10.0.sh --deb --compat   # y el paquete compatible con
+#   bash scripts/verify-evolution-1.11.0.sh --deb --compat   # y el paquete compatible con
 #        Debian 12+/Ubuntu 22.04+ (compilado en un contenedor de Docker con
 #        Ubuntu 22.04: descarga la imagen ubuntu:22.04 y ~700 MB de paquetes)
 #   --net    además consulta un servidor HTTPS real (TLS con los certificados
@@ -103,15 +108,15 @@
 # (scripts/dev/clean-install-test.sh) necesitan root y sistemas de prueba: no se
 # ejecutan en tu equipo (se listan como omitidas o se hacen a mano en M1).
 #
-# Resultado: verify-evolution-1.10.0-report.txt y los registros completos de cada paso
-# en target/verify-evolution-1.10.0/. Código de salida 0 solo si no hay ningún fallo
+# Resultado: verify-evolution-1.11.0-report.txt y los registros completos de cada paso
+# en target/verify-evolution-1.11.0/. Código de salida 0 solo si no hay ningún fallo
 # obligatorio. Las omisiones justificadas se listan aparte.
 
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
-REPORT="$ROOT/verify-evolution-1.10.0-report.txt"
-LOGDIR="$ROOT/target/verify-evolution-1.10.0"
+REPORT="$ROOT/verify-evolution-1.11.0-report.txt"
+LOGDIR="$ROOT/target/verify-evolution-1.11.0"
 rm -rf "$LOGDIR"
 mkdir -p "$LOGDIR"
 : > "$REPORT"
@@ -235,7 +240,7 @@ finish() {
 trap finish EXIT
 trap 'exit 130' INT TERM
 
-say "Container Manage Center - verificación de la 1.10.0 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
+say "Container Manage Center - verificación de la 1.11.0 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
 say "Fecha: $(date -Is)"
 say "Proyecto: $ROOT"
 say ""
@@ -575,7 +580,7 @@ old_name_gone() {
   # 1.8.0 (D-113): el nombre anterior solo aparece donde hace falta para
   # encontrar y pasar los datos de una versión anterior. Lista cerrada: un
   # archivo nuevo con el nombre anterior hace fallar este paso.
-  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.10\.0\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
+  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.11\.0\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
   local hits bad_
   hits=$(git grep -nIiE 'docker-control-center|dockercontrolcenter|docker control center|\bdcc[-_.]|\bDCC[-_]' -- crates src-tauri ui/src ui/index.html ui/public packaging scripts Cargo.toml package.json || true)
   bad_=$(printf '%s\n' "$hits" | grep -v '^$' | grep -vE "$allowed" || true)
@@ -683,6 +688,14 @@ run_tests "1.10.0 · Configuración [bulk]: valores por defecto y límites; una 
 run_tests "1.10.0 · Interfaz: panel general, carga y errores, búsqueda y filtros, orden, paginación, selección (individual, página, filtrado), barra contextual, confirmación con vista previa, eliminación con número escrito, política de reinicio, etiquetas (limitación explicada), progreso, resultados parciales, cancelación y filtro por lote en la actividad; textos en los 8 idiomas" npx vitest run ui/src/features/bulk ui/src/features/activity ui/src/shared/i18n/i18n.test.ts ui/src/app/App.test.tsx ui/src/app/a11y.test.tsx
 
 say ""
+say "5.1l 1.11.0: comandos masivos con Docker Exec (D-121 a D-124)"
+run_tests "1.11.0 · Motor: argumentos exactos sin shell del equipo, docker exec equivalente con usuario y directorio, validación (usuario, directorio absoluto, tiempo, nulos, tamaños), niveles de riesgo y motivos, aviso de secretos, salida limitada a 128 KiB, fallo de lanzamiento de Docker, formato de la petición" cargo test --locked -p cmc-engine --lib bulk_exec
+run_tests "1.11.0 · Coordinación: confirmación, concurrencia 1-16, número escrito desde el riesgo administrativo, vista previa, estados (correcto, error, tiempo agotado, interrumpido, no ejecutado, desconocido), resumen con el comando sin secretos, interrupción por flujo, comandos guardados sin secretos, cancelación de lo pendiente" cargo test --locked -p container-manage-center --lib bulk_exec::
+run_tests "1.11.0 · IPC sin Docker: vista previa, validación antes de empezar, cada contenedor sin conexión falla por separado, comandos guardados (rechazo de secretos, config_set no los pisa)" cargo test --locked -p container-manage-center --lib -- bulk_exec_preview_via_ipc bulk_exec_is_validated_and_fails_each_item_without_connection exec_templates_save_via_ipc
+run_tests "1.11.0 · Configuración [exec]: comandos guardados normalizados y persistidos" cargo test --locked -p cmc-store exec_templates
+run_tests "1.11.0 · Interfaz: seis apartados, resumen por servidor, configuración masiva (etiquetas desactivadas y explicadas), historial con las órdenes de cada lote, editor en las dos modalidades, intérprete, usuario, directorio, vista previa y riesgo, selector, confirmación con número, resultados con stdout, stderr y código de salida, copiar, exportar, cancelar pendientes e interrumpir activas, comandos frecuentes" npx vitest run ui/src/features/bulk ui/src/shared/i18n/i18n.test.ts ui/src/features/help
+
+say ""
 say "5.3 Pruebas funcionales contra Docker real (crean y eliminan recursos cmc.test)"
 if [ -n "$SOCK" ]; then
   export CMC_DOCKER_TESTS=1 CMC_DOCKER_SOCKET="$SOCK"
@@ -749,7 +762,10 @@ if [ -n "$SOCK" ]; then
   if live_block "1.10.0 · Gestión masiva contra Docker real: contenedores temporales propios a la vez con un fallo parcial (los demás siguen), omitidos por su estado, pausa, reanudación y reinicio, política on-failure:2 comprobada con inspect, sin cambios y --rm omitidos, eliminación sin forzar y forzada que conserva el volumen, cada orden registrada con el lote" cmc-engine live_bulk 1; then
     grep -q "bulk_operations_on_real_temporary_containers ... ok" "$LAST_LOG" || bad "La prueba real de la gestión masiva no se ejecutó"
   fi
-  if live_block "Aplicación Tauri: IPC contra Docker real (incluye 0.9.1: varias terminales por IPC con canales reales y cierre global; 1.10.0: operación masiva por IPC con la concurrencia de la configuración, lote en cada registro y eliminación con el número confirmado)" container-manage-center - 1; then
+  if live_block "1.11.0 · Comandos masivos contra Docker real: el mismo comando en dos contenedores (stdout, stderr y código), argumentos sin interpretar, secuencia de varias líneas, intérprete inexistente, contenedor sin ninguna shell, usuario y directorio, usuario inexistente, tiempo máximo y proceso que sigue, interrupción sin tocar el contenedor, detenido y eliminado sin ejecutar, fallo parcial, pérdida de conexión sin reintento y registro sin la salida" cmc-engine live_bulk_exec 1; then
+    grep -q "bulk_commands_on_real_temporary_containers ... ok" "$LAST_LOG" || bad "La prueba real de los comandos masivos no se ejecutó"
+  fi
+  if live_block "Aplicación Tauri: IPC contra Docker real (incluye 0.9.1: varias terminales por IPC con canales reales y cierre global; 1.10.0: operación masiva por IPC con la concurrencia de la configuración, lote en cada registro y eliminación con el número confirmado; 1.11.0: comando masivo por IPC con resultados por contenedor y lote)" container-manage-center - 1; then
     while IFS= read -r l; do
       case "$l" in
         *Compose*) bad "Prueba IPC de Compose sin ejecutar: ${l#*omitida: }" ;;
@@ -1006,22 +1022,22 @@ if [ "$SKIP" -gt 0 ]; then
   say "Omitidas (no cuentan como superadas):"; for s in "${SKIPS[@]}"; do say "  - $s"; done
 fi
 if [ "$FAIL" -gt 0 ]; then
-  say "VEREDICTO: 1.10.0 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
+  say "VEREDICTO: 1.11.0 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
 else
-  say "VEREDICTO: parte automática superada. Falta la validación manual de la gestión masiva (docs/validation/VALIDACION-1.10.0.md), la de la 1.8.0 en Debian 13 (docs/validation/VALIDACION-1.8.0.md) y la primera prueba en Windows (docs/validation/VALIDACION-WINDOWS.md)."
+  say "VEREDICTO: parte automática superada. Falta la validación manual de la gestión masiva y los comandos masivos (docs/validation/VALIDACION-1.11.0.md), la de la 1.8.0 en Debian 13 (docs/validation/VALIDACION-1.8.0.md) y la primera prueba en Windows (docs/validation/VALIDACION-WINDOWS.md)."
 fi
 say ""
 cat <<'EOF' | tee -a "$REPORT"
 8. Validación manual (solo si la parte automática está superada)
-   a) Gestión masiva (1.10.0), en Linux, con contenedores de prueba propios
+   a) Gestión masiva (1.10.0) y comandos masivos (1.11.0), en Linux, con contenedores de prueba propios
       (nunca con los tuyos reales): abre «Gestión masiva», comprueba que los
       contadores coinciden con «docker ps -a», filtra, selecciona varios y
       prueba detener, iniciar, pausar, reanudar, reiniciar, cambiar la
       política de reinicio y eliminar (forzado y sin forzar). Comprueba el
       resultado de cada contenedor y «Ver en actividad». Si tienes un
       servidor remoto, repítelo con contenedores de los dos a la vez:
-       docs/validation/VALIDACION-1.10.0.md
-   b) Windows: la 1.10.0 no se ha ejecutado nunca en un Windows real:
+       docs/validation/VALIDACION-1.11.0.md
+   b) Windows: la 1.11.0 no se ha ejecutado nunca en un Windows real:
        docs/validation/VALIDACION-WINDOWS.md (versión de Windows en pruebas)
    c) Si aún no has validado la 1.8.0, hazlo en Debian 13 con la 1.7.0
       instalada y en uso antes:

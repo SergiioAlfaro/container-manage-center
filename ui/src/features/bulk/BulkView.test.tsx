@@ -290,13 +290,18 @@ describe("Gestión masiva", () => {
     const calls = vi.mocked(api.bulkInventory).mock.calls.length;
     emit({ type: "started", batch: BATCH, total: 4, concurrency: 4 });
     emit({ type: "running", index: 0 });
-    const panel = screen.getByTestId("bulk-run");
+    // Al lanzarla se pasa al apartado «Operaciones».
+    expect(screen.getByRole("tab", { name: /Operaciones/ })).toHaveAttribute("aria-selected", "true");
+    let panel = screen.getByTestId("bulk-run");
     expect(within(panel).getByText("0 de 4 · 4 a la vez")).toBeInTheDocument();
     expect(within(panel).getAllByTestId("bulk-run-item")[0]).toHaveAttribute("data-status", "running");
     // Mientras se ejecuta no se puede lanzar otra.
+    await user.click(screen.getByRole("tab", { name: /Contenedores/ }));
     await user.click(select("db", "Este equipo"));
     expect(within(bar()).getByRole("button", { name: /^Iniciar/ })).toBeDisabled();
     expect(within(bar()).getByText("Hay una operación masiva en curso.")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Operaciones/ }));
+    panel = screen.getByTestId("bulk-run");
 
     const results = [
       result(0, req, {}),

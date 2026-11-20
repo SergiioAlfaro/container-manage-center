@@ -53,6 +53,8 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Audit", "Date",
     // 1.7.0
     "Licence",
+    // 1.11.0: comandos masivos.
+    "Mode", "Arguments", "Option", "Script", "Modification", "code {{code}}",
   ],
   it: [
     "Dashboard", "Area", "No", "Host", "Kernel", "{{count}} container", "Entrypoint", "Gateway", "Container {{name}}", "Container", "Volume",
@@ -65,6 +67,8 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Database",
     // 1.10.0: gestión masiva («container» no cambia en singular).
     "{{op}}: {{count}} container",
+    // 1.11.0: comandos masivos.
+    "Script",
   ],
   ca: [
     // 1.3.0
@@ -75,6 +79,8 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Manual",
     // 1.10.0
     "Total",
+    // 1.11.0
+    "Arguments",
   ],
   gl: ["Daemon (dockerd)", "Executable", "Local", "Terminal", "Variables", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual", "Total"],
   eu: [],

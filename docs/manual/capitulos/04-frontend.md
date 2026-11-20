@@ -14,7 +14,7 @@ y la estructura de la ventana en `app/`.
 | `dashboard` | Panel de inicio: versión de Docker, recursos, equipo, avisos |
 | `servers` | Servidores remotos: asistente, prueba de conexión, identidad, diagnóstico, vista general |
 | `containers` | Lista, asistente de creación (`create/`), detalle (`detail/`), edición (`edit/`) |
-| `bulk` | Gestión masiva (1.10.0): tabla de varios servidores, filtros, selección, confirmación, progreso y resultados |
+| `bulk` | Gestión masiva (1.10.0): tabla de varios servidores, filtros, selección, confirmación, progreso y resultados; desde la 1.11.0, seis apartados y comandos masivos |
 | `images` | Lista, detalle, descargas (`pull/`), construcción (`build/`), búsqueda |
 | `networks` · `volumes` · `binds` | Redes, volúmenes y carpetas vinculadas |
 | `compose` | Proyectos, servicios, despliegue, registros, editor de archivos |

@@ -1,5 +1,18 @@
 # Cambios
 
+## 1.11.0 — 2026-11-20 (gestión masiva: comandos masivos)
+- **Comandos masivos** (D-121 a D-124): el mismo comando dentro de varios contenedores con Docker Exec, de uno o varios servidores conectados.
+  - Dos modalidades: un ejecutable con argumentos (sin ninguna shell; funciona en imágenes sin `/bin/sh`) o una secuencia de varias líneas para el intérprete que se elija. Usuario, directorio de trabajo, tiempo máximo (1 s a 1 h) y ejecuciones a la vez (1 a 16).
+  - El comando nunca pasa por una shell del equipo ni se escribe en archivos: Docker recibe los argumentos tal cual. La vista previa muestra los argumentos exactos, el `docker exec` equivalente y el nivel de riesgo (informativo, modificación, administrativo, potencialmente destructivo) con sus motivos y un aviso si puede mostrar secretos.
+  - Confirmación con los contenedores donde se ejecutará y donde no (solo en los que están en ejecución); desde «administrativo» hay que escribir el número de contenedores, comprobado también en el backend.
+  - Resultado por contenedor: estado (pendiente, en ejecución, correcto, error, tiempo agotado, cancelación solicitada, no ejecutado o desconocido), código de salida, salida estándar y de error (copiables), hora de inicio, duración y error técnico. Resumen global y exportación en Markdown o JSON con los secretos ocultos.
+  - «Cancelar pendientes» y «Interrumpir activas» son acciones distintas. Docker Exec no permite detener un proceso: al agotarse el tiempo o interrumpir solo se deja de esperar y se informa de si sigue vivo; nunca se detiene ni se reinicia el contenedor.
+  - Comandos frecuentes guardados (se rechazan los que contienen secretos) y siete ejemplos.
+  - Registro: resumen con el comando (secretos ocultos), usuario, destinos y riesgo, y por contenedor el `docker exec` equivalente y el código de salida, con el lote; la salida no se registra.
+- **Gestión masiva organizada en apartados**: Resumen (por servidor), Contenedores, Operaciones, Configuración masiva (política de reinicio y etiquetas, estas con la limitación explicada), Comandos masivos e Historial (operaciones y comandos guardados, con las órdenes de cada lote). Aviso en la ventana al terminar una operación o un comando.
+- **Corrección encontrada con la prueba real**: si la conexión con Docker se cortaba durante una ejecución, el final de la salida parecía un fin normal; ahora es «desconocido».
+- Ayuda (sección 30) y textos en los 8 idiomas; `scripts/verify-evolution-1.11.0.sh`.
+
 ## 1.10.0 — 2026-11-20 (gestión masiva de contenedores, etapa 1)
 - **Apartado nuevo «Gestión masiva»** (en «Recursos», después de «Contenedores»; D-117 a D-120): reúne en una sola tabla los contenedores de todos los servidores conectados (este equipo y los remotos) y aplica una misma operación a muchos a la vez.
   - **Panel general**: total, en ejecución, detenidos, en pausa y con error (salida con un código distinto de 0 —salvo 137 y 143, los de `docker stop`—, muerto, reiniciándose o con la comprobación de salud fallando); servidores conectados y sin conexión; hora de la última actualización; actualización manual y automática (cada 5 a 300 s, se puede desactivar).

@@ -4,6 +4,7 @@
 
 mod backups;
 mod bulk;
+mod bulk_exec;
 mod commands;
 mod error;
 mod events;
@@ -120,6 +121,10 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::audit::audit_export_save,
             commands::bulk::bulk_inventory,
             commands::bulk::bulk_run_open,
+            commands::bulk_exec::bulk_exec_preview,
+            commands::bulk_exec::bulk_exec_open,
+            commands::bulk_exec::bulk_exec_interrupt,
+            commands::bulk_exec::exec_templates_save,
             commands::backup::backup_settings,
             commands::monitor::monitor_settings,
             commands::monitor::monitor_settings_set,

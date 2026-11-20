@@ -87,6 +87,20 @@ el capítulo [Uso de la aplicación](#uso-de-la-aplicación).
 | Errores | Antes de empezar: sin confirmar, número mal escrito al eliminar, destinos repetidos o más de 1000, servidor desconocido, contenedor ya en otra operación masiva (`bulk.busy`). Por contenedor: rechazo de Docker, contenedor ocupado (`engine.busy`), sin conexión, resultado desconocido si la conexión se corta |
 | Limitaciones | Las etiquetas no se pueden cambiar (Docker exige recrear el contenedor; D-119). No hay transacción global: los resultados pueden ser parciales y nada se deshace ni se reintenta. Nunca elimina volúmenes ni imágenes. No gestiona proyectos Compose, plantillas ni automatizaciones |
 
+Desde la 1.11.0 el módulo se organiza en seis apartados: Resumen, Contenedores, Operaciones, Configuración masiva, Comandos masivos e Historial.
+
+## Comandos masivos (1.11.0)
+
+| | |
+|---|---|
+| Qué hace | Ejecuta un mismo comando dentro de varios contenedores en ejecución con Docker Exec: un ejecutable con argumentos (sin shell) o una secuencia de varias líneas para el intérprete elegido, con usuario, directorio, tiempo máximo y concurrencia. Resultado por contenedor con estado, código de salida, `stdout`, `stderr`, inicio y duración; exportación; comandos frecuentes |
+| Dónde | Barra lateral › Recursos › Gestión masiva › Comandos masivos · `features/bulk/CommandsTab.tsx` |
+| Uso | Elegir contenedores → escribir el comando (o cargar uno guardado o un ejemplo) → vista previa con los argumentos exactos y el riesgo → confirmación (número escrito si el riesgo es administrativo o destructivo) → resultados; «Cancelar pendientes», «Interrumpir activas», «Exportar», «Ver en actividad» |
+| Operaciones | Por contenedor: `GET /containers/{id}/json` (sin registrar), `POST /containers/{id}/exec`, `POST /exec/{id}/start` (salida adjuntada) y `GET /exec/{id}/json` (código de salida) |
+| Componentes | `bulk_exec_preview`, `bulk_exec_open`, `bulk_exec_interrupt`, `exec_templates_save`, `stream_close`, `audit_export_save` · `cmc-engine/src/bulk_exec.rs`, `src-tauri/src/bulk_exec.rs`, `commands/bulk_exec.rs` |
+| Errores | Antes de empezar: los mismos que las operaciones masivas, más concurrencia fuera de 1–16 y comando no válido. Por contenedor: no está en ejecución o no existe (no se ejecuta), Docker rechaza la ejecución (usuario inexistente, en pausa), no puede lanzar el proceso (código 126/127), tiempo agotado, interrupción, pérdida de conexión (desconocido) |
+| Limitaciones | Docker Exec no permite detener un proceso ya lanzado: con tiempo agotado o interrupción solo se deja de esperar. La salida se guarda hasta 128 KiB por flujo y no se registra. La clasificación del riesgo es orientativa |
+
 ## Imágenes
 
 | | |

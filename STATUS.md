@@ -6,11 +6,11 @@
 
 | | |
 |---|---|
-| **Etapa actual** | 1.10.0: gestión masiva de contenedores, etapa 1 (D-117 a D-120) |
-| **Versión** | 1.10.0 |
-| **Estado** | 1.10.0 en Linux: verificada automáticamente con Docker 29.9.2, 168 correctas y 1 fallo ajeno a esta versión (aviso RustSec nuevo sobre chrono, pendiente de decisión). Hasta la 1.9.1: Docker 29, 26 y 24, sin fallos. Windows: 614 pruebas superadas con Wine, **sin probar en un Windows real**; permiso adicional de WebView2 aprobado (2026-11-17) |
+| **Etapa actual** | 1.11.0: gestión masiva, etapa 1 completa: apartados, configuración masiva y comandos masivos con Docker Exec (D-117 a D-124) |
+| **Versión** | 1.11.0 |
+| **Estado** | 1.11.0 en Linux: verificada automáticamente con Docker 29.9.2, 174 correctas y 1 fallo ajeno a esta versión (aviso RustSec sobre chrono, pendiente de decisión). 1.10.0: 168 correctas y el mismo fallo. Hasta la 1.9.1: Docker 29, 26 y 24, sin fallos. Windows: 614 pruebas superadas con Wine, **sin probar en un Windows real**; permiso adicional de WebView2 aprobado (2026-11-17) |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | La gestión masiva ([guía](docs/validation/VALIDACION-1.10.0.md)); lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+| **Pendiente de validar** | Los comandos masivos y los apartados ([guía](docs/validation/VALIDACION-1.11.0.md)); la gestión masiva de la 1.10.0 ([guía](docs/validation/VALIDACION-1.10.0.md)); lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -1477,9 +1477,35 @@ Fecha: 2026-11-20. Decisiones D-117 a D-120.
 - No compilado ni probado para Windows.
 - Las etiquetas no se pueden cambiar en masa; un contenedor terminado por falta de memoria (137) no se distingue en la lista de uno detenido.
 
+## 1.11.0 · Gestión masiva, etapa 1: apartados, configuración y comandos masivos
+
+Fecha: 2026-11-20. Decisiones D-121 a D-124.
+
+### Hecho
+- La gestión masiva se organiza en apartados: Resumen, Contenedores, Operaciones, Configuración masiva, Comandos masivos e Historial (lotes de operaciones y de comandos, con su detalle).
+- **Comandos masivos** con Docker Exec, sin pasar nunca por una shell del equipo: ejecutable con argumentos (cada argumento tal cual) o secuencia de varias líneas con un intérprete elegido; usuario, directorio de trabajo, tiempo máximo (1–3600 s) y ejecuciones a la vez (1–16).
+- Vista previa con el `docker exec` equivalente y los argumentos exactos; nivel de riesgo orientativo (Informativo, Modificación, Administrativo, Potencialmente destructivo). Desde Administrativo hay que escribir el número de contenedores, comprobado también en el backend.
+- Resultado por contenedor: estado (pendiente, en ejecución, correcto, error, tiempo agotado, cancelación solicitada, no ejecutado, desconocido), código de salida, duración, stdout y stderr por separado (hasta 128 KiB cada uno). Copiar y exportar a Markdown o JSON con los secretos ocultos.
+- Dos cancelaciones: «cancelar lo pendiente» y «dejar de esperar a los activos». Docker no permite detener un proceso de exec: CMC lo dice y nunca detiene ni reinicia el contenedor.
+- Plantillas de comandos frecuentes en la configuración (`[exec]`), validadas en el backend y rechazadas si contienen algo con aspecto de secreto; 7 ejemplos de solo lectura.
+- Historial: registro resumen por lote (`container.exec.bulk`) con el comando con los secretos ocultos; la salida no se guarda en la actividad.
+- Pérdida de conexión durante un comando: el resultado es «desconocido», nunca «correcto» (detectado con la prueba real que corta el socket).
+- Textos en 8 idiomas, ayuda (sección 30), guía de usuario, decisiones, arquitectura, manual (capítulos 1, 3, 4, 7, 9–14, captura real) y guía de validación manual.
+
+### Verificación automática (entorno de desarrollo)
+- `verify-evolution-1.11.0.sh --deb --compat --net`, Docker 29.9.2: **174 correctas, 1 fallo, 7 omitidas** (Windows sin MinGW, 2 que exigen root, 2 sin laboratorio SSH, sin chroot de APT, sin sesión gráfica). El fallo sigue siendo `cargo deny` por RUSTSEC-2026-0543 (chrono sin mantenimiento); no se ha añadido ninguna excepción.
+- Rust deterministas: 846 correctas; Vitest: 492; Clippy `-D warnings` y formato sin avisos; pruebas reales con Docker, incluidas `live_bulk_exec` (12 pasos con contenedores temporales propios: stdout, stderr y código en paralelo, argumentos tal cual, secuencia de varias líneas, intérprete inexistente, imagen sin shell, usuario y directorio, tiempo agotado, interrupción sin tocar el contenedor, detenido o eliminado, fallo parcial, corte de conexión y registro por lote) y `live_bulk_exec_via_ipc`. Sin recursos de prueba restantes.
+- Aplicación real (binario de publicación, Xvfb, usuario normal, contenedores de prueba propios): secuencia de 3 líneas en 4 contenedores (el «Creado» se omite ya en la selección), confirmación, 4 correctos con stdout y stderr separados. La comprobación hizo corregir tres detalles de presentación y que `>&2` se clasificara como «Modificación».
+
+### Limitaciones
+- No probado por SSH contra servidores reales ni en Windows.
+- Docker Exec no permite matar el proceso: al agotarse el tiempo o interrumpir, el proceso puede seguir dentro del contenedor.
+- La clasificación del riesgo es por palabras clave: orienta, no sustituye a revisar el comando.
+- Las etiquetas siguen sin poder cambiarse en masa (D-119).
+
 ## Próximos pasos
 
-1. Validación manual de la gestión masiva ([docs/validation/VALIDACION-1.10.0.md](docs/validation/VALIDACION-1.10.0.md)).
+1. Validación manual de los comandos masivos y los apartados ([docs/validation/VALIDACION-1.11.0.md](docs/validation/VALIDACION-1.11.0.md)) y de la gestión masiva de la 1.10.0 ([docs/validation/VALIDACION-1.10.0.md](docs/validation/VALIDACION-1.10.0.md)).
 1. Decidir sobre RUSTSEC-2026-0543 (chrono sin mantenimiento): excepción justificada en `deny.toml` o sustituir chrono.
 1. Primera prueba en Windows con [docs/validation/VALIDACION-WINDOWS.md](docs/validation/VALIDACION-WINDOWS.md) y, si se quiere, el flujo de GitHub Actions.
 2. Validación manual de la 1.8.0 en Debian 13 ([docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md)), si no se ha hecho.

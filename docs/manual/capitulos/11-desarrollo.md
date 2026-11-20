@@ -43,12 +43,12 @@ npx tauri build --no-bundle && bash scripts/run.sh   # compilación de producci�
 
 ## Pruebas
 
-Comandos ejecutados y superados en la 1.10.0:
+Comandos ejecutados y superados en la 1.11.0:
 
 ```bash
 npm run typecheck        # TypeScript estricto
 npm run lint             # ESLint (13 avisos de react-hooks, sin errores)
-npx vitest run           # 475 pruebas de la interfaz
+npx vitest run           # 492 pruebas de la interfaz
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace   # unitarias e IPC (las de Docker real se omiten)
@@ -58,7 +58,7 @@ CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_docker   # contra Docker
 La verificación completa (regresión, paquetes, licencias, migración, Windows):
 
 ```bash
-bash scripts/verify-evolution-1.10.0.sh --deb
+bash scripts/verify-evolution-1.11.0.sh --deb
 ```
 
 ## Lint y Clippy
@@ -121,13 +121,13 @@ CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER=wine64 \
 cargo test --target x86_64-pc-windows-gnu --workspace --lib --bins
 ```
 
-`verify-evolution-1.10.0.sh` lo hace solo si encuentra MinGW-w64, Wine y el
+`verify-evolution-1.11.0.sh` lo hace solo si encuentra MinGW-w64, Wine y el
 destino de Windows (o `RUST_SRC`).
 
 ## Regenerar este manual
 
 ```bash
-bash scripts/build-manual.sh       # docs/manual → target/manual/Container-Manage-Center-Manual-1.10.0.pdf
+bash scripts/build-manual.sh       # docs/manual → target/manual/Container-Manage-Center-Manual-1.11.0.pdf
 ```
 
 Necesita pandoc, XeLaTeX (con `fontspec`, `polyglossia`, `titlesec`,

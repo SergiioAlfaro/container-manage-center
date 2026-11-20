@@ -3,6 +3,7 @@ import type { ActivityConfig } from "./ActivityConfig";
 import type { BulkSettings } from "./BulkSettings";
 import type { ComposeSettings } from "./ComposeSettings";
 import type { DockerConfig } from "./DockerConfig";
+import type { ExecTemplates } from "./ExecTemplates";
 import type { UiConfig } from "./UiConfig";
 import type { UpdatesConfig } from "./UpdatesConfig";
 
@@ -10,4 +11,8 @@ export type AppConfig = { version: number, ui: UiConfig, activity: ActivityConfi
 /**
  * Gestión masiva (1.10.0).
  */
-bulk: BulkSettings, };
+bulk: BulkSettings, 
+/**
+ * Comandos frecuentes de la gestión masiva (1.11.0).
+ */
+exec: ExecTemplates, };

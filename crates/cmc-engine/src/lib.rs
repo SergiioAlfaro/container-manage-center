@@ -15,6 +15,7 @@ pub mod backup;
 pub mod binds;
 pub mod build;
 pub mod bulk;
+pub mod bulk_exec;
 pub mod catalog;
 pub mod cli;
 pub mod client;

@@ -4377,3 +4377,267 @@ fn live_bulk_via_ipc() {
         );
     }
 }
+
+// ------------------------------------------------ comandos masivos (1.11.0)
+
+fn exec_summary_record(h: &Harness) -> Option<serde_json::Value> {
+    let list = invoke_exact(h, "activity_list", json!({})).unwrap();
+    list.as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["kind"] == "container.exec.bulk" && r["status"] != "running")
+        .cloned()
+}
+
+/// Vista previa: argumentos exactos, comando equivalente y riesgo; sin
+/// ejecutar ni registrar nada.
+#[test]
+fn bulk_exec_preview_via_ipc() {
+    let h = harness();
+    let p = invoke_exact(
+        &h,
+        "bulk_exec_preview",
+        json!({ "command": { "command": { "mode": "script", "interpreter": "/bin/sh", "flag": "-c", "script": "apt-get update\nrm -rf /tmp/x" }, "user": "root", "workdir": null, "timeoutSecs": 60 } }),
+    )
+    .unwrap();
+    assert_eq!(
+        p["argv"],
+        json!(["/bin/sh", "-c", "apt-get update\nrm -rf /tmp/x"])
+    );
+    assert_eq!(p["risk"]["level"], "destructive");
+    assert_eq!(p["needsCount"], true);
+    assert!(p["equivalent"]
+        .as_str()
+        .unwrap()
+        .starts_with("docker exec --user root"));
+    let err = invoke_exact(
+        &h,
+        "bulk_exec_preview",
+        json!({ "command": { "command": { "mode": "direct", "program": "", "args": [] }, "user": null, "workdir": null, "timeoutSecs": 60 } }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "engine.invalidInput");
+    assert!(exec_summary_record(&h).is_none());
+}
+
+/// Validación antes de empezar y, sin conexión, cada contenedor falla por
+/// separado sin ejecutarse.
+#[test]
+fn bulk_exec_is_validated_and_fails_each_item_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    let cmd = |program: &str, args: Vec<&str>| json!({ "command": { "mode": "direct", "program": program, "args": args }, "user": null, "workdir": null, "timeoutSecs": 10 });
+    let targets = json!([
+        { "server": "local", "id": fake_id('a'), "name": "web" },
+        { "server": "local", "id": fake_id('b'), "name": "db" }
+    ]);
+    let open = |req: serde_json::Value, ch: u32| {
+        invoke_exact(
+            &h,
+            "bulk_exec_open",
+            json!({ "request": req, "onEvent": format!("__CHANNEL__:{ch}") }),
+        )
+    };
+    let code = |r: Result<serde_json::Value, serde_json::Value>| r.unwrap_err()["code"].clone();
+    assert_eq!(
+        code(open(
+            json!({ "command": cmd("df", vec![]), "targets": targets, "concurrency": 2, "confirmed": false, "confirmCount": null }),
+            120
+        )),
+        "engine.notConfirmed"
+    );
+    assert_eq!(
+        code(open(
+            json!({ "command": cmd("apt-get", vec!["update"]), "targets": targets, "concurrency": 2, "confirmed": true, "confirmCount": null }),
+            121
+        )),
+        "bulk.notConfirmed",
+        "riesgo administrativo: hay que escribir el número"
+    );
+    assert_eq!(
+        code(open(
+            json!({ "command": cmd("df", vec![]), "targets": targets, "concurrency": 40, "confirmed": true, "confirmCount": null }),
+            122
+        )),
+        "bulk.invalid"
+    );
+    assert!(exec_summary_record(&h).is_none(), "nada empezó");
+    let sid = open(json!({ "command": cmd("df", vec!["-h"]), "targets": targets, "concurrency": 2, "confirmed": true, "confirmCount": null }), 123).unwrap();
+    assert!(sid.as_u64().is_some());
+    wait_for("fin del comando masivo", || {
+        exec_summary_record(&h).is_some()
+    });
+    let rec = exec_summary_record(&h).unwrap();
+    assert_eq!(rec["status"], "failed");
+    assert_eq!(rec["error"], "0 correctos, 2 con error");
+    assert!(rec["requestBody"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"argv\""));
+    // Interrumpir un flujo que ya no existe no hace nada.
+    assert_eq!(
+        invoke_exact(&h, "bulk_exec_interrupt", json!({ "sid": sid })).unwrap(),
+        false
+    );
+}
+
+/// Comandos guardados: se validan, se guardan en el disco, rechazan secretos y
+/// `config_set` no los pisa.
+#[test]
+fn exec_templates_save_via_ipc() {
+    let h = harness();
+    let t = json!({ "id": "t1", "name": "Disco", "description": "Espacio libre", "mode": "direct", "program": "df", "args": ["-h"], "interpreter": "", "flag": "", "script": "", "user": "", "workdir": "", "timeoutSecs": 20 });
+    let saved = invoke_exact(
+        &h,
+        "exec_templates_save",
+        json!({ "templates": [t.clone()] }),
+    )
+    .unwrap();
+    assert_eq!(saved["exec"]["templates"][0]["name"], "Disco");
+    assert_eq!(h.store.load().unwrap().config.exec.templates.len(), 1);
+    let mut secret = t.clone();
+    secret["args"] = json!(["--token", "abc123def"]);
+    let err =
+        invoke_exact(&h, "exec_templates_save", json!({ "templates": [secret] })).unwrap_err();
+    assert_eq!(err["code"], "exec.templateSecret");
+    assert_eq!(
+        h.store.load().unwrap().config.exec.templates.len(),
+        1,
+        "no se tocó"
+    );
+    // Guardar el resto de la configuración con una lista vieja no la cambia.
+    let mut cfg = h.app.state::<AppState>().config();
+    cfg.exec.templates.clear();
+    cfg.ui.theme = Theme::Dark;
+    let v = invoke_exact(&h, "config_set", json!({ "config": cfg })).unwrap();
+    assert_eq!(v["exec"]["templates"].as_array().unwrap().len(), 1);
+    let empty = invoke_exact(&h, "exec_templates_save", json!({ "templates": [] })).unwrap();
+    assert!(empty["exec"]["templates"].as_array().unwrap().is_empty());
+}
+
+/// Contra Docker real (CMC_DOCKER_TESTS=1): el mismo comando en varios
+/// contenedores temporales propios por IPC, con el resultado de cada uno por
+/// el canal y el registro con el lote.
+#[cfg(unix)]
+#[test]
+fn live_bulk_exec_via_ipc() {
+    use bollard::models::{ContainerCreateBody, HostConfig};
+    use bollard::query_parameters::{
+        CreateContainerOptions, RemoveContainerOptions, StartContainerOptions,
+    };
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
+        return;
+    }
+    const IMAGE: &str = "cmc-test/sleeper:2";
+    let socket =
+        std::env::var("CMC_DOCKER_SOCKET").unwrap_or_else(|_| "/var/run/docker.sock".into());
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let docker =
+        bollard::Docker::connect_with_unix(&socket, 60, bollard::API_DEFAULT_VERSION).unwrap();
+    if rt.block_on(docker.inspect_image(IMAGE)).is_err() {
+        eprintln!("omitida: falta la imagen {IMAGE} (la crean las pruebas de cmc-engine)");
+        return;
+    }
+    let run = format!("ipcx-{}", std::process::id());
+    struct Gone(bollard::Docker, Vec<String>);
+    impl Drop for Gone {
+        fn drop(&mut self) {
+            let (d, ids) = (self.0.clone(), std::mem::take(&mut self.1));
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                for id in ids {
+                    let _ = rt.block_on(d.remove_container(
+                        &id,
+                        Some(RemoveContainerOptions {
+                            force: true,
+                            ..Default::default()
+                        }),
+                    ));
+                }
+            })
+            .join()
+            .unwrap();
+        }
+    }
+    let mut ids = Vec::new();
+    for (n, start) in [("a", true), ("b", true), ("parado", false)] {
+        let r = rt
+            .block_on(
+                docker.create_container(
+                    Some(CreateContainerOptions {
+                        name: Some(format!("cmc-exec-{run}-{n}")),
+                        ..Default::default()
+                    }),
+                    ContainerCreateBody {
+                        image: Some(IMAGE.into()),
+                        labels: Some(
+                            [("cmc.test", "true"), ("cmc.exec-test", run.as_str())]
+                                .into_iter()
+                                .map(|(k, v)| (k.to_owned(), v.to_owned()))
+                                .collect(),
+                        ),
+                        host_config: Some(HostConfig::default()),
+                        ..Default::default()
+                    },
+                ),
+            )
+            .unwrap();
+        if start {
+            rt.block_on(docker.start_container(&r.id, None::<StartContainerOptions>))
+                .unwrap();
+        }
+        ids.push(r.id);
+    }
+    let _gone = Gone(docker.clone(), ids.clone());
+
+    let dir = tempfile::tempdir().unwrap();
+    let h = harness_with(
+        dir,
+        DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: socket.clone(),
+        },
+    );
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    let targets: Vec<_> = ids
+        .iter()
+        .enumerate()
+        .map(|(i, id)| json!({ "server": "local", "id": id, "name": format!("c{i}") }))
+        .collect();
+    let req = json!({
+        "command": { "command": { "mode": "script", "interpreter": "/bin/sh", "flag": "-c", "script": "echo hola\necho aviso >&2\nexit 2" }, "user": null, "workdir": null, "timeoutSecs": 20 },
+        "targets": targets, "concurrency": 2, "confirmed": true, "confirmCount": null
+    });
+    invoke_exact(
+        &h,
+        "bulk_exec_open",
+        json!({ "request": req, "onEvent": "__CHANNEL__:124" }),
+    )
+    .unwrap();
+    wait_for("comando masivo", || exec_summary_record(&h).is_some());
+    let rec = exec_summary_record(&h).unwrap();
+    assert_eq!(
+        rec["error"], "0 correctos, 2 con error, 1 no ejecutados",
+        "{rec}"
+    );
+    let batch = rec["batch"].clone();
+    let list = invoke_exact(&h, "activity_list", json!({})).unwrap();
+    let runs: Vec<_> = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["kind"] == "container.exec.run" && r["batch"] == batch)
+        .collect();
+    assert_eq!(runs.len(), 2, "solo los que estaban en ejecución");
+    assert!(runs
+        .iter()
+        .all(|r| r["exitCode"] == 2 && r["stdout"].is_null()));
+    // Ningún contenedor se reinició ni cambió de estado.
+    for id in &ids[..2] {
+        let s = rt.block_on(docker.inspect_container(id, None)).unwrap();
+        assert_eq!(s.state.unwrap().running, Some(true));
+    }
+}

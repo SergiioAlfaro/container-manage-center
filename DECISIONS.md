@@ -1415,3 +1415,31 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 ### D-120 · La eliminación masiva nunca borra volúmenes ni imágenes
 * La eliminación masiva siempre envía `v=false`: ni los volúmenes con nombre ni los anónimos se eliminan, y no hay opción para hacerlo. Las imágenes tampoco se tocan. Se confirma después con `inspect` (404) que el contenedor ya no existe.
 * Sin «forzar», los contenedores en marcha, en pausa o reiniciándose se omiten; con «forzar» se detienen y se eliminan (`force=true`).
+
+---
+
+## 1.11.0 · Gestión masiva: comandos masivos, apartados e historial
+
+### D-121 · Comandos masivos con Docker Exec, sin ninguna shell del equipo
+* **Petición del propietario** (2026-11-20, nueva versión del encargo de la etapa 1): ejecutar comandos personalizados dentro de varios contenedores a la vez con Docker Exec, como parte de la etapa 1.
+* **Sin shell del equipo**: el comando se envía a Docker como lista de argumentos (`Cmd`) y lo ejecuta el contenedor. No se concatena nada, no se crean scripts ni archivos temporales y nunca se ejecuta nada en el equipo. La vista previa (`bulk_exec_preview`) muestra los argumentos exactos que recibirá Docker y el `docker exec` equivalente.
+* **Dos modalidades, sin suponer ninguna shell**: «ejecutable con argumentos» (un argumento por línea, sin interpretar `;`, `|`, `>` ni `$( )`; funciona en imágenes sin `/bin/sh`) y «secuencia con un intérprete» elegido por el usuario (`/bin/sh`, `/bin/bash`, `/bin/ash`, `/usr/bin/python3` u otro), que se ejecuta como `intérprete [opción] secuencia`. Si el intérprete no existe, Docker devuelve el error (código 126/127 con «OCI runtime exec failed») y se marca como «Docker no pudo lanzar el proceso».
+* **Antes de crear la ejecución**: ID completo, comando válido (usuario `usuario`, `uid`, `usuario:grupo` o `uid:gid`; directorio absoluto; tiempo entre 1 s y 1 h; sin caracteres nulos; límites de tamaño) e `inspect` sin registrar: si no existe o no está en ejecución, **no se ejecuta** y se dice por qué.
+* **Resultado por contenedor**: salida estándar y de error por separado (hasta 128 KiB cada una; se indica si se recortó), código de salida (`inspect` del exec), hora de inicio y duración. Estados: correcto (código 0), error, tiempo agotado, cancelación solicitada, no ejecutado y desconocido.
+* **Concurrencia**: la elige quien ejecuta (1–16; por defecto la de `[bulk]`), con el mismo grupo de ejecución que las operaciones masivas (`run_pool`, ahora común) y las mismas reservas por (servidor, ID).
+* **Registro**: un resumen `container.exec.bulk` (comando con los secretos ocultos, usuario, directorio, tiempo, riesgo, concurrencia y destinos) y, por contenedor, `container.exec.prepare` y `container.exec.run` con el `docker exec` equivalente, el código de salida y el lote. **La salida no se registra** (puede contener datos del usuario). En la interfaz se muestra tal cual, como en las terminales (D-085).
+
+### D-122 · Tiempo máximo, cancelación e interrupción sin matar nada
+* Docker Exec no tiene ninguna forma de detener un proceso ya lanzado. Al agotarse el tiempo o al pedir la interrupción **solo se deja de esperar**; después se consulta si el proceso sigue vivo y se informa («el proceso sigue en el contenedor»). Nunca se detiene, se mata ni se reinicia el contenedor.
+* **Cancelar pendientes** (`stream_close`) no lanza nada más; las activas terminan. **Interrumpir activas** (`bulk_exec_interrupt`) además deja de esperar a las activas. Son dos botones distintos.
+* **Pérdida de conexión**: si la salida se corta y Docker no responde o dice que el proceso sigue vivo, el resultado es **desconocido**, nunca «terminado» (la prueba real con un proxy cortado encontró que un corte limpio parecía un fin normal; se corrigió). Nunca se reintenta.
+
+### D-123 · Clasificación de riesgo orientativa, calculada en el backend
+* `classify` asigna uno de cuatro niveles (informativo, modificación, administrativo, potencialmente destructivo) por palabras clave, con los motivos (p. ej. `rm -rf`, gestores de paquetes, `systemctl`, redirecciones), y avisa si el comando puede mostrar secretos (`env`, `printenv`, `/proc/*/environ`…). No intenta entender la shell: es una ayuda, no un control.
+* Los controles no dependen de ella para todo: siempre hay confirmación con la lista de contenedores; desde «administrativo» hay que escribir el número de contenedores, y el backend lo comprueba (`bulk.notConfirmed`).
+
+### D-124 · Comandos frecuentes sin secretos, exportación y organización del módulo
+* **Comandos guardados** en la configuración (`[exec]`), con nombre, descripción, modalidad, ejecutable y argumentos o intérprete y secuencia, usuario, directorio y tiempo recomendado. Solo se cambian con `exec_templates_save`, que los valida y **rechaza los que contienen algo que las reglas de ocultación de secretos cambiarían** (`exec.templateSecret`); `config_set` no los toca. Hay siete ejemplos incluidos que no se guardan y no garantizan funcionar en cualquier imagen.
+* **Exportación** de resultados en Markdown o JSON reutilizando el guardado de informes de la auditoría (`audit_export_save`): pide la ruta, vuelve a ocultar los secretos, permisos 0600 y escritura atómica.
+* **Apartados**: Resumen, Contenedores, Operaciones, Configuración masiva, Comandos masivos e Historial. El historial lee las entradas guardadas (`history_list`) de operaciones y comandos masivos, y despliega las órdenes de cada lote.
+* **Etiquetas**: siguen sin poder cambiarse (D-119): los botones de añadir, modificar y eliminar están desactivados con la explicación.

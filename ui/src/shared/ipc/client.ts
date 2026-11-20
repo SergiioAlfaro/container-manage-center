@@ -15,6 +15,11 @@ import type { SystemInfo } from "./bindings/SystemInfo";
 import type { BulkEvent } from "./bindings/BulkEvent";
 import type { BulkInventory } from "./bindings/BulkInventory";
 import type { BulkRequest } from "./bindings/BulkRequest";
+import type { BulkCommand } from "./bindings/BulkCommand";
+import type { BulkExecRequest } from "./bindings/BulkExecRequest";
+import type { ExecEvent } from "./bindings/ExecEvent";
+import type { ExecPreview } from "./bindings/ExecPreview";
+import type { ExecTemplate } from "./bindings/ExecTemplate";
 import type { BackupEntry } from "./bindings/BackupEntry";
 import type { BackupEvent } from "./bindings/BackupEvent";
 import type { BackupJob } from "./bindings/BackupJob";
@@ -327,6 +332,12 @@ const appApi = {
   bulkInventory: (refresh: boolean) => call<BulkInventory>("bulk_inventory", { refresh }),
   /** Ejecuta la operación masiva; lo pendiente se cancela con `streamClose`. */
   bulkRunOpen: (request: BulkRequest, onEvent: (e: BulkEvent) => void) => call<number>("bulk_run_open", { request, onEvent: channel(onEvent) }),
+  // Comandos masivos (1.11.0): vista previa (argumentos y riesgo), ejecución
+  // con progreso, interrupción de lo activo y comandos guardados.
+  bulkExecPreview: (command: BulkCommand) => call<ExecPreview>("bulk_exec_preview", { command }),
+  bulkExecOpen: (request: BulkExecRequest, onEvent: (e: ExecEvent) => void) => call<number>("bulk_exec_open", { request, onEvent: channel(onEvent) }),
+  bulkExecInterrupt: (sid: number) => call<boolean>("bulk_exec_interrupt", { sid }),
+  execTemplatesSave: (templates: ExecTemplate[]) => call<AppConfig>("exec_templates_save", { templates }),
   // 0.10.0: servidores. Cada orden indica su servidor de forma explícita.
   serversList: () => call<ServerView[]>("servers_list"),
   serverValidate: (config: ServerConfig) => call<ProfileIssue[]>("server_validate", { config }),
