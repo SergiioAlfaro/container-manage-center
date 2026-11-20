@@ -115,6 +115,8 @@ pub struct ActivityLog {
     tx: broadcast::Sender<ActivityEvent>,
     /// Servidor con el que se etiquetan las operaciones de esta vista (0.10.0).
     server: Option<ServerTag>,
+    /// Operación masiva con la que se etiquetan (1.10.0, D-117).
+    batch: Option<Uuid>,
 }
 
 impl Default for ActivityLog {
@@ -134,6 +136,7 @@ impl ActivityLog {
             })),
             tx,
             server: None,
+            batch: None,
         }
     }
 
@@ -144,7 +147,24 @@ impl ActivityLog {
             inner: self.inner.clone(),
             tx: self.tx.clone(),
             server: Some(server),
+            batch: self.batch,
         }
+    }
+
+    /// Vista que etiqueta además cada operación con la operación masiva
+    /// `batch` (1.10.0, D-117). Conserva el servidor de la vista.
+    pub fn with_batch(&self, batch: Uuid) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            tx: self.tx.clone(),
+            server: self.server.clone(),
+            batch: Some(batch),
+        }
+    }
+
+    /// Operación masiva de esta vista.
+    pub fn batch(&self) -> Option<Uuid> {
+        self.batch
     }
 
     /// Servidor de esta vista.
@@ -223,6 +243,7 @@ impl ActivityLog {
             http_status: None,
             exit_code: None,
             server: self.server.clone(),
+            batch: self.batch,
         };
         let id = record.id;
         self.upsert(record);

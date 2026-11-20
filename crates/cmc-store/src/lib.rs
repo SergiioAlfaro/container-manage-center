@@ -19,8 +19,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub use config::{
-    Accent, ActivityConfig, AppConfig, ComposeSettings, DockerConfig, DockerMode, Language,
-    SavedProject, Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
+    Accent, ActivityConfig, AppConfig, BulkSettings, ComposeSettings, DockerConfig, DockerMode,
+    Language, SavedProject, Theme, UiConfig, UpdatesConfig, CONFIG_VERSION,
 };
 pub use servers::{ServerAuthMethod, ServerConfig, ServerDockerTarget, ServerSeen, ServerStore};
 
@@ -393,5 +393,42 @@ mod tests {
         )
         .unwrap();
         assert!(store.load().unwrap().config.compose.projects.is_empty());
+    }
+
+    /// Gestión masiva (1.10.0): valores por defecto, límites y archivos
+    /// anteriores sin la sección.
+    #[test]
+    fn bulk_settings_defaults_and_limits() {
+        let d = BulkSettings::default();
+        assert_eq!(
+            (d.concurrency, d.auto_refresh, d.refresh_secs),
+            (4, true, 15)
+        );
+        let c = AppConfig {
+            bulk: BulkSettings {
+                concurrency: 0,
+                auto_refresh: false,
+                refresh_secs: 1,
+            },
+            ..AppConfig::default()
+        }
+        .normalized();
+        assert_eq!(c.bulk.concurrency, BulkSettings::MIN_CONCURRENCY);
+        assert_eq!(c.bulk.refresh_secs, BulkSettings::MIN_REFRESH_SECS);
+        assert!(!c.bulk.auto_refresh);
+        let c = AppConfig {
+            bulk: BulkSettings {
+                concurrency: 200,
+                auto_refresh: true,
+                refresh_secs: 9999,
+            },
+            ..AppConfig::default()
+        }
+        .normalized();
+        assert_eq!(c.bulk.concurrency, BulkSettings::MAX_CONCURRENCY);
+        assert_eq!(c.bulk.refresh_secs, BulkSettings::MAX_REFRESH_SECS);
+        // Un config.toml de una versión anterior no tiene la sección.
+        let old: AppConfig = toml::from_str("version = 1\n").unwrap();
+        assert_eq!(old.bulk, BulkSettings::default());
     }
 }

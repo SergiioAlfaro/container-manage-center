@@ -75,6 +75,18 @@ el capítulo [Uso de la aplicación](#uso-de-la-aplicación).
 - **Duplicar**: abre el asistente con la configuración del contenedor y avisa
   de lo que no se traslada.
 
+## Gestión masiva (1.10.0)
+
+| | |
+|---|---|
+| Qué hace | Reúne los contenedores de todos los servidores conectados en una tabla con indicadores (total, en marcha, detenidos, en pausa, con error), filtros (nombre o ID, estado, imagen, etiqueta, servidor), orden, páginas y selección (individual, página, todo lo filtrado), y aplica una misma operación a muchos a la vez: iniciar, detener, reiniciar, pausar, reanudar, eliminar y cambiar la política de reinicio |
+| Dónde | Barra lateral › Recursos › Gestión masiva · `features/bulk` |
+| Uso | Seleccionar → botón de la barra (indica a cuántos se aplica) → confirmación con la lista de afectados y omitidos, consecuencias y operaciones a la vez (1–16) → progreso y resultado por contenedor; «Ver en actividad» |
+| Operaciones | Lectura silenciosa (`GET /containers/json`, `GET /containers/{id}/json`); por contenedor, las mismas órdenes que «Contenedores» (`start`, `stop`, `restart`, `pause`, `unpause`, `DELETE ?v=false`) o `POST /containers/{id}/update` para la política, con confirmación por `inspect` |
+| Componentes | `bulk_inventory`, `bulk_run_open`, `stream_close` · `src-tauri/src/bulk.rs`, `commands/bulk.rs`, `cmc-engine/src/bulk.rs` |
+| Errores | Antes de empezar: sin confirmar, número mal escrito al eliminar, destinos repetidos o más de 1000, servidor desconocido, contenedor ya en otra operación masiva (`bulk.busy`). Por contenedor: rechazo de Docker, contenedor ocupado (`engine.busy`), sin conexión, resultado desconocido si la conexión se corta |
+| Limitaciones | Las etiquetas no se pueden cambiar (Docker exige recrear el contenedor; D-119). No hay transacción global: los resultados pueden ser parciales y nada se deshace ni se reintenta. Nunca elimina volúmenes ni imágenes. No gestiona proyectos Compose, plantillas ni automatizaciones |
+
 ## Imágenes
 
 | | |
@@ -187,7 +199,7 @@ el capítulo [Uso de la aplicación](#uso-de-la-aplicación).
 | Sistema | Versiones, sistema operativo, rutas e informe para copiar |
 | Componentes y desinstalación | Linux: análisis con dpkg/APT y desinstalación selectiva con `pkexec`; Windows: instrucciones |
 | Legal | Licencia, copyright y avisos de terceros |
-| Ayuda | 29 secciones con índice y búsqueda |
+| Ayuda | 30 secciones con índice y búsqueda |
 | Restablecer | Preferencias a sus valores iniciales (no toca la conexión ni Compose) |
 
 ## Migración desde el nombre anterior

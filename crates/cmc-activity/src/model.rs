@@ -135,6 +135,11 @@ pub struct OperationRecord {
     /// la aplicación (idioma, color…), que no pertenecen a ningún servidor.
     #[serde(default)]
     pub server: Option<ServerTag>,
+    /// Operación masiva a la que pertenece (1.10.0, D-117): el resumen de la
+    /// operación masiva y cada operación real que ejecuta llevan el mismo
+    /// identificador, para consultarlas juntas.
+    #[serde(default)]
+    pub batch: Option<Uuid>,
 }
 
 /// Evento emitido a los suscriptores (la interfaz) cuando cambia el registro.

@@ -14,6 +14,7 @@ y la estructura de la ventana en `app/`.
 | `dashboard` | Panel de inicio: versión de Docker, recursos, equipo, avisos |
 | `servers` | Servidores remotos: asistente, prueba de conexión, identidad, diagnóstico, vista general |
 | `containers` | Lista, asistente de creación (`create/`), detalle (`detail/`), edición (`edit/`) |
+| `bulk` | Gestión masiva (1.10.0): tabla de varios servidores, filtros, selección, confirmación, progreso y resultados |
 | `images` | Lista, detalle, descargas (`pull/`), construcción (`build/`), búsqueda |
 | `networks` · `volumes` · `binds` | Redes, volúmenes y carpetas vinculadas |
 | `compose` | Proyectos, servicios, despliegue, registros, editor de archivos |
@@ -23,7 +24,7 @@ y la estructura de la ventana en `app/`.
 | `settings` | Configuración, sistema, actualizaciones, componentes, legal |
 | `activity` | Panel de actividad (lateral derecho) |
 | `engine` | Estado de la conexión, indicador y diagnóstico |
-| `help` | Ayuda integrada (29 secciones en 8 idiomas) |
+| `help` | Ayuda integrada (30 secciones en 8 idiomas) |
 | `pending` | Pantallas de funciones no disponibles en un servidor |
 
 ## Pantallas y navegación

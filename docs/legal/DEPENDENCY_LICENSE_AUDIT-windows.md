@@ -1,4 +1,4 @@
-# Auditoría de licencias de dependencias · Container Manage Center 1.9.1 · Windows
+# Auditoría de licencias de dependencias · Container Manage Center 1.10.0 · Windows
 
 Generada por `scripts/third-party-licenses.py` a partir de `Cargo.lock` y
 `package-lock.json` (sin conexión). La licencia del proyecto es **GPL-3.0-or-later**.

@@ -16,6 +16,7 @@ mantiene a la vez en `Cargo.toml` (workspace), `package.json`,
 | 1.8.0 | Fin del nombre anterior, con migración de los datos |
 | 1.9.0 | Versión de Windows en pruebas |
 | 1.9.1 | Auditoría y correcciones de Windows, pruebas con Wine, preparación para GitHub |
+| 1.10.0 | Gestión masiva de contenedores (etapa 1) |
 
 ## Paquetes Debian
 
@@ -74,7 +75,7 @@ descarga ni instala nada**:
 
 La publicación es una decisión del titular. Antes de publicar:
 
-1. `verify-evolution-1.9.1.sh --deb` sin fallos.
+1. `verify-evolution-1.10.0.sh --deb` sin fallos.
 2. Paquetes, instalador (si se publica), código fuente y `SHA256SUMS` en la
    misma publicación.
 3. Para Windows, validar en un Windows real.

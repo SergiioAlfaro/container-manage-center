@@ -36,6 +36,7 @@ ts-rs.workspace = true
 cmc-activity.workspace = true
 cmc-store.workspace = true
 cmc-engine.workspace = true
+uuid.workspace = true
 # Comprobación de versiones nuevas (Fase 9, D-060): HTTPS con rustls + ring y
 # los certificados del sistema; respeta HTTPS_PROXY.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }

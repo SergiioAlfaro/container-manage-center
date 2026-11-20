@@ -42,6 +42,9 @@ pub struct HistoryEntry {
     /// Servidor de la operación (0.10.0). Las entradas anteriores no lo tienen.
     #[serde(default)]
     pub server: Option<crate::model::ServerTag>,
+    /// Operación masiva (1.10.0, D-117).
+    #[serde(default)]
+    pub batch: Option<Uuid>,
 }
 
 /// Oculta los valores de los parámetros secretos de una ruta con query string
@@ -172,6 +175,7 @@ impl HistoryEntry {
             http_status: r.http_status,
             exit_code: r.exit_code,
             server: r.server.clone(),
+            batch: r.batch,
         })
     }
 }

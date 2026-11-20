@@ -380,3 +380,17 @@ No Windows, o Container Manage Center funciona como no Linux, com estas diferen�
 - **Notificações**: as do sistema (centro de notificações).
 - **Dados**: configuração em `%APPDATA%\container-manage-center` e histórico em `%LOCALAPPDATA%\container-manage-center`.
 - **Desinstalar**: em Definições do Windows › Aplicações › Aplicações instaladas. Os seus dados e o Docker Desktop não são alterados. A secção «Desinstalação e componentes» só existe no Debian e no Ubuntu.
+
+## 30. Gestão em massa {#bulk}
+
+**Gestão em massa** (em «Recursos») aplica a mesma operação a muitos contentores de uma vez, também em vários servidores.
+
+- **Vista geral**: total, em execução, parados, em pausa e com erro. Clicar num contador filtra por esse estado. Reúnem-se os contentores deste computador e dos servidores remotos **ligados**; os restantes são indicados num aviso.
+- **Atualização**: botão **Atualizar** e atualização automática (de 5 s a 5 min, pode ser desativada).
+- **Tabela**: procure por nome ou ID; filtre por estado, imagem, servidor e etiqueta (`chave` ou `chave=valor`); ordene clicando no título de uma coluna.
+- **Seleção**: caixa por linha, da página ou de **tudo o filtrado**. A barra indica a quantos contentores da seleção se aplica cada operação.
+- **Operações**: iniciar, parar, reiniciar, pausar, retomar, eliminar e alterar a política de reinício (a quente com `docker update`; não nos criados com `--rm`). Os que não o permitem no seu estado são **ignorados**, com o motivo.
+- **Confirmação**: operação, servidores, contentores afetados e ignorados, consequências e operações em simultâneo (1 a 16). **Eliminar** pede para escrever o número de contentores e **nunca elimina volumes nem imagens**.
+- **Etiquetas**: o Docker não permite alterá-las num contentor que já existe (teria de ser recriado); o diálogo explica-o e mostra as atuais. Para um contentor concreto, use **Duplicar**.
+- **Resultados**: cada contentor tem o seu: correto (confirmado pelo Docker), falhado (com o erro), ignorado, cancelado ou **desconhecido** (a ligação caiu antes da confirmação; atualize para ver o estado). Se um falhar, os restantes continuam; nada é desfeito nem repetido automaticamente. **Cancelar o pendente** deixa de enviar ordens.
+- **Atividade**: cada ordem fica registada com o distintivo «Massa»; **Ver na atividade** mostra só essa operação.

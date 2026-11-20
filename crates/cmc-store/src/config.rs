@@ -244,6 +244,48 @@ impl UpdatesConfig {
     pub const MAX_SOURCE_LEN: usize = 2048;
 }
 
+/// Gestión masiva de contenedores (1.10.0, D-118).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct BulkSettings {
+    /// Operaciones que se ejecutan a la vez en una operación masiva.
+    pub concurrency: u8,
+    /// Actualizar la lista de contenedores automáticamente.
+    pub auto_refresh: bool,
+    /// Segundos entre actualizaciones automáticas.
+    pub refresh_secs: u16,
+}
+
+impl BulkSettings {
+    pub const MIN_CONCURRENCY: u8 = 1;
+    pub const MAX_CONCURRENCY: u8 = 16;
+    pub const MIN_REFRESH_SECS: u16 = 5;
+    pub const MAX_REFRESH_SECS: u16 = 300;
+
+    pub fn normalized(self) -> Self {
+        Self {
+            concurrency: self
+                .concurrency
+                .clamp(Self::MIN_CONCURRENCY, Self::MAX_CONCURRENCY),
+            auto_refresh: self.auto_refresh,
+            refresh_secs: self
+                .refresh_secs
+                .clamp(Self::MIN_REFRESH_SECS, Self::MAX_REFRESH_SECS),
+        }
+    }
+}
+
+impl Default for BulkSettings {
+    fn default() -> Self {
+        Self {
+            concurrency: 4,
+            auto_refresh: true,
+            refresh_secs: 15,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
@@ -254,6 +296,8 @@ pub struct AppConfig {
     pub docker: DockerConfig,
     pub compose: ComposeSettings,
     pub updates: UpdatesConfig,
+    /// Gestión masiva (1.10.0).
+    pub bulk: BulkSettings,
 }
 
 impl Default for AppConfig {
@@ -265,6 +309,7 @@ impl Default for AppConfig {
             docker: DockerConfig::default(),
             compose: ComposeSettings::default(),
             updates: UpdatesConfig::default(),
+            bulk: BulkSettings::default(),
         }
     }
 }
@@ -297,6 +342,7 @@ impl AppConfig {
         if self.updates.source.is_empty() {
             self.updates.check_on_start = false;
         }
+        self.bulk = self.bulk.normalized();
         self
     }
 }

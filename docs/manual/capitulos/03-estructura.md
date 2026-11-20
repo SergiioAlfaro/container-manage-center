@@ -14,7 +14,7 @@ container-manage-center/
 │   ├── ISSUE_TEMPLATE/      Error, propuesta y enlace a seguridad
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── .cargo/config.toml       Opciones de Cargo del proyecto
-├── Cargo.toml · Cargo.lock  Workspace de Rust (versión 1.9.1)
+├── Cargo.toml · Cargo.lock  Workspace de Rust (versión 1.10.0)
 ├── package.json · package-lock.json · vite.config.ts · tsconfig.json · eslint.config.js
 ├── deny.toml                Política de cargo-deny (licencias y avisos)
 ├── crates/
@@ -137,7 +137,7 @@ ui/src/
 | `scripts/third-party-licenses.py` | Avisos de terceros y auditoría de licencias (Linux y `--windows`) |
 | `scripts/spdx-headers.py` | Encabezados SPDX del código propio |
 | `scripts/release-sums.sh` | `SHA256SUMS` de una entrega |
-| `scripts/verify-evolution-1.9.1.sh` | Verificación completa de la versión |
+| `scripts/verify-evolution-1.10.0.sh` | Verificación completa de la versión |
 | `scripts/build-manual.sh` | Generación de este manual |
 | `scripts/dev/` | Laboratorio SSH, imágenes de bases de datos de prueba, instalación limpia, prototipo |
 

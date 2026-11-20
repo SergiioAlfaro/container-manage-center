@@ -225,6 +225,14 @@ impl Engine {
         &self.endpoint
     }
 
+    /// El mismo motor (conexión, bloqueos) con otra vista del registro de
+    /// actividad, p. ej. etiquetada con una operación masiva (1.10.0, D-117).
+    pub fn with_activity(&self, activity: ActivityLog) -> Self {
+        let mut e = self.clone();
+        e.activity = activity;
+        e
+    }
+
     pub fn activity(&self) -> &ActivityLog {
         &self.activity
     }

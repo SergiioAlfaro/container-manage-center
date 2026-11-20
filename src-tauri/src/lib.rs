@@ -3,6 +3,7 @@
 //! Punto de entrada de la aplicación de escritorio.
 
 mod backups;
+mod bulk;
 mod commands;
 mod error;
 mod events;
@@ -117,6 +118,8 @@ pub fn configure<R: Runtime>(builder: Builder<R>, store: ConfigStore) -> Builder
             commands::audit::audit_history,
             commands::audit::audit_get,
             commands::audit::audit_export_save,
+            commands::bulk::bulk_inventory,
+            commands::bulk::bulk_run_open,
             commands::backup::backup_settings,
             commands::monitor::monitor_settings,
             commands::monitor::monitor_settings_set,

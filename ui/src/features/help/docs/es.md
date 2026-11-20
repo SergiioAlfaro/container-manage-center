@@ -380,3 +380,17 @@ En Windows, Container Manage Center funciona igual que en Linux, con estas difer
 - **Notificaciones**: las del sistema (centro de notificaciones).
 - **Datos**: configuración en `%APPDATA%\container-manage-center` e historial en `%LOCALAPPDATA%\container-manage-center`.
 - **Desinstalar**: desde Configuración de Windows › Aplicaciones › Aplicaciones instaladas. Tus datos y Docker Desktop no se tocan. El apartado «Desinstalación y componentes» solo existe en Debian y Ubuntu.
+
+## 30. Gestión masiva {#bulk}
+
+**Gestión masiva** (en «Recursos») aplica una misma operación a muchos contenedores a la vez, también de varios servidores.
+
+- **Panel general**: total, en ejecución, detenidos, en pausa y con error. Pulsar un contador filtra por ese estado. Se reúnen los contenedores de este equipo y de los servidores remotos **conectados**; los demás se indican en un aviso.
+- **Actualización**: botón **Actualizar** y actualización automática (5 s a 5 min, se puede desactivar).
+- **Tabla**: busca por nombre o ID; filtra por estado, imagen, servidor y etiqueta (`clave` o `clave=valor`); ordena pulsando el título de una columna.
+- **Selección**: casilla por fila, de la página o **todo lo filtrado**. La barra indica a cuántos de la selección se aplica cada operación.
+- **Operaciones**: iniciar, detener, reiniciar, pausar, reanudar, eliminar y cambiar la política de reinicio (en caliente con `docker update`; no en los creados con `--rm`). Lo que no se puede aplicar en su estado se **omite** y se explica.
+- **Confirmación**: operación, servidores, contenedores afectados y omitidos, consecuencias y operaciones a la vez (1 a 16). **Eliminar** pide escribir el número de contenedores y **nunca elimina volúmenes ni imágenes**.
+- **Etiquetas**: Docker no permite cambiarlas en un contenedor que ya existe (habría que recrearlo); el diálogo lo explica y muestra las actuales. Para un contenedor concreto, usa **Duplicar**.
+- **Resultados**: cada contenedor tiene el suyo: correcto (Docker lo confirmó), fallido (con el error), omitido, cancelado o **desconocido** (la conexión se cortó antes de la confirmación; actualiza para ver su estado). Si uno falla, los demás siguen; nada se deshace ni se reintenta solo. **Cancelar lo pendiente** deja de enviar órdenes.
+- **Actividad**: cada orden se registra con el distintivo «Masiva»; **Ver en actividad** muestra solo esa operación.

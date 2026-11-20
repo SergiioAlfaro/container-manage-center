@@ -6,6 +6,7 @@ pub mod activity;
 pub mod app;
 pub mod audit;
 pub mod backup;
+pub mod bulk;
 pub mod components;
 pub mod compose;
 pub mod config;

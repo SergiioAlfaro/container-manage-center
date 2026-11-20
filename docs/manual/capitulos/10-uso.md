@@ -1,7 +1,8 @@
 # Uso de la aplicación
 
 Las capturas de este capítulo son **reales**: se tomaron el 16 de noviembre
-de 2026 de la versión 1.9.1 de Linux, en el entorno de pruebas (Ubuntu 24.04,
+de 2026 de la versión 1.9.1 de Linux (las de «Gestión masiva», el 20 de
+noviembre de 2026 de la 1.10.0, con contenedores creados para la ocasión), en el entorno de pruebas (Ubuntu 24.04,
 Docker 29.9.2), con contenedores, redes, volúmenes y un proyecto Compose
 creados para la ocasión. Ese entorno no tiene acceso a Docker Hub, por eso las
 imágenes que se ven son las de prueba del proyecto (`cmc-test/…`), y se
@@ -44,6 +45,26 @@ conectar**.
    **Crear imagen a partir de este contenedor**.
 
 ![Lista de contenedores con filtros y acciones.](imagenes/captura-contenedores.png){width=100%}
+
+## Gestión masiva
+
+1. **Gestión masiva** (en «Recursos») muestra los contenedores de todos los
+   servidores conectados, con los contadores arriba. Pulsa un contador para
+   filtrar por ese estado, o usa la búsqueda y los filtros de imagen, etiqueta
+   y servidor.
+2. Marca las casillas (o la del título para toda la página) y, en la barra que
+   aparece, **Seleccionar los N filtrados** si quieres todas las páginas.
+3. Cada botón de la barra dice a cuántos de la selección se aplica. Al pulsarlo
+   se abre la confirmación con los afectados, los omitidos y su motivo. Para
+   eliminar, escribe el número de contenedores; los volúmenes y las imágenes no
+   se tocan.
+4. Durante la ejecución se ve el progreso; **Cancelar lo pendiente** deja de
+   enviar órdenes. Al terminar, cada contenedor tiene su resultado y **Ver en
+   actividad** muestra solo las órdenes de esa operación.
+
+![Gestión masiva: indicadores, filtros y barra de acciones con seis contenedores seleccionados.](imagenes/captura-gestion-masiva.png){width=100%}
+
+![Resultado de una detención masiva: cada contenedor con su resultado y su duración.](imagenes/captura-gestion-masiva-resultado.png){width=100%}
 
 ## Creación
 

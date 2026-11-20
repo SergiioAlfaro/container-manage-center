@@ -635,7 +635,7 @@ impl Engine {
         .await
     }
 
-    async fn op_update(
+    pub(crate) async fn op_update(
         &self,
         id: &str,
         shown: &str,

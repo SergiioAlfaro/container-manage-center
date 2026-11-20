@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-17
+Última actualización: 2026-11-20
 
 ## Resumen
 
 | | |
 |---|---|
-| **Etapa actual** | 1.9.1: auditoría y correcciones de Windows, preparación para GitHub y manual técnico (D-115, D-116) |
-| **Versión** | 1.9.1 |
-| **Estado** | Linux: verificada automáticamente con Docker 29, 26 y 24, sin fallos. Windows: 614 pruebas superadas con Wine, **sin probar en un Windows real**; permiso adicional de WebView2 aprobado (2026-11-17) |
+| **Etapa actual** | 1.10.0: gestión masiva de contenedores, etapa 1 (D-117 a D-120) |
+| **Versión** | 1.10.0 |
+| **Estado** | 1.10.0 en Linux: verificada automáticamente con Docker 29.9.2, 168 correctas y 1 fallo ajeno a esta versión (aviso RustSec nuevo sobre chrono, pendiente de decisión). Hasta la 1.9.1: Docker 29, 26 y 24, sin fallos. Windows: 614 pruebas superadas con Wine, **sin probar en un Windows real**; permiso adicional de WebView2 aprobado (2026-11-17) |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | Lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+| **Pendiente de validar** | La gestión masiva ([guía](docs/validation/VALIDACION-1.10.0.md)); lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -1455,8 +1455,32 @@ Fecha: 2026-11-16. Decisión D-115.
 - El instalador NSIS no se pudo ejecutar con Wine (es de 32 bits y solo hay Wine de 64 bits).
 - Los flujos de GitHub Actions no se han ejecutado (no hay repositorio remoto).
 
+## 1.10.0 · Gestión masiva de contenedores (etapa 1)
+
+Fecha: 2026-11-20. Decisiones D-117 a D-120.
+
+### Hecho
+- Apartado **Gestión masiva** (Recursos): contenedores de todos los servidores conectados en una tabla con indicadores, actualización manual y automática, búsqueda, filtros (estado, imagen, etiqueta, servidor), orden, páginas y selección (individual, página, todo lo filtrado).
+- Operaciones masivas: iniciar, detener, reiniciar, pausar, reanudar, eliminar (forzando o no; nunca volúmenes ni imágenes) y política de reinicio (`docker update`). Etiquetas: solo se muestran y se explica que Docker exige recrear el contenedor (D-119).
+- Confirmación con vista previa (afectados, omitidos con motivo, servidores, consecuencias); eliminar exige escribir el número, comprobado también en el backend.
+- Ejecución con concurrencia configurable (1–16), progreso, cancelación de lo pendiente y resultado por contenedor (correcto, fallido, omitido, cancelado, desconocido) con duración; sin reintentos ni transacción global (D-117).
+- Reservas por servidor+ID para que nada se aplique dos veces a la vez (D-118); lote en cada registro de actividad, registro resumen y filtro «Ver en actividad».
+- Configuración `[bulk]`, textos en 8 idiomas, sección 30 de la ayuda, guía de usuario, decisiones, arquitectura, manual (capítulos 4, 7 y 10, con capturas reales) y guía de validación manual.
+
+### Verificación automática (entorno de desarrollo)
+- `verify-evolution-1.10.0.sh --deb --compat --net`, Docker 29.9.2: **168 correctas, 1 fallo, 7 omitidas** (las mismas de siempre: Windows sin MinGW, root, sin laboratorio SSH, sin chroot de APT, sin sesión gráfica). El fallo es `cargo deny`: RUSTSEC-2026-0543 declara chrono sin mantenimiento (sin vulnerabilidad ni versión segura). chrono no cambia desde la 1.9.1; añadir la excepción a `deny.toml` es decisión del propietario.
+- Rust deterministas: 807 correctas; Vitest: 475; Clippy `-D warnings` y formato sin avisos; todas las pruebas reales con Docker, incluidas `live_bulk` (contenedores temporales propios: fallo parcial, omitidos, pausa, reinicio, política comprobada con inspect, `--rm`, eliminación que conserva el volumen, lote en cada registro) y `live_bulk_via_ipc`. Sin recursos de prueba restantes.
+- Aplicación real (binario de publicación, Xvfb, usuario normal, Docker 29.9.2 con contenedores de prueba): apartado, selección, confirmación, detención de 4 contenedores (los otros 2 seleccionados se omitieron ya en la confirmación; 10,4 s, los 4 correctos) y actividad filtrada por lote. Esta comprobación hizo ver que los contenedores detenidos con `docker stop` (código 137 o 143) contaban como «con error»; se corrigió antes de la verificación final.
+
+### Limitaciones
+- No probado por SSH contra servidores reales (no hay laboratorio en este entorno); la operación por contenedor es la misma ruta del motor que en local.
+- No compilado ni probado para Windows.
+- Las etiquetas no se pueden cambiar en masa; un contenedor terminado por falta de memoria (137) no se distingue en la lista de uno detenido.
+
 ## Próximos pasos
 
+1. Validación manual de la gestión masiva ([docs/validation/VALIDACION-1.10.0.md](docs/validation/VALIDACION-1.10.0.md)).
+1. Decidir sobre RUSTSEC-2026-0543 (chrono sin mantenimiento): excepción justificada en `deny.toml` o sustituir chrono.
 1. Primera prueba en Windows con [docs/validation/VALIDACION-WINDOWS.md](docs/validation/VALIDACION-WINDOWS.md) y, si se quiere, el flujo de GitHub Actions.
 2. Validación manual de la 1.8.0 en Debian 13 ([docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md)), si no se ha hecho.
 

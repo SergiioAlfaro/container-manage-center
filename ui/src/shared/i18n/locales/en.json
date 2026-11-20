@@ -23,6 +23,10 @@
       "title": "Containers",
       "description": "Create, start, stop and inspect containers."
     },
+    "bulk": {
+      "title": "Bulk management",
+      "description": "Act on many containers at once, on one or several servers."
+    },
     "images": {
       "title": "Images",
       "description": "Pull, build, tag and remove images."
@@ -174,7 +178,11 @@
     "allServers": "all",
     "connectionSsh": "SSH (docker system dial-stdio)",
     "connectionLocal": "Local socket",
-    "connection": "Connection"
+    "connection": "Connection",
+    "batch": "Bulk operation",
+    "batchChip": "Bulk",
+    "batchFilter": "Only the bulk operation",
+    "batchFilterClear": "Show all operations"
   },
   "settings": {
     "appearance": "Appearance",
@@ -244,7 +252,8 @@
       "update": "Update resources or restart policy",
       "recreate": "Recreate container",
       "restoreBackup": "Restore container backup",
-      "commit": "Create image from container"
+      "commit": "Create image from container",
+      "bulk": "Bulk operation"
     },
     "image": {
       "list": "List images",
@@ -519,6 +528,197 @@
     "create": "Create container",
     "openDetail": "Open {{name}}",
     "moreActions": "More actions for {{name}}"
+  },
+  "bulk": {
+    "intro": "Containers from every connected server. Filter, select and apply the same operation to many at once; each container gets its own result.",
+    "kpi": {
+      "total": "Total",
+      "running": "Running",
+      "stopped": "Stopped",
+      "paused": "Paused",
+      "error": "With errors"
+    },
+    "envSummary_one": "{{count}} server ({{connected}} connected)",
+    "envSummary_other": "{{count}} servers ({{connected}} connected)",
+    "updated": "Updated at {{time}}",
+    "autoRefresh": "Refresh automatically",
+    "refreshEvery": "Refresh interval",
+    "everySecs_one": "every {{count}} second",
+    "everySecs_other": "every {{count}} seconds",
+    "refresh": "Refresh",
+    "disconnected": "Not connected (their containers are not shown): {{names}}. Connect them from “Servers”.",
+    "envError": "Could not list the containers of {{name}}: {{message}}",
+    "loadError": "Could not load the list: {{message}}",
+    "runError": "The bulk operation did not start and nothing was sent to Docker: {{message}}",
+    "search": "Search by name or ID",
+    "filter": {
+      "state": "State",
+      "all": "all",
+      "image": "Image",
+      "env": "Server",
+      "label": "Filter by label",
+      "labelPlaceholder": "Label: key or key=value",
+      "clear": "Clear filters"
+    },
+    "shown_one": "{{count}} of {{total}} container",
+    "shown_other": "{{count}} of {{total}} containers",
+    "bar": {
+      "label": "Actions on the selection",
+      "selected_one": "{{count}} selected",
+      "selected_other": "{{count}} selected",
+      "selectFiltered_one": "Select the filtered one ({{count}})",
+      "selectFiltered_other": "Select all {{count}} filtered",
+      "clear": "Clear selection",
+      "none": "No selected container allows “{{op}}” in its current state.",
+      "applies_one": "Applies to {{count}} of {{total}} (the rest are skipped because of their state).",
+      "applies_other": "Applies to {{count}} of {{total}} (the rest are skipped because of their state).",
+      "busy": "A bulk operation is in progress.",
+      "tooMany": "At most {{max}} containers per operation."
+    },
+    "action": {
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart",
+      "pause": "Pause",
+      "unpause": "Resume",
+      "restartPolicy": "Restart policy",
+      "labels": "Labels",
+      "remove": "Remove"
+    },
+    "labels": {
+      "limitShort": "Docker does not allow changing the labels of an existing container.",
+      "title": "Labels of the selected containers",
+      "limit": "Docker does not allow adding, changing or removing labels on a container that already exists: they are only set when it is created. Doing so would mean recreating each container (removing it and creating it again), which this version does not do automatically.",
+      "future": "To give a single container other labels, use “Duplicate” in its detail view: it creates a new one with the same configuration, where you can change them before creating it, and the original is left untouched. Bulk label editing, which would require recreating containers, is left for a later stage.",
+      "current_one": "Current labels ({{count}} container)",
+      "current_other": "Current labels ({{count}} containers)",
+      "none": "No user labels",
+      "more_one": "And {{count}} more container.",
+      "more_other": "And {{count}} more containers."
+    },
+    "empty": "No containers",
+    "emptyBody": "No connected server has containers. Create one in “Containers” or connect another server.",
+    "tableLabel": "Containers from every server",
+    "selectPage": "Select the ones on this page",
+    "selectOne": "Select {{name}} ({{env}})",
+    "col": {
+      "name": "Name",
+      "image": "Image",
+      "state": "State",
+      "created": "Created",
+      "ports": "Ports",
+      "restart": "Restart",
+      "env": "Server",
+      "labels": "Labels"
+    },
+    "noMatches": "No container matches the filters.",
+    "pageSize": "Per page",
+    "range": "{{from}}–{{to}} of {{total}}",
+    "prev": "Previous page",
+    "next": "Next page",
+    "health": {
+      "healthy": "healthy",
+      "unhealthy": "unhealthy",
+      "starting": "checking"
+    },
+    "op": {
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart",
+      "pause": "Pause",
+      "unpause": "Resume",
+      "remove": "Remove",
+      "removeForce": "Remove (forced)",
+      "restartPolicyTo": "Change the restart policy to {{policy}}"
+    },
+    "skip": {
+      "state": "Skipped: not possible in state “{{state}}”",
+      "needsForce": "Skipped: it is “{{state}}”; tick “Force” to remove it",
+      "autoRemove": "Skipped: created with --rm, Docker allows no other policy",
+      "unchanged": "Skipped: it already has that policy",
+      "gone": "Skipped: it no longer exists"
+    },
+    "confirm": {
+      "title_one": "{{op}}: {{count}} container",
+      "title_other": "{{op}}: {{count}} containers",
+      "run_one": "Apply to {{count}} container",
+      "run_other": "Apply to {{count}} containers",
+      "operation": "Operation",
+      "containers": "Containers",
+      "applyCount_one": "{{count}} will be sent to Docker",
+      "applyCount_other": "{{count}} will be sent to Docker",
+      "environments": "Servers",
+      "remote": "Includes remote servers: the order is sent to each one over its own connection.",
+      "affected_one": "Affected container ({{count}})",
+      "affected_other": "Affected containers ({{count}})",
+      "skipped_one": "Skipped ({{count}})",
+      "skipped_other": "Skipped ({{count}})",
+      "nothing": "No selected container allows this operation. Nothing will be sent.",
+      "concurrency": "Operations at a time",
+      "partial": "Each container is independent: if one fails, the others carry on and you will see each result. What was already applied is not undone and nothing is retried automatically."
+    },
+    "consequence": {
+      "start": "The containers will be started. Their processes will begin running and publish their ports.",
+      "stop": "The containers will be stopped (Docker sends the stop signal and forces them after the timeout). The services they provide will become unavailable.",
+      "restart": "The containers will be restarted: they will be briefly out of service.",
+      "pause": "The containers' processes will be frozen; they will not respond until resumed.",
+      "unpause": "The frozen processes will be resumed.",
+      "remove": "The containers will be removed, along with anything they store outside volumes. This cannot be undone.",
+      "restartPolicy": "The restart policy will be changed with “docker update” without stopping or recreating the containers."
+    },
+    "policy": {
+      "new": "New restart policy",
+      "name": {
+        "no": "Do not restart",
+        "always": "Always",
+        "unless-stopped": "Unless stopped",
+        "on-failure": "On failure"
+      },
+      "hint": {
+        "no": "Docker does not start the container again on its own.",
+        "always": "Docker restarts it whenever it stops, also when Docker starts.",
+        "unless-stopped": "Like “Always”, unless you stopped it yourself.",
+        "on-failure": "Docker restarts it only if it exits with an error code."
+      },
+      "retries": "Maximum attempts",
+      "retriesHint": "0 = no limit",
+      "live": "Applied live: Docker allows changing the policy without recreating the container (except those created with --rm).",
+      "unknown": "unknown"
+    },
+    "remove": {
+      "risk": "Volumes and images are never removed: only the containers.",
+      "force": "Force (also remove running or paused ones)",
+      "forceHint": "Without this option, active containers are skipped.",
+      "type_one": "To confirm, type {{count}} (the number of containers that will be removed):",
+      "type_other": "To confirm, type {{count}} (the number of containers that will be removed):",
+      "typeLabel": "Number of containers that will be removed"
+    },
+    "run": {
+      "title": "Bulk operation progress",
+      "finished": "Finished in {{duration}}",
+      "cancelling": "Cancelling what is pending; what was already sent to Docker finishes…",
+      "progress": "{{done}} of {{total}} · {{concurrency}} at a time",
+      "cancel": "Cancel pending",
+      "cancelHint": "Nothing else will be sent to Docker. What is already in progress finishes and is reported.",
+      "activity": "View in activity",
+      "close": "Close result",
+      "allOk_one": "Succeeded on {{count}} container ({{skipped}} skipped).",
+      "allOk_other": "Succeeded on {{count}} containers ({{skipped}} skipped).",
+      "partial": "Partial result: {{ok}} succeeded, {{failed}} failed, {{unknown}} unknown, {{skipped}} skipped, {{cancelled}} cancelled.",
+      "unknownHint": "“Unknown”: the order was sent but the connection dropped before Docker confirmed it. Refresh the table to see its real state.",
+      "onlyProblems": "Show only those that did not succeed",
+      "nowState": "Now: {{state}}",
+      "removed": "Removed"
+    },
+    "status": {
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown",
+      "running": "Applying…",
+      "pending": "Pending"
+    }
   },
   "images": {
     "refresh": "Refresh",

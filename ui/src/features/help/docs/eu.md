@@ -380,3 +380,17 @@ Windows-en, Container Manage Center Linux-en bezala dabil, desberdintasun haueki
 - **Jakinarazpenak**: sistemarenak (jakinarazpen-zentroa).
 - **Datuak**: konfigurazioa `%APPDATA%\container-manage-center` karpetan eta historia `%LOCALAPPDATA%\container-manage-center` karpetan.
 - **Desinstalatu**: Windows-en Ezarpenak › Aplikazioak › Instalatutako aplikazioak ataletik. Zure datuak eta Docker Desktop ez dira ukitzen. «Desinstalazioa eta osagaiak» atala Debian eta Ubuntu-n bakarrik dago.
+
+## 30. Kudeaketa masiboa {#bulk}
+
+**Kudeaketa masiboa** («Baliabideak» atalean) eragiketa bera aplikatzen die edukiontzi askori aldi berean, baita zerbitzari batzuetan ere.
+
+- **Ikuspegi orokorra**: guztira, exekutatzen, geldituta, pausatuta eta errorearekin. Kontagailu batean sakatuz egoera horren arabera iragazten da. Ordenagailu honetako eta **konektatutako** urruneko zerbitzarietako edukiontziak biltzen dira; besteak ohar batean adierazten dira.
+- **Eguneratzea**: **Eguneratu** botoia eta eguneratze automatikoa (5 s-tik 5 min-ra, desaktiba daiteke).
+- **Taula**: bilatu izenaren edo IDaren arabera; iragazi egoera, irudi, zerbitzari eta etiketaren arabera (`gakoa` edo `gakoa=balioa`); ordenatu zutabe baten izenburuan sakatuz.
+- **Hautapena**: errenkada bakoitzeko laukia, orrikoa edo **iragazitako guztia**. Barrak adierazten du hautapeneko zenbat edukiontziri aplikatzen zaion eragiketa bakoitza.
+- **Eragiketak**: abiarazi, gelditu, berrabiarazi, pausatu, berrekin, ezabatu eta berrabiarazte-politika aldatu (beroan, `docker update` bidez; ez `--rm` aukerarekin sortutakoetan). Egoeragatik onartzen ez dutenak **saltatu** egiten dira, arrazoiarekin.
+- **Berrespena**: eragiketa, zerbitzariak, eragindako eta saltatutako edukiontziak, ondorioak eta aldi bereko eragiketak (1etik 16ra). **Ezabatu** aukerak edukiontzi kopurua idaztea eskatzen du eta **ez ditu inoiz bolumenak edo irudiak ezabatzen**.
+- **Etiketak**: Dockerrek ez du uzten lehendik dagoen edukiontzi batean aldatzen (birsortu beharko litzateke); elkarrizketa-koadroak azaltzen du eta unekoak erakusten ditu. Edukiontzi jakin baterako, erabili **Bikoiztu**.
+- **Emaitzak**: edukiontzi bakoitzak berea du: ondo (Dockerrek berretsia), huts (errorearekin), saltatuta, bertan behera edo **ezezaguna** (konexioa eten zen berretsi aurretik; eguneratu egoera ikusteko). Batek huts egiten badu, besteek jarraitzen dute; ez da ezer desegiten edo berriro saiatzen automatikoki. **Utzi bertan behera zain dagoena** aukerak aginduak bidaltzeari uzten dio.
+- **Jarduera**: agindu bakoitza «Masiboa» ikurrarekin erregistratzen da; **Ikusi jardueran** aukerak eragiketa hori soilik erakusten du.

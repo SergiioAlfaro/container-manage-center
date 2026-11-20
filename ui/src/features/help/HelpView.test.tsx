@@ -14,7 +14,7 @@ import { parseHelp } from "./markdown";
 import { LANGUAGES } from "@/shared/i18n";
 
 describe("Ayuda: documento", () => {
-  it.each(Object.keys(HELP_DOCS))("%s: tiene las 29 secciones (26 exigidas, «Servidores remotos» de 0.10.0, «Legal» de 1.7.0 y «Windows» de 1.9.0), en orden y con contenido", (lang) => {
+  it.each(Object.keys(HELP_DOCS))("%s: tiene las 30 secciones (26 exigidas, «Servidores remotos» de 0.10.0, «Legal» de 1.7.0, «Windows» de 1.9.0 y «Gestión masiva» de 1.10.0), en orden y con contenido", (lang) => {
     const s = parseHelp(HELP_DOCS[lang]!);
     expect(s.map((x) => x.id)).toEqual([...HELP_SECTION_IDS]);
     s.forEach((x, i) => {
@@ -71,7 +71,7 @@ describe("Ayuda: navegación", () => {
   it("muestra el índice y la primera sección; el índice y Siguiente/Anterior navegan", async () => {
     renderWithQuery(<HelpView />);
     const toc = screen.getByRole("navigation", { name: "Índice de la ayuda" });
-    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(29);
+    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(30);
     expect(screen.getByRole("heading", { level: 2, name: "1. Qué es Container Manage Center" })).toBeInTheDocument();
     await userEvent.click(within(toc).getByRole("button", { name: "21. Terminales simultáneas" }));
     expect(screen.getByRole("heading", { level: 2, name: "21. Terminales simultáneas" })).toBeInTheDocument();

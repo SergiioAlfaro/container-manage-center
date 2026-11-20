@@ -23,6 +23,10 @@
       "title": "Contenidors",
       "description": "Crea, inicia, atura i inspecciona contenidors."
     },
+    "bulk": {
+      "title": "Gestió massiva",
+      "description": "Actua sobre molts contenidors alhora, en un o diversos servidors."
+    },
     "images": {
       "title": "Imatges",
       "description": "Baixa, construeix, etiqueta i elimina imatges."
@@ -174,7 +178,11 @@
     "allServers": "tots",
     "connectionSsh": "SSH (docker system dial-stdio)",
     "connectionLocal": "Sòcol local",
-    "connection": "Connexió"
+    "connection": "Connexió",
+    "batch": "Operació massiva",
+    "batchChip": "Massiva",
+    "batchFilter": "Només l’operació massiva",
+    "batchFilterClear": "Mostra totes les operacions"
   },
   "settings": {
     "appearance": "Aparença",
@@ -244,7 +252,8 @@
       "update": "Actualitzar recursos o reinici",
       "recreate": "Recrear el contenidor",
       "restoreBackup": "Restaurar la còpia del contenidor",
-      "commit": "Crear una imatge des d’un contenidor"
+      "commit": "Crear una imatge des d’un contenidor",
+      "bulk": "Operació massiva"
     },
     "image": {
       "list": "Llistar imatges",
@@ -519,6 +528,197 @@
     "create": "Crear un contenidor",
     "openDetail": "Obrir {{name}}",
     "moreActions": "Més accions de {{name}}"
+  },
+  "bulk": {
+    "intro": "Contenidors de tots els servidors connectats. Filtra, selecciona i aplica una mateixa operació a molts alhora; cada contenidor té el seu propi resultat.",
+    "kpi": {
+      "total": "Total",
+      "running": "En execució",
+      "stopped": "Aturats",
+      "paused": "En pausa",
+      "error": "Amb error"
+    },
+    "envSummary_one": "{{count}} servidor ({{connected}} connectat)",
+    "envSummary_other": "{{count}} servidors ({{connected}} connectats)",
+    "updated": "Actualitzat a les {{time}}",
+    "autoRefresh": "Actualitza automàticament",
+    "refreshEvery": "Interval d’actualització",
+    "everySecs_one": "cada {{count}} segon",
+    "everySecs_other": "cada {{count}} segons",
+    "refresh": "Actualitza",
+    "disconnected": "Sense connexió (els seus contenidors no apareixen): {{names}}. Connecta’ls des de «Servidors».",
+    "envError": "No s’han pogut llistar els contenidors de {{name}}: {{message}}",
+    "loadError": "No s’ha pogut carregar la llista: {{message}}",
+    "runError": "L’operació massiva no s’ha iniciat i no s’ha enviat res a Docker: {{message}}",
+    "search": "Cerca per nom o ID",
+    "filter": {
+      "state": "Estat",
+      "all": "tots",
+      "image": "Imatge",
+      "env": "Servidor",
+      "label": "Filtra per etiqueta",
+      "labelPlaceholder": "Etiqueta: clau o clau=valor",
+      "clear": "Treu els filtres"
+    },
+    "shown_one": "{{count}} de {{total}} contenidor",
+    "shown_other": "{{count}} de {{total}} contenidors",
+    "bar": {
+      "label": "Accions sobre la selecció",
+      "selected_one": "{{count}} seleccionat",
+      "selected_other": "{{count}} seleccionats",
+      "selectFiltered_one": "Selecciona el filtrat ({{count}})",
+      "selectFiltered_other": "Selecciona els {{count}} filtrats",
+      "clear": "Treu la selecció",
+      "none": "Cap contenidor seleccionat admet «{{op}}» en el seu estat actual.",
+      "applies_one": "S’aplicarà a {{count}} de {{total}} (els altres s’ometen pel seu estat).",
+      "applies_other": "S’aplicarà a {{count}} de {{total}} (els altres s’ometen pel seu estat).",
+      "busy": "Hi ha una operació massiva en curs.",
+      "tooMany": "Com a màxim {{max}} contenidors per operació."
+    },
+    "action": {
+      "start": "Inicia",
+      "stop": "Atura",
+      "restart": "Reinicia",
+      "pause": "Posa en pausa",
+      "unpause": "Reprèn",
+      "restartPolicy": "Política de reinici",
+      "labels": "Etiquetes",
+      "remove": "Elimina"
+    },
+    "labels": {
+      "limitShort": "Docker no permet canviar les etiquetes d’un contenidor existent.",
+      "title": "Etiquetes dels contenidors seleccionats",
+      "limit": "Docker no permet afegir, canviar ni treure etiquetes d’un contenidor que ja existeix: només es fixen en crear-lo. Fer-ho exigiria recrear cada contenidor (eliminar-lo i tornar-lo a crear), cosa que aquesta versió no fa automàticament.",
+      "future": "Per posar altres etiquetes a un contenidor concret, fes servir «Duplicar» al seu detall: en crea un de nou amb la mateixa configuració, on les pots canviar abans de crear-lo, i l’original no es toca. L’edició massiva d’etiquetes, que exigiria recrear contenidors, queda per a una etapa posterior.",
+      "current_one": "Etiquetes actuals ({{count}} contenidor)",
+      "current_other": "Etiquetes actuals ({{count}} contenidors)",
+      "none": "Sense etiquetes pròpies",
+      "more_one": "I {{count}} contenidor més.",
+      "more_other": "I {{count}} contenidors més."
+    },
+    "empty": "No hi ha contenidors",
+    "emptyBody": "Cap servidor connectat té contenidors. Crea’n un a «Contenidors» o connecta un altre servidor.",
+    "tableLabel": "Contenidors de tots els servidors",
+    "selectPage": "Selecciona els d’aquesta pàgina",
+    "selectOne": "Selecciona {{name}} ({{env}})",
+    "col": {
+      "name": "Nom",
+      "image": "Imatge",
+      "state": "Estat",
+      "created": "Creat",
+      "ports": "Ports",
+      "restart": "Reinici",
+      "env": "Servidor",
+      "labels": "Etiquetes"
+    },
+    "noMatches": "Cap contenidor coincideix amb els filtres.",
+    "pageSize": "Per pàgina",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "prev": "Pàgina anterior",
+    "next": "Pàgina següent",
+    "health": {
+      "healthy": "sa",
+      "unhealthy": "no sa",
+      "starting": "comprovant"
+    },
+    "op": {
+      "start": "Inicia",
+      "stop": "Atura",
+      "restart": "Reinicia",
+      "pause": "Posa en pausa",
+      "unpause": "Reprèn",
+      "remove": "Elimina",
+      "removeForce": "Elimina (forçant)",
+      "restartPolicyTo": "Canvia la política de reinici a {{policy}}"
+    },
+    "skip": {
+      "state": "S’omet: no es pot en estat «{{state}}»",
+      "needsForce": "S’omet: està «{{state}}»; marca «Força» per eliminar-lo",
+      "autoRemove": "S’omet: creat amb --rm, Docker no admet cap altra política",
+      "unchanged": "S’omet: ja té aquesta política",
+      "gone": "S’omet: ja no existeix"
+    },
+    "confirm": {
+      "title_one": "{{op}}: {{count}} contenidor",
+      "title_other": "{{op}}: {{count}} contenidors",
+      "run_one": "Aplica a {{count}} contenidor",
+      "run_other": "Aplica a {{count}} contenidors",
+      "operation": "Operació",
+      "containers": "Contenidors",
+      "applyCount_one": "{{count}} s’enviarà a Docker",
+      "applyCount_other": "{{count}} s’enviaran a Docker",
+      "environments": "Servidors",
+      "remote": "Inclou servidors remots: l’ordre s’envia a cadascun per la seva pròpia connexió.",
+      "affected_one": "Contenidor afectat ({{count}})",
+      "affected_other": "Contenidors afectats ({{count}})",
+      "skipped_one": "S’omet ({{count}})",
+      "skipped_other": "S’ometen ({{count}})",
+      "nothing": "Cap contenidor seleccionat admet aquesta operació. No s’enviarà res.",
+      "concurrency": "Operacions alhora",
+      "partial": "Cada contenidor és independent: si algun falla, els altres continuen i veuràs el resultat de cadascun. No es desfà el que ja s’ha aplicat ni es reintenta res automàticament."
+    },
+    "consequence": {
+      "start": "S’iniciaran els contenidors. Els seus processos començaran a executar-se i publicaran els seus ports.",
+      "stop": "S’aturaran els contenidors (Docker envia el senyal d’aturada i, passat el temps d’espera, els força). Els serveis que ofereixen deixaran d’estar disponibles.",
+      "restart": "Es reiniciaran els contenidors: estaran un moment sense servei.",
+      "pause": "Es congelaran els processos dels contenidors; no respondran fins que es reprenguin.",
+      "unpause": "Es reprendran els processos congelats.",
+      "remove": "S’eliminaran els contenidors i el que guarden fora dels volums. No es pot desfer.",
+      "restartPolicy": "Es canviarà la política de reinici amb «docker update» sense aturar ni recrear els contenidors."
+    },
+    "policy": {
+      "new": "Nova política de reinici",
+      "name": {
+        "no": "No reiniciïs",
+        "always": "Sempre",
+        "unless-stopped": "Excepte si s’ha aturat",
+        "on-failure": "Si falla"
+      },
+      "hint": {
+        "no": "Docker no torna a iniciar el contenidor pel seu compte.",
+        "always": "Docker el reinicia sempre que s’atura, també en arrencar Docker.",
+        "unless-stopped": "Com «Sempre», excepte si l’has aturat tu.",
+        "on-failure": "Docker el reinicia només si acaba amb un codi d’error."
+      },
+      "retries": "Intents màxims",
+      "retriesHint": "0 = sense límit",
+      "live": "S’aplica en calent: Docker permet canviar la política sense recrear el contenidor (excepte els creats amb --rm).",
+      "unknown": "desconeguda"
+    },
+    "remove": {
+      "risk": "Els volums i les imatges no s’eliminen mai: només els contenidors.",
+      "force": "Força (elimina també els que estan en marxa o en pausa)",
+      "forceHint": "Sense aquesta opció, els contenidors actius s’ometen.",
+      "type_one": "Per confirmar, escriu {{count}} (el nombre de contenidors que s’eliminaran):",
+      "type_other": "Per confirmar, escriu {{count}} (el nombre de contenidors que s’eliminaran):",
+      "typeLabel": "Nombre de contenidors que s’eliminaran"
+    },
+    "run": {
+      "title": "Progrés de l’operació massiva",
+      "finished": "Acabada en {{duration}}",
+      "cancelling": "Cancel·lant el que queda; el que ja s’ha enviat a Docker acaba…",
+      "progress": "{{done}} de {{total}} · {{concurrency}} alhora",
+      "cancel": "Cancel·la el pendent",
+      "cancelHint": "No s’enviarà res més a Docker. El que ja està en curs acaba i se n’informa.",
+      "activity": "Mostra a l’activitat",
+      "close": "Tanca el resultat",
+      "allOk_one": "Correcta en {{count}} contenidor ({{skipped}} omesos).",
+      "allOk_other": "Correcta en {{count}} contenidors ({{skipped}} omesos).",
+      "partial": "Resultat parcial: {{ok}} correctes, {{failed}} fallides, {{unknown}} amb resultat desconegut, {{skipped}} omeses, {{cancelled}} cancel·lades.",
+      "unknownHint": "«Desconegut»: l’ordre s’ha enviat però la connexió s’ha tallat abans de la confirmació de Docker. Actualitza la taula per veure’n l’estat real.",
+      "onlyProblems": "Mostra només els que no han anat bé",
+      "nowState": "Ara: {{state}}",
+      "removed": "Eliminat"
+    },
+    "status": {
+      "succeeded": "Correcte",
+      "failed": "Fallit",
+      "skipped": "Omès",
+      "cancelled": "Cancel·lat",
+      "unknown": "Desconegut",
+      "running": "Aplicant…",
+      "pending": "Pendent"
+    }
   },
   "images": {
     "refresh": "Actualitzar",

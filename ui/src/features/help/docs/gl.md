@@ -380,3 +380,17 @@ En Windows, Container Manage Center funciona igual que en Linux, con estas difer
 - **Notificacións**: as do sistema (centro de notificacións).
 - **Datos**: configuración en `%APPDATA%\container-manage-center` e historial en `%LOCALAPPDATA%\container-manage-center`.
 - **Desinstalar**: desde Configuración de Windows › Aplicacións › Aplicacións instaladas. Os teus datos e Docker Desktop non se tocan. O apartado «Desinstalación e compoñentes» só existe en Debian e Ubuntu.
+
+## 30. Xestión masiva {#bulk}
+
+**Xestión masiva** (en «Recursos») aplica unha mesma operación a moitos contedores á vez, tamén de varios servidores.
+
+- **Visión xeral**: total, en execución, detidos, en pausa e con erro. Premer nun contador filtra por ese estado. Reúnense os contedores deste ordenador e dos servidores remotos **conectados**; os demais indícanse nun aviso.
+- **Actualización**: botón **Actualizar** e actualización automática (de 5 s a 5 min, pódese desactivar).
+- **Táboa**: busca por nome ou ID; filtra por estado, imaxe, servidor e etiqueta (`clave` ou `clave=valor`); ordena premendo no título dunha columna.
+- **Selección**: caixa por fila, da páxina ou de **todo o filtrado**. A barra indica a cantos contedores da selección se aplica cada operación.
+- **Operacións**: iniciar, deter, reiniciar, pausar, retomar, eliminar e cambiar a política de reinicio (en quente con `docker update`; non nos creados con `--rm`). Os que non o permiten polo seu estado **omítense**, co motivo.
+- **Confirmación**: operación, servidores, contedores afectados e omitidos, consecuencias e operacións á vez (1 a 16). **Eliminar** pide escribir o número de contedores e **nunca elimina volumes nin imaxes**.
+- **Etiquetas**: Docker non permite cambialas nun contedor que xa existe (habería que recrealo); o diálogo explícao e amosa as actuais. Para un contedor concreto, usa **Duplicar**.
+- **Resultados**: cada contedor ten o seu: correcto (confirmado por Docker), fallido (co erro), omitido, cancelado ou **descoñecido** (a conexión cortouse antes da confirmación; actualiza para ver o seu estado). Se un falla, os demais seguen; nada se desfai nin se reintenta só. **Cancelar o pendente** deixa de enviar ordes.
+- **Actividade**: cada orde rexístrase co distintivo «Masiva»; **Ver na actividade** amosa só esa operación.

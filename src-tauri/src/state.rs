@@ -28,6 +28,10 @@ pub struct AppState {
     pub closing: std::sync::atomic::AtomicBool,
     /// Monitorización (1.5.0).
     pub monitor: crate::monitor::Monitor,
+    /// Contenedores en una operación masiva en curso (1.10.0, D-118).
+    pub bulk_jobs: crate::bulk::BulkJobs,
+    /// Datos de `inspect` de la gestión masiva (política de reinicio, `--rm`).
+    pub bulk_details: std::sync::Arc<crate::bulk::DetailsCache>,
 }
 
 /// Traduce la configuración persistida al modo de conexión del motor.
@@ -109,6 +113,8 @@ impl AppState {
             last_update: Mutex::new(None),
             closing: Default::default(),
             monitor,
+            bulk_jobs: Default::default(),
+            bulk_details: Default::default(),
         }
     }
 

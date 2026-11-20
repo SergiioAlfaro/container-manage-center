@@ -106,6 +106,11 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
           >
             {t(`activity.via.${r.transport.via}`)}
           </span>
+          {r.batch && (
+            <span data-testid="activity-batch" title={`${t("activity.batch")}: ${r.batch}`} className="shrink-0 rounded-[4px] bg-beacon-soft px-1.5 py-px text-[10.5px] font-semibold text-beacon-strong">
+              {t("activity.batchChip")}
+            </span>
+          )}
           {r.server?.remote && (
             <span data-testid="activity-server" title={`${t("servers.target")}: ${r.server.name} (${r.server.address})`} className="max-w-[30%] shrink-0 truncate rounded-[4px] bg-beacon/15 px-1.5 py-px text-[10.5px] font-semibold text-beacon-strong">
               {r.server.name}
@@ -190,6 +195,12 @@ export const ActivityItem = memo(function ActivityItem({ record: r }: { record: 
             </dd>
             <dt className="text-ink-3">{t("activity.connection")}</dt>
             <dd>{r.server?.remote ? t("activity.connectionSsh") : t("activity.connectionLocal")}</dd>
+            {r.batch && (
+              <>
+                <dt className="text-ink-3">{t("activity.batch")}</dt>
+                <dd className="selectable font-mono [overflow-wrap:anywhere]">{r.batch}</dd>
+              </>
+            )}
             <dt className="text-ink-3">{t("activity.started")}</dt>
             <dd className="selectable tabular-nums">{formatDateTime(r.startedAt, i18n.language)}</dd>
             {r.finishedAt && (

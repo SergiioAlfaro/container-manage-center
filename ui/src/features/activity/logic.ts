@@ -49,9 +49,11 @@ export interface ActivityFilter {
   status: OpStatus | "all";
   /** Servidor (0.10.0): identificador o "all". */
   server: string;
+  /** Operación masiva (1.10.0): solo sus registros; `null` = todos. */
+  batch: string | null;
 }
 
-export const EMPTY_FILTER: ActivityFilter = { query: "", category: "all", status: "all", server: "all" };
+export const EMPTY_FILTER: ActivityFilter = { query: "", category: "all", status: "all", server: "all", batch: null };
 
 /** Servidor de un registro; los anteriores a 0.10.0 son del equipo local. */
 export function recordServer(r: Pick<OperationRecord, "server">): string {
@@ -59,10 +61,11 @@ export function recordServer(r: Pick<OperationRecord, "server">): string {
 }
 
 export function isFiltered(f: ActivityFilter): boolean {
-  return f.query.trim() !== "" || f.category !== "all" || f.status !== "all" || f.server !== "all";
+  return f.query.trim() !== "" || f.category !== "all" || f.status !== "all" || f.server !== "all" || f.batch !== null;
 }
 
 export function matches(r: OperationRecord, f: ActivityFilter): boolean {
+  if (f.batch !== null && r.batch !== f.batch) return false;
   if (f.server !== "all" && recordServer(r) !== f.server) return false;
   if (f.category !== "all" && r.category !== f.category) return false;
   if (f.status !== "all" && r.status !== f.status) return false;

@@ -39,6 +39,11 @@ import type { ServerOverview } from "@/shared/ipc/bindings/ServerOverview";
 import type { CheckId } from "@/shared/ipc/bindings/CheckId";
 import type { ConnectionState } from "@/shared/ipc/bindings/ConnectionState";
 import type { ContainerSummary } from "@/shared/ipc/bindings/ContainerSummary";
+import type { BulkContainer } from "@/shared/ipc/bindings/BulkContainer";
+import type { BulkEnvironment } from "@/shared/ipc/bindings/BulkEnvironment";
+import type { BulkEvent } from "@/shared/ipc/bindings/BulkEvent";
+import type { BulkInventory } from "@/shared/ipc/bindings/BulkInventory";
+import type { BulkRequest } from "@/shared/ipc/bindings/BulkRequest";
 import type { Diagnosis } from "@/shared/ipc/bindings/Diagnosis";
 import type { ImageSummary } from "@/shared/ipc/bindings/ImageSummary";
 import type { SystemOverview } from "@/shared/ipc/bindings/SystemOverview";
@@ -155,6 +160,7 @@ const DEFAULT_CONFIG: AppConfig = {
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
   updates: { checkOnStart: false, source: "" },
+  bulk: { concurrency: 4, autoRefresh: true, refreshSecs: 15 },
 };
 
 export const connected: ConnectionState = {
@@ -264,6 +270,57 @@ export const containers: ContainerSummary[] = [
   }),
   container({ id: "c3c3c3c3c3c3", name: "cache", image: "redis:8", state: "paused", status: "Up 3 hours (Paused)", ports: [], composeProject: "blog" }),
 ];
+
+/** Gestión masiva (1.10.0): ID completo de prueba a partir de un carácter. */
+export const fullId = (c: string) => c.repeat(64);
+export function bulkContainer(over: Partial<BulkContainer> = {}): BulkContainer {
+  return {
+    id: fullId("a"),
+    name: "web",
+    image: "nginx:1.27",
+    state: "running",
+    status: "Up 2 hours",
+    created: 1_794_000_000,
+    ports: [{ ip: "0.0.0.0", privatePort: 80, publicPort: 8080, protocol: "tcp" }],
+    labels: { "com.docker.compose.project": "tienda", tier: "frontend" },
+    composeProject: "tienda",
+    exitCode: null,
+    health: null,
+    error: false,
+    details: { restartPolicy: { name: "unless-stopped", maximumRetryCount: 0 }, autoRemove: false },
+    ...over,
+  };
+}
+export function bulkEnvironment(over: Partial<BulkEnvironment> = {}): BulkEnvironment {
+  return { server: "local", remote: false, name: "", address: "/var/run/docker.sock", connection: "connected", containers: [], error: null, ...over };
+}
+/** Tres en este equipo, dos en «Producción» (uno con el mismo ID que uno local)
+ *  y un servidor sin conexión. */
+export function bulkInventory(): BulkInventory {
+  return {
+    fetchedAt: "2026-11-20T10:00:00Z",
+    environments: [
+      bulkEnvironment({
+        containers: [
+          bulkContainer(),
+          bulkContainer({ id: fullId("b"), name: "db", image: "postgres:16", state: "exited", status: "Exited (1) 3 minutes ago", exitCode: 1, error: true, ports: [], labels: { tier: "backend" }, composeProject: null, details: { restartPolicy: { name: "no", maximumRetryCount: 0 }, autoRemove: false } }),
+          bulkContainer({ id: fullId("c"), name: "cache", image: "redis:7", state: "paused", status: "Up 1 hour (Paused)", ports: [], labels: {}, composeProject: null, details: { restartPolicy: { name: "always", maximumRetryCount: 0 }, autoRemove: false } }),
+        ],
+      }),
+      bulkEnvironment({
+        server: "srv-prod",
+        remote: true,
+        name: "Producción",
+        address: "ana@prod.example:22",
+        containers: [
+          bulkContainer({ name: "api", image: "nginx:1.27", labels: { tier: "frontend" }, composeProject: null }),
+          bulkContainer({ id: fullId("d"), name: "tarea", image: "alpine:3", state: "running", status: "Up 5 minutes", ports: [], labels: {}, composeProject: null, details: { restartPolicy: { name: "no", maximumRetryCount: 0 }, autoRemove: true } }),
+        ],
+      }),
+      bulkEnvironment({ server: "srv-test", remote: true, name: "Pruebas", address: "ana@test.example:22", connection: "disconnected" }),
+    ],
+  };
+}
 
 export const images: ImageSummary[] = [
   { id: "sha256:1111aaaabbbbcccc", repoTags: ["nginx:1.27", "nginx:latest"], repoDigests: [], created: 1_760_000_000, size: 192_000_000, dangling: false, labels: {}, usedBy: [{ id: "a1b2c3d4e5f6a7b8c9d0", name: "web", state: "running" }] },
@@ -707,6 +764,7 @@ export function historyEntry(over: Partial<HistoryEntry> = {}): HistoryEntry {
     httpStatus: null,
     exitCode: null,
     server: null,
+    batch: null,
     ...over,
   };
 }
@@ -1018,6 +1076,9 @@ export const api = {
   terminalInput: vi.fn(async (_s: number, _d: string) => {}),
   terminalResize: vi.fn(async (_s: number, _c: number, _r: number) => {}),
   streamClose: vi.fn(async (s: number) => streams.close(s)),
+  bulkInventory: vi.fn(async (_refresh: boolean): Promise<BulkInventory> => bulkInventory()),
+  /** El flujo queda abierto: la prueba emite los eventos con `streams.emit`. */
+  bulkRunOpen: vi.fn(async (_r: BulkRequest, h: (e: BulkEvent) => void) => streams.add(h)),
   pickFolder: vi.fn(async (_t: string): Promise<string | null> => "/home/u/datos"),
   pickFile: vi.fn(async (_t: string, _d?: string): Promise<string | null> => "/home/u/proyecto/docker/Dockerfile.prod"),
   imageDetails: vi.fn(async (reference: string): Promise<ImageDetails> => imageDetails(reference)),

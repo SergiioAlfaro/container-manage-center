@@ -63,6 +63,8 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Audit", "no", "container {{name}}",
     // 1.4.0: en italiano también se dice «database».
     "Database",
+    // 1.10.0: gestión masiva («container» no cambia en singular).
+    "{{op}}: {{count}} container",
   ],
   ca: [
     // 1.3.0
@@ -71,10 +73,12 @@ const SAME_WORDS: Record<"fr" | "it" | "ca" | "gl" | "eu" | "pt", string[]> = {
     "Terminal", "Terminals", "Variables", "Versions", "{{count}} error", "{{count}} errors",
     // 1.4.0
     "Manual",
+    // 1.10.0
+    "Total",
   ],
-  gl: ["Daemon (dockerd)", "Executable", "Local", "Terminal", "Variables", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual"],
+  gl: ["Daemon (dockerd)", "Executable", "Local", "Terminal", "Variables", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual", "Total"],
   eu: [],
-  pt: ["Aliases", "Ctrl+Shift+A", "Daemon (dockerd)", "Gateway", "Local", "Terminal", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual"],
+  pt: ["Aliases", "Ctrl+Shift+A", "Daemon (dockerd)", "Gateway", "Local", "Terminal", "Volume", "Volumes", "volume", "{{count}} volume", "{{count}} volumes", "Manual", "Total"],
 };
 
 describe("traducciones", () => {

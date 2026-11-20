@@ -119,4 +119,17 @@ describe("ActivityPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cerrar panel de actividad" }));
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it("operación masiva (1.10.0): distintivo, identificador en el detalle y filtro por lote que se puede quitar", async () => {
+    const batch = "0f0e0d0c-0b0a-4908-8706-050403020100";
+    useActivity.setState({ records: [apiRecord({ id: "r1", batch }), apiRecord({ id: "r2", target: "otro" })], filter: { ...EMPTY_FILTER, batch }, loadError: null, max: 500 });
+    render(<ActivityPanel onClose={() => {}} />);
+    expect(screen.getByTestId("activity-batch-filter")).toHaveTextContent("Solo la operación masiva 0f0e0d0c");
+    const list = screen.getByRole("list", { name: "Actividad" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(list).getByTestId("activity-batch")).toHaveTextContent("Masiva");
+    await userEvent.click(screen.getByRole("button", { name: "Mostrar todas las operaciones" }));
+    expect(useActivity.getState().filter.batch).toBeNull();
+    expect(within(screen.getByRole("list", { name: "Actividad" })).getAllByRole("listitem")).toHaveLength(2);
+  });
 });

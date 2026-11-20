@@ -1,6 +1,6 @@
 # Guía de usuario · Container Manage Center
 
-> Versión 1.9.1. Para actualizar desde una versión anterior, véase
+> Versión 1.10.0. Para actualizar desde una versión anterior, véase
 > [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 >
 > Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)
@@ -296,6 +296,142 @@ secretos. Si el contenedor está en ejecución, por defecto se pausa unos
 segundos mientras se crea la imagen; nunca se detiene. Si ya existe una imagen
 con ese nombre, hay que aceptarlo expresamente (la anterior se queda sin
 etiqueta, no se borra). **Ver la imagen** abre su detalle en Imágenes.
+
+## Gestión masiva
+
+Novedad de la 1.10.0. Sirve para aplicar una misma operación a muchos
+contenedores a la vez, también de varios servidores. Está en la barra lateral,
+en «Recursos», justo después de «Contenedores».
+
+### Qué muestra
+
+* **Panel general**: cuántos contenedores hay en total, en ejecución,
+  detenidos (creados, detenidos o muertos), en pausa y **con error** (terminaron
+  con un código distinto de 0, están muertos o reiniciándose, o su comprobación
+  de salud falla). Los códigos 137 y 143 no cuentan como error, porque son los
+  de un contenedor detenido con «Detener»; por eso un contenedor terminado por
+  falta de memoria (también 137) no aparece como error. Pulsar un contador filtra la tabla por ese estado.
+* **Servidores**: se reúnen los contenedores de este equipo y de todos los
+  servidores remotos **conectados**. Los que no lo están se indican en un aviso y
+  sus contenedores no aparecen; la gestión masiva no se conecta por su cuenta
+  (un servidor puede pedir una contraseña). Conéctalos desde «Servidores».
+* **Actualización**: la hora de la última actualización, el botón
+  **Actualizar** (vuelve a pedir a Docker todos los datos, también la política
+  de reinicio) y la **actualización automática**, que se puede desactivar o
+  hacer cada 5 segundos a 5 minutos. Mientras se ejecuta una operación masiva
+  no se actualiza sola; al terminar, sí.
+* **Tabla**: casilla, nombre e ID corto, imagen, estado (con la salud), cuándo
+  se creó, puertos, política de reinicio (`--rm` si se creó así), servidor y
+  etiquetas propias (no se muestran las que añaden Docker Compose o las
+  imágenes; al pasar el ratón se ven todas).
+
+### Buscar, filtrar y ordenar
+
+* **Buscar** por nombre o por el principio del ID.
+* **Filtros**: estado, imagen, servidor y etiqueta. Para la etiqueta escribe la
+  clave (`entorno`) o la clave y el valor (`entorno=pruebas`).
+* **Quitar filtros** vuelve a mostrarlo todo.
+* Pulsa el título de una columna para ordenar por ella; otra vez, al revés.
+* La tabla se muestra por páginas de 25, 50 o 100 contenedores.
+
+### Seleccionar
+
+* La casilla de cada fila selecciona ese contenedor. Un mismo ID en dos
+  servidores son dos contenedores distintos: se seleccionan por separado.
+* La casilla del título selecciona (o deja de seleccionar) los de la página.
+* Con algo seleccionado aparece la **barra de acciones**, que permite
+  **seleccionar todo lo filtrado** (todas las páginas) o **quitar la
+  selección**. Lo que deja de existir al actualizar sale de la selección.
+
+### Operaciones
+
+Cada botón de la barra indica a cuántos contenedores de la selección se puede
+aplicar en su estado actual; si no se puede a ninguno, está desactivado y su
+descripción explica por qué.
+
+| Operación | Se aplica a | Los demás |
+|---|---|---|
+| Iniciar | creados, detenidos o muertos | se omiten |
+| Detener | en ejecución, en pausa o reiniciándose | se omiten |
+| Reiniciar | en ejecución | se omiten |
+| Pausar | en ejecución | se omiten |
+| Reanudar | en pausa | se omiten |
+| Eliminar | todos (los activos, solo con «Forzar») | sin «Forzar», los activos se omiten |
+| Política de reinicio | todos, salvo los creados con `--rm` y los que ya la tienen | se omiten |
+
+Antes de hacer nada se abre la **confirmación**: la operación, en qué
+servidores, la lista de contenedores afectados y la de los que se omiten con su
+motivo, las consecuencias y cuántas operaciones se hacen a la vez (de 1 a 16; se
+guarda para la próxima vez). Justo antes de actuar sobre cada contenedor, la
+aplicación vuelve a consultar a Docker su estado real: si cambió mientras tanto
+y la operación ya no se puede aplicar, se omite.
+
+**Eliminar** pide además escribir el número de contenedores que se eliminarán.
+**Nunca se eliminan volúmenes ni imágenes**, solo los contenedores (y lo que
+guardan fuera de los volúmenes, que se pierde).
+
+### Política de reinicio
+
+Se elige la nueva política (no reiniciar, siempre, salvo si se detuvo, si falla
+con un máximo de intentos) y la confirmación muestra, para cada contenedor, la
+actual y la nueva. Se cambia en caliente con `docker update`, sin detener ni
+recrear los contenedores. Docker no admite otra política en los contenedores
+creados con `--rm`: se omiten. Después se comprueba con Docker que la política
+es la pedida.
+
+### Etiquetas
+
+Docker **no permite** añadir, cambiar ni quitar etiquetas de un contenedor que
+ya existe: solo se fijan al crearlo. Hacerlo exigiría recrear cada contenedor
+(eliminarlo y volver a crearlo), y esta versión no recrea nada automáticamente.
+El botón **Etiquetas** muestra las etiquetas actuales de la selección y lo
+explica. Para un contenedor concreto, **Duplicar** (en su detalle) crea uno
+nuevo con la misma configuración, donde puedes cambiar las etiquetas antes de
+crearlo. La edición masiva de etiquetas queda para una etapa posterior.
+
+### Progreso y resultados
+
+Mientras se ejecuta, se ve el progreso (cuántos van y cuántos a la vez) y cada
+contenedor pasa de «Pendiente» a «Aplicando…» y a su resultado:
+
+* **Correcto**: Docker lo confirmó (se muestra el estado nuevo, o «Eliminado»).
+* **Fallido**: Docker lo rechazó o no se pudo enviar; se muestra el error.
+* **Omitido**: no se podía aplicar en su estado; no se envió nada.
+* **Cancelado**: se canceló antes de enviarlo.
+* **Desconocido**: la orden se envió, pero la conexión se cortó antes de que
+  Docker confirmara. Puede haberse aplicado o no: actualiza la tabla para ver su
+  estado real.
+
+**Resultados parciales.** Cada contenedor es independiente: si uno falla, los
+demás siguen. No hay «todo o nada», nada se deshace y nada se reintenta solo.
+El resumen cuenta los correctos, fallidos, desconocidos, omitidos y cancelados,
+y la casilla «Mostrar solo los que no fueron correctos» deja solo los problemas.
+
+**Cancelar lo pendiente** deja de enviar órdenes a Docker; las que ya estaban en
+curso terminan y se informa de ellas.
+
+### Historial
+
+Cada orden que llega a Docker queda en el **panel de actividad** como cualquier
+otra (con su comando equivalente), con el distintivo «Masiva» y el
+identificador de la operación masiva en el detalle. Además hay un registro
+resumen «Operación masiva» con el resultado global. **Ver en actividad** abre
+el panel mostrando solo esa operación; la «×» del aviso vuelve a mostrarlo todo.
+El historial que se guarda en el disco también conserva el identificador.
+
+### Limitaciones y seguridad
+
+* Como máximo 1000 contenedores por operación y una operación masiva a la vez
+  desde la ventana. Si algún contenedor ya está en otra operación masiva, la
+  nueva no empieza y se dice cuál; si otra acción de la aplicación lo está usando
+  en ese momento, ese contenedor no se toca y su resultado es un fallo que lo
+  explica.
+* Solo se trabaja con el ID completo de cada contenedor y su servidor, nunca con
+  nombres: no puede afectar por error a otro contenedor de nombre parecido ni de
+  otro servidor.
+* Los errores se muestran sin contraseñas ni otros secretos.
+* No se gestionan proyectos Compose como tales, ni plantillas, automatizaciones
+  o políticas globales: para Compose, usa su apartado.
 
 ## Imágenes
 

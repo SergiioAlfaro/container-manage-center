@@ -23,6 +23,10 @@
       "title": "Edukiontziak",
       "description": "Sortu, abiarazi, gelditu eta ikuskatu edukiontziak."
     },
+    "bulk": {
+      "title": "Kudeaketa masiboa",
+      "description": "Jardun edukiontzi askoren gainean aldi berean, zerbitzari batean edo gehiagotan."
+    },
     "images": {
       "title": "Irudiak",
       "description": "Deskargatu, eraiki, etiketatu eta ezabatu irudiak."
@@ -174,7 +178,11 @@
     "allServers": "guztiak",
     "connectionSsh": "SSH (docker system dial-stdio)",
     "connectionLocal": "Socket lokala",
-    "connection": "Konexioa"
+    "connection": "Konexioa",
+    "batch": "Eragiketa masiboa",
+    "batchChip": "Masiboa",
+    "batchFilter": "Eragiketa masiboa soilik",
+    "batchFilterClear": "Erakutsi eragiketa guztiak"
   },
   "settings": {
     "appearance": "Itxura",
@@ -244,7 +252,8 @@
       "update": "Eguneratu baliabideak edo berrabiaraztea",
       "recreate": "Birsortu edukiontzia",
       "restoreBackup": "Leheneratu edukiontziaren kopia",
-      "commit": "Sortu irudia edukiontzi batetik"
+      "commit": "Sortu irudia edukiontzi batetik",
+      "bulk": "Eragiketa masiboa"
     },
     "image": {
       "list": "Zerrendatu irudiak",
@@ -519,6 +528,197 @@
     "create": "Sortu edukiontzia",
     "openDetail": "Ireki {{name}}",
     "moreActions": "{{name}} edukiontziaren ekintza gehiago"
+  },
+  "bulk": {
+    "intro": "Konektatutako zerbitzari guztietako edukiontziak. Iragazi, hautatu eta aplikatu eragiketa bera askori aldi berean; edukiontzi bakoitzak bere emaitza du.",
+    "kpi": {
+      "total": "Guztira",
+      "running": "Exekutatzen",
+      "stopped": "Geldituta",
+      "paused": "Pausatuta",
+      "error": "Errorearekin"
+    },
+    "envSummary_one": "{{count}} zerbitzari ({{connected}} konektatuta)",
+    "envSummary_other": "{{count}} zerbitzari ({{connected}} konektatuta)",
+    "updated": "Eguneratua: {{time}}",
+    "autoRefresh": "Eguneratu automatikoki",
+    "refreshEvery": "Eguneratze-tartea",
+    "everySecs_one": "{{count}} segundoro",
+    "everySecs_other": "{{count}} segundoro",
+    "refresh": "Eguneratu",
+    "disconnected": "Konexiorik gabe (haien edukiontziak ez dira agertzen): {{names}}. Konektatu «Zerbitzariak» ataletik.",
+    "envError": "Ezin izan dira {{name}} zerbitzariko edukiontziak zerrendatu: {{message}}",
+    "loadError": "Ezin izan da zerrenda kargatu: {{message}}",
+    "runError": "Eragiketa masiboa ez da hasi eta ez zaio ezer bidali Dockerri: {{message}}",
+    "search": "Bilatu izenaren edo IDaren arabera",
+    "filter": {
+      "state": "Egoera",
+      "all": "denak",
+      "image": "Irudia",
+      "env": "Zerbitzaria",
+      "label": "Iragazi etiketaren arabera",
+      "labelPlaceholder": "Etiketa: gakoa edo gakoa=balioa",
+      "clear": "Kendu iragazkiak"
+    },
+    "shown_one": "{{count}} / {{total}} edukiontzi",
+    "shown_other": "{{count}} / {{total}} edukiontzi",
+    "bar": {
+      "label": "Hautapenaren gaineko ekintzak",
+      "selected_one": "{{count}} hautatuta",
+      "selected_other": "{{count}} hautatuta",
+      "selectFiltered_one": "Hautatu iragazitakoa ({{count}})",
+      "selectFiltered_other": "Hautatu iragazitako {{count}}ak",
+      "clear": "Kendu hautapena",
+      "none": "Hautatutako edukiontzi batek ere ez du onartzen «{{op}}» bere egungo egoeran.",
+      "applies_one": "{{total}}(e)tik {{count}}(e)ri aplikatuko zaio (besteak egoeragatik saltatzen dira).",
+      "applies_other": "{{total}}(e)tik {{count}}(e)ri aplikatuko zaio (besteak egoeragatik saltatzen dira).",
+      "busy": "Eragiketa masibo bat abian dago.",
+      "tooMany": "Gehienez {{max}} edukiontzi eragiketa bakoitzeko."
+    },
+    "action": {
+      "start": "Abiarazi",
+      "stop": "Gelditu",
+      "restart": "Berrabiarazi",
+      "pause": "Pausatu",
+      "unpause": "Berrekin",
+      "restartPolicy": "Berrabiarazte-politika",
+      "labels": "Etiketak",
+      "remove": "Ezabatu"
+    },
+    "labels": {
+      "limitShort": "Dockerrek ez du uzten lehendik dagoen edukiontzi baten etiketak aldatzen.",
+      "title": "Hautatutako edukiontzien etiketak",
+      "limit": "Dockerrek ez du uzten lehendik dagoen edukiontzi bati etiketak gehitzen, aldatzen edo kentzen: sortzean bakarrik ezartzen dira. Horretarako edukiontzi bakoitza birsortu beharko litzateke (ezabatu eta berriro sortu), eta bertsio honek ez du hori automatikoki egiten.",
+      "future": "Edukiontzi jakin bati beste etiketa batzuk jartzeko, erabili «Bikoiztu» bere xehetasunetan: konfigurazio bereko edukiontzi berri bat sortzen du, eta sortu aurretik alda ditzakezu; jatorrizkoa ez da ukitzen. Etiketen edizio masiboa, edukiontziak birsortzea eskatuko lukeena, geroko etapa baterako geratzen da.",
+      "current_one": "Uneko etiketak ({{count}} edukiontzi)",
+      "current_other": "Uneko etiketak ({{count}} edukiontzi)",
+      "none": "Etiketa proprio gabe",
+      "more_one": "Eta beste edukiontzi {{count}}.",
+      "more_other": "Eta beste {{count}} edukiontzi."
+    },
+    "empty": "Ez dago edukiontzirik",
+    "emptyBody": "Konektatutako zerbitzari batek ere ez du edukiontzirik. Sortu bat «Edukiontziak» atalean edo konektatu beste zerbitzari bat.",
+    "tableLabel": "Zerbitzari guztietako edukiontziak",
+    "selectPage": "Hautatu orri honetakoak",
+    "selectOne": "Hautatu {{name}} ({{env}})",
+    "col": {
+      "name": "Izena",
+      "image": "Irudia",
+      "state": "Egoera",
+      "created": "Sortua",
+      "ports": "Atakak",
+      "restart": "Berrabiaraztea",
+      "env": "Zerbitzaria",
+      "labels": "Etiketak"
+    },
+    "noMatches": "Ez dago iragazkiekin bat datorren edukiontzirik.",
+    "pageSize": "Orriko",
+    "range": "{{from}}–{{to}} / {{total}}",
+    "prev": "Aurreko orria",
+    "next": "Hurrengo orria",
+    "health": {
+      "healthy": "osasuntsu",
+      "unhealthy": "ez osasuntsu",
+      "starting": "egiaztatzen"
+    },
+    "op": {
+      "start": "Abiarazi",
+      "stop": "Gelditu",
+      "restart": "Berrabiarazi",
+      "pause": "Pausatu",
+      "unpause": "Berrekin",
+      "remove": "Ezabatu",
+      "removeForce": "Ezabatu (behartuta)",
+      "restartPolicyTo": "Aldatu berrabiarazte-politika: {{policy}}"
+    },
+    "skip": {
+      "state": "Saltatuta: ezin da «{{state}}» egoeran",
+      "needsForce": "Saltatuta: «{{state}}» dago; markatu «Behartu» ezabatzeko",
+      "autoRemove": "Saltatuta: --rm aukerarekin sortua, Dockerrek ez du beste politikarik onartzen",
+      "unchanged": "Saltatuta: politika hori du jada",
+      "gone": "Saltatuta: jada ez da existitzen"
+    },
+    "confirm": {
+      "title_one": "{{op}}: {{count}} edukiontzi",
+      "title_other": "{{op}}: {{count}} edukiontzi",
+      "run_one": "Aplikatu {{count}} edukiontziri",
+      "run_other": "Aplikatu {{count}} edukiontziri",
+      "operation": "Eragiketa",
+      "containers": "Edukiontziak",
+      "applyCount_one": "{{count}} bidaliko zaio Dockerri",
+      "applyCount_other": "{{count}} bidaliko zaizkio Dockerri",
+      "environments": "Zerbitzariak",
+      "remote": "Urruneko zerbitzariak ditu: agindua bakoitzari bere konexiotik bidaltzen zaio.",
+      "affected_one": "Eragindako edukiontzia ({{count}})",
+      "affected_other": "Eragindako edukiontziak ({{count}})",
+      "skipped_one": "Saltatzen da ({{count}})",
+      "skipped_other": "Saltatzen dira ({{count}})",
+      "nothing": "Hautatutako edukiontzi batek ere ez du eragiketa hau onartzen. Ez da ezer bidaliko.",
+      "concurrency": "Aldi bereko eragiketak",
+      "partial": "Edukiontzi bakoitza independentea da: batek huts egiten badu, besteek jarraitzen dute eta bakoitzaren emaitza ikusiko duzu. Aplikatutakoa ez da desegiten eta ez da ezer automatikoki berriro saiatzen."
+    },
+    "consequence": {
+      "start": "Edukiontziak abiaraziko dira. Haien prozesuak exekutatzen hasiko dira eta atakak argitaratuko dituzte.",
+      "stop": "Edukiontziak geldituko dira (Dockerrek gelditzeko seinalea bidaltzen du eta, itxaron-denbora igarota, behartu egiten ditu). Eskaintzen dituzten zerbitzuak ez dira erabilgarri egongo.",
+      "restart": "Edukiontziak berrabiaraziko dira: une batez zerbitzurik gabe egongo dira.",
+      "pause": "Edukiontzien prozesuak izoztu egingo dira; ez dute erantzungo berrekin arte.",
+      "unpause": "Izoztutako prozesuak berrekingo dira.",
+      "remove": "Edukiontziak ezabatuko dira, bolumenetatik kanpo gordetzen dutenarekin batera. Ezin da desegin.",
+      "restartPolicy": "Berrabiarazte-politika «docker update» bidez aldatuko da, edukiontziak gelditu edo birsortu gabe."
+    },
+    "policy": {
+      "new": "Berrabiarazte-politika berria",
+      "name": {
+        "no": "Ez berrabiarazi",
+        "always": "Beti",
+        "unless-stopped": "Gelditu ezean",
+        "on-failure": "Huts eginez gero"
+      },
+      "hint": {
+        "no": "Dockerrek ez du edukiontzia bere kabuz berriro abiarazten.",
+        "always": "Dockerrek gelditzen den bakoitzean berrabiarazten du, baita Docker abiaraztean ere.",
+        "unless-stopped": "«Beti» bezala, zuk gelditu ezean.",
+        "on-failure": "Dockerrek errore-kode batekin amaitzen bada soilik berrabiarazten du."
+      },
+      "retries": "Gehienezko saiakerak",
+      "retriesHint": "0 = mugarik gabe",
+      "live": "Beroan aplikatzen da: Dockerrek politika aldatzen uzten du edukiontzia birsortu gabe (--rm aukerarekin sortutakoak izan ezik).",
+      "unknown": "ezezaguna"
+    },
+    "remove": {
+      "risk": "Bolumenak eta irudiak ez dira inoiz ezabatzen: edukiontziak soilik.",
+      "force": "Behartu (ezabatu exekutatzen edo pausatuta daudenak ere)",
+      "forceHint": "Aukera hau gabe, edukiontzi aktiboak saltatu egiten dira.",
+      "type_one": "Berresteko, idatzi {{count}} (ezabatuko diren edukiontzien kopurua):",
+      "type_other": "Berresteko, idatzi {{count}} (ezabatuko diren edukiontzien kopurua):",
+      "typeLabel": "Ezabatuko diren edukiontzien kopurua"
+    },
+    "run": {
+      "title": "Eragiketa masiboaren aurrerapena",
+      "finished": "Amaituta: {{duration}}",
+      "cancelling": "Zain dagoena bertan behera uzten; Dockerri jada bidalitakoa amaitzen ari da…",
+      "progress": "{{done}} / {{total}} · {{concurrency}} aldi berean",
+      "cancel": "Utzi bertan behera zain dagoena",
+      "cancelHint": "Ez zaio ezer gehiago bidaliko Dockerri. Abian dagoena amaitu eta jakinarazi egiten da.",
+      "activity": "Ikusi jardueran",
+      "close": "Itxi emaitza",
+      "allOk_one": "Ondo {{count}} edukiontzitan ({{skipped}} saltatuta).",
+      "allOk_other": "Ondo {{count}} edukiontzitan ({{skipped}} saltatuta).",
+      "partial": "Emaitza partziala: {{ok}} ondo, {{failed}} huts, {{unknown}} emaitza ezezagunarekin, {{skipped}} saltatuta, {{cancelled}} bertan behera.",
+      "unknownHint": "«Ezezaguna»: agindua bidali zen, baina konexioa eten egin zen Dockerrek berretsi aurretik. Eguneratu taula benetako egoera ikusteko.",
+      "onlyProblems": "Erakutsi ondo atera ez direnak soilik",
+      "nowState": "Orain: {{state}}",
+      "removed": "Ezabatuta"
+    },
+    "status": {
+      "succeeded": "Ondo",
+      "failed": "Huts",
+      "skipped": "Saltatuta",
+      "cancelled": "Bertan behera",
+      "unknown": "Ezezaguna",
+      "running": "Aplikatzen…",
+      "pending": "Zain"
+    }
   },
   "images": {
     "refresh": "Eguneratu",

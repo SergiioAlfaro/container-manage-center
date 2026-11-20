@@ -9,6 +9,7 @@ import {
   Activity,
   Layers,
   LayoutDashboard,
+  ListChecks,
   type LucideIcon,
   Radio,
   Server,
@@ -22,6 +23,7 @@ export type SectionId =
   | "dashboard"
   | "servers"
   | "containers"
+  | "bulk"
   | "images"
   | "networks"
   | "volumes"
@@ -47,6 +49,8 @@ export const SECTIONS: SectionDef[] = [
   // 0.10.0: administración remota y varios servidores.
   { id: "servers", icon: Server, group: "top" },
   { id: "containers", icon: Boxes, group: "resources" },
+  // 1.10.0: gestión masiva de contenedores (varios servidores a la vez).
+  { id: "bulk", icon: ListChecks, group: "resources" },
   { id: "images", icon: Layers, group: "resources" },
   { id: "networks", icon: Cable, group: "resources" },
   { id: "volumes", icon: HardDrive, group: "resources" },

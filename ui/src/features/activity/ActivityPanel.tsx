@@ -57,6 +57,17 @@ export function ActivityPanel({ onClose }: { onClose: () => void }) {
       </header>
 
       <div className="shrink-0 space-y-2 border-b border-line px-4 py-3">
+        {filter.batch && (
+          // 1.10.0: «Ver en actividad» de una operación masiva muestra solo sus registros.
+          <div data-testid="activity-batch-filter" className="flex items-center gap-2 rounded-md bg-beacon-soft px-2.5 py-1.5 text-[12px] text-beacon-strong">
+            <span className="min-w-0 flex-1 truncate">
+              {t("activity.batchFilter")} <span className="selectable font-mono">{filter.batch.slice(0, 8)}</span>
+            </span>
+            <button type="button" onClick={() => setFilter({ batch: null })} aria-label={t("activity.batchFilterClear")} title={t("activity.batchFilterClear")} className="shrink-0 hover:text-ink">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <label className="relative block">
           <span className="sr-only">{t("activity.search")}</span>
           <Search size={15} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-ink-3" />

@@ -4,7 +4,7 @@
 > módulos `legacy` de `cmc-store` y `cmc-engine`, para encontrar y pasar al
 > nombre nuevo los datos de una versión anterior (1.8.0, D-113).
 
-Documento iniciado en la 0.7.1 y ampliado en cada versión (última revisión: 1.9.1). Las cifras de pruebas de cada versión están en STATUS.md.
+Documento iniciado en la 0.7.1 y ampliado en cada versión (última revisión: 1.10.0). Las cifras de pruebas de cada versión están en STATUS.md.
 
 ## Visión general
 
@@ -57,7 +57,7 @@ container-manage-center/
 │   │   ├── dashboard/  containers/  images/  settings/  pending/
 │   ├── shared/                   ipc (cliente y tipos generados), i18n, query, format, ui
 │   └── test/                     Dobles y fixtures SOLO para pruebas
-└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.9.1.sh
+└── scripts/                      instalación, empaquetado, licencias y verify-evolution-1.10.0.sh
 ```
 
 ## cmc-engine
@@ -239,6 +239,12 @@ En la aplicación:
 - `commands/links.rs` (`tools_links`): solo lectura y sin registro; para los volúmenes de cada contenedor usa `Engine::list_containers_silent` (como la monitorización), con 5 s como máximo y solo si hay conexión.
 - En la interfaz, `features/audit/Links.tsx` muestra la tabla. La navegación a las otras herramientas pasa por dos almacenes pequeños (`features/monitor/store.ts` y `useBackupNav` en `features/backup/store.ts`), que se consumen una vez, por servidor. `prefillRequest` (`features/backup/model.ts`) convierte un contenedor en una selección de copia.
 
+### Gestión masiva (1.10.0, `cmc-engine/src/bulk.rs`, `src-tauri/src/bulk.rs`, D-117–D-120)
+- **Motor** (`cmc_engine::bulk`): `BulkOperation` (`start`, `stop`, `restart`, `pause`, `unpause`, `remove { force }`, `restartPolicy { policy }`), reglas puras `applicable(op, state)` y `SkipReason`. `Engine::bulk_apply(op, id, nombre)` trata un contenedor: ID completo → validación → cerrojo `container:{id}` → `inspect` silencioso (404 = omitido; ID distinto = error) → regla → orden (`run_action`, eliminación con `v=false` o `op_update` con `--restart`) → confirmación con `inspect`. Devuelve `ItemDone::{Applied, Skipped}` o `ItemError { stage: check|execute|confirm, error }`; `outcome_unknown()` marca los cortes de conexión al ejecutar o confirmar. `bulk_details_silent` lee la política de reinicio y `--rm` sin registrar. `Engine::with_activity` + `ActivityLog::with_batch` etiquetan con el lote cada orden registrada.
+- **Aplicación** (`src-tauri/src/bulk.rs`): `validate` (confirmación, número escrito al eliminar, vacíos, repetidos, máximo 1000, IDs completos, servidor conocido), `BulkJobs::reserve` (reserva todo o nada de pares servidor+ID, `bulk.busy`; se libera al terminar), `run_items` (semáforo con la concurrencia de `[bulk]`, `JoinSet`, cancelación con prioridad: lo pendiente pasa a `cancelled`, resultados en el orden de la petición), `item_result` (estado por contenedor, errores ya sin secretos al serializar `CommandError`), registro resumen `container.bulk` (`begin_summary`/`finish_summary`) y `DetailsCache` (política y `--rm` por servidor, se limpia con cada lista).
+- **IPC** (`commands/bulk.rs`): `bulk_inventory(refresh)` lista en paralelo los servidores conectados (sin conectar ninguno) y `bulk_run_open(request, onEvent)` valida y reserva antes de empezar, registra el flujo (`stream_close` cancela lo pendiente) y envía `BulkEvent` (`started` | `running` | `item` | `finished` con `BulkSummary`).
+- **Interfaz** (`ui/src/features/bulk/`): `model.ts` (filas por servidor con clave servidor+ID, indicadores, filtros, orden, páginas, selección y las mismas reglas que el motor para avisar antes), `store.ts` (operación en curso en un almacén global, para que el progreso siga al cambiar de apartado), `BulkView.tsx`, `dialogs.tsx` (confirmación con vista previa, política de reinicio, etiquetas solo informativas) y `RunPanel.tsx` (progreso, resultados, cancelar, «Ver en actividad»). La actividad filtra por lote (`ActivityFilter.batch`).
+
 ### Especificación de contenedor (`spec.rs`, D-034)
 `ContainerSpec` → `validate(check_fs)` (problemas `SpecIssue { severity, field, code, params }`), `to_create_body()`, `cli_args(run)`, `redacted()`. `from_inspect()` construye el `DuplicateSpec` (D-038). `details.rs` convierte la respuesta de inspect en `ContainerDetails` (incluye el JSON completo). `streams.rs` implementa los flujos: `LineAssembler` (fragmentos, UTF-8 y marca de tiempo), `sample_from` (fórmulas de `docker stats`) y `run_terminal`.
 
@@ -333,6 +339,8 @@ Primer contacto: la clave se captura en un archivo temporal y se muestra la huel
 | `events_journal(filter)` · `events_journal_clear()` | Eventos guardados (también de sesiones anteriores) y borrarlos (`history.io`) |
 | `events_query(query)` | Consulta a Docker (`EventQueryResult` con eventos, `truncated` y comando equivalente; `engine.invalidInput` sin llamar a Docker) |
 | `history_list(filter)` · `history_clear()` | Historial de operaciones guardado (`HistoryPage` con inicio de la sesión y carpeta) y borrarlo |
+| `bulk_inventory(refresh)` | 1.10.0: contenedores de todos los servidores conectados (`BulkInventory` con un `BulkEnvironment` por servidor, también los desconectados, sin contenedores); no se registra; `refresh` vuelve a leer la política de reinicio de todos |
+| `bulk_run_open(request, onEvent)` | 1.10.0: operación masiva (`BulkRequest` con operación, destinos servidor+ID completo, `confirmed` y `confirmCount` al eliminar). Errores antes de empezar: `engine.notConfirmed`, `bulk.notConfirmed`, `bulk.invalid`, `bulk.busy`, `server.unknown`, `engine.invalidInput`. Progreso por `BulkEvent`; se cancela lo pendiente con `stream_close` |
 
 Errores: `CommandError { code, message, httpStatus, issues }` con códigos `engine.invalidSpec` (con `issues`), `stream.closed`, `engine.notConnected`, `engine.docker`, `engine.timeout`, `engine.io`, `engine.invalidResponse`, `engine.invalidInput`, `engine.busy`, `engine.notConfirmed`, `engine.process`, `engine.fileChanged`, `engine.alreadyExists`, `engine.composeUnavailable`, `compose.duplicate`, `history.io`, `engine.other`, `config.io`.
 
@@ -340,7 +348,7 @@ El plugin `opener` de Tauri (0.9.1, D-066) solo puede abrir `https://github.com/
 
 Al cerrar la ventana (0.9.1, D-063) se cierran los flujos abiertos y se espera a que terminen (como mucho 8 s): `StreamRegistry::close_all_and_wait`.
 
-Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://state` (0.10.0), `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`).
+Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://state` (0.10.0), `docker://event` (cada evento de Docker), `updates://result` (comprobación al iniciar). Canales por flujo: `LogEvent` (`lines` | `end`), `StatsEvent` (`sample` | `end`), `TerminalEvent` (`output` | `end`), `ComposeEvent` (`lines` | `end`), `BulkEvent` (`started` | `running` | `item` | `finished`).
 
 ## Interfaz
 - `features/engine/store.ts`: estado de conexión; `App` lo alimenta con `engine_state` y el evento `engine://state`. Al pasar a conectado se invalidan todas las consultas; al perder la conexión se descartan.
@@ -361,7 +369,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 - `features/settings/`: `UpdatesSettings.tsx`, `SystemSettings.tsx` (con `systemReport`), restablecer en `SettingsView.tsx` y `layout.tsx` (`Group`, `Row`).
 - `features/events/`: `EventsView.tsx` (pestañas En directo, Guardados, Consultar a Docker, Historial), `store.ts` (eventos en directo, pausa, últimos 2000), `liveRefresh.ts` (`useLiveRefresh`, montado en `App.tsx`: cada evento recarga las consultas afectadas, agrupadas 250 ms y como mucho una vez por segundo durante las ráfagas, `refreshDelay`), `EventRow.tsx` (filas memorizadas con claves estables, `eventKeys`), `model.ts` (`invalidationsFor`, fechas con precisión de `timeNano`, filtros locales), `EventRow.tsx`, `HistoryTab.tsx`, `filters.tsx`.
 - `features/terminals/` (0.9.1, D-064): `sessions.ts` (gestor de sesiones fuera de React: una xterm y un flujo por sesión, generación por apertura, cierre sin huérfanos; estado visible en Zustand), `TerminalsView.tsx` (distribución según `layout.ts`, `Splitter.tsx` con ratón y teclado), `TerminalPane.tsx`, `NewTerminalDialog.tsx`.
-- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 27 secciones (0.10.0), `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
+- `features/settings/ComponentsSettings.tsx` (D-065) y `features/help/` (D-066: `docs/{en,es,ca,gl,eu,fr,it,pt}.md` con 30 secciones (1.10.0), `markdown.tsx` sin `innerHTML`, `HelpView.tsx`), como subpáginas de `SettingsView.tsx`.
 - `shared/i18n`: `en`, `es`, `ca`, `gl`, `eu`, `fr`, `it`, `pt` en el orden del selector (D-067, D-073); `LANGUAGE_NAMES` con los endónimos.
 - `features/containers/edit/` (0.9.2, D-069, D-070): `EditContainer.tsx` (pestañas, barra de cambios pendientes, ciclo de vida, copias de seguridad, redes con los diálogos de la Fase 5, Avanzado de solo lectura), `ReviewPanel.tsx` (comparación, asistente de recreación con riesgos y confirmación, resultado paso a paso), `model.ts` (borrador y clasificación para los indicadores; decide el backend), `CommitDialog.tsx`. `create/editors.tsx` reúne los editores de puertos, montajes, memoria y clave/valor que comparten el asistente de creación y la edición.
 - `shared/ui/Menu.tsx` (0.9.2): menú de acciones accesible (botón ⋯ y botón derecho en la fila).
@@ -386,7 +394,7 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | `scripts/install.sh` | Instalación, comprobación y desinstalación para el usuario final |
 | `scripts/run.sh` | Ejecutar la versión instalada o la compilación del código |
 | `scripts/dev/clean-install-test.sh` | Instalación limpia en Ubuntu 24.04 y 22.04 (solo máquinas de prueba); con `UPGRADE_FROM`, actualización desde una versión anterior comprobando que los datos del usuario no cambian (1.7.0) |
-| `scripts/verify-evolution-1.9.1.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
+| `scripts/verify-evolution-1.10.0.sh` | Verificación de la versión: toda la regresión, paquetes, instalador, licencias y migración (las de versiones anteriores están en el historial de Git) |
 
 ## Pruebas
 
@@ -402,9 +410,10 @@ Eventos: `activity://event`, `activity://resync`, `engine://state`, `server://st
 | Llavero real (0.10.0) | `CMC_KEYRING_TEST=1` dentro de una sesión D-Bus con un llavero temporal | 1 |
 | Edición, recreación y commit contra Docker real (0.9.2) | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_edit` | 8 (Docker 29, 26 y 24) |
 | Terminales múltiples contra Docker real (0.9.1) | `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_terminals` | 5 |
+| Gestión masiva (1.10.0) | `cargo test -p cmc-engine --lib bulk::` · `--test bulk_protocol` (Docker simulado por socket) · `cargo test -p container-manage-center --lib bulk` · `CMC_DOCKER_TESTS=1 cargo test -p cmc-engine --test live_bulk` | 17 unitarias + 7 de protocolo en el motor; 19 con el filtro `bulk::` y 4 IPC (una contra Docker real) en la aplicación; 1 contra Docker real con contenedores temporales propios |
 | Desinstalación real (0.9.1) | `CMC_TEST_CHROOT=… CMC_TEST_DEB=… cargo test -p container-manage-center --lib uninstall::tests::live_` (root, chroot preparado con `scripts/prepare-uninstall-chroot.sh`) | 1 |
 | Prototipo congelado (D-040) | `node scripts/dev/check-frozen-prototype.cjs` (Playwright) | 1 |
 | Estática | clippy `-D warnings`, `cargo fmt --check`, `tsc` estricto | — |
-| Paquete | `scripts/verify-evolution-1.9.1.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
+| Paquete | `scripts/verify-evolution-1.10.0.sh --deb --compat` | Versión, contenido y lanzador; `Depends` real; `libc6` cubre la glibc del binario; paquete compatible con glibc ≤ 2.35; el instalador elige el paquete |
 | Instalación limpia | `scripts/dev/clean-install-test.sh` (root, máquina de pruebas) | Ubuntu 24.04 y 22.04: instalación con un usuario normal, archivos, arranque y desinstalación |
 | Manual | `docs/validation/VALIDACION-1.8.0.md` | Solo lo que cambia en la 1.8.0 |

@@ -23,6 +23,10 @@
       "title": "Container",
       "description": "Crea, avvia, arresta e ispeziona container."
     },
+    "bulk": {
+      "title": "Gestione massiva",
+      "description": "Agisci su molti container alla volta, su uno o più server."
+    },
     "images": {
       "title": "Immagini",
       "description": "Scarica, compila, aggiungi tag ed elimina immagini."
@@ -174,7 +178,11 @@
     "allServers": "tutti",
     "connectionSsh": "SSH (docker system dial-stdio)",
     "connectionLocal": "Socket locale",
-    "connection": "Connessione"
+    "connection": "Connessione",
+    "batch": "Operazione massiva",
+    "batchChip": "Massiva",
+    "batchFilter": "Solo l’operazione massiva",
+    "batchFilterClear": "Mostra tutte le operazioni"
   },
   "settings": {
     "appearance": "Aspetto",
@@ -244,7 +252,8 @@
       "update": "Aggiorna risorse o riavvio",
       "recreate": "Ricrea container",
       "restoreBackup": "Ripristina copia del container",
-      "commit": "Crea immagine da container"
+      "commit": "Crea immagine da container",
+      "bulk": "Operazione massiva"
     },
     "image": {
       "list": "Elenca immagini",
@@ -519,6 +528,197 @@
     "create": "Crea container",
     "openDetail": "Apri {{name}}",
     "moreActions": "Altre azioni per {{name}}"
+  },
+  "bulk": {
+    "intro": "Container di tutti i server connessi. Filtra, seleziona e applica la stessa operazione a molti alla volta; ogni container ha il proprio risultato.",
+    "kpi": {
+      "total": "Totale",
+      "running": "In esecuzione",
+      "stopped": "Fermati",
+      "paused": "In pausa",
+      "error": "Con errori"
+    },
+    "envSummary_one": "{{count}} server ({{connected}} connesso)",
+    "envSummary_other": "{{count}} server ({{connected}} connessi)",
+    "updated": "Aggiornato alle {{time}}",
+    "autoRefresh": "Aggiorna automaticamente",
+    "refreshEvery": "Intervallo di aggiornamento",
+    "everySecs_one": "ogni {{count}} secondo",
+    "everySecs_other": "ogni {{count}} secondi",
+    "refresh": "Aggiorna",
+    "disconnected": "Non connessi (i loro container non compaiono): {{names}}. Connettili da «Server».",
+    "envError": "Impossibile elencare i container di {{name}}: {{message}}",
+    "loadError": "Impossibile caricare l’elenco: {{message}}",
+    "runError": "L’operazione massiva non è partita e non è stato inviato nulla a Docker: {{message}}",
+    "search": "Cerca per nome o ID",
+    "filter": {
+      "state": "Stato",
+      "all": "tutti",
+      "image": "Immagine",
+      "env": "Server",
+      "label": "Filtra per etichetta",
+      "labelPlaceholder": "Etichetta: chiave o chiave=valore",
+      "clear": "Rimuovi filtri"
+    },
+    "shown_one": "{{count}} di {{total}} container",
+    "shown_other": "{{count}} di {{total}} container",
+    "bar": {
+      "label": "Azioni sulla selezione",
+      "selected_one": "{{count}} selezionato",
+      "selected_other": "{{count}} selezionati",
+      "selectFiltered_one": "Seleziona il filtrato ({{count}})",
+      "selectFiltered_other": "Seleziona tutti i {{count}} filtrati",
+      "clear": "Deseleziona tutto",
+      "none": "Nessun container selezionato ammette «{{op}}» nel suo stato attuale.",
+      "applies_one": "Si applicherà a {{count}} di {{total}} (gli altri vengono saltati per il loro stato).",
+      "applies_other": "Si applicherà a {{count}} di {{total}} (gli altri vengono saltati per il loro stato).",
+      "busy": "È in corso un’operazione massiva.",
+      "tooMany": "Al massimo {{max}} container per operazione."
+    },
+    "action": {
+      "start": "Avvia",
+      "stop": "Ferma",
+      "restart": "Riavvia",
+      "pause": "Metti in pausa",
+      "unpause": "Riprendi",
+      "restartPolicy": "Criterio di riavvio",
+      "labels": "Etichette",
+      "remove": "Elimina"
+    },
+    "labels": {
+      "limitShort": "Docker non permette di cambiare le etichette di un container esistente.",
+      "title": "Etichette dei container selezionati",
+      "limit": "Docker non permette di aggiungere, modificare o rimuovere etichette di un container che esiste già: si impostano solo alla creazione. Servirebbe ricreare ogni container (eliminarlo e crearlo di nuovo), cosa che questa versione non fa in automatico.",
+      "future": "Per dare altre etichette a un singolo container, usa «Duplica» nel suo dettaglio: crea un nuovo container con la stessa configurazione, dove puoi cambiarle prima di crearlo, senza toccare l’originale. La modifica massiva delle etichette, che richiederebbe di ricreare i container, è rimandata a una fase successiva.",
+      "current_one": "Etichette attuali ({{count}} container)",
+      "current_other": "Etichette attuali ({{count}} container)",
+      "none": "Nessuna etichetta propria",
+      "more_one": "E {{count}} altro container.",
+      "more_other": "E altri {{count}} container."
+    },
+    "empty": "Nessun container",
+    "emptyBody": "Nessun server connesso ha container. Creane uno in «Container» o connetti un altro server.",
+    "tableLabel": "Container di tutti i server",
+    "selectPage": "Seleziona quelli di questa pagina",
+    "selectOne": "Seleziona {{name}} ({{env}})",
+    "col": {
+      "name": "Nome",
+      "image": "Immagine",
+      "state": "Stato",
+      "created": "Creato",
+      "ports": "Porte",
+      "restart": "Riavvio",
+      "env": "Server",
+      "labels": "Etichette"
+    },
+    "noMatches": "Nessun container corrisponde ai filtri.",
+    "pageSize": "Per pagina",
+    "range": "{{from}}–{{to}} di {{total}}",
+    "prev": "Pagina precedente",
+    "next": "Pagina successiva",
+    "health": {
+      "healthy": "sano",
+      "unhealthy": "non sano",
+      "starting": "in verifica"
+    },
+    "op": {
+      "start": "Avvia",
+      "stop": "Ferma",
+      "restart": "Riavvia",
+      "pause": "Metti in pausa",
+      "unpause": "Riprendi",
+      "remove": "Elimina",
+      "removeForce": "Elimina (forzato)",
+      "restartPolicyTo": "Cambia il criterio di riavvio in {{policy}}"
+    },
+    "skip": {
+      "state": "Saltato: non è possibile nello stato «{{state}}»",
+      "needsForce": "Saltato: è «{{state}}»; spunta «Forza» per eliminarlo",
+      "autoRemove": "Saltato: creato con --rm, Docker non ammette altri criteri",
+      "unchanged": "Saltato: ha già quel criterio",
+      "gone": "Saltato: non esiste più"
+    },
+    "confirm": {
+      "title_one": "{{op}}: {{count}} container",
+      "title_other": "{{op}}: {{count}} container",
+      "run_one": "Applica a {{count}} container",
+      "run_other": "Applica a {{count}} container",
+      "operation": "Operazione",
+      "containers": "Container",
+      "applyCount_one": "{{count}} verrà inviato a Docker",
+      "applyCount_other": "{{count}} verranno inviati a Docker",
+      "environments": "Server",
+      "remote": "Include server remoti: l’ordine viene inviato a ciascuno tramite la propria connessione.",
+      "affected_one": "Container interessato ({{count}})",
+      "affected_other": "Container interessati ({{count}})",
+      "skipped_one": "Saltato ({{count}})",
+      "skipped_other": "Saltati ({{count}})",
+      "nothing": "Nessun container selezionato ammette questa operazione. Non verrà inviato nulla.",
+      "concurrency": "Operazioni contemporanee",
+      "partial": "Ogni container è indipendente: se uno fallisce, gli altri proseguono e vedrai il risultato di ciascuno. Ciò che è già stato applicato non viene annullato e nulla viene ritentato automaticamente."
+    },
+    "consequence": {
+      "start": "I container verranno avviati. I loro processi inizieranno a funzionare e pubblicheranno le porte.",
+      "stop": "I container verranno fermati (Docker invia il segnale di arresto e, scaduto il tempo, li forza). I servizi che offrono non saranno più disponibili.",
+      "restart": "I container verranno riavviati: saranno brevemente fuori servizio.",
+      "pause": "I processi dei container verranno congelati; non risponderanno finché non verranno ripresi.",
+      "unpause": "I processi congelati riprenderanno.",
+      "remove": "I container verranno eliminati, insieme a ciò che conservano fuori dai volumi. L’operazione è irreversibile.",
+      "restartPolicy": "Il criterio di riavvio verrà cambiato con «docker update» senza fermare né ricreare i container."
+    },
+    "policy": {
+      "new": "Nuovo criterio di riavvio",
+      "name": {
+        "no": "Non riavviare",
+        "always": "Sempre",
+        "unless-stopped": "Salvo se fermato",
+        "on-failure": "In caso di errore"
+      },
+      "hint": {
+        "no": "Docker non riavvia il container da solo.",
+        "always": "Docker lo riavvia ogni volta che si ferma, anche all’avvio di Docker.",
+        "unless-stopped": "Come «Sempre», salvo se l’hai fermato tu.",
+        "on-failure": "Docker lo riavvia solo se termina con un codice di errore."
+      },
+      "retries": "Tentativi massimi",
+      "retriesHint": "0 = senza limite",
+      "live": "Applicato a caldo: Docker permette di cambiare il criterio senza ricreare il container (tranne quelli creati con --rm).",
+      "unknown": "sconosciuto"
+    },
+    "remove": {
+      "risk": "Volumi e immagini non vengono mai eliminati: solo i container.",
+      "force": "Forza (elimina anche quelli in esecuzione o in pausa)",
+      "forceHint": "Senza questa opzione, i container attivi vengono saltati.",
+      "type_one": "Per confermare, scrivi {{count}} (il numero di container che verranno eliminati):",
+      "type_other": "Per confermare, scrivi {{count}} (il numero di container che verranno eliminati):",
+      "typeLabel": "Numero di container che verranno eliminati"
+    },
+    "run": {
+      "title": "Avanzamento dell’operazione massiva",
+      "finished": "Terminata in {{duration}}",
+      "cancelling": "Annullamento di ciò che resta; ciò che è già stato inviato a Docker termina…",
+      "progress": "{{done}} di {{total}} · {{concurrency}} alla volta",
+      "cancel": "Annulla ciò che resta",
+      "cancelHint": "Non verrà inviato altro a Docker. Ciò che è già in corso termina e viene segnalato.",
+      "activity": "Vedi nell’attività",
+      "close": "Chiudi il risultato",
+      "allOk_one": "Riuscita su {{count}} container ({{skipped}} saltati).",
+      "allOk_other": "Riuscita su {{count}} container ({{skipped}} saltati).",
+      "partial": "Risultato parziale: {{ok}} riuscite, {{failed}} fallite, {{unknown}} con esito sconosciuto, {{skipped}} saltate, {{cancelled}} annullate.",
+      "unknownHint": "«Sconosciuto»: l’ordine è stato inviato ma la connessione si è interrotta prima della conferma di Docker. Aggiorna la tabella per vedere lo stato reale.",
+      "onlyProblems": "Mostra solo quelli non riusciti",
+      "nowState": "Ora: {{state}}",
+      "removed": "Eliminato"
+    },
+    "status": {
+      "succeeded": "Riuscito",
+      "failed": "Fallito",
+      "skipped": "Saltato",
+      "cancelled": "Annullato",
+      "unknown": "Sconosciuto",
+      "running": "In applicazione…",
+      "pending": "In attesa"
+    }
   },
   "images": {
     "refresh": "Aggiorna",

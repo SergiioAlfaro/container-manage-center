@@ -380,3 +380,17 @@ On Windows, Container Manage Center works as on Linux, with these differences:
 - **Notifications**: the system ones (notification centre).
 - **Data**: settings in `%APPDATA%\container-manage-center` and history in `%LOCALAPPDATA%\container-manage-center`.
 - **Uninstalling**: from Windows Settings › Apps › Installed apps. Your data and Docker Desktop are not touched. The “Uninstall and components” page only exists on Debian and Ubuntu.
+
+## 30. Bulk management {#bulk}
+
+**Bulk management** (under “Resources”) applies the same operation to many containers at once, also across several servers.
+
+- **Overview**: total, running, stopped, paused and with errors. Clicking a counter filters by that state. Containers from this computer and from **connected** remote servers are gathered; the others are listed in a notice.
+- **Refreshing**: **Refresh** button and automatic refresh (5 s to 5 min, can be turned off).
+- **Table**: search by name or ID; filter by state, image, server and label (`key` or `key=value`); sort by clicking a column title.
+- **Selection**: checkbox per row, for the page or **everything filtered**. The bar shows how many of the selection each operation applies to.
+- **Operations**: start, stop, restart, pause, resume, remove and change the restart policy (live with `docker update`; not for containers created with `--rm`). Containers whose state does not allow it are **skipped**, with the reason.
+- **Confirmation**: operation, servers, affected and skipped containers, consequences and operations at a time (1 to 16). **Remove** asks you to type the number of containers and **never removes volumes or images**.
+- **Labels**: Docker does not allow changing them on an existing container (it would have to be recreated); the dialog explains this and shows the current ones. For a single container, use **Duplicate**.
+- **Results**: each container gets its own: succeeded (confirmed by Docker), failed (with the error), skipped, cancelled or **unknown** (the connection dropped before confirmation; refresh to see its state). If one fails, the others carry on; nothing is undone or retried automatically. **Cancel pending** stops sending orders.
+- **Activity**: each order is recorded with the “Bulk” badge; **View in activity** shows only that operation.

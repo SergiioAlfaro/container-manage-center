@@ -380,3 +380,17 @@ Su Windows, Container Manage Center funziona come su Linux, con queste differenz
 - **Notifiche**: quelle di sistema (centro notifiche).
 - **Dati**: configurazione in `%APPDATA%\container-manage-center` e cronologia in `%LOCALAPPDATA%\container-manage-center`.
 - **Disinstallare**: da Impostazioni di Windows › App › App installate. I tuoi dati e Docker Desktop non vengono toccati. La sezione «Disinstallazione e componenti» esiste solo su Debian e Ubuntu.
+
+## 30. Gestione massiva {#bulk}
+
+**Gestione massiva** (in «Risorse») applica la stessa operazione a molti container alla volta, anche su più server.
+
+- **Panoramica**: totale, in esecuzione, fermati, in pausa e con errori. Facendo clic su un contatore si filtra per quello stato. Si riuniscono i container di questo computer e dei server remoti **connessi**; gli altri sono segnalati in un avviso.
+- **Aggiornamento**: pulsante **Aggiorna** e aggiornamento automatico (da 5 s a 5 min, disattivabile).
+- **Tabella**: cerca per nome o ID; filtra per stato, immagine, server ed etichetta (`chiave` o `chiave=valore`); ordina facendo clic sul titolo di una colonna.
+- **Selezione**: casella per riga, della pagina o di **tutto il filtrato**. La barra indica a quanti container della selezione si applica ogni operazione.
+- **Operazioni**: avvia, ferma, riavvia, metti in pausa, riprendi, elimina e cambia il criterio di riavvio (a caldo con `docker update`; non per quelli creati con `--rm`). Quelli il cui stato non lo consente vengono **saltati**, con il motivo.
+- **Conferma**: operazione, server, container interessati e saltati, conseguenze e operazioni contemporanee (da 1 a 16). **Elimina** chiede di scrivere il numero di container e **non elimina mai volumi né immagini**.
+- **Etichette**: Docker non permette di cambiarle in un container esistente (andrebbe ricreato); la finestra lo spiega e mostra quelle attuali. Per un singolo container, usa **Duplica**.
+- **Risultati**: ogni container ha il proprio: riuscito (confermato da Docker), fallito (con l’errore), saltato, annullato o **sconosciuto** (la connessione si è interrotta prima della conferma; aggiorna per vederne lo stato). Se uno fallisce, gli altri proseguono; nulla viene annullato o ritentato automaticamente. **Annulla ciò che resta** smette di inviare ordini.
+- **Attività**: ogni ordine viene registrato con il distintivo «Massiva»; **Vedi nell’attività** mostra solo quell’operazione.

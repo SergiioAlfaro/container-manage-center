@@ -25,6 +25,7 @@ import { queryClientFor, serverName, ServerScope, useServers } from "./server";
 // panel, que es lo primero que se ve, va en el paquete inicial.
 const load = {
   ContainersView: () => import("@/features/containers/ContainersView"),
+  BulkView: () => import("@/features/bulk/BulkView"),
   ImagesView: () => import("@/features/images/ImagesView"),
   NetworksView: () => import("@/features/networks/NetworksView"),
   VolumesView: () => import("@/features/volumes/VolumesView"),
@@ -167,6 +168,8 @@ function Section({ id }: { id: ReturnType<typeof useApp.getState>["section"] }) 
       return <DashboardView />;
     case "containers":
       return <View name="ContainersView" />;
+    case "bulk":
+      return <View name="BulkView" />;
     case "images":
       return <View name="ImagesView" />;
     case "networks":

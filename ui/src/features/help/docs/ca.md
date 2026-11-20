@@ -380,3 +380,17 @@ A Windows, Container Manage Center funciona igual que a Linux, amb aquestes dife
 - **Notificacions**: les del sistema (centre de notificacions).
 - **Dades**: configuració a `%APPDATA%\container-manage-center` i historial a `%LOCALAPPDATA%\container-manage-center`.
 - **Desinstal·lar**: des de Configuració de Windows › Aplicacions › Aplicacions instal·lades. Les teves dades i Docker Desktop no es toquen. L'apartat «Desinstal·lació i components» només existeix a Debian i Ubuntu.
+
+## 30. Gestió massiva {#bulk}
+
+**Gestió massiva** (a «Recursos») aplica una mateixa operació a molts contenidors alhora, també de diversos servidors.
+
+- **Visió general**: total, en execució, aturats, en pausa i amb error. Fer clic en un comptador filtra per aquest estat. Es reuneixen els contenidors d’aquest ordinador i dels servidors remots **connectats**; els altres s’indiquen en un avís.
+- **Actualització**: botó **Actualitza** i actualització automàtica (de 5 s a 5 min, es pot desactivar).
+- **Taula**: cerca per nom o ID; filtra per estat, imatge, servidor i etiqueta (`clau` o `clau=valor`); ordena fent clic al títol d’una columna.
+- **Selecció**: casella per fila, de la pàgina o de **tot el filtrat**. La barra indica a quants contenidors de la selecció s’aplica cada operació.
+- **Operacions**: iniciar, aturar, reiniciar, posar en pausa, reprendre, eliminar i canviar la política de reinici (en calent amb `docker update`; no en els creats amb `--rm`). Els que no ho permeten pel seu estat s’**ometen**, amb el motiu.
+- **Confirmació**: operació, servidors, contenidors afectats i omesos, conseqüències i operacions alhora (1 a 16). **Eliminar** demana escriure el nombre de contenidors i **mai no elimina volums ni imatges**.
+- **Etiquetes**: Docker no permet canviar-les en un contenidor que ja existeix (caldria recrear-lo); el diàleg ho explica i mostra les actuals. Per a un contenidor concret, fes servir **Duplicar**.
+- **Resultats**: cada contenidor té el seu: correcte (confirmat per Docker), fallit (amb l’error), omès, cancel·lat o **desconegut** (la connexió s’ha tallat abans de la confirmació; actualitza per veure’n l’estat). Si un falla, els altres continuen; no es desfà ni es reintenta res automàticament. **Cancel·la el pendent** deixa d’enviar ordres.
+- **Activitat**: cada ordre es registra amb el distintiu «Massiva»; **Mostra a l’activitat** mostra només aquesta operació.

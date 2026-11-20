@@ -1,5 +1,19 @@
 # Cambios
 
+## 1.10.0 — 2026-11-20 (gestión masiva de contenedores, etapa 1)
+- **Apartado nuevo «Gestión masiva»** (en «Recursos», después de «Contenedores»; D-117 a D-120): reúne en una sola tabla los contenedores de todos los servidores conectados (este equipo y los remotos) y aplica una misma operación a muchos a la vez.
+  - **Panel general**: total, en ejecución, detenidos, en pausa y con error (salida con un código distinto de 0 —salvo 137 y 143, los de `docker stop`—, muerto, reiniciándose o con la comprobación de salud fallando); servidores conectados y sin conexión; hora de la última actualización; actualización manual y automática (cada 5 a 300 s, se puede desactivar).
+  - **Tabla**: nombre, ID corto, imagen, estado (con la salud), creación, puertos, política de reinicio, servidor y etiquetas propias. Orden por columna, búsqueda por nombre o ID, filtros por estado, imagen, etiqueta (`clave` o `clave=valor`) y servidor, y páginas de 25, 50 o 100.
+  - **Selección** individual, de la página o de todo lo filtrado, y barra de acciones que indica a cuántos de la selección se aplica cada operación y desactiva las que no admite ninguno.
+  - **Operaciones**: iniciar, detener, reiniciar, pausar, reanudar, eliminar (forzando o no) y cambiar la política de reinicio. Las etiquetas **no** se pueden cambiar: Docker no lo permite sin recrear el contenedor, y esta etapa no recrea nada automáticamente; el diálogo lo explica y muestra las etiquetas actuales (D-119).
+  - **Confirmación** con la operación, los servidores, los contenedores afectados (con la política actual y la nueva) y los que se omiten con su motivo, las consecuencias y el número de operaciones a la vez. Eliminar exige escribir el número de contenedores, también comprobado en el backend, y **nunca elimina volúmenes ni imágenes** (D-120).
+  - **Ejecución** con un límite de operaciones a la vez (1 a 16, 4 por defecto), progreso y cancelación de lo pendiente. Cada contenedor tiene su resultado (correcto, fallido con el error comprensible, omitido, cancelado o desconocido si se cortó la conexión) y su duración. Solo es correcto cuando Docker lo confirma; no se reintenta ni se deshace nada (D-117).
+  - **Actividad**: cada orden queda registrada como siempre y, además, con el identificador de la operación masiva, más un registro resumen. «Ver en actividad» muestra solo esa operación; el distintivo «Masiva» y el identificador aparecen en cada registro.
+- **Sin acciones duplicadas**: un contenedor no puede estar en dos operaciones masivas a la vez, ni en una operación masiva y otra acción de la aplicación al mismo tiempo (D-118).
+- **Configuración**: sección `[bulk]` (operaciones a la vez y actualización automática); las configuraciones anteriores se cargan con los valores por defecto.
+- **Textos** en los 8 idiomas y sección «Gestión masiva» en la ayuda (30 secciones).
+- **Verificación**: `scripts/verify-evolution-1.10.0.sh` (toda la regresión y la gestión masiva: unitarias, protocolo con Docker simulado, IPC y contra Docker real con contenedores temporales propios).
+
 ## 1.9.1 — 2026-11-17 (auditoría de Windows y preparación para GitHub)
 - **Auditoría de la versión de Windows** (D-115, `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`): se han encontrado y corregido fallos que impedían usar en Windows funciones que en Linux sí funcionaban:
   - rutas de Windows (`C:\…`, `\\servidor\recurso\…`) en Compose (abrir, crear, levantar), carpetas vinculadas al crear o editar contenedores (`C:\datos:/datos`), construcción de imágenes, clave SSH elegida con el selector, destino de las copias de seguridad y carpeta nueva al restaurar;

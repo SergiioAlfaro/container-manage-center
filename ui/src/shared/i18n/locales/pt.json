@@ -23,6 +23,10 @@
       "title": "Contentores",
       "description": "Crie, inicie, pare e inspecione contentores."
     },
+    "bulk": {
+      "title": "Gestão em massa",
+      "description": "Atue sobre muitos contentores de uma vez, num ou em vários servidores."
+    },
     "images": {
       "title": "Imagens",
       "description": "Transfira, construa, etiquete e elimine imagens."
@@ -174,7 +178,11 @@
     "allServers": "todos",
     "connectionSsh": "SSH (docker system dial-stdio)",
     "connectionLocal": "Socket local",
-    "connection": "Ligação"
+    "connection": "Ligação",
+    "batch": "Operação em massa",
+    "batchChip": "Massa",
+    "batchFilter": "Só a operação em massa",
+    "batchFilterClear": "Mostrar todas as operações"
   },
   "settings": {
     "appearance": "Aparência",
@@ -244,7 +252,8 @@
       "update": "Atualizar recursos ou reinício",
       "recreate": "Recriar o contentor",
       "restoreBackup": "Restaurar a cópia do contentor",
-      "commit": "Criar imagem a partir de um contentor"
+      "commit": "Criar imagem a partir de um contentor",
+      "bulk": "Operação em massa"
     },
     "image": {
       "list": "Listar imagens",
@@ -519,6 +528,197 @@
     "create": "Criar contentor",
     "openDetail": "Abrir {{name}}",
     "moreActions": "Mais ações de {{name}}"
+  },
+  "bulk": {
+    "intro": "Contentores de todos os servidores ligados. Filtre, selecione e aplique a mesma operação a muitos de uma vez; cada contentor tem o seu próprio resultado.",
+    "kpi": {
+      "total": "Total",
+      "running": "Em execução",
+      "stopped": "Parados",
+      "paused": "Em pausa",
+      "error": "Com erro"
+    },
+    "envSummary_one": "{{count}} servidor ({{connected}} ligado)",
+    "envSummary_other": "{{count}} servidores ({{connected}} ligados)",
+    "updated": "Atualizado às {{time}}",
+    "autoRefresh": "Atualizar automaticamente",
+    "refreshEvery": "Intervalo de atualização",
+    "everySecs_one": "a cada {{count}} segundo",
+    "everySecs_other": "a cada {{count}} segundos",
+    "refresh": "Atualizar",
+    "disconnected": "Sem ligação (os seus contentores não aparecem): {{names}}. Ligue-os em «Servidores».",
+    "envError": "Não foi possível listar os contentores de {{name}}: {{message}}",
+    "loadError": "Não foi possível carregar a lista: {{message}}",
+    "runError": "A operação em massa não começou e nada foi enviado ao Docker: {{message}}",
+    "search": "Procurar por nome ou ID",
+    "filter": {
+      "state": "Estado",
+      "all": "todos",
+      "image": "Imagem",
+      "env": "Servidor",
+      "label": "Filtrar por etiqueta",
+      "labelPlaceholder": "Etiqueta: chave ou chave=valor",
+      "clear": "Limpar filtros"
+    },
+    "shown_one": "{{count}} de {{total}} contentor",
+    "shown_other": "{{count}} de {{total}} contentores",
+    "bar": {
+      "label": "Ações sobre a seleção",
+      "selected_one": "{{count}} selecionado",
+      "selected_other": "{{count}} selecionados",
+      "selectFiltered_one": "Selecionar o filtrado ({{count}})",
+      "selectFiltered_other": "Selecionar os {{count}} filtrados",
+      "clear": "Limpar a seleção",
+      "none": "Nenhum contentor selecionado admite «{{op}}» no estado atual.",
+      "applies_one": "Aplica-se a {{count}} de {{total}} (os restantes são ignorados pelo seu estado).",
+      "applies_other": "Aplica-se a {{count}} de {{total}} (os restantes são ignorados pelo seu estado).",
+      "busy": "Há uma operação em massa em curso.",
+      "tooMany": "No máximo {{max}} contentores por operação."
+    },
+    "action": {
+      "start": "Iniciar",
+      "stop": "Parar",
+      "restart": "Reiniciar",
+      "pause": "Pausar",
+      "unpause": "Retomar",
+      "restartPolicy": "Política de reinício",
+      "labels": "Etiquetas",
+      "remove": "Eliminar"
+    },
+    "labels": {
+      "limitShort": "O Docker não permite alterar as etiquetas de um contentor existente.",
+      "title": "Etiquetas dos contentores selecionados",
+      "limit": "O Docker não permite adicionar, alterar nem remover etiquetas de um contentor que já existe: só se definem ao criá-lo. Isso obrigaria a recriar cada contentor (eliminá-lo e voltar a criá-lo), algo que esta versão não faz automaticamente.",
+      "future": "Para dar outras etiquetas a um contentor concreto, use «Duplicar» no seu detalhe: cria um novo com a mesma configuração, onde as pode alterar antes de o criar, sem tocar no original. A edição em massa de etiquetas, que obrigaria a recriar contentores, fica para uma etapa posterior.",
+      "current_one": "Etiquetas atuais ({{count}} contentor)",
+      "current_other": "Etiquetas atuais ({{count}} contentores)",
+      "none": "Sem etiquetas próprias",
+      "more_one": "E mais {{count}} contentor.",
+      "more_other": "E mais {{count}} contentores."
+    },
+    "empty": "Não há contentores",
+    "emptyBody": "Nenhum servidor ligado tem contentores. Crie um em «Contentores» ou ligue outro servidor.",
+    "tableLabel": "Contentores de todos os servidores",
+    "selectPage": "Selecionar os desta página",
+    "selectOne": "Selecionar {{name}} ({{env}})",
+    "col": {
+      "name": "Nome",
+      "image": "Imagem",
+      "state": "Estado",
+      "created": "Criado",
+      "ports": "Portas",
+      "restart": "Reinício",
+      "env": "Servidor",
+      "labels": "Etiquetas"
+    },
+    "noMatches": "Nenhum contentor corresponde aos filtros.",
+    "pageSize": "Por página",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "prev": "Página anterior",
+    "next": "Página seguinte",
+    "health": {
+      "healthy": "saudável",
+      "unhealthy": "não saudável",
+      "starting": "a verificar"
+    },
+    "op": {
+      "start": "Iniciar",
+      "stop": "Parar",
+      "restart": "Reiniciar",
+      "pause": "Pausar",
+      "unpause": "Retomar",
+      "remove": "Eliminar",
+      "removeForce": "Eliminar (forçado)",
+      "restartPolicyTo": "Alterar a política de reinício para {{policy}}"
+    },
+    "skip": {
+      "state": "Ignorado: não é possível no estado «{{state}}»",
+      "needsForce": "Ignorado: está «{{state}}»; marque «Forçar» para o eliminar",
+      "autoRemove": "Ignorado: criado com --rm, o Docker não admite outra política",
+      "unchanged": "Ignorado: já tem essa política",
+      "gone": "Ignorado: já não existe"
+    },
+    "confirm": {
+      "title_one": "{{op}}: {{count}} contentor",
+      "title_other": "{{op}}: {{count}} contentores",
+      "run_one": "Aplicar a {{count}} contentor",
+      "run_other": "Aplicar a {{count}} contentores",
+      "operation": "Operação",
+      "containers": "Contentores",
+      "applyCount_one": "{{count}} será enviado ao Docker",
+      "applyCount_other": "{{count}} serão enviados ao Docker",
+      "environments": "Servidores",
+      "remote": "Inclui servidores remotos: a ordem é enviada a cada um pela sua própria ligação.",
+      "affected_one": "Contentor afetado ({{count}})",
+      "affected_other": "Contentores afetados ({{count}})",
+      "skipped_one": "Ignorado ({{count}})",
+      "skipped_other": "Ignorados ({{count}})",
+      "nothing": "Nenhum contentor selecionado admite esta operação. Nada será enviado.",
+      "concurrency": "Operações em simultâneo",
+      "partial": "Cada contentor é independente: se algum falhar, os restantes continuam e verá o resultado de cada um. O que já foi aplicado não é desfeito e nada é repetido automaticamente."
+    },
+    "consequence": {
+      "start": "Os contentores serão iniciados. Os seus processos começarão a executar e publicarão as suas portas.",
+      "stop": "Os contentores serão parados (o Docker envia o sinal de paragem e, após o tempo de espera, força-os). Os serviços que oferecem deixarão de estar disponíveis.",
+      "restart": "Os contentores serão reiniciados: ficarão um momento sem serviço.",
+      "pause": "Os processos dos contentores serão congelados; não responderão até serem retomados.",
+      "unpause": "Os processos congelados serão retomados.",
+      "remove": "Os contentores serão eliminados, juntamente com o que guardam fora dos volumes. Isto não pode ser desfeito.",
+      "restartPolicy": "A política de reinício será alterada com «docker update» sem parar nem recriar os contentores."
+    },
+    "policy": {
+      "new": "Nova política de reinício",
+      "name": {
+        "no": "Não reiniciar",
+        "always": "Sempre",
+        "unless-stopped": "Salvo se parado",
+        "on-failure": "Se falhar"
+      },
+      "hint": {
+        "no": "O Docker não volta a iniciar o contentor por si.",
+        "always": "O Docker reinicia-o sempre que para, também ao arrancar o Docker.",
+        "unless-stopped": "Como «Sempre», salvo se o parou manualmente.",
+        "on-failure": "O Docker só o reinicia se terminar com um código de erro."
+      },
+      "retries": "Tentativas máximas",
+      "retriesHint": "0 = sem limite",
+      "live": "Aplica-se a quente: o Docker permite alterar a política sem recriar o contentor (exceto os criados com --rm).",
+      "unknown": "desconhecida"
+    },
+    "remove": {
+      "risk": "Os volumes e as imagens nunca são eliminados: só os contentores.",
+      "force": "Forçar (eliminar também os que estão em execução ou em pausa)",
+      "forceHint": "Sem esta opção, os contentores ativos são ignorados.",
+      "type_one": "Para confirmar, escreva {{count}} (o número de contentores que serão eliminados):",
+      "type_other": "Para confirmar, escreva {{count}} (o número de contentores que serão eliminados):",
+      "typeLabel": "Número de contentores que serão eliminados"
+    },
+    "run": {
+      "title": "Progresso da operação em massa",
+      "finished": "Terminada em {{duration}}",
+      "cancelling": "A cancelar o pendente; o que já foi enviado ao Docker termina…",
+      "progress": "{{done}} de {{total}} · {{concurrency}} de cada vez",
+      "cancel": "Cancelar o pendente",
+      "cancelHint": "Nada mais será enviado ao Docker. O que já está em curso termina e é comunicado.",
+      "activity": "Ver na atividade",
+      "close": "Fechar resultado",
+      "allOk_one": "Concluída em {{count}} contentor ({{skipped}} ignorados).",
+      "allOk_other": "Concluída em {{count}} contentores ({{skipped}} ignorados).",
+      "partial": "Resultado parcial: {{ok}} corretas, {{failed}} falhadas, {{unknown}} com resultado desconhecido, {{skipped}} ignoradas, {{cancelled}} canceladas.",
+      "unknownHint": "«Desconhecido»: a ordem foi enviada mas a ligação caiu antes da confirmação do Docker. Atualize a tabela para ver o estado real.",
+      "onlyProblems": "Mostrar só os que não correram bem",
+      "nowState": "Agora: {{state}}",
+      "removed": "Eliminado"
+    },
+    "status": {
+      "succeeded": "Correto",
+      "failed": "Falhado",
+      "skipped": "Ignorado",
+      "cancelled": "Cancelado",
+      "unknown": "Desconhecido",
+      "running": "A aplicar…",
+      "pending": "Pendente"
+    }
   },
   "images": {
     "refresh": "Atualizar",

@@ -244,7 +244,7 @@ Socket personalizado**. "Probar conexión" comprueba una ruta sin guardarla.
 
 La aplicación funciona sin Docker Compose, pero el apartado **Docker Compose**
 lo necesita (si falta, el apartado explica cómo instalarlo) y
-la verificación (`scripts/verify-evolution-1.9.1.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
+la verificación (`scripts/verify-evolution-1.10.0.sh`) lo exige. Se admite **Compose v2 o posterior**, como plugin
 (`docker compose`) o como binario independiente (`docker-compose` v2). Compose
 v1 (`docker-compose 1.x`) no se admite.
 

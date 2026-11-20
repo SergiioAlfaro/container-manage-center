@@ -12,4 +12,8 @@ transport: Transport, status: OpStatus, startedAt: string, finishedAt: string | 
 /**
  * Servidor de la operación (0.10.0). Las entradas anteriores no lo tienen.
  */
-server: ServerTag | null, };
+server: ServerTag | null, 
+/**
+ * Operación masiva (1.10.0, D-117).
+ */
+batch: string | null, };

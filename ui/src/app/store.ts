@@ -17,6 +17,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   docker: { mode: "auto", customSocket: "" },
   compose: { projects: [] },
   updates: { checkOnStart: false, source: "" },
+  // 1.10.0: gestión masiva.
+  bulk: { concurrency: 4, autoRefresh: true, refreshSecs: 15 },
 };
 
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
@@ -47,6 +49,7 @@ function merge(base: AppConfig, patch: DeepPartial<AppConfig>): AppConfig {
     // La lista de proyectos Compose solo la cambia el backend (compose_register/unregister).
     compose: base.compose,
     updates: { ...base.updates, ...patch.updates },
+    bulk: { ...base.bulk, ...patch.bulk },
   };
 }
 

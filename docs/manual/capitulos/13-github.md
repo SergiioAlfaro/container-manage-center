@@ -56,7 +56,7 @@ npm run typecheck && npm run lint && npm test
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-bash scripts/verify-evolution-1.9.1.sh --deb     # completa, con Docker
+bash scripts/verify-evolution-1.10.0.sh --deb     # completa, con Docker
 ```
 
 ## Cómo preparar una contribución

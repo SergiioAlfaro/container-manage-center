@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
-# Verificación de Container Manage Center 1.9.1 en Debian/Ubuntu. Repite toda
+# Verificación de Container Manage Center 1.10.0 en Debian/Ubuntu. Repite toda
 # la regresión automática de las fases 1-10, las etapas 1-6 y las versiones
-# 1.7.0 a 1.9.0, y comprueba lo nuevo de la 1.9.1 (D-115: auditoría de Windows
-# y preparación para GitHub):
+# 1.7.0 a 1.9.1, y comprueba lo nuevo de la 1.10.0 (D-117 a D-120: gestión
+# masiva de contenedores, etapa 1):
+#   - reglas de cada operación, validación, reservas (nada se aplica dos veces
+#     a la vez), límite de concurrencia, cancelación de lo pendiente, resultado
+#     por contenedor (correcto, fallido, omitido, cancelado o desconocido) y
+#     errores sin secretos;
+#   - protocolo con un Docker simulado: lo que se envía y lo que no (nunca
+#     v=true al eliminar, política con «docker update», sin reintentos);
+#   - contra Docker real: contenedores temporales propios con un fallo parcial,
+#     pausa, reinicio, política comprobada con inspect, --rm omitido,
+#     eliminación que conserva el volumen y registro con el lote en cada orden;
+#   - por IPC: validación antes de empezar, servidor sin conexión y ejecución
+#     real con concurrencia configurada;
+#   - interfaz: tabla, filtros, orden, selección, diálogos, progreso,
+#     resultados parciales y filtro por lote en la actividad.
+# De la 1.9.1 (D-115: auditoría de Windows y preparación para GitHub):
 #   - Linux no cambia de comportamiento (toda la regresión);
 #   - con Wine, MinGW-w64 y RUST_SRC: las pruebas unitarias compiladas para
 #     Windows (sin Wine, solo la compilación);
@@ -58,9 +72,9 @@
 #   - correcciones propuestas en «Editar configuración» sin aplicar nada.
 #
 # Uso (desde la raíz del proyecto, con tu usuario normal, NO como root):
-#   bash scripts/verify-evolution-1.9.1.sh --deb            # recomendado: incluye la compilación
+#   bash scripts/verify-evolution-1.10.0.sh --deb            # recomendado: incluye la compilación
 #                                                    # de producción y el paquete .deb
-#   bash scripts/verify-evolution-1.9.1.sh --deb --compat   # y el paquete compatible con
+#   bash scripts/verify-evolution-1.10.0.sh --deb --compat   # y el paquete compatible con
 #        Debian 12+/Ubuntu 22.04+ (compilado en un contenedor de Docker con
 #        Ubuntu 22.04: descarga la imagen ubuntu:22.04 y ~700 MB de paquetes)
 #   --net    además consulta un servidor HTTPS real (TLS con los certificados
@@ -89,15 +103,15 @@
 # (scripts/dev/clean-install-test.sh) necesitan root y sistemas de prueba: no se
 # ejecutan en tu equipo (se listan como omitidas o se hacen a mano en M1).
 #
-# Resultado: verify-evolution-1.9.1-report.txt y los registros completos de cada paso
-# en target/verify-evolution-1.9.1/. Código de salida 0 solo si no hay ningún fallo
+# Resultado: verify-evolution-1.10.0-report.txt y los registros completos de cada paso
+# en target/verify-evolution-1.10.0/. Código de salida 0 solo si no hay ningún fallo
 # obligatorio. Las omisiones justificadas se listan aparte.
 
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
-REPORT="$ROOT/verify-evolution-1.9.1-report.txt"
-LOGDIR="$ROOT/target/verify-evolution-1.9.1"
+REPORT="$ROOT/verify-evolution-1.10.0-report.txt"
+LOGDIR="$ROOT/target/verify-evolution-1.10.0"
 rm -rf "$LOGDIR"
 mkdir -p "$LOGDIR"
 : > "$REPORT"
@@ -221,7 +235,7 @@ finish() {
 trap finish EXIT
 trap 'exit 130' INT TERM
 
-say "Container Manage Center - verificación de la 1.9.1 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
+say "Container Manage Center - verificación de la 1.10.0 (versión $(grep -m1 '^version' Cargo.toml | cut -d'"' -f2))"
 say "Fecha: $(date -Is)"
 say "Proyecto: $ROOT"
 say ""
@@ -561,7 +575,7 @@ old_name_gone() {
   # 1.8.0 (D-113): el nombre anterior solo aparece donde hace falta para
   # encontrar y pasar los datos de una versión anterior. Lista cerrada: un
   # archivo nuevo con el nombre anterior hace fallar este paso.
-  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.9\.1\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
+  local allowed='^(crates/cmc-store/src/legacy\.rs|crates/cmc-engine/src/legacy\.rs|crates/cmc-store/src/migrate\.rs|src-tauri/src/migration\.rs|src-tauri/src/systemd\.rs|src-tauri/src/uninstall\.rs|src-tauri/tauri\.conf\.json|scripts/install\.sh|scripts/dev/clean-install-test\.sh|scripts/verify-evolution-1\.10\.0\.sh|ui/src/app/server\.tsx|ui/src/app/server\.test\.ts):'
   local hits bad_
   hits=$(git grep -nIiE 'docker-control-center|dockercontrolcenter|docker control center|\bdcc[-_.]|\bDCC[-_]' -- crates src-tauri ui/src ui/index.html ui/public packaging scripts Cargo.toml package.json || true)
   bad_=$(printf '%s\n' "$hits" | grep -v '^$' | grep -vE "$allowed" || true)
@@ -660,6 +674,15 @@ if [ $NET_TESTS -eq 1 ]; then
   run_tests "Consulta HTTPS real con TLS y los certificados del sistema (registry.npmjs.org)" env CMC_NET_TESTS=1 cargo test --locked -p container-manage-center --lib updates::tests::real_https -- --nocapture
 fi
 say ""
+say "5.1k 1.10.0: gestión masiva de contenedores (D-117 a D-120)"
+run_tests "1.10.0 · Motor: reglas de cada operación según el estado, motivos de omisión, política de reinicio (validación y equivalencia con Docker), solo IDs completos, salud y errores, formato de la petición, resultado desconocido si se corta la conexión al ejecutar" cargo test --locked -p cmc-engine --lib bulk::
+run_tests "1.10.0 · Protocolo con Docker simulado: orden enviada y confirmada con inspect, estado incompatible sin escrituras, eliminación nunca con v=true y forzado solo si se pide, cuerpo de docker update, --rm y política sin cambios omitidos, 500 = fallo y corte = desconocido sin reintentos, contenedor desaparecido, ocupado, ID no válido o suplantado" cargo test --locked -p cmc-engine --test bulk_protocol
+run_tests "1.10.0 · Coordinación: validación (confirmación, vacíos, duplicados, servidor desconocido, más de 1000), mismo ID en dos servidores, eliminar exige escribir el número, reservas todo o nada, concurrencia máxima respetada y orden de resultados, cancelación de lo pendiente, estados, errores sin secretos, resumen en la actividad con el lote" cargo test --locked -p container-manage-center --lib bulk::
+run_tests "1.10.0 · IPC sin Docker: inventario con servidores sin conexión, rechazo antes de empezar y cada contenedor de un servidor sin conexión falla sin enviarse" cargo test --locked -p container-manage-center --lib -- bulk_inventory_without_connection bulk_run_is_validated_before_starting bulk_run_without_connection_fails_each_item
+run_tests "1.10.0 · Configuración [bulk]: valores por defecto y límites; una configuración anterior sin la sección se carga" cargo test --locked -p cmc-store bulk_settings
+run_tests "1.10.0 · Interfaz: panel general, carga y errores, búsqueda y filtros, orden, paginación, selección (individual, página, filtrado), barra contextual, confirmación con vista previa, eliminación con número escrito, política de reinicio, etiquetas (limitación explicada), progreso, resultados parciales, cancelación y filtro por lote en la actividad; textos en los 8 idiomas" npx vitest run ui/src/features/bulk ui/src/features/activity ui/src/shared/i18n/i18n.test.ts ui/src/app/App.test.tsx ui/src/app/a11y.test.tsx
+
+say ""
 say "5.3 Pruebas funcionales contra Docker real (crean y eliminan recursos cmc.test)"
 if [ -n "$SOCK" ]; then
   export CMC_DOCKER_TESTS=1 CMC_DOCKER_SOCKET="$SOCK"
@@ -723,7 +746,10 @@ if [ -n "$SOCK" ]; then
   grep -q "omitida" "$LAST_LOG" && bad "La prueba IPC de la monitorización no se ejecutó"
   run_step "1.6.0 · Integración por IPC contra Docker real: la auditoría, la monitorización y una copia reconocen el mismo contenedor por su id; la copia guarda el id; la tarea que lo incluye; otro contenedor sin copia; al recrearlo, solo por nombre; los enlaces no se registran" env CMC_DOCKER_TESTS=1 cargo test --locked -p container-manage-center --lib live_e6_audit_links_monitoring_and_backups_by_container_id -- --nocapture --test-threads=1
   grep -q "omitida" "$LAST_LOG" && bad "La prueba IPC de la integración no se ejecutó"
-  if live_block "Aplicación Tauri: IPC contra Docker real (incluye 0.9.1: varias terminales por IPC con canales reales y cierre global)" container-manage-center - 1; then
+  if live_block "1.10.0 · Gestión masiva contra Docker real: contenedores temporales propios a la vez con un fallo parcial (los demás siguen), omitidos por su estado, pausa, reanudación y reinicio, política on-failure:2 comprobada con inspect, sin cambios y --rm omitidos, eliminación sin forzar y forzada que conserva el volumen, cada orden registrada con el lote" cmc-engine live_bulk 1; then
+    grep -q "bulk_operations_on_real_temporary_containers ... ok" "$LAST_LOG" || bad "La prueba real de la gestión masiva no se ejecutó"
+  fi
+  if live_block "Aplicación Tauri: IPC contra Docker real (incluye 0.9.1: varias terminales por IPC con canales reales y cierre global; 1.10.0: operación masiva por IPC con la concurrencia de la configuración, lote en cada registro y eliminación con el número confirmado)" container-manage-center - 1; then
     while IFS= read -r l; do
       case "$l" in
         *Compose*) bad "Prueba IPC de Compose sin ejecutar: ${l#*omitida: }" ;;
@@ -929,7 +955,7 @@ if [ $BUILD_DEB -eq 1 ]; then
   fi
 fi
 if [ $BUILD_COMPAT -eq 1 ]; then
-  if run_step "Paquete compatible con Debian 12+ y Ubuntu 22.04+ (compilado en Ubuntu 22.04)" bash scripts/build-deb-compat.sh; then
+  if run_step "Paquete compatible con Debian 12+ y Ubuntu 22.04+ (compilado en Ubuntu 22.04)" env CMC_BUILD_ALLOW_ROOT="${CMC_VERIFY_ALLOW_ROOT:-0}" bash scripts/build-deb-compat.sh; then
     CDEB=$(ls -1t "$ROOT"/target/compat/*.deb | head -1)
     if dpkg-deb -f "$CDEB" Recommends | grep -qw openssh-client; then ok "El paquete compatible recomienda openssh-client"; else bad "El paquete compatible no recomienda openssh-client"; fi
     check_package "$CDEB"
@@ -980,19 +1006,25 @@ if [ "$SKIP" -gt 0 ]; then
   say "Omitidas (no cuentan como superadas):"; for s in "${SKIPS[@]}"; do say "  - $s"; done
 fi
 if [ "$FAIL" -gt 0 ]; then
-  say "VEREDICTO: 1.9.1 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
+  say "VEREDICTO: 1.10.0 NO SUPERADA en la parte automática. No continúes con las comprobaciones manuales; envía este informe."
 else
-  say "VEREDICTO: parte automática superada. Falta la validación manual de la 1.8.0 en Debian 13 (docs/validation/VALIDACION-1.8.0.md) y la primera prueba en Windows (docs/validation/VALIDACION-WINDOWS.md)."
+  say "VEREDICTO: parte automática superada. Falta la validación manual de la gestión masiva (docs/validation/VALIDACION-1.10.0.md), la de la 1.8.0 en Debian 13 (docs/validation/VALIDACION-1.8.0.md) y la primera prueba en Windows (docs/validation/VALIDACION-WINDOWS.md)."
 fi
 say ""
 cat <<'EOF' | tee -a "$REPORT"
 8. Validación manual (solo si la parte automática está superada)
-   a) Windows: la 1.9.1 no se ha ejecutado nunca en un Windows real:
+   a) Gestión masiva (1.10.0), en Linux, con contenedores de prueba propios
+      (nunca con los tuyos reales): abre «Gestión masiva», comprueba que los
+      contadores coinciden con «docker ps -a», filtra, selecciona varios y
+      prueba detener, iniciar, pausar, reanudar, reiniciar, cambiar la
+      política de reinicio y eliminar (forzado y sin forzar). Comprueba el
+      resultado de cada contenedor y «Ver en actividad». Si tienes un
+      servidor remoto, repítelo con contenedores de los dos a la vez:
+       docs/validation/VALIDACION-1.10.0.md
+   b) Windows: la 1.10.0 no se ha ejecutado nunca en un Windows real:
        docs/validation/VALIDACION-WINDOWS.md (versión de Windows en pruebas)
-   b) Linux: la 1.9.1 no cambia nada en Linux. Si aún no has validado la
-      1.8.0, hazlo en Debian 13 con la 1.7.0 instalada y en uso antes:
+   c) Si aún no has validado la 1.8.0, hazlo en Debian 13 con la 1.7.0
+      instalada y en uso antes:
        docs/validation/VALIDACION-1.8.0.md
-      (actualización y migración de tus datos reales, que no quede nada con
-      el nombre anterior y que todo siga funcionando).
 EOF
 [ "$FAIL" -eq 0 ]

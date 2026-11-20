@@ -380,3 +380,17 @@ Sous Windows, Container Manage Center fonctionne comme sous Linux, avec ces diff
 - **Notifications** : celles du système (centre de notifications).
 - **Données** : configuration dans `%APPDATA%\container-manage-center` et historique dans `%LOCALAPPDATA%\container-manage-center`.
 - **Désinstaller** : depuis Paramètres Windows › Applications › Applications installées. Vos données et Docker Desktop ne sont pas modifiés. La page « Désinstallation et composants » n'existe que sous Debian et Ubuntu.
+
+## 30. Gestion en masse {#bulk}
+
+**Gestion en masse** (dans « Ressources ») applique une même opération à de nombreux conteneurs à la fois, y compris sur plusieurs serveurs.
+
+- **Vue générale** : total, en cours d’exécution, arrêtés, en pause et en erreur. Cliquer sur un compteur filtre par cet état. Les conteneurs de cet ordinateur et des serveurs distants **connectés** sont réunis ; les autres sont signalés.
+- **Actualisation** : bouton **Actualiser** et actualisation automatique (de 5 s à 5 min, désactivable).
+- **Tableau** : recherche par nom ou ID ; filtres par état, image, serveur et étiquette (`clé` ou `clé=valeur`) ; tri en cliquant sur le titre d’une colonne.
+- **Sélection** : case par ligne, de la page ou de **tout le filtré**. La barre indique à combien de conteneurs de la sélection chaque opération s’applique.
+- **Opérations** : démarrer, arrêter, redémarrer, mettre en pause, reprendre, supprimer et changer la politique de redémarrage (à chaud avec `docker update` ; pas pour ceux créés avec `--rm`). Ceux dont l’état ne le permet pas sont **ignorés**, avec le motif.
+- **Confirmation** : opération, serveurs, conteneurs concernés et ignorés, conséquences et opérations simultanées (1 à 16). **Supprimer** demande de saisir le nombre de conteneurs et **ne supprime jamais de volumes ni d’images**.
+- **Étiquettes** : Docker ne permet pas de les modifier sur un conteneur existant (il faudrait le recréer) ; la boîte de dialogue l’explique et montre les actuelles. Pour un conteneur précis, utilisez **Dupliquer**.
+- **Résultats** : chaque conteneur a le sien : réussi (confirmé par Docker), en échec (avec l’erreur), ignoré, annulé ou **inconnu** (connexion coupée avant la confirmation ; actualisez pour voir son état). Si l’un échoue, les autres continuent ; rien n’est annulé ni réessayé automatiquement. **Annuler ce qui reste** arrête l’envoi des ordres.
+- **Activité** : chaque ordre est enregistré avec le badge « Masse » ; **Voir dans l’activité** n’affiche que cette opération.

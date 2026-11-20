@@ -104,3 +104,18 @@ describe("filtro por servidor (0.10.0)", () => {
     expect(matches(apiRecord({ server: remote }), { ...EMPTY_FILTER, query: "producción" })).toBe(true);
   });
 });
+
+describe("filtro por operación masiva (1.10.0)", () => {
+  it("muestra solo los registros de un lote y cuenta como filtro", () => {
+    const batch = "0f0e0d0c-0b0a-4908-8706-050403020100";
+    const inBatch = apiRecord({ batch });
+    const other = apiRecord({ batch: "11111111-0b0a-4908-8706-050403020100" });
+    const plain = apiRecord();
+    const f = { ...EMPTY_FILTER, batch };
+    expect(matches(inBatch, f)).toBe(true);
+    expect(matches(other, f)).toBe(false);
+    expect(matches(plain, f)).toBe(false);
+    expect(matches(plain, EMPTY_FILTER)).toBe(true);
+    expect(isFiltered(f)).toBe(true);
+  });
+});

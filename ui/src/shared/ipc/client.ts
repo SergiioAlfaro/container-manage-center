@@ -12,6 +12,9 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import i18n from "@/shared/i18n";
 import type { SystemInfo } from "./bindings/SystemInfo";
+import type { BulkEvent } from "./bindings/BulkEvent";
+import type { BulkInventory } from "./bindings/BulkInventory";
+import type { BulkRequest } from "./bindings/BulkRequest";
 import type { BackupEntry } from "./bindings/BackupEntry";
 import type { BackupEvent } from "./bindings/BackupEvent";
 import type { BackupJob } from "./bindings/BackupJob";
@@ -319,6 +322,11 @@ export function dockerApi(server: string) {
 export type DockerApi = ReturnType<typeof dockerApi>;
 
 const appApi = {
+  // 1.10.0: gestión masiva. El inventario reúne los servidores conectados; cada
+  // contenedor de una operación masiva lleva su servidor (D-117).
+  bulkInventory: (refresh: boolean) => call<BulkInventory>("bulk_inventory", { refresh }),
+  /** Ejecuta la operación masiva; lo pendiente se cancela con `streamClose`. */
+  bulkRunOpen: (request: BulkRequest, onEvent: (e: BulkEvent) => void) => call<number>("bulk_run_open", { request, onEvent: channel(onEvent) }),
   // 0.10.0: servidores. Cada orden indica su servidor de forma explícita.
   serversList: () => call<ServerView[]>("servers_list"),
   serverValidate: (config: ServerConfig) => call<ProfileIssue[]>("server_validate", { config }),

@@ -4097,3 +4097,283 @@ fn live_e6_audit_links_monitoring_and_backups_by_container_id() {
     .unwrap_err();
     assert!(e["code"].as_str().unwrap().starts_with("server"), "{e}");
 }
+
+// ------------------------------------------------------ gestión masiva (1.10.0)
+
+fn bulk_summary_record(h: &Harness) -> Option<serde_json::Value> {
+    let list = invoke_exact(h, "activity_list", json!({})).unwrap();
+    list.as_array()?
+        .iter()
+        .find(|r| r["kind"] == "container.bulk" && r["status"] != "running")
+        .cloned()
+}
+
+fn fake_id(c: char) -> String {
+    c.to_string().repeat(64)
+}
+
+/// Sin conexión: el inventario muestra el equipo local sin contenedores y sin
+/// error; no intenta conectar por su cuenta.
+#[test]
+fn bulk_inventory_without_connection() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    let inv = invoke_exact(&h, "bulk_inventory", json!({ "refresh": true })).unwrap();
+    let envs = inv["environments"].as_array().unwrap();
+    assert_eq!(envs.len(), 1);
+    assert_eq!(envs[0]["server"], "local");
+    assert_eq!(envs[0]["connection"], "disconnected");
+    assert_eq!(envs[0]["containers"], json!([]));
+    assert!(envs[0]["error"].is_null());
+    assert!(inv["fetchedAt"].is_string());
+}
+
+/// La validación se hace antes de empezar nada, con códigos estables.
+#[test]
+fn bulk_run_is_validated_before_starting() {
+    let h = harness();
+    let t = |server: &str, id: String| json!({ "server": server, "id": id, "name": "web" });
+    let run = |req: serde_json::Value| {
+        invoke_exact(
+            &h,
+            "bulk_run_open",
+            json!({ "request": req, "onEvent": "__CHANNEL__:90" }),
+        )
+        .unwrap_err()["code"]
+            .clone()
+    };
+    let one = vec![t("local", fake_id('a'))];
+    assert_eq!(
+        run(
+            json!({ "operation": { "kind": "stop" }, "targets": one, "confirmed": false, "confirmCount": null })
+        ),
+        "engine.notConfirmed"
+    );
+    assert_eq!(
+        run(
+            json!({ "operation": { "kind": "remove", "force": true }, "targets": one, "confirmed": true, "confirmCount": null })
+        ),
+        "bulk.notConfirmed",
+        "eliminar exige escribir el número"
+    );
+    assert_eq!(
+        run(
+            json!({ "operation": { "kind": "stop" }, "targets": [t("srv-no", fake_id('a'))], "confirmed": true, "confirmCount": null })
+        ),
+        "server.unknown"
+    );
+    assert_eq!(
+        run(
+            json!({ "operation": { "kind": "stop" }, "targets": [t("local", "web".into())], "confirmed": true, "confirmCount": null })
+        ),
+        "bulk.invalid",
+        "nombres o prefijos no"
+    );
+    // No existe una operación de etiquetas: Docker no las cambia sin recrear.
+    let err = invoke_exact(
+        &h,
+        "bulk_run_open",
+        json!({ "request": { "operation": { "kind": "labels" }, "targets": one, "confirmed": true, "confirmCount": null }, "onEvent": "__CHANNEL__:91" }),
+    )
+    .unwrap_err();
+    assert!(err.to_string().contains("labels"), "{err}");
+    // Nada de lo anterior llegó a empezar.
+    assert!(bulk_summary_record(&h).is_none());
+}
+
+/// Sin conexión, cada contenedor falla por separado («no se envió») y el
+/// resumen del registro lo refleja; no se queda nada reservado.
+#[test]
+fn bulk_run_without_connection_fails_each_item() {
+    let h = harness();
+    wait_for("estado desconectado", || {
+        engine_state(&h)["state"] == "disconnected"
+    });
+    let req = json!({
+        "operation": { "kind": "stop" },
+        "targets": [
+            { "server": "local", "id": fake_id('a'), "name": "web" },
+            { "server": "local", "id": fake_id('b'), "name": "db" }
+        ],
+        "confirmed": true, "confirmCount": null
+    });
+    let sid = invoke_exact(
+        &h,
+        "bulk_run_open",
+        json!({ "request": req.clone(), "onEvent": "__CHANNEL__:92" }),
+    )
+    .unwrap();
+    assert!(sid.as_u64().is_some());
+    wait_for("fin de la operación masiva", || {
+        bulk_summary_record(&h).is_some()
+    });
+    let rec = bulk_summary_record(&h).unwrap();
+    assert_eq!(rec["status"], "failed");
+    assert_eq!(rec["error"], "0 correctas, 2 fallidas");
+    assert!(rec["batch"].is_string());
+    // Terminada, los mismos contenedores se pueden volver a pedir.
+    wait_for("reserva liberada", || {
+        invoke_exact(
+            &h,
+            "bulk_run_open",
+            json!({ "request": req.clone(), "onEvent": "__CHANNEL__:93" }),
+        )
+        .is_ok()
+    });
+}
+
+/// Contra Docker real (CMC_DOCKER_TESTS=1): inventario y operaciones masivas
+/// por IPC sobre contenedores temporales propios, que se eliminan al terminar.
+#[cfg(unix)]
+#[test]
+fn live_bulk_via_ipc() {
+    use bollard::models::{ContainerCreateBody, HostConfig};
+    use bollard::query_parameters::{CreateContainerOptions, RemoveContainerOptions};
+    if std::env::var("CMC_DOCKER_TESTS").as_deref() != Ok("1") {
+        eprintln!("omitida: define CMC_DOCKER_TESTS=1");
+        return;
+    }
+    const IMAGE: &str = "cmc-test/sleeper:2";
+    let socket =
+        std::env::var("CMC_DOCKER_SOCKET").unwrap_or_else(|_| "/var/run/docker.sock".into());
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let docker =
+        bollard::Docker::connect_with_unix(&socket, 60, bollard::API_DEFAULT_VERSION).unwrap();
+    if rt.block_on(docker.inspect_image(IMAGE)).is_err() {
+        eprintln!("omitida: falta la imagen {IMAGE} (la crean las pruebas de cmc-engine)");
+        return;
+    }
+    let run = format!("ipc-{}", std::process::id());
+    struct Gone(bollard::Docker, Vec<String>);
+    impl Drop for Gone {
+        fn drop(&mut self) {
+            let (d, ids) = (self.0.clone(), std::mem::take(&mut self.1));
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                for id in ids {
+                    let _ = rt.block_on(d.remove_container(
+                        &id,
+                        Some(RemoveContainerOptions {
+                            force: true,
+                            v: true,
+                            ..Default::default()
+                        }),
+                    ));
+                }
+            })
+            .join()
+            .unwrap();
+        }
+    }
+    let mut ids = Vec::new();
+    for n in ["a", "b", "c"] {
+        let r = rt
+            .block_on(
+                docker.create_container(
+                    Some(CreateContainerOptions {
+                        name: Some(format!("cmc-bulk-{run}-{n}")),
+                        ..Default::default()
+                    }),
+                    ContainerCreateBody {
+                        image: Some(IMAGE.into()),
+                        labels: Some(
+                            [("cmc.test", "true"), ("cmc.bulk-test", run.as_str())]
+                                .into_iter()
+                                .map(|(k, v)| (k.to_owned(), v.to_owned()))
+                                .collect(),
+                        ),
+                        host_config: Some(HostConfig::default()),
+                        ..Default::default()
+                    },
+                ),
+            )
+            .unwrap();
+        ids.push(r.id);
+    }
+    let _gone = Gone(docker.clone(), ids.clone());
+
+    let dir = tempfile::tempdir().unwrap();
+    let h = harness_with(
+        dir,
+        DockerConfig {
+            mode: DockerMode::Custom,
+            custom_socket: socket.clone(),
+        },
+    );
+    wait_for("conexión", || engine_state(&h)["state"] == "connected");
+    // Concurrencia 2 desde la configuración.
+    let mut cfg = h.app.state::<AppState>().config();
+    cfg.bulk.concurrency = 2;
+    invoke_exact(&h, "config_set", json!({ "config": cfg })).unwrap();
+
+    let inv = invoke_exact(&h, "bulk_inventory", json!({ "refresh": true })).unwrap();
+    let mine: Vec<_> = inv["environments"][0]["containers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["labels"]["cmc.bulk-test"] == run.as_str())
+        .cloned()
+        .collect();
+    assert_eq!(mine.len(), 3);
+    assert!(mine.iter().all(|c| c["state"] == "created"));
+    assert!(mine
+        .iter()
+        .all(|c| c["details"]["restartPolicy"]["name"] == "no"));
+
+    let targets: Vec<_> = mine
+        .iter()
+        .map(|c| json!({ "server": "local", "id": c["id"], "name": c["name"] }))
+        .collect();
+    let start = json!({ "operation": { "kind": "start" }, "targets": targets, "confirmed": true, "confirmCount": null });
+    invoke_exact(
+        &h,
+        "bulk_run_open",
+        json!({ "request": start, "onEvent": "__CHANNEL__:94" }),
+    )
+    .unwrap();
+    wait_for("inicio masivo", || bulk_summary_record(&h).is_some());
+    let rec = bulk_summary_record(&h).unwrap();
+    assert_eq!(rec["status"], "succeeded", "{rec}");
+    assert_eq!(rec["summary"], "3 correctas");
+    assert!(rec["requestBody"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"concurrency\": 2"));
+    let batch = rec["batch"].clone();
+    let list = invoke_exact(&h, "activity_list", json!({})).unwrap();
+    let starts = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["kind"] == "container.start" && r["batch"] == batch)
+        .count();
+    assert_eq!(starts, 3, "cada orden real lleva el lote");
+
+    let inv = invoke_exact(&h, "bulk_inventory", json!({ "refresh": false })).unwrap();
+    let running = inv["environments"][0]["containers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["labels"]["cmc.bulk-test"] == run.as_str() && c["state"] == "running")
+        .count();
+    assert_eq!(running, 3);
+
+    invoke_exact(&h, "activity_clear", json!({})).unwrap();
+    let remove = json!({ "operation": { "kind": "remove", "force": true }, "targets": targets, "confirmed": true, "confirmCount": 3 });
+    invoke_exact(
+        &h,
+        "bulk_run_open",
+        json!({ "request": remove, "onEvent": "__CHANNEL__:95" }),
+    )
+    .unwrap();
+    wait_for("eliminación masiva", || bulk_summary_record(&h).is_some());
+    assert_eq!(bulk_summary_record(&h).unwrap()["summary"], "3 correctas");
+    for id in &ids {
+        assert!(
+            rt.block_on(docker.inspect_container(id, None)).is_err(),
+            "eliminado"
+        );
+    }
+}

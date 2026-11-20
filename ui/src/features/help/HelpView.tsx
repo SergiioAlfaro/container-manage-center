@@ -52,6 +52,8 @@ export const HELP_SECTION_IDS = [
   "faq",
   "legal",
   "windows",
+  // 1.10.0: gestión masiva.
+  "bulk",
 ] as const;
 
 const blockText = (b: Block): string =>

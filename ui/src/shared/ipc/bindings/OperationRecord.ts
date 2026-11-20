@@ -35,4 +35,10 @@ error: string | null, httpStatus: number | null, exitCode: number | null,
  * Servidor sobre el que se ejecutó; `None` en las operaciones propias de
  * la aplicación (idioma, color…), que no pertenecen a ningún servidor.
  */
-server: ServerTag | null, };
+server: ServerTag | null, 
+/**
+ * Operación masiva a la que pertenece (1.10.0, D-117): el resumen de la
+ * operación masiva y cada operación real que ejecuta llevan el mismo
+ * identificador, para consultarlas juntas.
+ */
+batch: string | null, };
