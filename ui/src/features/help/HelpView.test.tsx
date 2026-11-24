@@ -14,7 +14,7 @@ import { parseHelp } from "./markdown";
 import { LANGUAGES } from "@/shared/i18n";
 
 describe("Ayuda: documento", () => {
-  it.each(Object.keys(HELP_DOCS))("%s: tiene las 30 secciones (26 exigidas, «Servidores remotos» de 0.10.0, «Legal» de 1.7.0, «Windows» de 1.9.0 y «Gestión masiva» de 1.10.0), en orden y con contenido", (lang) => {
+  it.each(Object.keys(HELP_DOCS))("%s: tiene las 34 secciones del índice de la 1.11.1, en orden y con contenido", (lang) => {
     const s = parseHelp(HELP_DOCS[lang]!);
     expect(s.map((x) => x.id)).toEqual([...HELP_SECTION_IDS]);
     s.forEach((x, i) => {
@@ -33,17 +33,19 @@ describe("Ayuda: documento", () => {
     }
   });
 
-  it("hay ayuda para cada idioma de la interfaz, con las secciones nuevas de 0.9.2", () => {
+  it("hay ayuda para cada idioma de la interfaz, con el índice de la 1.11.1", () => {
     expect(Object.keys(HELP_DOCS).sort()).toEqual([...LANGUAGES].sort());
     const es = parseHelp(HELP_DOCS.es!);
     expect(es.find((x) => x.id === "container-edit")?.title).toBe("11. Editar la configuración de un contenedor");
     expect(es.find((x) => x.id === "container-commit")?.title).toBe("12. Crear una imagen a partir de un contenedor");
+    expect(es.find((x) => x.id === "interface")?.title).toBe("4. Interfaz principal y navegación");
+    expect(es.find((x) => x.id === "glossary")?.title).toBe("33. Glosario");
   });
 
   it.each(Object.keys(HELP_DOCS))("%s: la sección legal da la licencia, el copyright, el enlace GPL y los avisos de terceros (1.7.0)", (lang) => {
     const legal = parseHelp(HELP_DOCS[lang]!).find((x) => x.id === "legal")!;
     const text = legal.blocks.map((b) => (b.kind === "p" ? b.text : "")).join("\n");
-    expect(legal.title).toMatch(/^28\. /);
+    expect(legal.title).toMatch(/^34\. /);
     for (const must of ["Container Manage Center", "CMC", "GPL-3.0-or-later", "Copyright © 2026 Sergio Alfaro Lorite", "https://www.gnu.org/licenses/gpl-3.0.html", "THIRD_PARTY_NOTICES.md", "Docker, Inc."]) {
       expect(text, `${lang}: ${must}`).toContain(must);
     }
@@ -71,15 +73,15 @@ describe("Ayuda: navegación", () => {
   it("muestra el índice y la primera sección; el índice y Siguiente/Anterior navegan", async () => {
     renderWithQuery(<HelpView />);
     const toc = screen.getByRole("navigation", { name: "Índice de la ayuda" });
-    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(30);
+    expect(within(toc).getAllByRole("button").filter((b) => /^\d+\. /.test(b.textContent ?? ""))).toHaveLength(34);
     expect(screen.getByRole("heading", { level: 2, name: "1. Qué es Container Manage Center" })).toBeInTheDocument();
-    await userEvent.click(within(toc).getByRole("button", { name: "21. Terminales simultáneas" }));
-    expect(screen.getByRole("heading", { level: 2, name: "21. Terminales simultáneas" })).toBeInTheDocument();
-    expect(within(toc).getByRole("button", { name: "21. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
-    await userEvent.click(within(screen.getByTestId("help-content")).getByRole("button", { name: /22\. Panel de actividad/ }));
-    expect(screen.getByRole("heading", { level: 2, name: /^22\. Panel de actividad/ })).toBeInTheDocument();
+    await userEvent.click(within(toc).getByRole("button", { name: "22. Terminales simultáneas" }));
+    expect(screen.getByRole("heading", { level: 2, name: "22. Terminales simultáneas" })).toBeInTheDocument();
+    expect(within(toc).getByRole("button", { name: "22. Terminales simultáneas" })).toHaveAttribute("aria-current", "true");
+    await userEvent.click(within(screen.getByTestId("help-content")).getByRole("button", { name: /23\. Auditoría de seguridad/ }));
+    expect(screen.getByRole("heading", { level: 2, name: /^23\. Auditoría de seguridad/ })).toBeInTheDocument();
     // Las tablas y el código se muestran como tales.
-    await userEvent.click(within(toc).getByRole("button", { name: "24. Desinstalación y gestión de dependencias" }));
+    await userEvent.click(within(toc).getByRole("button", { name: "29. Desinstalación y componentes" }));
     expect(screen.getByText(/pkexec \/usr\/bin\/apt-get remove -y --no-auto-remove/).tagName).toBe("PRE");
   });
 
@@ -87,8 +89,8 @@ describe("Ayuda: navegación", () => {
     renderWithQuery(<HelpView />);
     await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en la ayuda" }), "pkexec");
     const content = screen.getByTestId("help-content");
-    expect(within(content).getByRole("heading", { name: "24. Desinstalación y gestión de dependencias" })).toBeInTheDocument();
-    expect(within(content).queryByRole("heading", { name: "16. Redes Docker" })).not.toBeInTheDocument();
+    expect(within(content).getByRole("heading", { name: "29. Desinstalación y componentes" })).toBeInTheDocument();
+    expect(within(content).queryByRole("heading", { name: "16. Redes" })).not.toBeInTheDocument();
     await userEvent.clear(screen.getByRole("searchbox"));
     await userEvent.type(screen.getByRole("searchbox"), "zzzz-nada");
     expect(screen.getByText("Ninguna sección contiene ese texto.")).toBeInTheDocument();
@@ -116,6 +118,28 @@ describe("Ayuda: navegación", () => {
     renderWithQuery(<HelpView />);
     expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: github })).toBeInTheDocument();
+  });
+});
+
+describe("Ayuda: índice de la 1.11.1", () => {
+  it("las referencias «sección N» del español apuntan a secciones que existen y tratan de lo que dicen", () => {
+    const s = parseHelp(HELP_DOCS.es!);
+    const text = HELP_DOCS.es!;
+    const refs = [...text.matchAll(/secci(?:ón|ones) (\d+)(?: (?:a|y) (\d+))?/g)].flatMap((m) => [m[1], m[2]].filter(Boolean).map(Number));
+    expect(refs.length).toBeGreaterThan(10);
+    for (const n of refs) expect(n, `sección ${n}`).toBeLessThanOrEqual(s.length);
+    const at = (id: string) => s.findIndex((x) => x.id === id) + 1;
+    expect(text).toContain(`Glosario** (sección ${at("glossary")})`);
+    expect(text).toContain(`**Gestión masiva** (sección ${at("bulk")})`);
+    expect(text).toContain(`(secciones ${at("audit")} a ${at("monitoring")})`);
+    expect(text).toContain(`Solo lectura`);
+  });
+
+  it.each(Object.keys(HELP_DOCS))("%s: explica cada apartado de la barra lateral, incluidos Auditoría, Copias y Monitorización", (lang) => {
+    const ids = parseHelp(HELP_DOCS[lang]!).map((x) => x.id);
+    for (const id of ["interface", "dashboard", "remote-servers", "containers", "bulk", "images", "networks", "volumes", "binds", "compose", "terminals", "audit", "backup", "monitoring", "activity", "settings", "glossary"]) {
+      expect(ids, `${lang}: ${id}`).toContain(id);
+    }
   });
 });
 

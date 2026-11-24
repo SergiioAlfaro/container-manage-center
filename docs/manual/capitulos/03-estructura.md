@@ -14,7 +14,7 @@ container-manage-center/
 │   ├── ISSUE_TEMPLATE/      Error, propuesta y enlace a seguridad
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── .cargo/config.toml       Opciones de Cargo del proyecto
-├── Cargo.toml · Cargo.lock  Workspace de Rust (versión 1.11.0)
+├── Cargo.toml · Cargo.lock  Workspace de Rust (versión 1.11.1)
 ├── package.json · package-lock.json · vite.config.ts · tsconfig.json · eslint.config.js
 ├── deny.toml                Política de cargo-deny (licencias y avisos)
 ├── crates/

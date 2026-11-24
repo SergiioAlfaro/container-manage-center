@@ -12,12 +12,15 @@ Docker Engine compatible: **20.10 o posterior** (API 1.41+), en modo normal o ro
 > historial, servidores, contraseñas, copias y tareas programadas. Detalles
 > en [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 
-Hay dos paquetes de la misma versión:
+Hay dos paquetes de la misma versión. Se descargan, con `SHA256SUMS`, de las
+[Releases](https://github.com/SergiioAlfaro/container-manage-center/releases)
+del repositorio (`sha256sum -c SHA256SUMS --ignore-missing` comprueba los
+que hayas descargado):
 
 | Paquete | Para |
 |---|---|
-| `container-manage-center_1.9.1_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
-| `container-manage-center_1.9.1_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
+| `container-manage-center_1.11.1_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39+) |
+| `container-manage-center_1.11.1_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34+) |
 
 ### Con el script de instalación
 
@@ -63,7 +66,7 @@ archivo con `bash scripts/release-sums.sh CARPETA`.
 ### A mano
 
 ```bash
-sudo apt install ./container-manage-center_1.9.1_amd64.deb
+sudo apt install ./container-manage-center_1.11.1_amd64.deb
 ```
 
 `apt` instala las dependencias de ejecución (WebKitGTK 4.1, GTK 3, glibc…).
@@ -140,7 +143,10 @@ descarga la imagen `ubuntu:22.04` y unos 700 MB de paquetes de compilación.
 ## Opción D: Windows 10 y 11 (x86_64) — en pruebas
 
 > **En pruebas.** La versión de Windows **no se ha ejecutado todavía en un
-> Windows real** (solo compilación, Clippy y pruebas unitarias con Wine; ver
+> Windows real**. Desde la 1.11.1 el instalador
+> (`Container Manage Center_<versión>_x64-setup-msvc.exe`, en las Releases) se
+> compila con MSVC en GitHub Actions y las pruebas unitarias pasan en un runner
+> de Windows Server 2025; antes, con Wine (ver
 > `docs/validation/AUDITORIA-WINDOWS-1.9.1.md`). La guía de la primera prueba es
 > `docs/validation/VALIDACION-WINDOWS.md`. El instalador incluye el cargador de
 > WebView2 de Microsoft (binario sin código fuente publicado), cubierto por el

@@ -1,0 +1,21 @@
+<!--
+  Manifiesto de Windows de la aplicación: dependencia de Common Controls v6.
+  Copiado sin cambios de tauri-build 2.7.4 (src/windows-app-manifest.xml),
+  SPDX-License-Identifier: Apache-2.0 OR MIT, Copyright (c) Tauri Programme
+  within The Commons Conservancy. build.rs lo enlaza con MSVC en todos los
+  ejecutables, también en los de pruebas (1.11.1).
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity
+        type="win32"
+        name="Microsoft.Windows.Common-Controls"
+        version="6.0.0.0"
+        processorArchitecture="*"
+        publicKeyToken="6595b64144ccf1df"
+        language="*"
+      />
+    </dependentAssembly>
+  </dependency>
+</assembly>

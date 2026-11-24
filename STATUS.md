@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-20
+Última actualización: 2026-11-24
 
 ## Resumen
 
 | | |
 |---|---|
-| **Etapa actual** | 1.11.0: gestión masiva, etapa 1 completa: apartados, configuración masiva y comandos masivos con Docker Exec (D-117 a D-124) |
-| **Versión** | 1.11.0 |
-| **Estado** | 1.11.0 en Linux: verificada automáticamente con Docker 29.9.2, 174 correctas y 1 fallo ajeno a esta versión (aviso RustSec sobre chrono, pendiente de decisión). 1.10.0: 168 correctas y el mismo fallo. Hasta la 1.9.1: Docker 29, 26 y 24, sin fallos. Windows: 614 pruebas superadas con Wine, **sin probar en un Windows real**; permiso adicional de WebView2 aprobado (2026-11-17) |
+| **Etapa actual** | 1.11.1: entrega final — manual reorganizado (aplicación y PDF con la misma fuente), empaquetado y primera publicación en GitHub (D-125) |
+| **Versión** | 1.11.1 |
+| **Estado** | 1.11.1: CI de GitHub en verde (interfaz, Rust en Linux y en Windows Server 2025, licencias), `.deb` instalado y desinstalado en Ubuntu 24.04 y 22.04 limpios, instalador de Windows compilado con MSVC (**sin ejecutar en un Windows real**). 1.11.0 en Linux: verificada automáticamente con Docker 29.9.2, 174 correctas y 1 fallo ajeno a esta versión (aviso RustSec sobre chrono, pendiente de decisión). 1.10.0: 168 correctas y el mismo fallo. Hasta la 1.9.1: Docker 29, 26 y 24, sin fallos. Windows: 614 pruebas superadas con Wine, **sin probar en un Windows real**; permiso adicional de WebView2 aprobado (2026-11-17) |
 | **Fases completadas (validadas)** | 1–10, las actualizaciones 0.9.1, 0.9.2 y 0.10.0 y las etapas E0–E6 (validación confirmada por el propietario, 2026-11-15) |
-| **Pendiente de validar** | Los comandos masivos y los apartados ([guía](docs/validation/VALIDACION-1.11.0.md)); la gestión masiva de la 1.10.0 ([guía](docs/validation/VALIDACION-1.10.0.md)); lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+| **Pendiente de validar** | El instalador de Windows de la 1.11.1 en un Windows real ([guía](docs/validation/VALIDACION-WINDOWS.md)); Los comandos masivos y los apartados ([guía](docs/validation/VALIDACION-1.11.0.md)); la gestión masiva de la 1.10.0 ([guía](docs/validation/VALIDACION-1.10.0.md)); lo nuevo de la 1.8.0 en Debian 13 ([guía](docs/validation/VALIDACION-1.8.0.md)) y la primera prueba en Windows ([guía](docs/validation/VALIDACION-WINDOWS.md), [auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 | **Próximas etapas** | Ninguna en la hoja de ruta; candidatas H-09–H-14 (H-10 fuera por decisión del propietario) |
 
 | Fase | Estado |
@@ -1503,7 +1503,45 @@ Fecha: 2026-11-20. Decisiones D-121 a D-124.
 - La clasificación del riesgo es por palabras clave: orienta, no sustituye a revisar el comando.
 - Las etiquetas siguen sin poder cambiarse en masa (D-119).
 
+## 1.11.1 · Entrega final: documentación, empaquetado y publicación en GitHub
+
+Fecha: 2026-11-24. Decisión D-125. Versión de corrección: no añade ni quita funciones.
+
+### Hecho
+- **GitHub**: el repositorio `SergiioAlfaro/container-manage-center` (privado) estaba vacío. Se subió el historial hasta la 1.11.0 a `main` (sin cambios, autorizado por el titular) y todo lo de esta entrega va en la rama `release/final-documentation-and-packaging`, con su *pull request* hacia `main`. No se ha fusionado nada.
+- **Manual de la aplicación** reorganizado en los 8 idiomas: 34 secciones; nuevas Interfaz, Auditoría, Copias, Monitorización y Glosario (D-125).
+- **Manual en PDF** (`docs/Container-Manage-Center-Manual-ES.pdf`, 108 páginas): Parte I generada del manual de la aplicación (mismos números), con 18 capturas reales; Parte II con los anexos técnicos.
+- **Corrección encontrada al tomar las capturas**: Redes y Copias › Nueva copia fallaban tras abrir «Crear contenedor» (claves de caché compartidas). Corregido, con prueba.
+- **Primera ejecución de los workflows en GitHub**, que sacó tres problemas: el texto de la licencia de WebView2Loader no era el original del paquete NuGet; Clippy de Rust 1.100 (`result_large_err`); y el ejecutable de pruebas no arrancaba en Windows (0xc0000139, manifiesto de Common Controls v6). Los tres están corregidos.
+- **Workflows**: `ci.yml` en `main` con informes de pruebas como artefactos; `linux-build.yml` y `windows-build.yml` reutilizables y con `SHA256SUMS` en el registro; `release-draft.yml` nuevo (borradores de Release). Validados con actionlint 1.7.12.
+- `docs/PUBLICACION.md`: cómo publicar una versión solo desde la web.
+
+### Verificación (con evidencia)
+- **Local** (Ubuntu 24.04): Vitest 503/503, `typecheck` y lint sin errores (13 avisos `react-hooks` anteriores), rustfmt, avisos de terceros y SPDX al día (379/379).
+- **GitHub Actions**, commit `778ee47`:
+  - `ci`: interfaz, Rust en Linux (Rust 1.100) y licencias en verde.
+  - **Rust en Windows** (Windows Server 2025, Rust 1.100): 692 pruebas superadas. En una ejecución anterior, `ipc_tests::changing_docker_config_reconnects_and_emits_state` falló una vez por tiempo (límite de 10 s) y pasó al repetirla: es intermitente.
+  - `linux-build`: `.deb` en Ubuntu 22.04 y 26 pruebas contra el Docker del runner en verde.
+  - `windows-build`: `Container Manage Center_1.11.1_x64-setup-msvc.exe` (5,06 MiB, SHA-256 `853910f5662b6402f1367fa5c19037638b50c8fca2a840319bcd896dd00ce639`).
+- **Paquetes locales** del mismo commit: `container-manage-center_1.11.1_amd64.deb` (7 946 252 B) y el compatible (8 454 376 B). Se comprobaron sus metadatos y su contenido (binario, lanzador, iconos, licencias; nada temporal ni secreto).
+- **Instalación limpia** (`scripts/dev/clean-install-test.sh`), Ubuntu 24.04 y 22.04 recién creados: 0 fallos. Comprueba la instalación con `install.sh` como usuario normal, el arranque, la negativa a arrancar como root, la desinstalación y que se conservan los datos. La primera ejecución dio «código 134» en las dos porque no había servidor X en `:99` (fallo del entorno de prueba); con Xvfb pasó.
+- **Aplicación real** (binario 1.11.1, Xvfb, usuario normal, Docker 29.9.2 con recursos de demostración): recorrido de todos los apartados. Se usaron de verdad la auditoría (66 hallazgos), la monitorización, dos terminales y la elección de carpeta de copias. Los recursos se eliminaron al terminar.
+
+### No verificado
+- La aplicación en un **Windows real** (el instalador no se ha ejecutado).
+- Debian 12 y 13, servidores SSH reales y Docker Desktop.
+- `verify-evolution-1.11.0.sh` completo no se ha repetido: los cambios de código son la clave de caché (con prueba), `build.rs` (solo MSVC) y un `allow` de Clippy. La 1.11.0 dio 174 correctas y 1 fallo (chrono).
+- `release-draft.yml` no se ha ejecutado: GitHub solo lo permite cuando esté en `main`.
+
+### Limitaciones
+- Las Releases se preparan como **borrador**. Los artefactos de GitHub Actions no se pueden descargar desde el entorno donde se preparó la entrega, así que el `.exe` hay que añadirlo al borrador desde la web (ver el *pull request*).
+- 14 tipos de operación (auditoría, copias, monitorización…) se ven en el panel de actividad con su identificador técnico, sin traducir. Viene de versiones anteriores.
+- Dos páginas del PDF contienen solo la última línea de su capítulo (no hay texto cortado).
+
 ## Próximos pasos
+
+1. Revisar y fusionar el *pull request* de la 1.11.1; revisar y publicar el borrador de la Release `v1.11.1` ([docs/PUBLICACION.md](docs/PUBLICACION.md)).
+1. Primera prueba del instalador de Windows en un Windows real.
 
 1. Validación manual de los comandos masivos y los apartados ([docs/validation/VALIDACION-1.11.0.md](docs/validation/VALIDACION-1.11.0.md)) y de la gestión masiva de la 1.10.0 ([docs/validation/VALIDACION-1.10.0.md](docs/validation/VALIDACION-1.10.0.md)).
 1. Decidir sobre RUSTSEC-2026-0543 (chrono sin mantenimiento): excepción justificada en `deny.toml` o sustituir chrono.
@@ -1511,6 +1549,6 @@ Fecha: 2026-11-20. Decisiones D-121 a D-124.
 2. Validación manual de la 1.8.0 en Debian 13 ([docs/validation/VALIDACION-1.8.0.md](docs/validation/VALIDACION-1.8.0.md)), si no se ha hecho.
 
 ## Decisiones pendientes del propietario
-- Publicación del repositorio en GitHub (`git push`): solo con autorización expresa del titular.
+- Fusionar el *pull request* de la 1.11.1 y publicar la Release `v1.11.1` (borrador preparado).
 - Firma de `SHA256SUMS`: clave GPG del propietario y dónde publicar la clave pública (D-092).
 - Dónde se publicarán las versiones (repositorio de GitHub o dirección HTTPS): es la fuente que vendría configurada para la comprobación de actualizaciones (D-060). Hasta entonces la fuente está vacía y la aplicación no se conecta a Internet.

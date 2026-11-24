@@ -53,7 +53,7 @@ WIN_LICENSES = ROOT / "packaging" / "windows" / "licenses"
 WINDOWS_EXTRA = [
     # (nombre, versión, licencia, archivo, origen, nota)
     ("WebView2Loader.dll (Microsoft Edge WebView2 SDK)", "1.0.3650.58", "BSD-3-Clause",
-     "WebView2Loader.LICENSE.txt", "estándar",
+     "WebView2Loader.LICENSE.txt", "nuget",
      "binario de Microsoft incluido en webview2-com-sys 0.39.1 (sin código fuente publicado)"),
     ("Runtime de MinGW-w64 (solo compilación con MinGW)", "11.0.1", "ZPL-2.1 AND MIT AND LicenseRef-public-domain",
      "mingw-w64-runtime.copyright", "sistema", "archivo copyright de Debian/Ubuntu"),
@@ -95,7 +95,7 @@ def audit_class(eco, origin, lic):
     código fuente publicado (WebView2Loader.dll), que se distribuyen con el
     permiso adicional de la sección 7 de la GPL v3 (aprobado el 2026-11-17)."""
     c, conds = classify(lic)
-    if eco == "Windows" and origin == "estándar":
+    if eco == "Windows" and origin in ("estándar", "nuget"):
         return "condicionada", ["BSD-3-Clause + permiso adicional GPL v3 §7"]
     return c, conds
 
@@ -328,7 +328,9 @@ def collect():
     if WINDOWS:
         for name, version, lic, fname, origin, _note in WINDOWS_EXTRA:
             text = (WIN_LICENSES / fname).read_text(encoding="utf-8", errors="replace").strip()
-            label = "BSD-3-Clause (texto estándar con el titular de Microsoft)" if origin == "estándar" else fname
+            # 1.11.1: el texto es el LICENSE.txt original del paquete NuGet
+            # (windows-build.yml lo compara en cada compilación).
+            label = "LICENSE.txt del paquete NuGet Microsoft.Web.WebView2" if origin == "nuget" else fname
             shipped.append(("Windows", name, version, lic, [(label, text)], origin))
     rust_build = [(pkgs[i]["name"], pkgs[i]["version"], pkgs[i].get("license") or "") for i in build if pkgs[i]["name"] not in OWN]
     rust_dev = [(pkgs[i]["name"], pkgs[i]["version"], pkgs[i].get("license") or "") for i in dev if pkgs[i]["name"] not in OWN]
@@ -401,7 +403,7 @@ def render_notices(shipped):
         "|---|---|---|---|---|",
     ]
     for eco, name, version, lic, refs, origin in comp:
-        mark = {"paquete": "", "estándar": " (estándar)", "sistema": " (del sistema de compilación)"}.get(origin, " (del proyecto)")
+        mark = {"paquete": "", "estándar": " (estándar)", "nuget": " (del paquete NuGet)", "sistema": " (del sistema de compilación)"}.get(origin, " (del proyecto)")
         lines.append(f"| {name} | {version} | {eco} | {lic or 'sin indicar'} | {', '.join('T-' + r for r in refs) or '—'}{mark} |")
     lines += ["", "## Textos de licencia y avisos", ""]
     for h, (fname, text) in texts.items():

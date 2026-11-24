@@ -1,13 +1,13 @@
 # Instalación y requisitos
 
-Hay dos paquetes de Linux de la misma versión. El instalador de Windows (en
-pruebas) no se ha generado para la 1.10.0 ni para la 1.11.0; el último es el de la 1.9.1:
+Hay dos paquetes de Linux de la misma versión y un instalador de Windows (en
+pruebas). Se publican en las Releases del repositorio:
 
 | Archivo | Para |
 |---|---|
-| `container-manage-center_1.11.0_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39 o posterior) |
-| `container-manage-center_1.11.0_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34 o posterior) |
-| `Container Manage Center_1.9.1_x64-setup.exe` | Windows 10 y 11 de 64 bits — **solo pruebas** (versión 1.9.1) |
+| `container-manage-center_1.11.1_amd64.deb` | Debian 13 y Ubuntu 24.04 o posteriores (glibc 2.39 o posterior) |
+| `container-manage-center_1.11.1_amd64-compat-debian12-ubuntu2204.deb` | También Debian 12 y Ubuntu 22.04 (glibc 2.34 o posterior) |
+| `Container Manage Center_1.11.1_x64-setup-msvc.exe` | Windows 10 y 11 de 64 bits — **en pruebas** (compilado en GitHub Actions, sin firmar) |
 | `SHA256SUMS` | Sumas para comprobar los archivos |
 
 ## Debian 13
@@ -40,7 +40,7 @@ instala con `sudo apt-get install ./paquete.deb` y comprueba, sin cambiar
 nada, Docker, tu acceso al socket, Compose, el cliente SSH y el almacén de
 contraseñas. **Nunca** instala Docker ni te añade al grupo `docker`.
 
-A mano: `sudo apt install ./container-manage-center_1.11.0_amd64.deb`.
+A mano: `sudo apt install ./container-manage-center_1.11.1_amd64.deb`.
 
 ### Dependencias
 

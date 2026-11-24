@@ -561,6 +561,10 @@ pub async fn attempt(
 }
 
 /// Comprueba que el socket es Docker y que la API es compatible.
+// Rust 1.100 (Clippy de GitHub Actions) avisa del tamaño de `Problem`
+// (variante `Remote`). Se llama una vez por conexión y el error se muestra
+// tal cual en el diagnóstico: envolverlo en `Box` no aporta nada (1.11.1).
+#[allow(clippy::result_large_err)]
 async fn handshake(
     activity: &ActivityLog,
     endpoint: Endpoint,

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Versión 1.11.0 · GPL-3.0-or-later · Linux (Debian, Ubuntu) · Windows 10/11 (en pruebas)
+  Versión 1.11.1 · GPL-3.0-or-later · Linux (Debian, Ubuntu) · Windows 10/11 (en pruebas)
 </p>
 
 <p align="center">
@@ -17,6 +17,8 @@
   <a href="#características">Características</a> ·
   <a href="#especificaciones-técnicas">Especificaciones</a> ·
   <a href="#documentación">Documentación</a> ·
+  <a href="docs/Container-Manage-Center-Manual-ES.pdf">Manual (PDF)</a> ·
+  <a href="https://github.com/SergiioAlfaro/container-manage-center/releases">Versiones</a> ·
   <a href="#licencia">Licencia</a>
 </p>
 
@@ -77,7 +79,7 @@ conoce la terminal:
 | **Copias de seguridad** | Volúmenes, bases de datos (MariaDB, MySQL, PostgreSQL, Redis, MongoDB), configuración y Compose; manifiesto SHA-256, restauración, retención y tareas programadas |
 | **Auditoría de seguridad** | Revisión de contenedores, imágenes y proyectos Compose; correcciones con vista previa; vulnerabilidades con Trivy o Grype |
 | **Panel de actividad** | Cada operación con su petición real y su orden equivalente; eventos de Docker en tiempo real |
-| **Interfaz** | Ayuda integrada, 8 idiomas, tema claro u oscuro, atajos de teclado |
+| **Interfaz** | Manual integrado de 34 secciones (el mismo que el PDF), 8 idiomas, tema claro u oscuro, atajos de teclado |
 
 ## Capturas de pantalla
 
@@ -87,10 +89,13 @@ conoce la terminal:
 | **Contenedores**: filtros y acciones según el estado | **Creación**: orden equivalente y riesgos para el equipo |
 | ![Proyecto Docker Compose](docs/images/compose.png) | ![Panel de actividad](docs/images/actividad.png) |
 | **Docker Compose**: servicios, despliegue y registros | **Actividad**: la petición real y la orden `docker` |
+| ![Gestión masiva](docs/images/gestion-masiva.png) | |
+| **Gestión masiva**: muchos contenedores y servidores a la vez | |
 
-Capturas reales de la versión 1.9.1 de Linux con Docker 29 y datos de
-demostración. Las de Windows están pendientes de la primera validación en un
-Windows real.
+Capturas reales de la versión 1.11.1 de Linux (Ubuntu 24.04, Docker 29.9.2)
+con datos de demostración. El [manual en PDF](docs/Container-Manage-Center-Manual-ES.pdf)
+tiene una captura de cada apartado. Las de Windows están pendientes de la
+primera validación en un Windows real.
 
 ## Estado por plataforma
 
@@ -100,7 +105,7 @@ Windows real.
 | Ubuntu 22.04 | **Admitida** (paquete compatible) | Instalación limpia del paquete compatible |
 | Debian 13 | **Admitida** | Validación manual del propietario hasta la 1.7.0; desde la 1.8.0, pendiente ([guía](docs/validation/VALIDACION-1.8.0.md)) |
 | Debian 12 | **Admitida** (paquete compatible) | Paquete para glibc ≥ 2.34; sin validación manual |
-| Windows 10 y 11 (x86_64) | **En pruebas** | Hasta la 1.9.1: compilación, Clippy y 614 pruebas unitarias con Wine (la 1.10.0 y la 1.11.0 no se han compilado para Windows). **Nunca ejecutada en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
+| Windows 10 y 11 (x86_64) | **En pruebas** | 1.11.1: el instalador se compila con MSVC en GitHub Actions (runner de Windows) y las pruebas unitarias se ejecutan allí (ver [STATUS.md](STATUS.md)). **La aplicación nunca se ha ejecutado en un Windows real** ([auditoría](docs/validation/AUDITORIA-WINDOWS-1.9.1.md)) |
 
 ## Especificaciones técnicas
 
@@ -148,14 +153,17 @@ Windows real.
 
 Desinstalar no borra los datos del usuario.
 
-### Paquetes de la versión 1.11.0
+### Paquetes de la versión 1.11.1
+
+Se publican en [Releases](https://github.com/SergiioAlfaro/container-manage-center/releases) con `SHA256SUMS`.
 
 | Paquete | Para | Tamaño |
 |---|---|---|
-| `container-manage-center_1.11.0_amd64.deb` | Ubuntu 24.04, Debian 13 (glibc ≥ 2.39) | 7,6 MiB |
-| `container-manage-center_1.11.0_amd64-compat-debian12-ubuntu2204.deb` | Debian 12, Ubuntu 22.04 (glibc ≥ 2.34) | 8,0 MiB |
-| `Container Manage Center_1.9.1_x64-setup.exe` | Windows 10/11, instalación para el usuario sin administrador; sin firmar (en pruebas). **No hay instalador de la 1.10.0 ni de la 1.11.0**: no se han compilado para Windows | 5,1 MiB |
-| `container-manage-center-1.11.0-src.tar.gz` | Código fuente correspondiente | — |
+| `container-manage-center_1.11.1_amd64.deb` | Ubuntu 24.04, Debian 13 (glibc ≥ 2.39) | 7,9 MiB |
+| `container-manage-center_1.11.1_amd64-compat-debian12-ubuntu2204.deb` | Debian 12, Ubuntu 22.04 (glibc ≥ 2.34) | ver la Release |
+| `Container Manage Center_1.11.1_x64-setup-msvc.exe` | Windows 10/11, instalación para el usuario sin administrador; sin firmar; compilado en GitHub Actions. **En pruebas: no se ha ejecutado en un Windows real** | ver la Release |
+| `container-manage-center-1.11.1-src.tar.gz` | Código fuente correspondiente | — |
+| `Container-Manage-Center-Manual-1.11.1-ES.pdf` | Manual de usuario y técnico | 2,9 MiB |
 
 ### Seguridad
 
@@ -179,13 +187,13 @@ bash scripts/install.sh          # elige el paquete adecuado para tu sistema y l
 bash scripts/install.sh --check  # solo comprueba el sistema
 ```
 
-O directamente con el paquete: `sudo apt install ./container-manage-center_1.11.0_amd64.deb`
+O directamente con el paquete: `sudo apt install ./container-manage-center_1.11.1_amd64.deb`
 (en Debian 12 o Ubuntu 22.04, el paquete `…-compat-debian12-ubuntu2204.deb`).
 Después se abre desde el menú de aplicaciones o con `container-manage-center`.
 
 ### Windows (en pruebas)
 
-Ejecuta `Container Manage Center_1.9.1_x64-setup.exe` (el último instalador de Windows; la 1.10.0 y la 1.11.0 no tienen): instala para el usuario
+Ejecuta `Container Manage Center_1.11.1_x64-setup-msvc.exe` (de [Releases](https://github.com/SergiioAlfaro/container-manage-center/releases)): instala para el usuario
 actual sin permisos de administrador. Como no está firmado, SmartScreen
 avisará («Más información › Ejecutar de todas formas»). La aplicación no
 arranca como administrador. Requisitos y diferencias con Linux en
@@ -253,12 +261,13 @@ docs/               Manual, legal, seguridad, validación e imágenes
 | Documento | Contenido |
 |---|---|
 | [INSTALL.md](INSTALL.md) | Instalación, requisitos, dependencias, compilación y diagnóstico |
-| [USER_GUIDE.md](USER_GUIDE.md) | Uso de la aplicación |
-| Manual técnico y de usuario | PDF de 16 capítulos; se genera con `bash scripts/build-manual.sh` desde [docs/manual/](docs/manual/) |
+| [Manual en PDF](docs/Container-Manage-Center-Manual-ES.pdf) | Parte I: el manual de la aplicación (34 capítulos, con capturas); Parte II: anexos técnicos. Se genera con `bash scripts/build-manual.sh` |
+| [USER_GUIDE.md](USER_GUIDE.md) | Guía de uso detallada, apartado por apartado |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitectura técnica y pruebas |
-| [DECISIONS.md](DECISIONS.md) | Decisiones técnicas (D-001 a D-116) |
+| [DECISIONS.md](DECISIONS.md) | Decisiones técnicas (D-001 a D-125) |
 | [STATUS.md](STATUS.md) | Estado del proyecto y resultados de las pruebas |
 | [CHANGELOG.md](CHANGELOG.md) | Cambios de cada versión |
+| [docs/PUBLICACION.md](docs/PUBLICACION.md) | Cómo compilar y publicar una versión desde GitHub |
 | [docs/validation/](docs/validation/) | Auditoría de Windows y guías de validación manual |
 | [docs/security/](docs/security/) | Auditoría de seguridad, plan de corrección y lista de comprobación |
 | [docs/legal/](docs/legal/) | Licencia, copyright, avisos de terceros y cumplimiento |

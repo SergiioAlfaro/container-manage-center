@@ -12,10 +12,23 @@
 #     públicas. Algunas necesitan imágenes que prepara el laboratorio de
 #     scripts/verify-evolution-*.sh y se omiten o fallan sin él: la
 #     verificación completa sigue siendo ese script en Debian/Ubuntu.
+#
+# 1.11.1: también se puede llamar desde release-draft.yml (workflow_call);
+# entonces solo se compila el paquete.
 name: linux-build
 
 on:
   workflow_dispatch:
+    inputs:
+      integration:
+        description: Ejecutar también las pruebas contra Docker real
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      integration:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -52,7 +65,7 @@ jobs:
           bash scripts/deb-set-depends.sh "$DEB"
           mkdir -p out
           cp "$DEB" out/
-          (cd out && sha256sum -- *.deb > SHA256SUMS)
+          (cd out && sha256sum -- *.deb > SHA256SUMS && cat SHA256SUMS)
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: container-manage-center-deb
@@ -61,6 +74,7 @@ jobs:
 
   docker-integration:
     name: Pruebas contra Docker real (runner)
+    if: ${{ inputs.integration }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

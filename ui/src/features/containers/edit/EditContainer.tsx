@@ -311,7 +311,7 @@ function KindHint({ kind }: { kind: "direct" | "recreate" }) {
 
 function VolumesDatalist() {
   const api = useApi();
-  const volumes = useQuery({ queryKey: ["volumesBrief"], queryFn: api.volumesBrief });
+  const volumes = useQuery({ queryKey: keys.volumesBrief, queryFn: api.volumesBrief });
   return (
     <datalist id="cmc-volumes">
       {(volumes.data ?? []).map((v) => (

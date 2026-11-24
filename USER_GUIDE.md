@@ -1,6 +1,6 @@
 # Guía de usuario · Container Manage Center
 
-> Versión 1.11.0. Para actualizar desde una versión anterior, véase
+> Versión 1.11.1. Para actualizar desde una versión anterior, véase
 > [docs/MIGRATION-CMC.md](docs/MIGRATION-CMC.md).
 >
 > Versión 1.0.0. (La nota original de la Fase 2 se conserva abajo por historia.)
@@ -1081,7 +1081,7 @@ mientras haya conexión).
   también las dependencias, revisa la simulación de APT y la orden exacta y
   confirma: el sistema pide la contraseña de administrador (pkexec) solo para
   `apt-get remove`. Sin pkexec, se muestra la orden para ejecutarla a mano.
-- **Ayuda y documentación**: guía de todas las funciones con índice y búsqueda, y
+- **Ayuda y documentación**: el manual de la aplicación (34 secciones, el mismo que la Parte I del [manual en PDF](docs/Container-Manage-Center-Manual-ES.pdf)) con índice y búsqueda, y
   el botón **Visitar mi perfil de GitHub**.
 - **Restablecer las preferencias**: tema, idioma, panel de actividad, historial y
   actualizaciones vuelven a sus valores iniciales, tras confirmarlo. No cambia la

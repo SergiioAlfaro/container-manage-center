@@ -43,12 +43,12 @@ npx tauri build --no-bundle && bash scripts/run.sh   # compilación de producci�
 
 ## Pruebas
 
-Comandos ejecutados y superados en la 1.11.0:
+Comandos ejecutados y superados en la 1.11.1:
 
 ```bash
 npm run typecheck        # TypeScript estricto
 npm run lint             # ESLint (13 avisos de react-hooks, sin errores)
-npx vitest run           # 492 pruebas de la interfaz
+npx vitest run           # 503 pruebas de la interfaz
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace   # unitarias e IPC (las de Docker real se omiten)
@@ -127,7 +127,8 @@ destino de Windows (o `RUST_SRC`).
 ## Regenerar este manual
 
 ```bash
-bash scripts/build-manual.sh       # docs/manual → target/manual/Container-Manage-Center-Manual-1.11.0.pdf
+bash scripts/build-manual.sh       # manual de la aplicación + docs/manual → target/manual/Container-Manage-Center-Manual-<versión>.pdf
+                                   # (se copia a docs/Container-Manage-Center-Manual-ES.pdf)
 ```
 
 Necesita pandoc, XeLaTeX (con `fontspec`, `polyglossia`, `titlesec`,

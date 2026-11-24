@@ -1,46 +1,74 @@
 ## 1. Qu’est-ce que Container Manage Center {#about}
 
-Container Manage Center est une application de bureau pour administrer **Docker Engine** sous Linux sans dépendre du terminal. Tout ce qu’elle affiche correspond à des données réelles demandées à Docker à cet instant, et chaque action est une opération réelle : rien n’est simulé.
+Container Manage Center (**CMC**) est une application de bureau pour administrer **Docker Engine** sans dépendre du terminal, sur cet ordinateur et sur des serveurs distants par SSH. Tout ce qu’elle affiche est une donnée réelle demandée à Docker à ce moment-là, et chaque action est une opération réelle : rien n’est simulé.
 
-- Elle communique avec Docker Engine par son **socket Unix**, avec l’API officielle.
+- Elle dialogue avec Docker Engine par son **API officielle** : par le socket Unix sous Linux, par le canal nommé de Docker Desktop sous Windows et par SSH avec les serveurs distants.
 - Elle exécute **Docker Compose** avec son programme officiel, avec des arguments séparés et sans shell.
 - Chaque opération apparaît dans le **panneau d’activité** avec sa commande `docker` équivalente, pour que vous sachiez exactement ce qui a été fait.
 
-La fenêtre comporte une **barre latérale** avec les rubriques (elle se réduit avec Ctrl+B), la **zone de travail**, une **barre supérieure** avec l’indicateur de connexion et le bouton **Activité**, et le **panneau d’activité** à droite (Ctrl+Maj+A).
+Il n’est pas nécessaire de savoir utiliser Docker depuis le terminal : chaque rubrique explique ce qu’elle fait avant de le faire, et les opérations qui suppriment ou modifient quelque chose demandent une confirmation. Si un terme ne vous est pas familier, consultez le **Glossaire** (section 33).
 
-## 2. Configuration requise et dépendances {#requirements}
+## 2. Configuration requise {#requirements}
 
-- **Système** : Debian 12 ou ultérieur, ou Ubuntu 22.04 ou ultérieur, 64 bits (x86_64).
-- **Docker Engine 20.10 ou ultérieur** (API 1.41+), en mode normal ou rootless.
-- **Docker Compose v2 ou ultérieur**, uniquement pour la rubrique Docker Compose (greffon `docker compose` ou binaire `docker-compose` v2). Compose v1 n’est pas pris en charge.
-- **Dépendances d’exécution** : WebKitGTK 4.1, GTK 3, glibc et bibliothèques associées. APT les installe avec le paquet.
+| Élément | Exigence |
+|---|---|
+| Système (Linux) | Debian 12 ou ultérieur, ou Ubuntu 22.04 ou ultérieur, 64 bits (x86_64) |
+| Système (Windows, en test) | Windows 10 ou 11 64 bits avec Docker Desktop (section 28) |
+| Docker | Docker Engine 20.10 ou ultérieur (API 1.41+), en mode normal ou rootless |
+| Docker Compose | v2 ou ultérieur, uniquement pour la rubrique Docker Compose (`docker compose` ou `docker-compose` v2). Compose v1 n’est pas pris en charge |
+| Bibliothèques (Linux) | WebKitGTK 4.1, GTK 3 et glibc. APT les installe avec le paquet |
+| Serveurs distants | Le client SSH du système (`ssh`) et, sur le serveur, Docker Engine 20.10 ou ultérieur |
+
+Docker et Docker Compose sont des **prérequis externes** : l’application ne les installe ni ne les configure, mais vous indique comment faire s’ils manquent.
 
 L’application n’a pas besoin d’Internet. Seules les opérations que Docker Engine effectue auprès de registres distants (télécharger des images, chercher sur Docker Hub, construire avec des images de base absentes de l’ordinateur) nécessitent que Docker ait accès au réseau.
 
 ## 3. Installation et premier lancement {#install}
 
-Installez le paquet avec APT, qui résout les dépendances :
+Sous Debian et Ubuntu, installez le paquet avec APT, qui résout les dépendances :
 
 ```
 sudo apt install ./container-manage-center_X.Y.Z_amd64.deb
 ```
 
-L’application apparaît dans le menu sous le nom **Container Manage Center**. Elle s’exécute avec votre utilisateur normal : **ne la lancez pas avec sudo** (elle refuse de démarrer en tant que root).
+Pour Debian 12 et Ubuntu 22.04, utilisez le paquet compatible, dont le nom se termine par `-compat-debian12-ubuntu2204.deb`. Avant d’installer, vous pouvez vérifier le téléchargement avec le fichier `SHA256SUMS` publié avec chaque version (`sha256sum -c SHA256SUMS`).
 
-À l’ouverture, elle cherche Docker Engine automatiquement. Si elle le trouve, le **Tableau de bord** affiche son état ; sinon, il affiche le diagnostic avec la cause et les étapes pour la résoudre.
+L’application apparaît dans le menu sous le nom **Container Manage Center**. Elle s’exécute avec votre utilisateur normal : **ne la lancez pas avec sudo** (elle refuse de démarrer en root).
 
-Pour mettre à jour, installez le nouveau paquet de la même façon : votre configuration et votre historique sont conservés.
+**Premier lancement.** À l’ouverture, elle cherche Docker Engine automatiquement. Si elle le trouve, le **Tableau de bord** affiche son état ; sinon, il affiche le diagnostic avec la cause et les étapes pour la résoudre. Il n’y a rien d’autre à configurer pour commencer.
 
-## 4. Configuration initiale {#first-setup}
+**Mettre à jour.** Installez le nouveau paquet de la même façon : votre configuration et votre historique sont conservés.
 
-Il n’y a rien à configurer pour commencer : la connexion à Docker est automatique. Dans **Paramètres**, vous pouvez choisir :
+L’installation sous Windows est expliquée à la section 28.
 
-- Le **thème** (Système, Clair ou Sombre) et la **langue**. La couleur principale est le violet.
-- Si le panneau d’activité s’ouvre seul lorsqu’une opération échoue et combien d’opérations il conserve.
-- Si l’historique des opérations et des événements est conservé entre les sessions.
-- Un socket Docker précis, si vous ne voulez pas la détection automatique.
+## 4. Fenêtre principale et navigation {#interface}
 
-Tout est enregistré immédiatement dans `~/.config/container-manage-center/config.toml`.
+La fenêtre comporte quatre zones :
+
+- **Barre latérale** (à gauche) : les rubriques, groupées. Elle se réduit avec **Ctrl+B** ou avec **Réduire la barre latérale**, en bas.
+- **Barre supérieure** : le titre de la rubrique, le **sélecteur de serveur** (sur quel Docker vous travaillez : cet ordinateur ou un serveur distant), l’**indicateur de connexion** et le bouton **Activité**.
+- **Zone de travail** : le contenu de la rubrique choisie.
+- **Panneau d’activité** (à droite) : les opérations exécutées. Il s’ouvre et se ferme avec **Ctrl+Maj+A** ou avec le bouton **Activité**.
+
+| Groupe | Rubriques |
+|---|---|
+| (en haut) | Tableau de bord, Serveurs |
+| Ressources | Conteneurs, Gestion en masse, Images, Réseaux, Volumes, Répertoires liés |
+| Orchestration | Docker Compose |
+| Outils | Terminaux, Audit, Sauvegardes |
+| Supervision | Surveillance, Événements et journaux |
+| (en bas) | Paramètres |
+
+Ce manuel se trouve dans **Paramètres › Aide et documentation**. L’index de gauche mène à chaque section, **Précédent** et **Suivant** parcourent le manuel dans l’ordre et la recherche n’affiche que les sections contenant le texte saisi.
+
+| Raccourci | Action |
+|---|---|
+| Ctrl+B | Réduire ou développer la barre latérale |
+| Ctrl+Maj+A | Ouvrir ou fermer le panneau d’activité |
+| Échap | Fermer une boîte de dialogue ou un menu |
+| Flèches, Début et Fin | Se déplacer dans les menus et déplacer les séparateurs de Terminaux |
+
+Les couleurs d’état sont toujours les mêmes : **vert** pour ce qui fonctionne ou est en cours d’exécution, **ambre** pour les avertissements et **rouge** pour les erreurs.
 
 ## 5. Connexion à Docker Engine {#connection}
 
@@ -56,7 +84,9 @@ En mode **automatique**, l’application essaie dans cet ordre : la variable `DO
 
 L’application ne demande jamais sudo, ne modifie ni permissions ni groupes et n’exécute pas à votre place les instructions du diagnostic. Votre utilisateur doit pouvoir ouvrir le socket : avec Docker rootless ou en appartenant au groupe `docker` (ce qui équivaut en pratique à des privilèges d’administrateur).
 
-## 6. Docker rootless et connexions par socket {#rootless}
+La configuration est enregistrée immédiatement dans `~/.config/container-manage-center/config.toml`. Si vous préférez indiquer un socket précis, consultez la section suivante.
+
+## 6. Docker rootless et sockets personnalisés {#rootless}
 
 Avec **Docker rootless**, le démon s’exécute avec votre utilisateur et le socket se trouve dans `$XDG_RUNTIME_DIR/docker.sock` (généralement `/run/user/1000/docker.sock`). L’application le détecte seule, y compris via le contexte `rootless`, et l’indique avec l’étiquette **rootless**. C’est l’option recommandée pour la sécurité.
 
@@ -89,11 +119,15 @@ Depuis **Serveurs**, vous pouvez administrer le Docker d'autres machines Linux a
 
 Appartenir au groupe `docker` du serveur équivaut à un accès **root** sur ce serveur : décidez-en avec son administrateur ; Docker rootless est l'alternative la plus sûre.
 
+Sur un serveur distant, l’**Audit**, les **Sauvegardes** et la **Surveillance** fonctionnent aussi (sections 23 à 25).
+
 ## 8. Tableau de bord et diagnostic {#dashboard}
 
 Une fois connecté, le **Tableau de bord** affiche des données obtenues à cet instant : versions de Docker Engine et de l’API, socket et origine de la connexion, conteneurs (en cours d’exécution, en pause, arrêtés), images, données de l’ordinateur (système, noyau, CPU, mémoire), stockage et exécution (pilote, répertoire de données, cgroups, journaux) et les avertissements du démon. **Actualiser** les redemande.
 
 Sans connexion, il affiche le **diagnostic** : la cause précise, les étapes pour la résoudre (avec les commandes à copier dans un terminal), les sockets vérifiés avec leur résultat et ce qui a été détecté comme installé. Les boutons **Se reconnecter** et **Configurer la connexion** se trouvent dans l’en-tête.
+
+Les causes les plus fréquentes d’un échec de connexion et leur solution se trouvent à la section 30.
 
 ## 9. Gestion des conteneurs {#containers}
 
@@ -107,7 +141,9 @@ La rubrique **Conteneurs** liste tous les conteneurs, comme `docker ps -a` : ét
 
 Arrêter et redémarrer attendent 10 secondes que le processus se termine avant de le forcer, comme Docker. Après chaque action, l’état réel du conteneur est consulté. Si Docker refuse une action, son message apparaît au-dessus du tableau et dans le panneau d’activité. Les listes se mettent à jour seules lorsque quelque chose change dans Docker, y compris depuis le terminal.
 
-## 10. Création, duplication, inspection et suppression de conteneurs {#container-lifecycle}
+Pour appliquer une même action à de nombreux conteneurs à la fois, utilisez la **Gestion en masse** (section 13).
+
+## 10. Créer, dupliquer, inspecter et supprimer des conteneurs {#container-lifecycle}
 
 **Créer un conteneur** ouvre un assistant à six onglets (seule l’image est obligatoire) : Général, Environnement, Réseau, Stockage, Ressources et Avancé.
 
@@ -121,6 +157,8 @@ Un clic sur le nom d’un conteneur ouvre son **détail** : Résumé, Journaux, 
 **Dupliquer** ouvre l’assistant avec la configuration du conteneur et le nom `<nom>-copie`, et signale les réglages qui ne sont pas repris.
 
 **Supprimer** demande une confirmation. Un conteneur en cours d’exécution ou en pause n’est supprimé que si vous cochez **L’arrêter de force et le supprimer**. Ses volumes anonymes peuvent aussi être supprimés ; les volumes nommés et les dossiers liés ne sont pas touchés. Action irréversible.
+
+Les journaux, les statistiques et le terminal de la vue détaillée sont expliqués à la section 21.
 
 ## 11. Modifier la configuration d’un conteneur {#container-edit}
 
@@ -161,17 +199,30 @@ Un clic sur le nom d’un conteneur ouvre son **détail** : Résumé, Journaux, 
 - Si une image porte déjà ce nom, un avertissement s’affiche et vous devez l’accepter explicitement : l’ancienne n’est pas supprimée, elle perd simplement son étiquette.
 - Le conteneur d’origine n’est pas modifié. À la fin, **Voir l’image** ouvre son détail dans Images.
 
-## 13. Journaux, statistiques et terminaux {#logs-stats-terminal}
+## 13. Gestion en masse {#bulk}
 
-Dans le détail d’un conteneur :
+La **Gestion en masse** (dans « Ressources ») applique une même opération ou une même commande à de nombreux conteneurs à la fois, y compris sur plusieurs serveurs. Elle réunit les conteneurs de cet ordinateur et des serveurs distants **connectés** ; les autres sont signalés dans un avis. Elle est divisée en onglets : **Résumé**, **Conteneurs**, **Opérations**, **Configuration en masse**, **Commandes en masse** et **Historique**.
 
-- **Journaux** : sortie en direct (stderr en rouge). Vous pouvez choisir combien de lignes précédentes charger, filtrer, afficher l’horodatage, suivre la fin, copier ce qui est visible et arrêter le suivi. Les 10 000 dernières lignes sont conservées.
-- **Statistiques** : CPU, mémoire, réseau, disque et processus chaque seconde, calculés comme `docker stats`.
-- **Terminal** : **Ouvrir un terminal** lance un shell avec `docker exec -it` (Automatique utilise `bash` s’il existe, sinon `sh` ; vous pouvez aussi en choisir un). **Fermer la session** termine le shell et les processus qu’il a laissés dans le conteneur.
+- **Résumé** : total, en cours d’exécution, arrêtés, en pause et en erreur. Cliquer sur un compteur filtre selon cet état. **Actualiser** et l’actualisation automatique (de 5 s à 5 min, désactivable) redemandent les données.
+- **Conteneurs** : recherche par nom ou ID ; filtres par état, image, serveur et étiquette (`clé` ou `clé=valeur`) ; tri en cliquant sur le titre d’une colonne. La sélection se fait avec la case de chaque ligne, celle de la page ou **tout ce qui est filtré**.
+- **Opérations** : démarrer, arrêter, redémarrer, mettre en pause, reprendre et supprimer. Ce qui ne peut pas s’appliquer dans l’état actuel est **ignoré** et expliqué.
+- **Configuration en masse** : affiche la politique de redémarrage de la sélection et permet de la changer pour tous (à chaud, avec `docker update` ; pas pour ceux créés avec `--rm`). Les **étiquettes** sont seulement affichées : Docker ne permet pas de les modifier sur un conteneur existant (il faudrait le recréer). Pour un conteneur précis, utilisez **Dupliquer**.
+- **Historique** : les opérations et commandes en masse précédentes, avec ce qui a été fait dans chaque conteneur.
 
-Ce sont des opérations réelles qui apparaissent dans le panneau d’activité tant qu’elles sont ouvertes et qui se ferment en quittant le détail. Pour travailler avec plusieurs terminaux à la fois, utilisez la rubrique **Terminaux**.
+**Avant d’appliquer**, une confirmation présente l’opération, les serveurs, les conteneurs concernés et ignorés, les conséquences et le nombre d’opérations simultanées (de 1 à 16). **Supprimer** demande de saisir le nombre de conteneurs et **ne supprime jamais les volumes ni les images**.
 
-## 14. Gestion des images {#images}
+**Résultats** : chaque conteneur a le sien : réussi (Docker l’a confirmé), échoué (avec l’erreur), ignoré, annulé ou **inconnu** (la connexion a été coupée avant la confirmation ; actualisez pour voir son état). Si l’un échoue, les autres continuent ; rien n’est annulé ni réessayé automatiquement. **Annuler ce qui reste** arrête l’envoi des ordres. Chaque ordre est enregistré dans le panneau d’activité avec le badge « Masse », et **Voir dans l’activité** n’affiche que cette opération.
+
+Les **Commandes en masse** exécutent une même commande dans plusieurs conteneurs en cours d’exécution avec Docker Exec, sans passer par aucun shell de cet ordinateur :
+
+1. Choisissez le mode : **Exécutable avec arguments** (un argument par ligne, envoyé tel quel) ou **Script avec un interpréteur** (plusieurs lignes pour `/bin/sh`, `bash`, `python3`…). Vous pouvez aussi charger un exemple ou une commande fréquente enregistrée.
+2. Si besoin, indiquez l’utilisateur, le répertoire de travail, le délai maximal (de 1 à 3600 s) et le nombre d’exécutions simultanées.
+3. Vérifiez l’**Aperçu** : le `docker exec` équivalent, les arguments exacts que reçoit Docker et le niveau de risque (Informatif, Modification, Administratif ou Potentiellement destructeur). La classification est indicative : elle ne remplace pas la relecture de la commande.
+4. Confirmez. Les commandes à risque administratif ou destructeur demandent de saisir le nombre de conteneurs.
+
+Chaque conteneur indique son état, son code de sortie, sa durée, et `stdout` et `stderr` séparément (copiables et exportables en Markdown ou JSON avec les secrets masqués). **Annuler les exécutions en attente** ne lance pas la commande dans les conteneurs qui n’ont pas encore commencé ; **Interrompre les actives** cesse en plus d’attendre celles en cours. Docker ne permet pas d’arrêter un processus déjà lancé : quand le délai expire ou que vous interrompez, le processus peut continuer dans le conteneur, et CMC **n’arrête ni ne redémarre jamais** le conteneur pour le stopper. Les commandes fréquentes peuvent être enregistrées, **jamais avec des secrets**.
+
+## 14. Images {#images}
 
 La rubrique **Images** liste les images locales, comme `docker image ls` : étiquettes, ID court, taille, ancienneté et conteneurs qui les utilisent. Filtres **Toutes / Utilisées / Inutilisées / Sans étiquette** et recherche par étiquette ou ID.
 
@@ -180,7 +231,7 @@ La rubrique **Images** liste les images locales, comme `docker image ls` : étiq
 - **Supprimer** : si l’image a plusieurs étiquettes, vous pouvez n’en retirer qu’une ; l’image entière exige de forcer. Docker ne supprime pas les images de conteneurs en cours d’exécution.
 - **Nettoyer** supprime les images sans étiquette qu’aucun conteneur n’utilise ou, après une confirmation supplémentaire, toutes celles qui ne sont pas utilisées.
 
-## 15. Téléchargement et construction d’images {#pull-build}
+## 15. Télécharger et construire des images {#pull-build}
 
 **Télécharger une image** demande la référence (`nginx:1.27`, `utilisateur/app`, `registre.exemple.com:5000/app:v2` ; sans étiquette, `latest` est utilisé). Identifiants :
 
@@ -194,7 +245,7 @@ Le panneau **Téléchargements** affiche la progression totale et par couche ; v
 
 **Construire une image** ouvre un assistant : contexte (le dossier envoyé, en respectant `.dockerignore`) et Dockerfile, noms (`--tag`), arguments (`--build-arg`), métadonnées (`--label`), étape finale, sans cache, rechercher des images de base plus récentes et constructeur (**BuildKit** ou **classique**). Les étapes s’affichent avec leur état et la sortie comme `docker build --progress=plain` ; la construction peut être annulée.
 
-## 16. Réseaux Docker {#networks}
+## 16. Réseaux {#networks}
 
 La rubrique **Réseaux** liste les réseaux, comme `docker network ls`, avec pilote, sous-réseaux et conteneurs. Les réseaux **bridge**, **host** et **none** sont prédéfinis et ne peuvent pas être supprimés.
 
@@ -211,13 +262,15 @@ La rubrique **Volumes** liste les volumes, comme `docker volume ls`, avec leur p
 - **Supprimer** : Docker ne supprime pas un volume monté par un conteneur, même arrêté.
 - **Nettoyer** : supprime les volumes anonymes inutilisés ou, après confirmation, tous les volumes inutilisés.
 
-## 18. Répertoires liés (Bind Mounts) {#binds}
+**Les données d’un volume supprimé ne peuvent pas être récupérées.** Si vous en avez besoin, faites d’abord une sauvegarde (section 24).
+
+## 18. Répertoires liés {#binds}
 
 Cette rubrique affiche les dossiers et fichiers de votre ordinateur montés dans des conteneurs, regroupés par chemin : type, permissions et propriétaire, existence, conteneurs qui les montent, où et avec quel accès. Ceux qui demandent de l’attention sont signalés : le **socket Docker** (il donne au conteneur le contrôle de Docker), la racine ou les répertoires système et les chemins qui n’existent plus.
 
 Docker ne permet pas d’ajouter un dossier à un conteneur existant. **Lier un dossier…** ouvre le sélecteur de dossiers puis l’assistant de conteneurs avec ce dossier monté dans `/mnt/<nom>`.
 
-## 19. Docker Compose {#compose}
+## 19. Docker Compose : projets {#compose}
 
 La rubrique **Docker Compose** nécessite Compose v2 ou ultérieur ; s’il n’est pas installé, elle explique comment l’installer. Toutes les opérations exécutent le Docker Compose officiel et apparaissent dans le panneau d’activité avec la commande exacte.
 
@@ -227,7 +280,7 @@ La liste affiche les projets ayant des conteneurs dans Docker (y compris ceux d�
 - **Nouveau projet** : choisissez un dossier, écrivez le contenu (à partir d’un modèle) puis **Créer le projet** : il est validé avec Docker Compose avant la création de `compose.yaml`.
 - **Retirer de la liste** le retire seulement de la liste ; Docker et les fichiers ne sont pas touchés.
 
-## 20. Gestion des projets et profils Compose {#compose-projects}
+## 20. Docker Compose : services, déploiement et profils {#compose-projects}
 
 Dans le détail d’un projet :
 
@@ -239,7 +292,19 @@ Dans le détail d’un projet :
 - **Fichier** : modifiez les fichiers ; **Valider** les vérifie avec Docker Compose sans enregistrer, et **Enregistrer** valide d’abord et n’écrase pas si un autre programme les a modifiés.
 - **Configuration** : la configuration finale selon Docker Compose. Elle peut contenir des secrets, elle reste donc masquée jusqu’à ce que vous la demandiez et n’est pas enregistrée dans le panneau d’activité.
 
-## 21. Terminaux simultanés {#terminals}
+## 21. Journaux, statistiques et terminal d’un conteneur {#logs-stats-terminal}
+
+Dans le détail d’un conteneur :
+
+- **Journaux** : sortie en direct (stderr en rouge). Vous pouvez choisir combien de lignes précédentes charger, filtrer, afficher l’horodatage, suivre la fin, copier ce qui est visible et arrêter le suivi. Les 10 000 dernières lignes sont conservées.
+- **Statistiques** : CPU, mémoire, réseau, disque et processus chaque seconde, calculés comme `docker stats`.
+- **Terminal** : **Ouvrir un terminal** lance un shell avec `docker exec -it` (Automatique utilise `bash` s’il existe, sinon `sh` ; vous pouvez aussi en choisir un). **Fermer la session** termine le shell et les processus qu’il a laissés dans le conteneur.
+
+Ce sont des opérations réelles qui apparaissent dans le panneau d’activité tant qu’elles sont ouvertes et qui se ferment en quittant le détail. Pour travailler avec plusieurs terminaux à la fois, utilisez la rubrique **Terminaux**.
+
+Pour voir l’évolution de l’utilisation dans le temps et recevoir des alertes, utilisez la **Surveillance** (section 25).
+
+## 22. Terminaux simultanés {#terminals}
 
 La rubrique **Terminaux** permet d’ouvrir et d’afficher en même temps plusieurs terminaux réels (`docker exec -it`) dans des conteneurs en cours d’exécution, dans le même conteneur ou dans d’autres.
 
@@ -254,33 +319,102 @@ La rubrique **Terminaux** permet d’ouvrir et d’afficher en même temps plusi
 
 Le panneau d’activité enregistre l’ouverture, la fermeture et les erreurs de chaque session, mais pas ce qui est saisi ni la sortie du terminal.
 
-## 22. Panneau d’activité et journal des opérations {#activity}
+## 23. Audit de sécurité {#audit}
 
-Chaque opération apparaît dans le **panneau d’activité** : heure, badge **API** (requête à Docker Engine par le socket), **CLI** (processus, comme `docker compose` ou `apt-get`) ou **APP** (opération de l’application elle-même, comme un changement de langue, ou le résumé d’une recréation dont les étapes apparaissent à part), type, ressource, durée et état. La ligne principale est la commande équivalente, que vous pouvez copier. En dépliant une entrée, vous voyez l’opération réellement exécutée, le résultat, l’erreur et son code HTTP en cas d’échec, ainsi que la sortie des processus.
+**Outils › Audit** examine la sécurité du serveur choisi (cet ordinateur ou un serveur distant) et **ne modifie rien** : il lit seulement la configuration.
 
-La rubrique **Événements et journaux** affiche les événements Docker en direct, ceux qui ont été enregistrés, une requête à Docker sur une période (`docker events --since … --until …` ; Docker ne conserve que les 256 derniers) et l’**historique des opérations** de cette session et des précédentes.
+1. Choisissez **quoi auditer** : tous les conteneurs (en cours d’exécution et arrêtés) ou un seul ; aussi les images et les projets Compose (leur configuration est lue avec `docker compose config`, sans déploiement).
+2. Cliquez sur **Auditer**. La progression s’affiche et l’audit peut être annulé.
+3. Examinez les **constats**, par niveau (critique, élevé, moyen, faible) et groupés par conteneur, service ou image. Chacun explique ce qui se passe, **pourquoi c’est important** et ce qui est **recommandé**. Ils peuvent être filtrés par niveau, par type et par texte.
 
-L’historique enregistre ce qui a été fait, quand et avec quel résultat, mais jamais le corps des requêtes, la commande ni les sorties, car ils peuvent contenir des mots de passe. Il se trouve dans `~/.local/state/container-manage-center/`, lisible uniquement par votre utilisateur.
+Sont vérifiés les risques pour l’ordinateur (socket Docker monté, dossiers sensibles, capacités, mode privilégié, réseau de l’hôte, PID et IPC partagés, seccomp, AppArmor ou SELinux désactivés, périphériques et ports ouverts sur toutes les interfaces) et le durcissement (processus en root, système de fichiers modifiable, sans limites de mémoire, de CPU ou de processus, sans `no-new-privileges` et images de plus d’un an). Avec Docker rootless ou `userns-remap`, le root du conteneur est marqué comme faible.
 
-## 23. Paramètres, thèmes et langues {#settings}
+- **Proposer des corrections** (conteneurs ; le bouton indique combien) : ouvre **Modifier la configuration** avec les changements déjà dans le brouillon. Vérifiez-les et appliquez-les comme toute modification (section 11) ; si vous les abandonnez, rien ne change.
+- **Vulnérabilités** : si **Trivy** ou **Grype** est installé avec sa base téléchargée, cochez la case et chaque image affiche le nombre de vulnérabilités connues, par gravité. L’application n’installe pas ces outils. Sans eux, ou sur un serveur distant, le rapport indique « Non analysé », jamais « 0 ».
+- **Exporter** en JSON, Markdown ou HTML : le fichier n’est lisible que par votre utilisateur et les secrets sont masqués.
+- **Audits précédents** : les 200 derniers de chaque serveur, pour les rouvrir.
+- **Conteneurs dans les autres outils** : pour chaque conteneur audité, son pire constat, si la surveillance le suit, sa sauvegarde la plus récente et les tâches de sauvegarde qui l’incluent, avec des accès **Voir dans Surveillance** et **Préparer une sauvegarde**.
 
-- **Apparence** : thème (Système, Clair, Sombre) et langue, dans cet ordre : **English**, **Español** (par défaut), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** et **Português**. Chaque langue apparaît sous son propre nom. La langue est enregistrée, conservée à la réouverture de l’application, et ses changements apparaissent dans le panneau d’activité. La couleur principale est le **violet** (depuis la version 1.0.0, aucune autre ne peut être choisie ; si vous aviez le bleu canard, il passe au violet sans perdre le reste de vos réglages).
-- **Panneau d’activité** : l’ouvrir en cas d’erreur, opérations conservées (50–10 000) et **Conserver l’historique entre les sessions**.
-- **Connexion à Docker** et vérification de **Docker Compose**.
-- **Mises à jour** : où les versions sont publiées et **Vérifier maintenant**. L’application ne télécharge ni n’installe jamais rien.
-- **Système** : versions de l’application, du paquet, de WebKitGTK et de glibc, du système et de Docker ; **Copier** génère un rapport sans données sensibles.
-- **Désinstallation et composants** et **Aide et documentation**.
-- **Réinitialiser les préférences**, après confirmation. La connexion à Docker n’est pas modifiée.
+## 24. Sauvegardes {#backup}
 
-| Raccourci | Action |
+**Outils › Sauvegardes** sauvegarde le serveur choisi (cet ordinateur ou un serveur distant) et restaure les sauvegardes.
+
+1. **Dossier de destination** : **Choisir un dossier** ouvre la boîte de dialogue du système. À l’intérieur est créé `container-manage-center-copias/<serveur>/<sauvegarde>/`, lisible seulement par votre utilisateur. Les dossiers système ne peuvent pas être utilisés ; un disque externe ou un dossier réseau déjà monté, oui.
+2. **Nouvelle sauvegarde** : cochez ce que vous voulez sauvegarder.
+3. **Sauvegarder maintenant** affiche la progression et peut être annulé. Une sauvegarde annulée ou interrompue n’est jamais considérée comme valide.
+
+| Élément | Comment il est sauvegardé |
 |---|---|
-| Ctrl+B | Réduire ou développer la barre latérale |
-| Ctrl+Maj+A | Ouvrir ou fermer le panneau d’activité |
-| Échap | Fermer une boîte de dialogue |
+| Volumes | Par l’API Docker, avec un conteneur auxiliaire qui n’est jamais démarré. Si un conteneur en cours d’exécution l’utilise, choisissez **à chaud** (sauvegarde non garantie) ou **en arrêtant les conteneurs** (ils sont arrêtés pendant la copie puis redémarrés) |
+| Bases de données | MariaDB, MySQL, PostgreSQL, Redis ou MongoDB en cours d’exécution : le vidage est fait par l’outil du moteur lui-même dans le conteneur, avec le mot de passe de ses variables. Il est cohérent même en cas d’écritures |
+| Configuration des conteneurs | Pour les recréer, sans les variables contenant des secrets |
+| Projets Compose | Seulement sur cet ordinateur : leurs fichiers. Les `.env` seulement si vous cochez « Inclure les fichiers .env » |
+| Configuration de l’application | Préférences, serveurs et tâches (les mots de passe sont dans le trousseau et ne sont pas copiés) |
 
-Les messages produits par Docker lui-même (par exemple une erreur de Docker Engine) et la sortie des programmes sont affichés tels qu’ils arrivent, sans traduction. Les résumés techniques que le moteur de l’application écrit dans le panneau d’activité (par exemple, la façon dont un terminal s’est terminé) et les messages d’erreur contenant des données précises sont générés en espagnol dans toutes les langues.
+- **Sauvegardes** : celles du serveur, avec leur état (Complète, Incomplète), éléments, taille et avertissements. **Vérifier** recalcule la somme SHA-256 de chaque fichier et indique si l’un est altéré, manquant ou en trop.
+- **Restaurer** : choisissez quels éléments et où, puis cliquez sur **Aperçu**, qui vérifie l’intégrité et indique ce qui sera fait pour chacun. Un volume est restauré dans un volume **nouveau** ou vide, jamais par-dessus un volume contenant des données. Un conteneur est créé neuf, sous un autre nom et sans démarrer. Les fichiers sont écrits dans un nouveau dossier.
+- **Restaurer une base de données remplace ses données actuelles** : il faut saisir « restaurer » pour confirmer.
+- **Tâches planifiées** : **Enregistrer comme tâche** enregistre la sélection avec un nom, une fréquence (quotidienne, hebdomadaire ou mensuelle) et une rétention (par défaut, 7 quotidiennes, 4 hebdomadaires et 3 mensuelles). La rétention ne supprime que les anciennes sauvegardes **de cette tâche**. **Planifier** crée un minuteur utilisateur systemd (sous Windows, une tâche du Planificateur de tâches) qui fonctionne même application fermée ; il vous montre d’abord ce qu’il va créer et ne le crée que si vous l’autorisez. Les droits d’administrateur ne sont pas nécessaires. Les minuteurs utilisateur de Linux ne s’exécutent que lorsque votre session est ouverte, sauf si vous activez vous-même `loginctl enable-linger`.
+- **Historique** : chaque sauvegarde, manuelle ou planifiée, avec son résultat et les anciennes sauvegardes supprimées par la rétention.
 
-## 24. Désinstallation et gestion des dépendances {#uninstall}
+Les sauvegardes **ne sont pas chiffrées** : elles contiennent vos données telles quelles. Si vous les stockez hors de l’ordinateur, utilisez un disque chiffré.
+
+## 25. Surveillance et alertes {#monitoring}
+
+**Supervision › Surveillance** affiche l’utilisation des conteneurs du serveur choisi au fil du temps. Rien n’est installé sur le serveur : elle demande à Docker la même chose que `docker stats`, y compris par SSH.
+
+- **Activer** : cochez « Surveiller ce serveur ». L’activation se fait par serveur et reste active à la réouverture de l’application. L’**intervalle** (de 2 à 60 s) est commun à tous ; **Mettre en pause** arrête tous les échantillons.
+- **Résumé** : CPU et mémoire de l’ordinateur selon Docker, conteneurs en cours d’exécution, en pause et arrêtés, et utilisation totale en graphiques. Le tableau indique, par conteneur, CPU, mémoire et sa limite, réseau, disque, processus, durée de fonctionnement et redémarrages. Cliquez sur un nom pour voir ses graphiques. Le CPU est en % d’un CPU, comme `docker stats` : un conteneur qui utilise deux CPU entiers affiche 200 %.
+- **Période** : 5, 15 et 30 minutes proviennent de la mémoire (depuis l’ouverture de l’application) ; 1, 6 et 24 heures, du résumé par minute stocké sur votre ordinateur.
+- **Comparer** : jusqu’à 4 conteneurs en cours d’exécution et une métrique sur le même graphique.
+- **Sans connexion** : si le serveur ne répond plus, les graphiques affichent une zone hachurée. Aucune donnée n’est inventée.
+
+**Alertes** : CPU élevé et mémoire élevée (avec un seuil d’alerte et un seuil de résolution, pour ne pas alerter à chaque petite hausse), le conteneur plante et Docker le redémarre, manque de mémoire (OOM), il se termine en erreur sans que personne ne l’arrête et la connexion au serveur est perdue. Arrêter vous-même un conteneur n’est pas une erreur. Après une notification, la même alerte ne se répète pas pendant les minutes de silence (15 par défaut). Les **notifications de bureau** ne quittent pas l’ordinateur ; **Tester la notification** en envoie une de test. Toutes les alertes restent dans l’**Historique des alertes**.
+
+La surveillance n’enregistre pas chaque échantillon dans le panneau d’activité : seulement son début et sa fin sur chaque serveur.
+
+## 26. Événements, activité et historique des opérations {#activity}
+
+Chaque opération apparaît dans le **panneau d’activité** : heure, badge **API** (requête à Docker Engine), **CLI** (processus, comme `docker compose` ou `apt-get`) ou **APP** (opération de l’application elle-même, comme un changement de langue, ou le résumé d’une recréation dont les étapes apparaissent à part), type, ressource, serveur, durée et état. La ligne principale est la commande équivalente, que vous pouvez copier. En dépliant une entrée, vous voyez l’opération réellement exécutée, le résultat, l’erreur et son code HTTP en cas d’échec, et les sorties des processus. Les valeurs secrètes sont masquées par `********`.
+
+La rubrique **Événements et journaux** comporte quatre onglets :
+
+- **En direct** : les événements Docker de cette session (un conteneur qui démarre, une image téléchargée…), qu’ils viennent de cette application ou de tout autre outil. Ils peuvent être filtrés et mis en **Pause**.
+- **Enregistrés** : les événements reçus pendant que l’application était ouverte, y compris lors de sessions précédentes (les 20 000 plus récents).
+- **Interroger Docker** : les événements d’une période (`docker events --since … --until …`). Cela inclut ce qui s’est passé application fermée, mais Docker ne conserve que les 256 derniers.
+- **Historique des opérations** : ce que l’application a fait, y compris lors de sessions précédentes (les 10 000 plus récentes).
+
+L’historique conserve ce qui a été fait, quand et avec quel résultat, mais jamais le corps des requêtes, les commandes ni les sorties, car ils peuvent contenir des mots de passe. Il se trouve dans `~/.local/state/container-manage-center/`, lisible seulement par votre utilisateur. Vous pouvez l’effacer depuis chaque onglet ou cesser de l’enregistrer dans les Paramètres.
+
+## 27. Paramètres de l’application {#settings}
+
+- **Apparence** : thème (Système, Clair, Sombre) et langue, dans cet ordre : **English**, **Español** (par défaut), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** et **Português**. Chaque langue apparaît sous son propre nom. La langue est enregistrée et conservée à la réouverture de l’application. La couleur principale est le **violet** et ne peut pas être changée.
+- **Panneau d’activité** : l’ouvrir seulement quand une opération échoue, opérations conservées (50–10 000) et **Conserver l’historique entre les sessions**.
+- **Connexion à Docker** (sections 5 et 6) et vérification de **Docker Compose**.
+- **Mises à jour** : où sont publiées les versions et **Vérifier maintenant**. L’application ne télécharge ni n’installe jamais rien.
+- **Système** : versions de l’application, du paquet, de WebKitGTK et glibc, du système et de Docker ; **Copier** génère un rapport sans données sensibles.
+- **Désinstallation et composants** (section 29), **Aide et documentation** (ce manuel) et **Mentions légales** (section 34).
+- **Réinitialiser les préférences**, après confirmation. Cela ne modifie pas la connexion à Docker.
+
+Tout est enregistré immédiatement dans `~/.config/container-manage-center/config.toml`.
+
+Les messages produits par Docker lui-même (par exemple, une erreur de Docker Engine) et la sortie des programmes s’affichent tels qu’ils arrivent, sans traduction. Les résumés techniques que le moteur de l’application écrit dans le panneau d’activité et les messages d’erreur contenant des données précises sont générés en espagnol dans toutes les langues.
+
+## 28. Windows {#windows}
+
+La version Windows est **en test** : l’installateur est généré, mais il n’a pas encore été validé sur un vrai Windows. C’est un installateur `.exe` pour votre utilisateur, sans droits d’administrateur, et il n’est pas signé : Windows peut donc afficher un avertissement SmartScreen à son ouverture.
+
+Sous Windows, Container Manage Center fonctionne comme sous Linux, avec ces différences :
+
+- **Docker local** : il se connecte à **Docker Desktop** par son canal nommé (`\\.\pipe\docker_engine`). Docker Desktop doit être démarré et votre utilisateur doit faire partie du groupe local `docker-users` (l'installateur de Docker Desktop l'y ajoute).
+- **Serveurs distants par SSH** : ils utilisent le client OpenSSH de Windows (`ssh.exe`, inclus dans Windows 10 et 11). Comme il ne prend pas en charge les connexions multiplexées, chaque opération ouvre sa propre connexion : la première fois, l'identité du serveur est vérifiée comme sous Linux, et le mot de passe ou la phrase secrète enregistrés sont utilisés automatiquement. Les **serveurs de rebond** (ProxyJump) ne sont pas encore disponibles et, dans le **terminal du serveur**, le redimensionnement de la fenêtre n'est pas transmis au serveur.
+- **Mots de passe mémorisés** : dans le **Gestionnaire d'identification** de Windows (informations d'identification Windows), sous le nom `container-manage-center/…`.
+- **Copies planifiées** : avec le **Planificateur de tâches**, dans le dossier « Container Manage Center », avec votre utilisateur et sans privilèges d'administrateur. Elles s'exécutent quand votre session est ouverte ; si l'ordinateur était éteint à cette heure-là, la copie est faite dès que possible.
+- **Notifications** : celles du système (centre de notifications).
+- **Données** : configuration dans `%APPDATA%\container-manage-center` et historique dans `%LOCALAPPDATA%\container-manage-center`.
+- **Désinstaller** : depuis Paramètres Windows › Applications › Applications installées. Vos données et Docker Desktop ne sont pas modifiés. La page « Désinstallation et composants » n'existe que sous Debian et Ubuntu.
+
+## 29. Désinstallation et composants {#uninstall}
 
 **Paramètres › Désinstallation et composants** montre ce que l’application a installé et permet de le retirer sans utiliser le terminal. **Analyser** interroge dpkg et APT sans rien modifier :
 
@@ -301,18 +435,7 @@ Lorsque vous confirmez, le système demande votre mot de passe d’administrateu
 
 Si `pkexec` n’est pas installé, l’application ne peut pas demander d’autorisation : la boîte de dialogue affiche la commande équivalente avec `sudo` pour que vous l’exécutiez vous-même dans un terminal.
 
-## 25. Sécurité et traitement des identifiants {#security}
-
-- L’application **ne s’exécute pas en tant que root**, ne demande jamais sudo pour fonctionner et ne modifie ni les permissions du socket ni les groupes.
-- Les commandes externes s’exécutent **sans shell** et avec des arguments séparés : ce que vous saisissez n’est jamais interprété comme des commandes.
-- **Elle n’enregistre pas d’identifiants.** Ceux d’un registre ne servent que pour un téléchargement et n’apparaissent pas dans le panneau d’activité. Avec « Ceux de Docker », ceux de `docker login` sont utilisés.
-- Les valeurs de variables comme `PASSWORD`, `TOKEN` ou `SECRET` sont masquées à l’écran et dans le panneau (`********`), même si Docker les reçoit en entier.
-- L’historique persistant n’enregistre jamais le corps des requêtes, les commandes ni les sorties.
-- Les opérations destructives demandent une confirmation.
-- La fenêtre bloque les connexions externes. La seule connexion propre à l’application est la vérification des versions, désactivée tant que vous n’indiquez pas de source. Le bouton GitHub de l’Aide ne peut ouvrir que cette adresse, dans votre navigateur.
-- Monter le socket Docker dans un conteneur ou appartenir au groupe `docker` donne le contrôle total de l’ordinateur : l’application le signale.
-
-## 26. Résolution des problèmes courants {#troubleshooting}
+## 30. Résolution des problèmes {#troubleshooting}
 
 | Cause affichée | Que faire |
 |---|---|
@@ -331,7 +454,23 @@ Si `pkexec` n’est pas installé, l’application ne peut pas demander d’auto
 - **La désinstallation ne propose pas une dépendance** : un autre programme l’utilise, elle était déjà installée ou cela ne peut pas être déterminé avec certitude ; la raison s’affiche à côté.
 - **Pour signaler un problème** : Paramètres › Système › **Copier** génère un rapport sans données sensibles.
 
-## 27. Questions fréquentes {#faq}
+- **Un serveur distant ne se connecte pas** : **Tester la connexion** indique laquelle des sept étapes échoue (section 7).
+- **Une commande en masse échoue dans un conteneur** : le conteneur doit être en cours d’exécution et disposer du programme ou de l’interpréteur indiqué ; l’erreur de Docker apparaît dans son résultat.
+
+## 31. Sécurité et bonnes pratiques {#security}
+
+- L’application **ne s’exécute pas en tant que root**, ne demande jamais sudo pour fonctionner et ne modifie ni les permissions du socket ni les groupes.
+- Les commandes externes s’exécutent **sans shell** et avec des arguments séparés : ce que vous saisissez n’est jamais interprété comme des commandes.
+- **Elle n’enregistre pas d’identifiants.** Ceux d’un registre ne servent que pour un téléchargement et n’apparaissent pas dans le panneau d’activité. Avec « Ceux de Docker », ceux de `docker login` sont utilisés.
+- Les valeurs de variables comme `PASSWORD`, `TOKEN` ou `SECRET` sont masquées à l’écran et dans le panneau (`********`), même si Docker les reçoit en entier.
+- L’historique persistant n’enregistre jamais le corps des requêtes, les commandes ni les sorties.
+- Les opérations destructives demandent une confirmation.
+- La fenêtre bloque les connexions externes. La seule connexion propre à l’application est la vérification des versions, désactivée tant que vous n’indiquez pas de source. Le bouton GitHub de l’Aide ne peut ouvrir que cette adresse, dans votre navigateur.
+- Monter le socket Docker dans un conteneur ou appartenir au groupe `docker` donne le contrôle total de l’ordinateur : l’application le signale.
+
+**Bonnes pratiques** : utilisez Docker rootless quand c’est possible ; consultez l’**Audit** de temps en temps ; faites des **sauvegardes** avant de supprimer des volumes ou de mettre à jour des bases de données ; ne publiez pas de ports sur toutes les interfaces si vous ne les utilisez que sur cet ordinateur ; ne stockez pas de mots de passe dans les images ni dans les commandes fréquentes. Dans la gestion en masse, la suppression et les commandes à risque administratif ou destructeur demandent de saisir le nombre de conteneurs.
+
+## 32. Questions fréquentes {#faq}
 
 **L’application exécute-t-elle des commandes `docker` ?** Non : elle utilise l’API de Docker Engine. La commande affichée dans le panneau d’activité est l’équivalent, pour que vous puissiez la reproduire. Docker Compose, lui, est exécuté avec son programme officiel.
 
@@ -349,7 +488,38 @@ Si `pkexec` n’est pas installé, l’application ne peut pas demander d’auto
 
 **Comment changer de langue ?** Dans Paramètres › Apparence › Langue.
 
-## 28. Mentions légales {#legal}
+**Les sauvegardes planifiées continuent-elles application fermée ?** Oui : c’est le système qui les exécute (systemd ou le Planificateur de tâches de Windows), lorsque votre session est ouverte.
+
+## 33. Glossaire {#glossary}
+
+| Terme | Signification |
+|---|---|
+| Conteneur | Un programme en cours d’exécution isolé du reste de l’ordinateur, créé à partir d’une image |
+| Image | Modèle en lecture seule avec le système de fichiers et la configuration pour créer des conteneurs |
+| Étiquette d’image (*tag*) | Nom d’une version d’une image, comme `nginx:1.27` |
+| Étiquette de conteneur (*label*) | Donnée `clé=valeur` stockée dans un conteneur, comme `cmc.description` |
+| Registre | Serveur depuis lequel on télécharge des images, comme Docker Hub |
+| Volume | Stockage géré par Docker qui est conservé même si le conteneur est supprimé |
+| Répertoire lié (*bind mount*) | Dossier ou fichier de l’ordinateur monté dans un conteneur |
+| Réseau | Réseau virtuel qui relie les conteneurs entre eux et avec l’extérieur |
+| Port publié | Port de l’ordinateur qui mène à un port du conteneur |
+| Politique de redémarrage | Ce que fait Docker quand un conteneur se termine ou que l’ordinateur démarre |
+| Docker Engine | Le service qui exécute les conteneurs ; CMC dialogue avec lui |
+| API Docker | Interface qui permet de piloter Docker Engine ; la CLI Docker et CMC l’utilisent |
+| Socket Unix | Fichier spécial pour communiquer avec Docker sur le même ordinateur (`/var/run/docker.sock`) |
+| Rootless | Docker exécuté par un utilisateur normal, sans privilèges d’administrateur |
+| Contexte Docker | Configuration nommée indiquant à quel Docker la CLI se connecte (`docker context`) |
+| `DOCKER_HOST` | Variable d’environnement qui indique à quel Docker se connecter |
+| Docker Compose | Outil pour définir et exécuter des applications à plusieurs conteneurs avec un fichier YAML |
+| Service et profil (Compose) | Un service est chaque partie d’un projet Compose ; un profil regroupe des services facultatifs |
+| Docker Exec | Exécuter un programme dans un conteneur déjà en cours d’exécution |
+| `stdout` et `stderr` | Sortie normale et sortie d’erreur d’un programme |
+| Empreinte (*fingerprint*) | Résumé de la clé d’un serveur SSH (`SHA256:…`) pour vérifier son identité |
+| Stockage sécurisé (trousseau) | Emplacement du système où les mots de passe sont stockés chiffrés (GNOME Keyring, KWallet, Gestionnaire d’identification) |
+| Docker Desktop | Application Docker pour Windows et macOS |
+| Canal nommé | Mécanisme de Windows pour se connecter à Docker Desktop (`\\.\pipe\docker_engine`) |
+
+## 34. Informations légales et licence {#legal}
 
 **Nom :** Container Manage Center (en abrégé **CMC**).
 
@@ -367,32 +537,6 @@ Texte complet de la licence : https://www.gnu.org/licenses/gpl-3.0.html (égalem
 
 **Marques.** Container Manage Center est un projet indépendant : il n'est ni affilié à Docker, Inc. ni approuvé par elle. « Docker » est une marque de Docker, Inc. et n'est utilisée ici que pour nommer la technologie avec laquelle l'application fonctionne (Docker Engine, son API, Docker Compose et la CLI Docker).
 
+**Windows.** L’installateur Windows inclut le chargeur WebView2 de Microsoft, couvert par une autorisation supplémentaire au titre de l’article 7 de la GPL v3.
+
 Les mêmes informations figurent dans **Paramètres › Mentions légales**.
-
-## 29. Windows {#windows}
-
-Sous Windows, Container Manage Center fonctionne comme sous Linux, avec ces différences :
-
-- **Docker local** : il se connecte à **Docker Desktop** par son canal nommé (`\\.\pipe\docker_engine`). Docker Desktop doit être démarré et votre utilisateur doit faire partie du groupe local `docker-users` (l'installateur de Docker Desktop l'y ajoute).
-- **Serveurs distants par SSH** : ils utilisent le client OpenSSH de Windows (`ssh.exe`, inclus dans Windows 10 et 11). Comme il ne prend pas en charge les connexions multiplexées, chaque opération ouvre sa propre connexion : la première fois, l'identité du serveur est vérifiée comme sous Linux, et le mot de passe ou la phrase secrète enregistrés sont utilisés automatiquement. Les **serveurs de rebond** (ProxyJump) ne sont pas encore disponibles et, dans le **terminal du serveur**, le redimensionnement de la fenêtre n'est pas transmis au serveur.
-- **Mots de passe mémorisés** : dans le **Gestionnaire d'identification** de Windows (informations d'identification Windows), sous le nom `container-manage-center/…`.
-- **Copies planifiées** : avec le **Planificateur de tâches**, dans le dossier « Container Manage Center », avec votre utilisateur et sans privilèges d'administrateur. Elles s'exécutent quand votre session est ouverte ; si l'ordinateur était éteint à cette heure-là, la copie est faite dès que possible.
-- **Notifications** : celles du système (centre de notifications).
-- **Données** : configuration dans `%APPDATA%\container-manage-center` et historique dans `%LOCALAPPDATA%\container-manage-center`.
-- **Désinstaller** : depuis Paramètres Windows › Applications › Applications installées. Vos données et Docker Desktop ne sont pas modifiés. La page « Désinstallation et composants » n'existe que sous Debian et Ubuntu.
-
-## 30. Gestion en masse {#bulk}
-
-**Gestion en masse** (dans « Ressources ») applique une même opération à de nombreux conteneurs à la fois, y compris sur plusieurs serveurs.
-
-- **Vue générale** : total, en cours d’exécution, arrêtés, en pause et en erreur. Cliquer sur un compteur filtre par cet état. Les conteneurs de cet ordinateur et des serveurs distants **connectés** sont réunis ; les autres sont signalés.
-- **Actualisation** : bouton **Actualiser** et actualisation automatique (de 5 s à 5 min, désactivable).
-- **Tableau** : recherche par nom ou ID ; filtres par état, image, serveur et étiquette (`clé` ou `clé=valeur`) ; tri en cliquant sur le titre d’une colonne.
-- **Sélection** : case par ligne, de la page ou de **tout le filtré**. La barre indique à combien de conteneurs de la sélection chaque opération s’applique.
-- **Opérations** : démarrer, arrêter, redémarrer, mettre en pause, reprendre, supprimer et changer la politique de redémarrage (à chaud avec `docker update` ; pas pour ceux créés avec `--rm`). Ceux dont l’état ne le permet pas sont **ignorés**, avec le motif.
-- **Confirmation** : opération, serveurs, conteneurs concernés et ignorés, conséquences et opérations simultanées (1 à 16). **Supprimer** demande de saisir le nombre de conteneurs et **ne supprime jamais de volumes ni d’images**.
-- **Étiquettes** : Docker ne permet pas de les modifier sur un conteneur existant (il faudrait le recréer) ; la boîte de dialogue l’explique et montre les actuelles. Pour un conteneur précis, utilisez **Dupliquer**.
-- **Résultats** : chaque conteneur a le sien : réussi (confirmé par Docker), en échec (avec l’erreur), ignoré, annulé ou **inconnu** (connexion coupée avant la confirmation ; actualisez pour voir son état). Si l’un échoue, les autres continuent ; rien n’est annulé ni réessayé automatiquement. **Annuler ce qui reste** arrête l’envoi des ordres.
-- **Activité** : chaque ordre est enregistré avec le badge « Masse » ; **Voir dans l’activité** n’affiche que cette opération.
-- **Sections** : Résumé, Conteneurs, Opérations, Configuration en masse, Commandes en masse et Historique (opérations et commandes enregistrées, avec les ordres de chaque conteneur).
-- **Commandes en masse** : exécutez une même commande dans plusieurs conteneurs en cours d’exécution avec Docker Exec, sans passer par un shell de cet ordinateur. Choisissez « Exécutable avec arguments » (un par ligne, sans shell) ou « Script avec un interpréteur » (`/bin/sh`, `bash`, `python3`…), l’utilisateur, le répertoire, le délai maximal et les exécutions simultanées. L’aperçu montre les arguments exacts et le risque ; les commandes administratives ou destructrices demandent de saisir le nombre de conteneurs. Chaque conteneur donne son état, son code de sortie, `stdout` et `stderr` (copiables et exportables avec les secrets masqués). Docker ne permet pas d’arrêter un processus déjà lancé : au délai dépassé ou à l’interruption, on cesse seulement d’attendre. Les commandes fréquentes peuvent être enregistrées (jamais avec des secrets).

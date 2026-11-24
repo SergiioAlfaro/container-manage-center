@@ -1,46 +1,74 @@
 ## 1. Que é Container Manage Center {#about}
 
-Container Manage Center é unha aplicación de escritorio para administrar **Docker Engine** en Linux sen depender do terminal. Todo o que amosa son datos reais que lle pide a Docker nese momento, e cada acción é unha operación real: non se simula nada.
+Container Manage Center (**CMC**) é unha aplicación de escritorio para administrar **Docker Engine** sen depender do terminal, neste equipo e en servidores remotos por SSH. Todo o que mostra son datos reais que lle pide a Docker nese momento, e cada acción é unha operación real: non se simula nada.
 
-- Fala con Docker Engine polo seu **socket Unix**, coa API oficial.
+- Comunícase con Docker Engine coa súa **API oficial**: polo socket Unix en Linux, pola canalización con nome de Docker Desktop en Windows e por SSH cos servidores remotos.
 - Executa **Docker Compose** co seu programa oficial, con argumentos separados e sen shell.
-- Cada operación aparece no **panel de actividade** coa súa orde `docker` equivalente, para que saibas exactamente que se fixo.
+- Cada operación aparece no **panel de actividade** co seu comando `docker` equivalente, para que saibas exactamente que se fixo.
 
-A xanela ten unha **barra lateral** cos apartados (contráese con Ctrl+B), a **área de traballo**, unha **barra superior** co indicador de conexión e o botón **Actividade**, e o **panel de actividade** á dereita (Ctrl+Maiús+A).
+Non fai falta saber usar Docker desde o terminal: cada apartado explica o que fai antes de facelo, e as operacións que borran ou cambian algo piden confirmación. Se un termo non che resulta familiar, consulta o **Glosario** (sección 33).
 
-## 2. Requisitos do sistema e dependencias {#requirements}
+## 2. Requisitos do sistema {#requirements}
 
-- **Sistema**: Debian 12 ou superior, ou Ubuntu 22.04 ou superior, de 64 bits (x86_64).
-- **Docker Engine 20.10 ou posterior** (API 1.41+), en modo normal ou rootless.
-- **Docker Compose v2 ou posterior**, só para o apartado Docker Compose (como complemento `docker compose` ou binario `docker-compose` v2). Compose v1 non se admite.
-- **Dependencias de execución**: WebKitGTK 4.1, GTK 3, glibc e bibliotecas relacionadas. Instálaas APT co paquete.
+| Elemento | Requisito |
+|---|---|
+| Sistema (Linux) | Debian 12 ou superior, ou Ubuntu 22.04 ou superior, de 64 bits (x86_64) |
+| Sistema (Windows, en probas) | Windows 10 ou 11 de 64 bits con Docker Desktop (sección 28) |
+| Docker | Docker Engine 20.10 ou posterior (API 1.41+), en modo normal ou rootless |
+| Docker Compose | v2 ou posterior, só para o apartado Docker Compose (`docker compose` ou `docker-compose` v2). Compose v1 non se admite |
+| Bibliotecas (Linux) | WebKitGTK 4.1, GTK 3 e glibc. Instálaas APT co paquete |
+| Servidores remotos | O cliente SSH do sistema (`ssh`) e, no servidor, Docker Engine 20.10 ou posterior |
 
-A aplicación non necesita Internet. Só as operacións que fai Docker Engine contra rexistros remotos (descargar imaxes, buscar en Docker Hub, construír con imaxes base que non estean no equipo) precisan que Docker teña rede.
+Docker e Docker Compose son **requisitos externos**: a aplicación non os instala nin os configura, pero dille como facelo se faltan.
+
+A aplicación non necesita Internet. Só as operacións que fai Docker Engine contra rexistros remotos (descargar imaxes, buscar en Docker Hub, construír con imaxes base que non estean no equipo) necesitan que Docker teña rede.
 
 ## 3. Instalación e primeira execución {#install}
 
-Instala o paquete con APT, que resolve as dependencias:
+En Debian e Ubuntu, instala o paquete con APT, que resolve as dependencias:
 
 ```
 sudo apt install ./container-manage-center_X.Y.Z_amd64.deb
 ```
 
-A aplicación aparece no menú como **Container Manage Center**. Execútase co teu usuario normal: **non a executes con sudo** (négase a arrancar como root).
+Para Debian 12 e Ubuntu 22.04 usa o paquete compatible, cuxo nome remata en `-compat-debian12-ubuntu2204.deb`. Antes de instalar podes comprobar a descarga co ficheiro `SHA256SUMS` que se publica con cada versión (`sha256sum -c SHA256SUMS`).
 
-Ao abrila, busca Docker Engine automaticamente. Se o atopa, o **Panel** amosa o seu estado; se non, amosa o diagnóstico coa causa e os pasos para resolvela.
+A aplicación aparece no menú como **Container Manage Center**. Execútase co teu usuario normal: **non a executes con sudo** (négase a arrincar como root).
 
-Para actualizar, instala o paquete novo da mesma forma: consérvanse a túa configuración e o teu historial.
+**Primeira execución.** Ao abrila, busca Docker Engine automaticamente. Se o atopa, o **Panel** mostra o seu estado; se non, mostra o diagnóstico coa causa e os pasos para resolvela. Non fai falta configurar nada máis para comezar.
 
-## 4. Configuración inicial {#first-setup}
+**Actualizar.** Instala o paquete novo do mesmo xeito: consérvanse a túa configuración e o teu historial.
 
-Non cómpre configurar nada para comezar: a conexión con Docker é automática. En **Configuración** podes escoller:
+A instalación en Windows explícase na sección 28.
 
-- O **tema** (Sistema, Claro ou Escuro) e o **idioma**. A cor principal é o morado.
-- Se o panel de actividade se abre só cando falla unha operación e cantas operacións conserva.
-- Se se garda o historial de operacións e eventos entre sesións.
-- Un socket concreto de Docker, se non queres a detección automática.
+## 4. Xanela principal e navegación {#interface}
 
-Todo se garda ao momento en `~/.config/container-manage-center/config.toml`.
+A xanela ten catro zonas:
+
+- **Barra lateral** (á esquerda): os apartados, agrupados. Contráese con **Ctrl+B** ou con **Contraer a barra lateral**, ao pé.
+- **Barra superior**: o título do apartado, o **selector de servidor** (en que Docker traballas: este equipo ou un servidor remoto), o **indicador de conexión** e o botón **Actividade**.
+- **Área de traballo**: o contido do apartado escollido.
+- **Panel de actividade** (á dereita): as operacións executadas. Ábrese e péchase con **Ctrl+Maiús+A** ou co botón **Actividade**.
+
+| Grupo | Apartados |
+|---|---|
+| (arriba) | Panel, Servidores |
+| Recursos | Contedores, Xestión masiva, Imaxes, Redes, Volumes, Directorios vinculados |
+| Orquestración | Docker Compose |
+| Ferramentas | Terminais, Auditoría, Copias |
+| Supervisión | Monitorización, Eventos e rexistros |
+| (ao pé) | Configuración |
+
+Este manual está en **Configuración › Axuda e documentación**. O índice da esquerda leva a cada sección, **Anterior** e **Seguinte** percorren o manual en orde e o buscador mostra só as seccións que conteñen o texto que escribas.
+
+| Atallo | Acción |
+|---|---|
+| Ctrl+B | Contraer ou expandir a barra lateral |
+| Ctrl+Maiús+A | Abrir ou pechar o panel de actividade |
+| Escape | Pechar un diálogo ou un menú |
+| Frechas, Inicio e Fin | Moverse polos menús e mover os separadores de Terminais |
+
+As cores de estado son sempre as mesmas: **verde** para o que funciona ou está en marcha, **ámbar** para os avisos e **vermello** para os erros.
 
 ## 5. Conexión con Docker Engine {#connection}
 
@@ -56,7 +84,9 @@ En modo **automático**, a aplicación proba nesta orde: a variable `DOCKER_HOST
 
 A aplicación nunca pide sudo, non cambia permisos nin grupos e non executa por ti as instrucións do diagnóstico. O teu usuario necesita poder abrir o socket: con Docker rootless ou pertencendo ao grupo `docker` (o que na práctica equivale a ter privilexios de administración).
 
-## 6. Docker rootless e conexións mediante socket {#rootless}
+A configuración gárdase ao momento en `~/.config/container-manage-center/config.toml`. Se prefires indicar un socket concreto, consulta a sección seguinte.
+
+## 6. Docker rootless e sockets personalizados {#rootless}
 
 Con **Docker rootless** o daemon execútase co teu usuario e o socket está en `$XDG_RUNTIME_DIR/docker.sock` (normalmente `/run/user/1000/docker.sock`). A aplicación detéctao soa, tamén a través do contexto `rootless`, e indícao coa etiqueta **rootless**. É a opción recomendada por seguridade.
 
@@ -89,11 +119,15 @@ Desde **Servidores** podes administrar o Docker doutros equipos Linux aos que te
 
 Pertencer ao grupo `docker` do servidor equivale a ter acceso de **root** nel: decídeo co seu administrador; Docker rootless é a alternativa máis segura.
 
+Nun servidor remoto tamén funcionan a **Auditoría**, as **Copias** e a **Monitorización** (seccións 23 a 25).
+
 ## 8. Panel e diagnóstico {#dashboard}
 
 Con conexión, o **Panel** amosa datos obtidos nese momento: versión de Docker Engine e da API, socket e orixe da conexión, contedores (en execución, en pausa, detidos), imaxes, datos do equipo (sistema, núcleo, CPU, memoria), almacenamento e execución (controlador, directorio de datos, cgroups, rexistros) e os avisos do daemon. **Actualizar** volve pedilos.
 
 Sen conexión amosa o **diagnóstico**: a causa concreta, os pasos para resolvela (coas ordes para copiar nun terminal), os sockets comprobados co seu resultado e o que se detectou instalado. Os botóns **Volver conectar** e **Configurar a conexión** están na cabeceira.
+
+As causas máis habituais dun fallo de conexión e a súa solución están na sección 30.
 
 ## 9. Xestión de contedores {#containers}
 
@@ -107,7 +141,9 @@ O apartado **Contedores** lista todos os contedores, como `docker ps -a`: estado
 
 Deter e reiniciar agardan 10 segundos a que o proceso remate antes de forzalo, como Docker. Tras cada acción consúltase o estado real do contedor. Se Docker rexeita unha acción, a súa mensaxe aparece enriba da táboa e no panel de actividade. As listas actualízanse soas cando algo cambia en Docker, tamén desde o terminal.
 
-## 10. Creación, duplicación, inspección e eliminación de contedores {#container-lifecycle}
+Para aplicar unha mesma acción a moitos contedores á vez, usa a **Xestión masiva** (sección 13).
+
+## 10. Crear, duplicar, inspeccionar e eliminar contedores {#container-lifecycle}
 
 **Crear contedor** abre un asistente con seis lapelas (só a imaxe é obrigatoria): Xeral, Ambiente, Rede, Almacenamento, Recursos e Avanzado.
 
@@ -121,6 +157,8 @@ Ao premer o nome dun contedor ábrese o seu **detalle**: Resumo, Rexistros, Term
 **Duplicar** abre o asistente coa configuración do contedor e o nome `<nome>-copia`, e avisa dos axustes que non se trasladan.
 
 **Eliminar** pide confirmación. Un contedor en execución ou en pausa só se elimina se marcas **Detelo á forza e eliminalo**. Opcionalmente elimínanse os seus volumes anónimos; os volumes con nome e os cartafoles vinculados non se tocan. Non se pode desfacer.
+
+Os rexistros, as estatísticas e o terminal do detalle explícanse na sección 21.
 
 ## 11. Editar a configuración dun contedor {#container-edit}
 
@@ -161,17 +199,30 @@ Ao premer o nome dun contedor ábrese o seu **detalle**: Resumo, Rexistros, Term
 - Se xa existe unha imaxe con ese nome, avísase e hai que aceptalo expresamente: a anterior non se elimina, queda sen etiqueta.
 - O contedor orixinal non se modifica. Ao rematar, **Ver a imaxe** abre o seu detalle en Imaxes.
 
-## 13. Rexistros, estatísticas e terminais {#logs-stats-terminal}
+## 13. Xestión masiva {#bulk}
 
-No detalle dun contedor:
+A **Xestión masiva** (en «Recursos») aplica unha mesma operación ou un mesmo comando a moitos contedores á vez, tamén de varios servidores. Reúne os contedores deste equipo e dos servidores remotos **conectados**; os demais indícanse nun aviso. Está dividida en lapelas: **Resumo**, **Contedores**, **Operacións**, **Configuración masiva**, **Comandos masivos** e **Historial**.
 
-- **Rexistros**: saída en directo (stderr en vermello). Podes escoller cantas liñas anteriores cargar, filtrar, ver as marcas de tempo, seguir o final, copiar o visible e deixar de seguir. Consérvanse as últimas 10 000 liñas.
-- **Estatísticas**: CPU, memoria, rede, disco e procesos cada segundo, calculados como `docker stats`.
-- **Terminal**: **Abrir terminal** inicia unha shell con `docker exec -it` (Automática usa `bash` se existe e, se non, `sh`; tamén podes escoller unha). **Pechar a sesión** remata a shell e os procesos que deixou dentro do contedor.
+- **Resumo**: total, en execución, detidos, en pausa e con erro. Premer un contador filtra por ese estado. **Actualizar** e a actualización automática (de 5 s a 5 min, pódese desactivar) volven pedir os datos.
+- **Contedores**: busca por nome ou ID; filtra por estado, imaxe, servidor e etiqueta (`clave` ou `clave=valor`); ordena premendo o título dunha columna. Selecciónase coa caixa de cada fila, a da páxina ou **todo o filtrado**.
+- **Operacións**: iniciar, deter, reiniciar, pausar, retomar e eliminar. O que non se pode aplicar no seu estado **omítese** e explícase.
+- **Configuración masiva**: mostra a política de reinicio da selección e permite cambiala en todos (en quente, con `docker update`; non nos creados con `--rm`). As **etiquetas** só se mostran: Docker non permite cambialas nun contedor que xa existe (habería que recrealo). Para un contedor concreto, usa **Duplicar**.
+- **Historial**: as operacións e os comandos masivos anteriores, co que se fixo en cada contedor.
 
-Son operacións reais que aparecen no panel de actividade mentres están abertas e péchanse ao saír do detalle. Para traballar con varios terminais á vez, usa o apartado **Terminais**.
+**Antes de aplicar** amósase unha confirmación coa operación, os servidores, os contedores afectados e os omitidos, as consecuencias e cantas operacións van á vez (de 1 a 16). **Eliminar** pide escribir o número de contedores e **nunca elimina volumes nin imaxes**.
 
-## 14. Xestión de imaxes {#images}
+**Resultados**: cada contedor ten o seu: correcto (Docker confirmouno), fallido (co erro), omitido, cancelado ou **descoñecido** (a conexión cortouse antes da confirmación; actualiza para ver o seu estado). Se un falla, os demais seguen; nada se desfai nin se reintenta só. **Cancelar o pendente** deixa de enviar ordes. Cada orde rexístrase no panel de actividade co distintivo «Masiva», e **Ver na actividade** mostra só esa operación.
+
+Os **Comandos masivos** executan un mesmo comando dentro de varios contedores en execución con Docker Exec, sen pasar por ningunha shell deste equipo:
+
+1. Escolle a modalidade: **Executable con argumentos** (un argumento por liña, enviado tal cal) ou **Secuencia cun intérprete** (varias liñas para `/bin/sh`, `bash`, `python3`…). Tamén podes cargar un exemplo ou un comando frecuente gardado.
+2. Se fai falta, indica o usuario, o directorio de traballo, o tempo máximo (de 1 a 3600 s) e cantas execucións van á vez.
+3. Revisa a **Vista previa**: o `docker exec` equivalente, os argumentos exactos que recibe Docker e o nivel de risco (Informativo, Modificación, Administrativo ou Potencialmente destrutivo). A clasificación é orientativa: non substitúe revisar o comando.
+4. Confirma. Os comandos de risco administrativo ou destrutivo piden escribir o número de contedores.
+
+Cada contedor dá o seu estado, código de saída, duración, e `stdout` e `stderr` por separado (copiables e exportables a Markdown ou JSON cos segredos ocultos). **Cancelar pendentes** non lanza o comando nos que aínda non comezaron; **Interromper activas**, ademais, deixa de esperar polos que están en marcha. Docker non permite deter un proceso xa lanzado: co tempo esgotado ou ao interromper, o proceso pode seguir dentro do contedor, e CMC **nunca** detén nin reinicia o contedor para paralo. Os comandos frecuentes pódense gardar, **nunca con segredos**.
+
+## 14. Imaxes {#images}
 
 O apartado **Imaxes** lista as imaxes locais, como `docker image ls`: etiquetas, ID curto, tamaño, antigüidade e que contedores as usan. Filtros **Todas / En uso / Sen uso / Sen etiqueta** e busca por etiqueta ou ID.
 
@@ -180,7 +231,7 @@ O apartado **Imaxes** lista as imaxes locais, como `docker image ls`: etiquetas,
 - **Eliminar**: se a imaxe ten varias etiquetas podes quitar só unha; a imaxe completa esixe forzar. Docker non elimina imaxes de contedores en execución.
 - **Limpar** elimina as imaxes sen etiqueta que non usa ningún contedor ou, cunha confirmación adicional, todas as que non se usan.
 
-## 15. Descarga e construción de imaxes {#pull-build}
+## 15. Descargar e construír imaxes {#pull-build}
 
 **Descargar imaxe** pide a referencia (`nginx:1.27`, `usuario/app`, `rexistro.exemplo.com:5000/app:v2`; sen etiqueta úsase `latest`). Credenciais:
 
@@ -194,7 +245,7 @@ O panel **Descargas** amosa o progreso total e por capa; mentres tanto podes cam
 
 **Construír imaxe** abre un asistente: contexto (o cartafol que se envía, respectando `.dockerignore`) e Dockerfile, nomes (`--tag`), argumentos (`--build-arg`), metadatos (`--label`), etapa final, sen caché, buscar imaxes base novas e construtor (**BuildKit** ou **clásico**). Vense os pasos co seu estado e a saída como `docker build --progress=plain`; pódese cancelar.
 
-## 16. Redes de Docker {#networks}
+## 16. Redes {#networks}
 
 O apartado **Redes** lista as redes, como `docker network ls`, co controlador, as subredes e os contedores. As redes **bridge**, **host** e **none** son predefinidas e non se poden eliminar.
 
@@ -211,13 +262,15 @@ O apartado **Volumes** lista os volumes, como `docker volume ls`, co seu control
 - **Eliminar**: Docker non elimina un volume que monte calquera contedor, aínda que estea detido.
 - **Limpar**: elimina os volumes anónimos sen uso ou, con confirmación, todos os volumes sen uso.
 
-## 18. Directorios vinculados (bind mounts) {#binds}
+**Os datos dun volume eliminado non se poden recuperar.** Se os necesitas, fai antes unha copia (sección 24).
+
+## 18. Directorios vinculados {#binds}
 
 Este apartado amosa os cartafoles e ficheiros do teu equipo montados dentro de contedores, agrupados por ruta: tipo, permisos e propietario, se existen, que contedores os montan, onde e con que acceso. Sinálanse os que requiren atención: o **socket de Docker** (dálle o control de Docker ao contedor), a raíz ou directorios do sistema e as rutas que xa non existen.
 
 Docker non permite engadir un cartafol a un contedor que xa existe. **Vincular un cartafol…** abre o selector de cartafoles e despois o asistente de contedores con ese cartafol montado en `/mnt/<nome>`.
 
-## 19. Docker Compose {#compose}
+## 19. Docker Compose: proxectos {#compose}
 
 O apartado **Docker Compose** necesita Compose v2 ou posterior; se non está instalado, explica como instalalo. Todas as operacións executan o Docker Compose oficial e aparecen no panel de actividade coa orde exacta.
 
@@ -227,7 +280,7 @@ A lista amosa os proxectos con contedores en Docker (tamén os despregados desde
 - **Novo proxecto**: escolle un cartafol, escribe o contido (pártese dun modelo) e **Crear proxecto**: valídase con Docker Compose antes de crear `compose.yaml`.
 - **Quitar da lista** só o quita da lista; non toca Docker nin os ficheiros.
 
-## 20. Xestión de proxectos e perfís de Compose {#compose-projects}
+## 20. Docker Compose: servizos, despregamento e perfís {#compose-projects}
 
 No detalle dun proxecto:
 
@@ -239,7 +292,19 @@ No detalle dun proxecto:
 - **Ficheiro**: edita os ficheiros; **Validar** compróbaos con Docker Compose sen gardar, e **Gardar** valida antes e non sobrescribe se outro programa os cambiou.
 - **Configuración**: a configuración final segundo Docker Compose. Pode conter segredos, así que está oculta ata que a pides e non se garda no panel de actividade.
 
-## 21. Terminais simultáneos {#terminals}
+## 21. Rexistros, estatísticas e terminal dun contedor {#logs-stats-terminal}
+
+No detalle dun contedor:
+
+- **Rexistros**: saída en directo (stderr en vermello). Podes escoller cantas liñas anteriores cargar, filtrar, ver as marcas de tempo, seguir o final, copiar o visible e deixar de seguir. Consérvanse as últimas 10 000 liñas.
+- **Estatísticas**: CPU, memoria, rede, disco e procesos cada segundo, calculados como `docker stats`.
+- **Terminal**: **Abrir terminal** inicia unha shell con `docker exec -it` (Automática usa `bash` se existe e, se non, `sh`; tamén podes escoller unha). **Pechar a sesión** remata a shell e os procesos que deixou dentro do contedor.
+
+Son operacións reais que aparecen no panel de actividade mentres están abertas e péchanse ao saír do detalle. Para traballar con varios terminais á vez, usa o apartado **Terminais**.
+
+Para ver a evolución do uso ao longo do tempo e recibir alertas, usa a **Monitorización** (sección 25).
+
+## 22. Terminais simultáneos {#terminals}
 
 O apartado **Terminais** permite abrir e ver á vez varios terminais reais (`docker exec -it`) en contedores en execución, no mesmo contedor ou noutros.
 
@@ -254,33 +319,102 @@ O apartado **Terminais** permite abrir e ver á vez varios terminais reais (`doc
 
 O panel de actividade rexistra a apertura, o peche e os erros de cada sesión, pero non o que se escribe nin a saída do terminal.
 
-## 22. Panel de actividade e rexistro de operacións {#activity}
+## 23. Auditoría de seguridade {#audit}
 
-Cada operación aparece no **panel de actividade**: hora, distintivo **API** (petición a Docker Engine polo socket), **CLI** (proceso, como `docker compose` ou `apt-get`) ou **APP** (operación da propia aplicación, como un cambio de idioma, ou o resumo dunha recreación cuxos pasos aparecen á parte), tipo, recurso, duración e estado. A liña principal é a orde equivalente, que podes copiar. Ao despregar unha entrada ves a operación executada de verdade, o resultado, o erro e o seu código HTTP se fallou, e as saídas dos procesos.
+**Ferramentas › Auditoría** revisa a seguridade do servidor escollido (este equipo ou un remoto) e **non cambia nada**: só le a configuración.
 
-O apartado **Eventos e rexistros** amosa os eventos de Docker en directo, os gardados, a consulta a Docker dun período (`docker events --since … --until …`; Docker só conserva os últimos 256) e o **historial de operacións** desta e doutras sesións.
+1. Escolle **que auditar**: todos os contedores (en execución e detidos) ou un; tamén as imaxes e os proxectos Compose (lese a súa configuración con `docker compose config`, sen despregar).
+2. Preme **Auditar**. Vese o avance e pódese cancelar.
+3. Revisa os **achados**, por nivel (crítico, alto, medio, baixo) e agrupados por contedor, servizo ou imaxe. Cada un explica que ocorre, **por que importa** e que se **recomenda**. Pódense filtrar por nivel, por tipo e por texto.
 
-O historial garda que se fixo, cando e con que resultado, pero nunca o corpo das peticións, a orde nin as saídas, porque poden conter contrasinais. Está en `~/.local/state/container-manage-center/`, só lexible polo teu usuario.
+Compróbanse os riscos para o equipo (socket de Docker montado, cartafoles sensibles, capacidades, modo privilexiado, rede do equipo, PID e IPC compartidos, seccomp, AppArmor ou SELinux desactivados, dispositivos e portos abertos a todas as interfaces) e o endurecemento (proceso como root, sistema de ficheiros modificable, sen límites de memoria, CPU ou procesos, sen `no-new-privileges` e imaxes de máis dun ano). Con Docker rootless ou `userns-remap`, o root do contedor márcase como baixo.
 
-## 23. Configuración, temas e idiomas {#settings}
+- **Propor correccións** (contedores; o botón indica cantas): abre **Editar a configuración** cos cambios xa postos no borrador. Revísaos e aplícaos como calquera edición (sección 11); se os descartas, non cambia nada.
+- **Vulnerabilidades**: se tes **Trivy** ou **Grype** instalados coa súa base descargada, marca a caixa e cada imaxe mostra cantas vulnerabilidades coñecidas ten, por gravidade. A aplicación non instala estas ferramentas. Sen elas, ou nun servidor remoto, o informe di «Non analizado», nunca «0».
+- **Exportar** a JSON, Markdown ou HTML: o ficheiro queda só para o teu usuario e os segredos ocúltanse.
+- **Auditorías anteriores**: as 200 últimas de cada servidor, para abrilas de novo.
+- **Contedores nas demais ferramentas**: para cada contedor auditado, o seu peor achado, se a monitorización o vixía, a súa copia máis recente e as tarefas de copias que o inclúen, con accesos a **Ver en Monitorización** e **Preparar unha copia**.
 
-- **Aparencia**: tema (Sistema, Claro, Escuro) e idioma, nesta orde: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Cada idioma aparece co seu propio nome. O idioma gárdase, mantense ao volver abrir a aplicación e os seus cambios quedan no panel de actividade. A cor principal é o **morado** (desde a versión 1.0.0 non se pode escoller outra; se tiñas o verde azulado, cámbiase a morado sen perder o resto da configuración).
-- **Panel de actividade**: abrilo ante erros, operacións conservadas (50–10 000) e **Gardar o historial entre sesións**.
-- **Conexión con Docker** e comprobación de **Docker Compose**.
+## 24. Copias de seguridade {#backup}
+
+**Ferramentas › Copias** fai copias de seguridade do servidor escollido (este equipo ou un remoto) e restáuraas.
+
+1. **Cartafol de destino**: **Escoller cartafol** abre o diálogo do sistema. Dentro créase `container-manage-center-copias/<servidor>/<copia>/`, só para o teu usuario. Non se poden usar cartafoles do sistema; si un disco externo ou un cartafol de rede xa montado.
+2. **Nova copia**: marca o que queiras copiar.
+3. **Facer copia agora** mostra o avance e pódese cancelar. Unha copia cancelada ou interrompida nunca se dá por boa.
+
+| Elemento | Como se copia |
+|---|---|
+| Volumes | Pola API de Docker, cun contedor auxiliar que nunca se arrinca. Se un contedor en marcha o usa, escolle **en quente** (copia non garantida) ou **detendo os contedores** (párase mentres se copia e volven arrincar) |
+| Bases de datos | MariaDB, MySQL, PostgreSQL, Redis ou MongoDB en marcha: o envorcado faino a ferramenta do propio motor dentro do contedor, co contrasinal das súas variables. É coherente aínda que haxa escrituras |
+| Configuración de contedores | Para volver crealos, sen as variables con segredos |
+| Proxectos Compose | Só neste equipo: os seus ficheiros. Os `.env` só se marcas «Incluír os ficheiros .env» |
+| Configuración da aplicación | Preferencias, servidores e tarefas (os contrasinais están no chaveiro e non se copian) |
+
+- **Copias**: as do servidor, co seu estado (Completa, Incompleta), elementos, tamaño e avisos. **Comprobar** recalcula a suma SHA-256 de cada ficheiro e di se algún está alterado, falta ou sobra.
+- **Restaurar**: escolle que elementos e onde, e preme **Vista previa**, que comproba a integridade e di que se fará con cada un. Un volume restáurase nun **novo** ou baleiro, nunca sobre un con datos. Un contedor créase novo, con outro nome e sen arrincar. Os ficheiros escríbense nun cartafol novo.
+- **Restaurar unha base de datos substitúe os seus datos actuais**: hai que escribir «restaurar» para confirmalo.
+- **Tarefas programadas**: **Gardar como tarefa** garda a selección cun nome, unha frecuencia (diaria, semanal ou mensual) e unha retención (por defecto, 7 diarias, 4 semanais e 3 mensuais). A retención só borra copias antigas **desa tarefa**. **Programar** crea un temporizador de usuario de systemd (en Windows, unha tarefa do Programador de tarefas) que funciona aínda que a aplicación estea pechada; antes móstrache o que vai crear e só o crea se o autorizas. Non fai falta ser administrador. Os temporizadores de usuario de Linux só se executan coa túa sesión iniciada, salvo que actives ti `loginctl enable-linger`.
+- **Historial**: cada copia, manual ou programada, co seu resultado e as copias antigas que borrou a retención.
+
+As copias **non están cifradas**: conteñen os teus datos tal cal. Se as gardas fóra do equipo, usa un disco cifrado.
+
+## 25. Monitorización e alertas {#monitoring}
+
+**Supervisión › Monitorización** mostra o uso dos contedores do servidor escollido ao longo do tempo. Non instala nada no servidor: pregúntalle a Docker o mesmo que `docker stats`, tamén por SSH.
+
+- **Activar**: marca «Monitorizar este servidor». Actívase en cada servidor por separado e segue activa ao volver abrir a aplicación. O **intervalo** (de 2 a 60 s) é común a todos; **Pausar** detén todas as mostras.
+- **Resumo**: CPU e memoria do equipo segundo Docker, contedores en marcha, en pausa e parados, e o uso total en gráficos. A táboa mostra, por contedor, CPU, memoria e o seu límite, rede, disco, procesos, tempo en marcha e reinicios. Preme un nome para ver os seus gráficos. A CPU está en % dunha CPU, como `docker stats`: un contedor que usa dúas CPU enteiras marca 200 %.
+- **Período**: 5, 15 e 30 minutos veñen da memoria (desde que abriches a aplicación); 1, 6 e 24 horas, do resumo por minuto que se garda no equipo.
+- **Comparar**: ata 4 contedores en marcha e unha métrica no mesmo gráfico.
+- **Sen conexión**: se o servidor deixa de responder, os gráficos mostran un treito raiado. Non se inventan datos.
+
+**Alertas**: CPU alta e memoria alta (cun limiar de aviso e outro de resolución, para non avisar a cada pequena subida), o contedor cae e Docker vólveo arrincar, falta de memoria (OOM), remata con erro sen que ninguén o pare e pérdese a conexión co servidor. Parar ti un contedor non é un erro. Despois dun aviso, a mesma alerta non se repite durante os minutos de silencio (15 por defecto). As **notificacións de escritorio** non saen do equipo; **Probar notificación** envía unha de proba. Todas as alertas quedan no **Historial de alertas**.
+
+A monitorización non anota cada mostra no panel de actividade: só cando comeza e cando remata en cada servidor.
+
+## 26. Eventos, actividade e historial de operacións {#activity}
+
+Cada operación aparece no **panel de actividade**: hora, distintivo **API** (petición a Docker Engine), **CLI** (proceso, como `docker compose` ou `apt-get`) ou **APP** (operación da propia aplicación, como un cambio de idioma, ou o resumo dunha recreación cuxos pasos aparecen á parte), tipo, recurso, servidor, duración e estado. A liña principal é o comando equivalente, que podes copiar. Ao despregar unha entrada ves a operación executada de verdade, o resultado, o erro e o seu código HTTP se fallou, e as saídas dos procesos. Os valores secretos ocúltanse con `********`.
+
+O apartado **Eventos e rexistros** ten catro lapelas:
+
+- **En directo**: os eventos de Docker desta sesión (un contedor que arrinca, unha imaxe descargada…), veñan desta aplicación ou de calquera outra ferramenta. Pódense filtrar e **Pausar**.
+- **Gardados**: os eventos recibidos coa aplicación aberta, tamén de sesións anteriores (os 20.000 máis recentes).
+- **Consultar a Docker**: os eventos dun período (`docker events --since … --until …`). Inclúe o que pasou coa aplicación pechada, pero Docker só conserva os últimos 256.
+- **Historial de operacións**: o que fixo a aplicación, tamén en sesións anteriores (as 10.000 máis recentes).
+
+O historial garda que se fixo, cando e con que resultado, pero nunca o corpo das peticións, os comandos nin as saídas, porque poden conter contrasinais. Está en `~/.local/state/container-manage-center/`, só lexible polo teu usuario. Podes borralo desde cada lapela ou deixar de gardalo en Configuración.
+
+## 27. Configuración da aplicación {#settings}
+
+- **Aparencia**: tema (Sistema, Claro, Escuro) e idioma, por esta orde: **English**, **Español** (predeterminado), **Català**, **Galego**, **Euskara**, **Français**, **Italiano** e **Português**. Cada idioma aparece co seu propio nome. O idioma gárdase e mantense ao volver abrir a aplicación. A cor principal é o **morado** e non se pode cambiar.
+- **Panel de actividade**: abrilo só cando falla unha operación, operacións conservadas (50–10.000) e **Gardar o historial entre sesións**.
+- **Conexión con Docker** (seccións 5 e 6) e comprobación de **Docker Compose**.
 - **Actualizacións**: onde se publican as versións e **Comprobar agora**. A aplicación nunca descarga nin instala nada.
 - **Sistema**: versións da aplicación, do paquete, de WebKitGTK e glibc, do sistema e de Docker; **Copiar** xera un informe sen datos sensibles.
-- **Desinstalación e compoñentes** e **Axuda e documentación**.
+- **Desinstalación e compoñentes** (sección 29), **Axuda e documentación** (este manual) e **Legal** (sección 34).
 - **Restablecer as preferencias**, tras confirmalo. Non cambia a conexión con Docker.
 
-| Atallo | Acción |
-|---|---|
-| Ctrl+B | Contraer ou expandir a barra lateral |
-| Ctrl+Maiús+A | Abrir ou pechar o panel de actividade |
-| Escape | Pechar un diálogo |
+Todo se garda ao momento en `~/.config/container-manage-center/config.toml`.
 
-As mensaxes que xera o propio Docker (por exemplo, un erro de Docker Engine) e a saída dos programas amósanse tal como chegan, sen traducir. Os resumos técnicos que o motor da aplicación escribe no panel de actividade (por exemplo, como rematou un terminal) e as mensaxes de erro con datos concretos xéranse en castelán en todos os idiomas.
+As mensaxes que xera o propio Docker (por exemplo, un erro de Docker Engine) e a saída dos programas móstranse tal como chegan, sen traducir. Os resumos técnicos que o motor da aplicación escribe no panel de actividade e as mensaxes de erro con datos concretos xéranse en castelán en todos os idiomas.
 
-## 24. Desinstalación e xestión de dependencias {#uninstall}
+## 28. Windows {#windows}
+
+A versión para Windows está **en probas**: o instalador xérase, pero aínda non se validou nun Windows real. É un instalador `.exe` para o teu usuario, sen permisos de administrador, e non está asinado, así que Windows pode mostrar un aviso de SmartScreen ao abrilo.
+
+En Windows, Container Manage Center funciona igual que en Linux, con estas diferenzas:
+
+- **Docker local**: conéctase con **Docker Desktop** pola súa canalización con nome (`\\.\pipe\docker_engine`). Docker Desktop ten que estar en marcha, e o teu usuario, no grupo local `docker-users` (engádeo o instalador de Docker Desktop).
+- **Servidores remotos por SSH**: usan o cliente OpenSSH de Windows (`ssh.exe`, incluído en Windows 10 e 11). Como non admite conexións multiplexadas, cada operación abre a súa propia conexión: a primeira vez compróbase a identidade do servidor igual que en Linux, e o contrasinal ou a frase de paso gardada úsase soa. Os **servidores intermedios** (ProxyJump) aínda non están dispoñibles, e na **terminal do servidor** o cambio de tamaño da xanela non chega ao servidor.
+- **Contrasinais lembrados**: no **Administrador de credenciais** de Windows (credenciais de Windows), co nome `container-manage-center/…`.
+- **Copias programadas**: co **Programador de tarefas**, no cartafol «Container Manage Center», co teu usuario e sen privilexios de administrador. Execútanse coa sesión iniciada; se o equipo estaba apagado a esa hora, a copia faise en canto se poida.
+- **Notificacións**: as do sistema (centro de notificacións).
+- **Datos**: configuración en `%APPDATA%\container-manage-center` e historial en `%LOCALAPPDATA%\container-manage-center`.
+- **Desinstalar**: desde Configuración de Windows › Aplicacións › Aplicacións instaladas. Os teus datos e Docker Desktop non se tocan. O apartado «Desinstalación e compoñentes» só existe en Debian e Ubuntu.
+
+## 29. Desinstalación e compoñentes {#uninstall}
 
 **Configuración › Desinstalación e compoñentes** amosa que instalou a aplicación e permite quitalo sen usar o terminal. **Analizar** consulta dpkg e APT sen cambiar nada:
 
@@ -301,18 +435,7 @@ Ao confirmar, o sistema pide o teu contrasinal de administración (pkexec) **só
 
 Se `pkexec` non está instalado, a aplicación non pode pedir permisos: o diálogo amosa a orde equivalente con `sudo` para que a executes ti nun terminal.
 
-## 25. Seguridade e tratamento de credenciais {#security}
-
-- A aplicación **non se executa como root**, nunca pide sudo para funcionar e non cambia permisos do socket nin grupos.
-- As ordes externas execútanse **sen shell** e con argumentos separados: o que escribes nunca se interpreta como ordes.
-- **Non garda credenciais.** As dun rexistro úsanse só para unha descarga e non aparecen no panel de actividade. Con «As de Docker» úsanse as de `docker login`.
-- Os valores de variables como `PASSWORD`, `TOKEN` ou `SECRET` ocúltanse na pantalla e no panel (`********`), aínda que Docker os recibe completos.
-- O historial persistente nunca garda corpos de peticións, ordes nin saídas.
-- As operacións destrutivas piden confirmación.
-- A xanela bloquea as conexións externas. A única conexión propia é a comprobación de versións, desactivada mentres non indiques unha fonte. O botón de GitHub da Axuda só pode abrir ese enderezo, no teu navegador.
-- Montar o socket de Docker nun contedor ou pertencer ao grupo `docker` dá control total do equipo: a aplicación sinálao.
-
-## 26. Solución de problemas frecuentes {#troubleshooting}
+## 30. Solución de problemas {#troubleshooting}
 
 | Causa amosada | Que facer |
 |---|---|
@@ -331,7 +454,23 @@ Se `pkexec` non está instalado, a aplicación non pode pedir permisos: o diálo
 - **A desinstalación non ofrece unha dependencia**: úsaa outro programa, xa estaba instalada ou non se pode saber con seguridade; o motivo aparece ao seu carón.
 - **Para informar dun problema**: Configuración › Sistema › **Copiar** xera un informe sen datos sensibles.
 
-## 27. Preguntas frecuentes {#faq}
+- **Un servidor remoto non conecta**: **Probar conexión** indica en cal dos sete pasos falla (sección 7).
+- **Un comando masivo falla nun contedor**: o contedor debe estar en execución e ter o programa ou o intérprete indicados; o erro de Docker aparece no seu resultado.
+
+## 31. Seguridade e boas prácticas {#security}
+
+- A aplicación **non se executa como root**, nunca pide sudo para funcionar e non cambia permisos do socket nin grupos.
+- As ordes externas execútanse **sen shell** e con argumentos separados: o que escribes nunca se interpreta como ordes.
+- **Non garda credenciais.** As dun rexistro úsanse só para unha descarga e non aparecen no panel de actividade. Con «As de Docker» úsanse as de `docker login`.
+- Os valores de variables como `PASSWORD`, `TOKEN` ou `SECRET` ocúltanse na pantalla e no panel (`********`), aínda que Docker os recibe completos.
+- O historial persistente nunca garda corpos de peticións, ordes nin saídas.
+- As operacións destrutivas piden confirmación.
+- A xanela bloquea as conexións externas. A única conexión propia é a comprobación de versións, desactivada mentres non indiques unha fonte. O botón de GitHub da Axuda só pode abrir ese enderezo, no teu navegador.
+- Montar o socket de Docker nun contedor ou pertencer ao grupo `docker` dá control total do equipo: a aplicación sinálao.
+
+**Boas prácticas**: usa Docker rootless cando poidas; revisa a **Auditoría** de cando en vez; fai **copias** antes de eliminar volumes ou actualizar bases de datos; non publiques portos en todas as interfaces se só os usas neste equipo; non gardes contrasinais en imaxes nin nos comandos frecuentes. Na xestión masiva, eliminar e os comandos de risco administrativo ou destrutivo piden escribir o número de contedores.
+
+## 32. Preguntas frecuentes {#faq}
 
 **A aplicación executa ordes `docker`?** Non: usa a API de Docker Engine. A orde que ves no panel de actividade é a equivalente, para que a poidas reproducir. Docker Compose si se executa co seu programa oficial.
 
@@ -349,7 +488,38 @@ Se `pkexec` non está instalado, a aplicación non pode pedir permisos: o diálo
 
 **Como cambio o idioma?** En Configuración › Aparencia › Idioma.
 
-## 28. Legal {#legal}
+**As copias programadas seguen funcionando coa aplicación pechada?** Si: execútaas o sistema (systemd ou o Programador de tarefas de Windows), coa túa sesión iniciada.
+
+## 33. Glosario {#glossary}
+
+| Termo | Significado |
+|---|---|
+| Contedor | Un programa en execución illado do resto do equipo, creado a partir dunha imaxe |
+| Imaxe | Modelo de só lectura co sistema de ficheiros e a configuración para crear contedores |
+| Etiqueta de imaxe (*tag*) | Nome dunha versión dunha imaxe, como `nginx:1.27` |
+| Etiqueta de contedor (*label*) | Dato `clave=valor` gardado nun contedor, como `cmc.description` |
+| Rexistro | Servidor do que se descargan imaxes, como Docker Hub |
+| Volume | Almacenamento que xestiona Docker e que se conserva aínda que se elimine o contedor |
+| Directorio vinculado (*bind mount*) | Cartafol ou ficheiro do equipo montado dentro dun contedor |
+| Rede | Rede virtual que comunica os contedores entre si e co exterior |
+| Porto publicado | Porto do equipo que leva a un porto do contedor |
+| Política de reinicio | Que fai Docker cando un contedor remata ou o equipo arrinca |
+| Docker Engine | O servizo que executa os contedores; CMC comunícase con el |
+| API de Docker | Interface coa que se controla Docker Engine; úsana a CLI de Docker e CMC |
+| Socket Unix | Ficheiro especial para comunicarse con Docker no mesmo equipo (`/var/run/docker.sock`) |
+| Rootless | Docker executado cun usuario normal, sen privilexios de administrador |
+| Contexto de Docker | Configuración con nome que indica a que Docker se conecta a CLI (`docker context`) |
+| `DOCKER_HOST` | Variable de contorno que indica a que Docker conectarse |
+| Docker Compose | Ferramenta para definir e executar aplicacións de varios contedores cun ficheiro YAML |
+| Servizo e perfil (Compose) | Un servizo é cada parte dun proxecto Compose; un perfil agrupa servizos opcionais |
+| Docker Exec | Executar un programa dentro dun contedor que xa está en marcha |
+| `stdout` e `stderr` | Saída normal e saída de erros dun programa |
+| Pegada (*fingerprint*) | Resumo da clave dun servidor SSH (`SHA256:…`) para comprobar a súa identidade |
+| Almacén seguro (chaveiro) | Lugar do sistema onde se gardan os contrasinais cifrados (GNOME Keyring, KWallet, Administrador de credenciais) |
+| Docker Desktop | Aplicación de Docker para Windows e macOS |
+| Canalización con nome | Mecanismo de Windows co que se conecta a Docker Desktop (`\\.\pipe\docker_engine`) |
+
+## 34. Información legal e licenza {#legal}
 
 **Nome:** Container Manage Center (abreviado **CMC**).
 
@@ -367,32 +537,6 @@ Texto completo da licenza: https://www.gnu.org/licenses/gpl-3.0.html (tamén en 
 
 **Marcas.** Container Manage Center é un proxecto independente: non está afiliado a Docker, Inc. nin avalado por ela. «Docker» é unha marca de Docker, Inc. e aquí só se usa para nomear a tecnoloxía coa que traballa a aplicación (Docker Engine, a súa API, Docker Compose e a CLI de Docker).
 
+**Windows.** O instalador de Windows inclúe o cargador de WebView2 de Microsoft, cuberto por un permiso adicional da GPL v3 §7.
+
 Os mesmos datos están en **Configuración › Legal**.
-
-## 29. Windows {#windows}
-
-En Windows, Container Manage Center funciona igual que en Linux, con estas diferenzas:
-
-- **Docker local**: conéctase con **Docker Desktop** pola súa canalización con nome (`\\.\pipe\docker_engine`). Docker Desktop ten que estar en marcha, e o teu usuario, no grupo local `docker-users` (engádeo o instalador de Docker Desktop).
-- **Servidores remotos por SSH**: usan o cliente OpenSSH de Windows (`ssh.exe`, incluído en Windows 10 e 11). Como non admite conexións multiplexadas, cada operación abre a súa propia conexión: a primeira vez compróbase a identidade do servidor igual que en Linux, e o contrasinal ou a frase de paso gardada úsase soa. Os **servidores intermedios** (ProxyJump) aínda non están dispoñibles, e na **terminal do servidor** o cambio de tamaño da xanela non chega ao servidor.
-- **Contrasinais lembrados**: no **Administrador de credenciais** de Windows (credenciais de Windows), co nome `container-manage-center/…`.
-- **Copias programadas**: co **Programador de tarefas**, no cartafol «Container Manage Center», co teu usuario e sen privilexios de administrador. Execútanse coa sesión iniciada; se o equipo estaba apagado a esa hora, a copia faise en canto se poida.
-- **Notificacións**: as do sistema (centro de notificacións).
-- **Datos**: configuración en `%APPDATA%\container-manage-center` e historial en `%LOCALAPPDATA%\container-manage-center`.
-- **Desinstalar**: desde Configuración de Windows › Aplicacións › Aplicacións instaladas. Os teus datos e Docker Desktop non se tocan. O apartado «Desinstalación e compoñentes» só existe en Debian e Ubuntu.
-
-## 30. Xestión masiva {#bulk}
-
-**Xestión masiva** (en «Recursos») aplica unha mesma operación a moitos contedores á vez, tamén de varios servidores.
-
-- **Visión xeral**: total, en execución, detidos, en pausa e con erro. Premer nun contador filtra por ese estado. Reúnense os contedores deste ordenador e dos servidores remotos **conectados**; os demais indícanse nun aviso.
-- **Actualización**: botón **Actualizar** e actualización automática (de 5 s a 5 min, pódese desactivar).
-- **Táboa**: busca por nome ou ID; filtra por estado, imaxe, servidor e etiqueta (`clave` ou `clave=valor`); ordena premendo no título dunha columna.
-- **Selección**: caixa por fila, da páxina ou de **todo o filtrado**. A barra indica a cantos contedores da selección se aplica cada operación.
-- **Operacións**: iniciar, deter, reiniciar, pausar, retomar, eliminar e cambiar a política de reinicio (en quente con `docker update`; non nos creados con `--rm`). Os que non o permiten polo seu estado **omítense**, co motivo.
-- **Confirmación**: operación, servidores, contedores afectados e omitidos, consecuencias e operacións á vez (1 a 16). **Eliminar** pide escribir o número de contedores e **nunca elimina volumes nin imaxes**.
-- **Etiquetas**: Docker non permite cambialas nun contedor que xa existe (habería que recrealo); o diálogo explícao e amosa as actuais. Para un contedor concreto, usa **Duplicar**.
-- **Resultados**: cada contedor ten o seu: correcto (confirmado por Docker), fallido (co erro), omitido, cancelado ou **descoñecido** (a conexión cortouse antes da confirmación; actualiza para ver o seu estado). Se un falla, os demais seguen; nada se desfai nin se reintenta só. **Cancelar o pendente** deixa de enviar ordes.
-- **Actividade**: cada orde rexístrase co distintivo «Masiva»; **Ver na actividade** amosa só esa operación.
-- **Apartados**: Resumo, Contedores, Operacións, Configuración masiva, Comandos masivos e Historial (operacións e comandos gardados, coas ordes de cada contedor).
-- **Comandos masivos**: executa un mesmo comando dentro de varios contedores en execución con Docker Exec, sen pasar por ningunha shell deste ordenador. Escolle «Executable con argumentos» (un por liña, sen shell) ou «Secuencia cun intérprete» (`/bin/sh`, `bash`, `python3`…), usuario, directorio, tempo máximo e execucións á vez. A vista previa amosa os argumentos exactos e o risco; os de risco administrativo ou destrutivo piden escribir o número de contedores. Cada contedor dá o seu estado, código de saída, `stdout` e `stderr` (copiables e exportables cos segredos ocultos). Docker non permite deter un proceso xa iniciado: co tempo esgotado ou ao interromper só se deixa de agardar. Pódense gardar comandos frecuentes (nunca con segredos).

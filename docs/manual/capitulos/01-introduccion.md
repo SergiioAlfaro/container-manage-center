@@ -1,4 +1,4 @@
-# Introducción
+# Visión general del proyecto
 
 ## Qué es Container Manage Center
 
@@ -14,7 +14,7 @@ el motor web del sistema (WebKitGTK en Linux, WebView2 en Windows) en lugar de
 incluir un navegador completo. El resultado es un programa ligero (un paquete
 `.deb` de unos 8 MB) que habla directamente con la API de Docker.
 
-Este manual describe la **versión 1.11.0**. Todo lo que se cuenta está en el
+Este manual describe la **versión 1.11.1**. Todo lo que se cuenta está en el
 código fuente del repositorio; cuando algo no se ha podido comprobar (por
 ejemplo, el funcionamiento en un Windows real), se dice expresamente.
 
@@ -81,11 +81,11 @@ momento en la aplicación, gracias a los eventos de Docker).
 
 ## Plataformas
 
-| Plataforma | Estado en la 1.11.0 |
+| Plataforma | Estado en la 1.11.1 |
 |---|---|
 | Debian 13 y 12 (x86_64) | Admitidas; paquete `.deb` (en Debian 12, el paquete compatible) |
 | Ubuntu 24.04 y 22.04 (x86_64) | Admitidas; regresión automática en Ubuntu 24.04 con Docker 29, 26 y 24; instalación limpia del paquete en las dos |
-| Windows 10 y 11 (x86_64) | **En pruebas**: en la 1.9.1 compilaba y sus pruebas unitarias pasaban con Wine; la 1.10.0 y la 1.11.0 no se han compilado ni probado para Windows, y ninguna versión se ha ejecutado aún en un Windows real |
+| Windows 10 y 11 (x86_64) | **En pruebas**: desde la 1.11.1, el instalador se compila con MSVC en GitHub Actions y las 692 pruebas unitarias e IPC de Rust pasan en un runner de Windows Server 2025; la aplicación no se ha ejecutado todavía en un Windows 10 u 11 real |
 
 El capítulo [Pruebas y control de calidad](#pruebas-y-control-de-calidad) detalla qué se ha
 probado en cada plataforma.

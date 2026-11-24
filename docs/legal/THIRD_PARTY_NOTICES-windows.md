@@ -363,7 +363,7 @@ compilación con MSVC usa el runtime de Visual C++ del sistema.
 | scheduler | 0.28.0 | npm | MIT | T-cf9b17822d1f |
 | void-elements | 3.1.0 | npm | MIT | T-bc3fa41de8a1 |
 | zustand | 5.0.16 | npm | MIT | T-384a8fa756d4 |
-| WebView2Loader.dll (Microsoft Edge WebView2 SDK) | 1.0.3650.58 | Windows | BSD-3-Clause | T-903fd2ca8187 (estándar) |
+| WebView2Loader.dll (Microsoft Edge WebView2 SDK) | 1.0.3650.58 | Windows | BSD-3-Clause | T-0af8f1b80751 (del paquete NuGet) |
 | Runtime de MinGW-w64 (solo compilación con MinGW) | 11.0.1 | Windows | ZPL-2.1 AND MIT AND LicenseRef-public-domain | T-54cf5a4597d3 (del sistema de compilación) |
 | libgcc de GCC (solo compilación con MinGW) | 13.2.0 | Windows | GPL-3.0-or-later WITH GCC-exception-3.1 | T-b9b87f6d7630 (del sistema de compilación) |
 
@@ -14494,7 +14494,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### T-903fd2ca8187 · BSD-3-Clause (texto estándar con el titular de Microsoft)
+### T-0af8f1b80751 · LICENSE.txt del paquete NuGet Microsoft.Web.WebView2
 
 Usado por: WebView2Loader.dll (Microsoft Edge WebView2 SDK) 1.0.3650.58.
 
@@ -14502,28 +14502,29 @@ Usado por: WebView2Loader.dll (Microsoft Edge WebView2 SDK) 1.0.3650.58.
 Copyright (C) Microsoft Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+modification, are permitted provided that the following conditions are
+met:
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * The name of Microsoft Corporation, or the names of its contributors 
+may not be used to endorse or promote products derived from this
+software without specific prior written permission.
 
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 

@@ -21,12 +21,13 @@ import { BlockView, parseHelp, type Block } from "./markdown";
  *  una prueba). */
 export const HELP_DOCS: Record<string, string> = { en, es, ca, gl, eu, fr, it, pt };
 
-/** Secciones exigidas, en orden (0.9.2). */
+/** Secciones exigidas, en orden. 1.11.1: índice reorganizado para quien no
+ *  conoce Docker (interfaz, auditoría, copias, monitorización y glosario). */
 export const HELP_SECTION_IDS = [
   "about",
   "requirements",
   "install",
-  "first-setup",
+  "interface",
   "connection",
   "rootless",
   "remote-servers",
@@ -35,7 +36,7 @@ export const HELP_SECTION_IDS = [
   "container-lifecycle",
   "container-edit",
   "container-commit",
-  "logs-stats-terminal",
+  "bulk",
   "images",
   "pull-build",
   "networks",
@@ -43,17 +44,20 @@ export const HELP_SECTION_IDS = [
   "binds",
   "compose",
   "compose-projects",
+  "logs-stats-terminal",
   "terminals",
+  "audit",
+  "backup",
+  "monitoring",
   "activity",
   "settings",
-  "uninstall",
-  "security",
-  "troubleshooting",
-  "faq",
-  "legal",
   "windows",
-  // 1.10.0: gestión masiva.
-  "bulk",
+  "uninstall",
+  "troubleshooting",
+  "security",
+  "faq",
+  "glossary",
+  "legal",
 ] as const;
 
 const blockText = (b: Block): string =>
