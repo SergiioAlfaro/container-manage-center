@@ -1443,3 +1443,9 @@ propietario el 2026-11-12). Hallazgos: `docs/security/SECURITY_AUDIT.md`.
 * **Exportación** de resultados en Markdown o JSON reutilizando el guardado de informes de la auditoría (`audit_export_save`): pide la ruta, vuelve a ocultar los secretos, permisos 0600 y escritura atómica.
 * **Apartados**: Resumen, Contenedores, Operaciones, Configuración masiva, Comandos masivos e Historial. El historial lee las entradas guardadas (`history_list`) de operaciones y comandos masivos, y despliega las órdenes de cada lote.
 * **Etiquetas**: siguen sin poder cambiarse (D-119): los botones de añadir, modificar y eliminar están desactivados con la explicación.
+
+### D-125 · Un solo manual: la aplicación y el PDF salen del mismo texto (1.11.1)
+* El manual de la aplicación (`ui/src/features/help/docs/<idioma>.md`) es la **fuente única** del manual de usuario. El PDF (`scripts/build-manual.sh`) convierte el español sin cambiar el texto (`scripts/manual/ayuda-a-pdf.py`): cada sección es un capítulo con el mismo número, y solo se añaden capturas (`docs/manual/figuras-ayuda.tsv`). Así no pueden contradecirse. Los capítulos técnicos siguen en `docs/manual/capitulos/` como anexos.
+* El índice se ordena para quien no conoce Docker: qué es, requisitos, instalación, interfaz, conexión, recursos (con la gestión masiva junto a los contenedores), herramientas, supervisión, configuración, Windows, desinstalación, problemas, seguridad, preguntas, glosario y legal. Cada apartado de la barra lateral tiene su sección (lo comprueba una prueba).
+* Los ocho idiomas tienen las mismas secciones; los cambios de esta versión se tradujeron en todos.
+* **Publicación**: las versiones se publican como Releases de GitHub. `release-draft.yml` solo crea **borradores** (la etiqueta se crea al publicar) y nunca sustituye una Release existente; publicar es una decisión del titular.

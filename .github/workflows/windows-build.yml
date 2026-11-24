@@ -79,7 +79,7 @@ jobs:
             cp "$f" "out/$(basename "$f" .exe)-msvc.exe"
           done
           cp docs/legal/THIRD_PARTY_NOTICES-windows.md docs/legal/DEPENDENCY_LICENSE_AUDIT-windows.md out/
-          (cd out && sha256sum -- * > SHA256SUMS)
+          (cd out && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

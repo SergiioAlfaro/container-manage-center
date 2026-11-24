@@ -1,5 +1,17 @@
 # Cambios
 
+## 1.11.1 — 2026-11-24 (documentación, empaquetado y publicación en GitHub)
+Versión de corrección: no añade ni quita funciones de la aplicación.
+
+- **Corrección: Redes y Copias › Nueva copia fallaban** («La interfaz ha encontrado un error») si se abrían en los 5 minutos siguientes a abrir el asistente «Crear contenedor»: el asistente guardaba sus listas breves de redes y volúmenes en la misma caché que las listas completas. Ahora tienen claves propias, que los eventos de Docker también recargan, y una prueba impide que vuelva a pasar. Encontrado al tomar las capturas del manual con la aplicación real; venía de versiones anteriores.
+- **Windows (MSVC)**: el manifiesto de Common Controls v6 se enlaza también en los ejecutables de pruebas (antes no arrancaban en un Windows real: 0xc0000139). El programa lleva el mismo manifiesto que antes.
+- **Manual de la aplicación reorganizado** en los 8 idiomas (D-125): 34 secciones ordenadas para quien no conoce Docker. Nuevas: Interfaz principal y navegación, Auditoría de seguridad, Copias de seguridad, Monitorización y alertas (tres apartados que existían desde la 1.3.0–1.5.0 y no tenían sección) y Glosario. La gestión masiva pasa junto a los contenedores; «Configuración inicial» se reparte entre Conexión y Configuración; avisos añadidos en las operaciones que borran datos; la sección de Windows indica que está en pruebas.
+- **Manual en PDF con la misma fuente**: la Parte I es el manual de la aplicación, con la misma numeración y capturas reales de esta versión; la Parte II reúne los anexos técnicos. Se guarda en `docs/Container-Manage-Center-Manual-ES.pdf`. Los capítulos «Funcionalidades» y «Uso de la aplicación» del PDF anterior se retiran porque los sustituye la Parte I.
+- **Licencia de WebView2Loader**: `packaging/windows/licenses/WebView2Loader.LICENSE.txt` era el texto BSD-3-Clause estándar con el titular de Microsoft; ahora es el `LICENSE.txt` original del paquete NuGet (lo detectó `windows-build.yml` en su primera ejecución). Los avisos de terceros de Windows lo citan como «del paquete NuGet».
+- **Clippy de Rust 1.100** (GitHub Actions): `result_large_err` en `cmc-engine::manager::handshake`, permitido con su justificación; sin cambio de comportamiento.
+- **GitHub**: primera publicación del repositorio (rama `main`). `ci.yml` se ejecuta en `main` y guarda los informes de pruebas como artefactos (JUnit de Vitest, Rust en Linux y en Windows); `linux-build.yml` y `windows-build.yml` se pueden reutilizar; nuevo `release-draft.yml`, que crea una Release en borrador con el `.deb`, el `.exe`, el código fuente, el manual y `SHA256SUMS`, sin publicar nada.
+- README, guía de usuario, estado, guía de publicación y capítulos técnicos al día.
+
 ## 1.11.0 — 2026-11-20 (gestión masiva: comandos masivos)
 - **Comandos masivos** (D-121 a D-124): el mismo comando dentro de varios contenedores con Docker Exec, de uno o varios servidores conectados.
   - Dos modalidades: un ejecutable con argumentos (sin ninguna shell; funciona en imágenes sin `/bin/sh`) o una secuencia de varias líneas para el intérprete que se elija. Usuario, directorio de trabajo, tiempo máximo (1 s a 1 h) y ejecuciones a la vez (1 a 16).
