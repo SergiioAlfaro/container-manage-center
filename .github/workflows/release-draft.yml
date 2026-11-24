@@ -81,10 +81,16 @@ jobs:
           set -euo pipefail
           mkdir -p out
           cp dl/container-manage-center-deb/*.deb out/
-          cp dl/container-manage-center-windows/*.exe out/
+          # GitHub cambia los espacios por puntos al subir un archivo a una
+          # Release: se renombra antes, para que SHA256SUMS use el mismo nombre
+          # que se descarga (1.11.1).
+          for f in dl/container-manage-center-windows/*.exe; do
+            n=$(basename "$f"); cp "$f" "out/${n// /.}"
+          done
           git archive --format=tar.gz --prefix="container-manage-center-$V/" \
             -o "out/container-manage-center-$V-src.tar.gz" HEAD
           cp docs/Container-Manage-Center-Manual-ES.pdf "out/Container-Manage-Center-Manual-$V-ES.pdf"
+          if ls out | grep -q ' '; then echo "::error::Hay nombres con espacios en out/"; exit 1; fi
           (cd out && sha256sum -- * > SHA256SUMS && sha256sum -c SHA256SUMS)
           # Notas: la sección de esta versión en CHANGELOG.md.
           awk -v v="$V" '$0 ~ "^## "v" " {on=1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
