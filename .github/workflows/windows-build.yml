@@ -10,10 +10,13 @@
 # instalador se guarda como artefacto de la ejecución; publicar una versión
 # (release) es una decisión del titular y se hace a mano. Las pruebas
 # unitarias están en ci.yml.
+#
+# 1.11.1: también se puede llamar desde release-draft.yml (workflow_call).
 name: windows-build
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

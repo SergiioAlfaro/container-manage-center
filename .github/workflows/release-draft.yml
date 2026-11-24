@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
+#
+# Borrador de publicación (1.11.1). Solo se lanza a mano (workflow_dispatch),
+# indicando la versión exacta. Reutiliza linux-build.yml y windows-build.yml
+# (no duplica sus pasos) y crea una Release de GitHub en **borrador** con:
+#   - el paquete .deb (compilado en Ubuntu 22.04: Debian 12+ y Ubuntu 22.04+),
+#   - el instalador .exe de Windows (en pruebas, sin firmar),
+#   - el código fuente (git archive del commit),
+#   - el manual en PDF (docs/Container-Manage-Center-Manual-ES.pdf),
+#   - SHA256SUMS de todo,
+# y las notas de la versión sacadas de CHANGELOG.md.
+#
+# Un borrador no crea la etiqueta ni es visible para nadie más: la etiqueta
+# v<versión> se crea cuando el titular pulsa «Publish release». Si ya existe
+# una Release con esa etiqueta, el flujo se detiene y no la toca.
+name: release-draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Versión exacta, la de package.json (por ejemplo, 1.11.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-draft
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Versión y Release existente
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Comprobar la versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Versión no válida: $V"; exit 1; }
+          test "$(node -p "require('./package.json').version")" = "$V" || { echo "::error::package.json no tiene la versión $V"; exit 1; }
+          grep -q "^version = \"$V\"" Cargo.toml || { echo "::error::Cargo.toml no tiene la versión $V"; exit 1; }
+          grep -q "^## $V " CHANGELOG.md || { echo "::error::CHANGELOG.md no tiene la sección de la $V"; exit 1; }
+          test -f docs/Container-Manage-Center-Manual-ES.pdf || { echo "::error::Falta docs/Container-Manage-Center-Manual-ES.pdf"; exit 1; }
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Ya existe una Release v$V: no se sustituye"
+            exit 1
+          fi
+
+  linux:
+    needs: check
+    uses: ./.github/workflows/linux-build.yml
+    with:
+      integration: false
+
+  windows:
+    needs: check
+    uses: ./.github/workflows/windows-build.yml
+
+  draft:
+    name: Borrador de la Release
+    needs: [linux, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          path: dl
+      - name: Reunir los archivos
+        env:
+          V: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp dl/container-manage-center-deb/*.deb out/
+          cp dl/container-manage-center-windows/*.exe out/
+          git archive --format=tar.gz --prefix="container-manage-center-$V/" \
+            -o "out/container-manage-center-$V-src.tar.gz" HEAD
+          cp docs/Container-Manage-Center-Manual-ES.pdf "out/Container-Manage-Center-Manual-$V-ES.pdf"
+          (cd out && sha256sum -- * > SHA256SUMS && sha256sum -c SHA256SUMS)
+          # Notas: la sección de esta versión en CHANGELOG.md.
+          awk -v v="$V" '$0 ~ "^## "v" " {on=1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
+          test -s notes.md
+          ls -la out
+      - name: Crear el borrador
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "v$V" out/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --target "$GITHUB_SHA" \
+            --title "Container Manage Center $V" \
+            --notes-file notes.md
