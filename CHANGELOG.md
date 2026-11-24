@@ -10,6 +10,7 @@ Versión de corrección: no añade ni quita funciones de la aplicación.
 - **Licencia de WebView2Loader**: `packaging/windows/licenses/WebView2Loader.LICENSE.txt` era el texto BSD-3-Clause estándar con el titular de Microsoft; ahora es el `LICENSE.txt` original del paquete NuGet (lo detectó `windows-build.yml` en su primera ejecución). Los avisos de terceros de Windows lo citan como «del paquete NuGet».
 - **Clippy de Rust 1.100** (GitHub Actions): `result_large_err` en `cmc-engine::manager::handshake`, permitido con su justificación; sin cambio de comportamiento.
 - **GitHub**: primera publicación del repositorio (rama `main`). `ci.yml` se ejecuta en `main` y guarda los informes de pruebas como artefactos (JUnit de Vitest, Rust en Linux y en Windows); `linux-build.yml` y `windows-build.yml` se pueden reutilizar; nuevo `release-draft.yml`, que crea una Release en borrador con el `.deb`, el `.exe`, el código fuente, el manual y `SHA256SUMS`, sin publicar nada.
+- `release-draft.yml`: el `.exe` se renombra con puntos en lugar de espacios antes de calcular `SHA256SUMS`, porque GitHub hace ese cambio al subirlo y la suma no se podía comprobar. Una prueba de IPC espera hasta 30 s (antes 10) a que lleguen los eventos: en el runner de Windows fallaba a veces por tiempo.
 - README, guía de usuario, estado, guía de publicación y capítulos técnicos al día.
 
 ## 1.11.0 — 2026-11-20 (gestión masiva: comandos masivos)

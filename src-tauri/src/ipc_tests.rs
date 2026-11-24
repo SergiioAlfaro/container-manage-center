@@ -246,8 +246,11 @@ const MISSING_DIR: &str = if cfg!(windows) {
     "/no/existe/cmc"
 };
 
+// 1.11.1: 30 s (antes 10). En el runner de Windows de GitHub, la reconexión tras
+// cambiar el socket a veces tardaba algo más de 10 s y la prueba fallaba sin
+// error real. Solo cambia cuánto se espera antes de dar la prueba por fallida.
 fn wait_for<F: Fn() -> bool>(what: &str, f: F) {
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    let deadline = std::time::Instant::now() + Duration::from_secs(30);
     while !f() {
         assert!(
             std::time::Instant::now() < deadline,
