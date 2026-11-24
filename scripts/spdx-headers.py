@@ -13,7 +13,9 @@ la hay. No toca:
 - el código generado (tipos TypeScript de ts-rs en ui/src/shared/ipc/bindings);
 - archivos sin comentarios (JSON), imágenes ni documentos;
 - archivos que ya tengan un aviso SPDX o de copyright (no se sustituye nada).
-No hay código de terceros copiado en el repositorio (DEPENDENCY_LICENSE_AUDIT.md).
+No hay código de terceros copiado en el repositorio (DEPENDENCY_LICENSE_AUDIT.md),
+salvo src-tauri/windows-app-manifest.xml (el manifiesto de Windows de
+tauri-build, Apache-2.0 OR MIT, con su aviso; 1.11.1).
 
 Uso (desde la raíz del proyecto):
     python3 scripts/spdx-headers.py           # añade los que falten

@@ -62,6 +62,12 @@ cargador de Microsoft Edge WebView2 en Windows. Aprobado por el titular el
   sistema.
 - **El texto de la GPL** (`LICENSE`): Copyright © 2007 Free Software
   Foundation, Inc.
+- **El manifiesto de Windows** `src-tauri/windows-app-manifest.xml` (1.11.1):
+  copiado sin cambios de tauri-build 2.7.4, de Tauri Programme within The
+  Commons Conservancy (Apache-2.0 OR MIT); el archivo lleva su aviso.
+- **El texto de la licencia de WebView2Loader**
+  (`packaging/windows/licenses/WebView2Loader.LICENSE.txt`): el original del
+  paquete NuGet Microsoft.Web.WebView2, de Microsoft Corporation.
 - **La marca «Docker»**, de Docker, Inc. Container Manage Center es un
   proyecto independiente, no afiliado a Docker, Inc. ni respaldado por ella.
 
