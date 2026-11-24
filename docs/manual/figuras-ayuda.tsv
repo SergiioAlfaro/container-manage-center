@@ -1,0 +1,22 @@
+# Capturas de la Parte I del manual en PDF (scripts/manual/ayuda-a-pdf.py).
+# id de la sección<TAB>imagen (docs/manual/imagenes)<TAB>pie de figura
+# Capturas reales de la 1.11.1 (24-11-2026), Ubuntu 24.04 y Docker 29.9.2, con recursos de demostración;
+# captura-comandos-masivos.png es de la 1.11.0 (20-11-2026): esa pantalla no ha cambiado.
+interface	captura-actividad.png	Ventana principal: barra lateral, barra superior, área de trabajo y panel de actividad abierto.
+dashboard	captura-inicio.png	Dashboard conectado a Docker Engine 29.9.2.
+remote-servers	captura-servidores.png	Servidores: este equipo y el botón para añadir servidores remotos por SSH.
+containers	captura-contenedores.png	Lista de contenedores con su estado, imagen y puertos.
+container-lifecycle	captura-crear-contenedor.png	Asistente para crear un contenedor, con el comando equivalente y la revisión.
+bulk	captura-gestion-masiva.png	Gestión masiva: indicadores, apartados y tabla de contenedores de todos los servidores.
+bulk	captura-comandos-masivos.png	Resultado de un comando masivo: cada contenedor con su stdout y su stderr.
+images	captura-imagenes.png	Imágenes locales y los contenedores que las usan.
+networks	captura-redes.png	Redes de Docker con sus subredes y contenedores.
+volumes	captura-volumenes.png	Volúmenes, con los anónimos señalados.
+compose	captura-compose.png	Proyecto Docker Compose en marcha.
+terminals	captura-terminales.png	Dos terminales simultáneas en contenedores distintos.
+audit	captura-auditoria.png	Resultado de una auditoría: hallazgos por nivel con su explicación y recomendación.
+backup	captura-copias.png	Nueva copia: volúmenes, bases de datos y configuración de contenedores que se pueden copiar.
+monitoring	captura-monitorizacion.png	Monitorización: uso de CPU y memoria en el tiempo y tabla por contenedor.
+activity	captura-eventos.png	Eventos de Docker en directo.
+settings	captura-configuracion.png	Configuración: apariencia, panel de actividad y conexión con Docker.
+settings	captura-ayuda.png	Este manual dentro de la aplicación (Configuración › Ayuda y documentación).

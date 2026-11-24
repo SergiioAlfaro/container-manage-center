@@ -49,7 +49,7 @@ npm test            # Vitest
 Cubren la traducción de errores en ocho idiomas, el diagnóstico de la
 conexión, los textos de cada plataforma, la ocultación de secretos en la
 interfaz, los formularios de creación y edición, el tema morado y su
-contraste. En la versión 1.11.0 pasan **492 pruebas**.
+contraste. En la versión 1.11.1 pasan **503 pruebas** (entre ellas, que el manual tiene las 34 secciones en los ocho idiomas y que ninguna clave de la caché se pide con dos funciones distintas).
 
 ## Pruebas de integración
 
@@ -66,7 +66,9 @@ servidor caído, Docker detenido, permisos insuficientes).
 - **Windows**: el código se compila de forma cruzada para
   `x86_64-pc-windows-gnu` y las pruebas unitarias y de IPC se ejecutan con
   **Wine**; además, la integración continua las ejecuta en un runner de
-  Windows. Wine **no es Windows**: no tiene Docker Desktop, WebView2 Runtime,
+  Windows (1.11.1: Windows Server 2025, Rust 1.100, 692 pruebas superadas;
+  una prueba de IPC con un límite de 10 s falló una vez por tiempo y pasó al
+  repetirla). Wine **no es Windows**: no tiene Docker Desktop, WebView2 Runtime,
   Programador de tareas ni un Administrador de credenciales completo, así que
   esas partes quedan para la validación manual.
 
@@ -80,7 +82,7 @@ servidor caído, Docker detenido, permisos insuficientes).
   compatible en 22.04), lo instala, la aplicación arranca con ese usuario y se
   niega a hacerlo como root, y la desinstalación quita el programa y conserva
   los datos del usuario. La actualización desde una versión anterior no se
-  ha probado ni en la 1.9.1, ni en la 1.10.0, ni en la 1.11.0.
+  ha probado ni en la 1.9.1, ni en la 1.10.0, ni en la 1.11.0 ni en la 1.11.1.
 - Instalador de Windows: bibliotecas del `.exe` (solo de Windows y
   `WebView2Loader.dll`) e inspección del script NSIS generado (instalación
   para el usuario actual, idiomas, licencia, carpeta `legal\`, gancho de
@@ -105,7 +107,7 @@ las guías del repositorio:
 | Ubuntu 24.04 | Sí | Docker 29, 26 y 24 | `.deb` instalado y desinstalado (sistema limpio) | Entorno de pruebas | Verificada automáticamente |
 | Ubuntu 22.04 | Compilación del paquete compatible | No | `.deb` compatible instalado y desinstalado (sistema limpio) | No | Paquete comprobado |
 | Debian 12 / 13 | No | No | `.deb` compatible (exige glibc ≥ 2.34) | Pendiente | Compatible, sin validar a mano |
-| Windows 10 / 11 | Wine: 614 pruebas superadas | No | Instalador generado, no instalado | Pendiente | **En pruebas** |
+| Windows 10 / 11 | Runner Windows Server 2025: 692 pruebas superadas (1.11.1); Wine: 614 (1.9.1) | No | Instalador generado con MSVC en GitHub Actions, no instalado | Pendiente | **En pruebas** |
 
 La matriz detallada de Windows (AUT-01 a AUT-22, con los estados PASS,
 PARTIAL y BLOCKED, y los pasos WIN-\* NOT TESTED) está en
@@ -153,7 +155,7 @@ pasos completos en `docs/validation/VALIDACION-WINDOWS.md`):
 **Linux**:
 
 1. Instalar el `.deb` compatible en un **Debian 13** real con Docker y
-   repetir el recorrido del capítulo [Uso de la aplicación](#uso-de-la-aplicación).
+   repetir el recorrido de la [Parte I, Manual de usuario](#ayuda-about).
 2. Probar Docker en modo *rootless* en un equipo real.
 
 **Decisiones del titular** antes de publicar: si los paquetes se firman con

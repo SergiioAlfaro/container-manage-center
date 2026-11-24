@@ -2,8 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Sergio Alfaro Lorite
 #
-# Genera el manual técnico y de usuario en PDF a partir de docs/manual/
-# (1.9.1): capítulos en Markdown, diagramas Mermaid y plantilla de XeLaTeX.
+# Genera el manual técnico y de usuario en PDF (1.9.1; reorganizado en la
+# 1.11.1):
+#   - Parte I, «Manual de usuario»: el manual de la aplicación
+#     (ui/src/features/help/docs/es.md, el que se ve en Configuración › Ayuda y
+#     documentación), con la misma numeración y las capturas de
+#     docs/manual/figuras-ayuda.tsv. Es la única fuente: el PDF y la aplicación
+#     no pueden contradecirse.
+#   - Parte II, «Anexos técnicos»: docs/manual/capitulos/*.md (arquitectura,
+#     desarrollo, pruebas, distribución, legal…), como apéndices A, B, C…
 #
 # Requisitos: pandoc 3, XeLaTeX (fontspec, polyglossia, titlesec, fancyhdr,
 # tocloft, tcolorbox, fvextra, lastpage), las fuentes Inter y DejaVu Sans Mono,
@@ -51,8 +58,13 @@ sed -e "s/Versión 1\.9\.1/Versión $VERSION/g" "$SRC/plantilla/estilo.tex" > "$
   sed -e "s/Versión 1\.9\.1/Versión $VERSION/g" "$SRC/plantilla/portada.tex"
 } > "$WORK/portada.tex"
 
+# Parte I (manual de la aplicación) y Parte II (anexos técnicos).
+python3 "$ROOT/scripts/manual/ayuda-a-pdf.py" "$ROOT/ui/src/features/help/docs/es.md" \
+  "$SRC/figuras-ayuda.tsv" > "$WORK/1-manual-de-usuario.md"
+printf '```{=latex}\n\\part{Anexos técnicos}\n\\appendix\n```\n' > "$WORK/2-anexos.md"
+
 cd "$SRC"
-pandoc capitulos/*.md \
+pandoc prefacio.md "$WORK/1-manual-de-usuario.md" "$WORK/2-anexos.md" capitulos/*.md \
   --from markdown+pipe_tables+implicit_figures+link_attributes \
   --pdf-engine=xelatex \
   --top-level-division=chapter \

@@ -18,6 +18,7 @@ mantiene a la vez en `Cargo.toml` (workspace), `package.json`,
 | 1.9.1 | Auditoría y correcciones de Windows, pruebas con Wine, preparación para GitHub |
 | 1.10.0 | Gestión masiva de contenedores (etapa 1) |
 | 1.11.0 | Gestión masiva: comandos masivos con Docker Exec, apartados e historial |
+| 1.11.1 | Manual reorganizado (aplicación y PDF con la misma fuente), primera publicación en GitHub, flujos de compilación y borrador de Release |
 
 ## Paquetes Debian
 
@@ -33,8 +34,10 @@ mantiene a la vez en `Cargo.toml` (workspace), `package.json`,
 
 ## Instaladores de Windows
 
-- Instalador **NSIS** (`…_x64-setup.exe`) para el usuario actual, sin
-  administrador, en inglés, español, francés, italiano o portugués.
+- Instalador **NSIS** (`…_x64-setup.exe`; `windows-build.yml` lo guarda como
+  `…_x64-setup-msvc.exe`, compilado con MSVC en un runner de Windows) para el
+  usuario actual, sin administrador, en inglés, español, francés, italiano o
+  portugués.
 - Incluye en `legal\` la licencia, los avisos de terceros de Windows, el
   permiso adicional de WebView2 y los textos de licencia de WebView2Loader y
   de MinGW-w64/libgcc.
@@ -74,12 +77,19 @@ descarga ni instala nada**:
 
 ## Distribución
 
-La publicación es una decisión del titular. Antes de publicar:
+Las versiones se publican como **Releases de GitHub** con la etiqueta
+`v<versión>`. La publicación es una decisión del titular:
 
-1. `verify-evolution-1.11.0.sh --deb` sin fallos.
-2. Paquetes, instalador (si se publica), código fuente y `SHA256SUMS` en la
-   misma publicación.
-3. Para Windows, validar en un Windows real.
+1. `release-draft.yml` (o, a mano, los paquetes de `linux-build.yml` y
+   `windows-build.yml`) prepara una Release en **borrador** con el `.deb`, el
+   `.exe`, el código fuente, el manual en PDF y `SHA256SUMS`.
+2. El titular revisa el borrador y las notas y pulsa **Publish release**; solo
+   entonces se crea la etiqueta y la versión es visible.
+3. No se sustituyen los archivos de una versión ya publicada: una corrección
+   es una versión nueva.
+
+Antes de publicar conviene: `verify-evolution-1.11.0.sh --deb` sin fallos en
+Debian o Ubuntu y, para Windows, validar el instalador en un Windows real.
 
 ## Requisitos de la GPL al distribuir
 

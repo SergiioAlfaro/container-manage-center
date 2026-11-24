@@ -130,7 +130,7 @@ otra vez al ejecutar.
 ## Auditoría y avisos de seguridad
 
 El apartado **Auditoría** revisa contenedores, imágenes y proyectos sin
-cambiar nada (ver [Funcionalidades](#auditoría-de-seguridad)). Además, el
+cambiar nada (ver [Auditoría de seguridad](#ayuda-audit)). Además, el
 proyecto mantiene `docs/security/` con la auditoría de seguridad de la 1.0.0
 (13 hallazgos confirmados), el plan de corrección y una lista de comprobación
 que se revisa en cada versión.
@@ -142,4 +142,4 @@ que se revisa en cada versión.
 | **Implementada** | Validación en Rust; confirmación en el backend; riesgos con aceptación; ocultación de secretos; llavero; verificación estricta de la clave SSH; procesos sin shell; CSP y permisos mínimos de Tauri; negativa a root (Linux); reglas de rutas de Compose (Linux y Windows); `SHA256SUMS` verificado por `install.sh` |
 | **Parcial** | Ocultación de secretos: depende del nombre de la variable o del formato del valor (un secreto en una variable con nombre neutro no se reconoce); detección de riesgos: conoce rutas y opciones concretas, no todas las posibles |
 | **Limitación conocida** | Copias sin cifrar; paquetes e instalador sin firmar; `style-src 'unsafe-inline'` en la CSP (estilos en línea de React); dependencias transitivas sin mantenimiento señaladas por `cargo deny` (sin vulnerabilidad conocida); en Windows no se comprueba si se ejecuta como administrador |
-| **Pendiente** | Firma GPG de `SHA256SUMS` (decisión del titular, CMC-SEC-09); validación en Windows real; aprobación del permiso adicional de WebView2 |
+| **Pendiente** | Firma GPG de `SHA256SUMS` (decisión del titular, CMC-SEC-09); validación en Windows real |

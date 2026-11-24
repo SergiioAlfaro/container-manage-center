@@ -5,6 +5,10 @@
 \setmainfont{Inter}[Scale=0.92]
 \setsansfont{Inter}[Scale=0.92]
 \setmonofont{DejaVu Sans Mono}[Scale=0.80]
+% Símbolos que Inter no tiene en todos sus pesos (el menú «⋯» de la aplicación).
+\usepackage{newunicodechar}
+\newfontfamily\cmcsimbolos{DejaVu Sans}[Scale=0.92]
+\newunicodechar{⋯}{{\cmcsimbolos ⋯}}
 \usepackage{polyglossia}
 \setdefaultlanguage{spanish}
 \usepackage{xcolor}
@@ -34,11 +38,20 @@
 % Títulos
 \titleformat{\chapter}[display]
   {\sffamily\color{cmcoscuro}}
-  {\colorbox{cmcmorado}{\parbox[c][1.6em][c]{2.2em}{\centering\color{white}\Large\bfseries\thechapter}}\hspace{0.6em}{\large\color{cmcmorado}\MakeUppercase{Capítulo}}}
+  {\colorbox{cmcmorado}{\parbox[c][1.6em][c]{2.2em}{\centering\color{white}\Large\bfseries\thechapter}}\hspace{0.6em}{\large\color{cmcmorado}\MakeUppercase{\chaptertitlename}}}
   {0.6em}
   {\Huge\bfseries}
   [\vspace{0.3em}{\color{cmcmorado}\titlerule[1.2pt]}]
 \titlespacing*{\chapter}{0pt}{-1.2em}{1.6em}
+% Partes (1.11.1): I, manual de usuario; II, anexos técnicos.
+\titleformat{\part}[display]
+  {\centering\sffamily\color{cmcoscuro}}
+  {\Large\color{cmcmorado}\MakeUppercase{\partname}~\thepart}
+  {1em}
+  {\fontsize{34}{40}\selectfont\bfseries}
+  [\vspace{0.6em}{\color{cmcmorado}\titlerule[1.2pt]}]
+\renewcommand{\cftpartfont}{\sffamily\Large\bfseries\color{cmcmorado}}
+\renewcommand{\cftpartpagefont}{\sffamily\Large\bfseries\color{cmcmorado}}
 \titleformat{\section}{\sffamily\Large\bfseries\color{cmcoscuro}}{\color{cmcmorado}\thesection}{0.6em}{}
 \titleformat{\subsection}{\sffamily\large\bfseries\color{cmcoscuro}}{\color{cmcmorado}\thesubsection}{0.6em}{}
 \titleformat{\subsubsection}{\sffamily\normalsize\bfseries\color{cmcmorado}}{}{0em}{}

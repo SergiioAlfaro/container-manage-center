@@ -24,7 +24,7 @@ y la estructura de la ventana en `app/`.
 | `settings` | Configuración, sistema, actualizaciones, componentes, legal |
 | `activity` | Panel de actividad (lateral derecho) |
 | `engine` | Estado de la conexión, indicador y diagnóstico |
-| `help` | Ayuda integrada (30 secciones en 8 idiomas) |
+| `help` | Manual integrado (34 secciones en 8 idiomas; la Parte I del PDF sale del mismo texto, D-125) |
 | `pending` | Pantallas de funciones no disponibles en un servidor |
 
 ## Pantallas y navegación
