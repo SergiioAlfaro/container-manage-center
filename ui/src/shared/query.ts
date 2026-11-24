@@ -21,6 +21,11 @@ export const keys = {
   images: ["images"] as const,
   networks: ["networks"] as const,
   volumes: ["volumes"] as const,
+  // 1.11.1: las listas breves (nombre y driver) del asistente de contenedores
+  // tienen su propia clave; compartían ["networks"] y ["volumes"] con las
+  // listas completas y Redes o Copias fallaban al leerlas.
+  networksBrief: ["networksBrief"] as const,
+  volumesBrief: ["volumesBrief"] as const,
   volumeSizes: ["volumeSizes"] as const,
   binds: ["binds"] as const,
   compose: ["compose"] as const,

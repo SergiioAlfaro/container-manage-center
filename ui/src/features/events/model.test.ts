@@ -13,8 +13,8 @@ describe("eventos: modelo", () => {
     expect(k("container", "exec_create: sh -c true")).toEqual([]);
     expect(k("container", "exec_die")).toEqual([]);
     expect(k("image", "pull")).toEqual(['["images"]', '["image"]', '["overview"]']);
-    expect(k("volume", "destroy")).toEqual(['["volumes"]', '["volume"]', '["volumeSizes"]', '["overview"]']);
-    expect(k("network", "connect")).toEqual(expect.arrayContaining(['["networks"]', '["containers"]']));
+    expect(k("volume", "destroy")).toEqual(['["volumes"]', '["volumesBrief"]', '["volume"]', '["volumeSizes"]', '["overview"]']);
+    expect(k("network", "connect")).toEqual(expect.arrayContaining(['["networks"]', '["networksBrief"]', '["containers"]']));
     expect(k("daemon", "reload")).toEqual(['["overview"]']);
     expect(k("plugin", "enable")).toEqual([]);
   });

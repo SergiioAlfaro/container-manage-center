@@ -146,8 +146,8 @@ export function CreateWizard({ initial, notes, sourceName }: { initial: Containe
 
   // Datos reales para ayudar a rellenar: imágenes locales, redes y volúmenes.
   const images = useQuery({ queryKey: keys.images, queryFn: api.imagesList });
-  const networks = useQuery({ queryKey: ["networks"], queryFn: api.networksBrief });
-  const volumes = useQuery({ queryKey: ["volumes"], queryFn: api.volumesBrief });
+  const networks = useQuery({ queryKey: keys.networksBrief, queryFn: api.networksBrief });
+  const volumes = useQuery({ queryKey: keys.volumesBrief, queryFn: api.volumesBrief });
   const tags = useMemo(() => (images.data ?? []).flatMap((i) => i.repoTags), [images.data]);
   const ref = normalizeRef(spec.image);
   const localImage = ref !== "" && (images.data ?? []).some((i) => i.repoTags.includes(ref) || i.id === ref || (ref.startsWith("sha256:") && i.id.startsWith(ref)));

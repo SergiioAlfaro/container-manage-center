@@ -19,13 +19,13 @@ export function invalidationsFor(e: Pick<DockerEvent, "kind" | "action">): Query
   switch (e.kind) {
     case "container":
       if (QUIET_CONTAINER_ACTIONS.includes(base)) return [];
-      return [keys.containers, ["container"], keys.overview, keys.composeProjects, keys.binds, keys.volumes, keys.networks, ["network"], ["volume"]];
+      return [keys.containers, ["container"], keys.overview, keys.composeProjects, keys.binds, keys.volumes, keys.volumesBrief, keys.networks, ["network"], ["volume"]];
     case "image":
       return [keys.images, ["image"], keys.overview];
     case "volume":
-      return [keys.volumes, ["volume"], keys.volumeSizes, keys.overview];
+      return [keys.volumes, keys.volumesBrief, ["volume"], keys.volumeSizes, keys.overview];
     case "network":
-      return [keys.networks, ["network"], keys.containers, ["container"], keys.overview];
+      return [keys.networks, keys.networksBrief, ["network"], keys.containers, ["container"], keys.overview];
     case "daemon":
       return [keys.overview];
     default:
